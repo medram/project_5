@@ -2,7 +2,10 @@ import { Head, Link, router } from '@inertiajs/react';
 import {
     Activity,
     BarChart3,
+    CalendarClock,
     ExternalLink,
+    Folder,
+    KeyRound,
     Link2,
     MousePointerClick,
     Pause,
@@ -44,6 +47,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { destroy, index, insights, update } from '@/routes/links';
+import type { FolderOption } from '@/types/folders';
 import {
     type LinkIndexProps,
     type LinkListItem,
@@ -111,7 +115,13 @@ function DeleteLinkDialog({ link }: { link: LinkListItem }) {
     );
 }
 
-function LinkActions({ link }: { link: LinkListItem }) {
+function LinkActions({
+    link,
+    folders,
+}: {
+    link: LinkListItem;
+    folders: FolderOption[];
+}) {
     const [updatingStatus, setUpdatingStatus] = useState(false);
 
     function toggleStatus() {
@@ -122,6 +132,11 @@ function LinkActions({ link }: { link: LinkListItem }) {
                 title: link.title ?? '',
                 slug: link.slug,
                 is_active: !link.isActive,
+                folder_id: link.folderId,
+                available_from: link.availableFrom,
+                expires_at: link.expiresAt,
+                access_code: '',
+                clear_access_code: false,
             },
             {
                 preserveScroll: true,
@@ -133,7 +148,7 @@ function LinkActions({ link }: { link: LinkListItem }) {
 
     return (
         <div className="flex flex-wrap gap-2">
-            <LinkFormDialog link={link}>
+            <LinkFormDialog link={link} folders={folders}>
                 <Button variant="outline" size="sm">
                     <Pencil data-icon="inline-start" />
                     Edit
@@ -166,7 +181,13 @@ function LinkActions({ link }: { link: LinkListItem }) {
     );
 }
 
-function LinkRow({ link }: { link: LinkListItem }) {
+function LinkRow({
+    link,
+    folders,
+}: {
+    link: LinkListItem;
+    folders: FolderOption[];
+}) {
     return (
         <Card>
             <CardHeader className="gap-4">
@@ -200,7 +221,7 @@ function LinkRow({ link }: { link: LinkListItem }) {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
                 <Separator />
-                <dl className="grid gap-4 sm:grid-cols-2">
+                <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="flex flex-col gap-1">
                         <dt className="text-sm text-muted-foreground">
                             Destination
@@ -226,16 +247,70 @@ function LinkRow({ link }: { link: LinkListItem }) {
                             {link.clicksCount === 1 ? 'click' : 'clicks'}
                         </dd>
                     </div>
+                    <div className="flex flex-col gap-1">
+                        <dt className="text-sm text-muted-foreground">
+                            Folder
+                        </dt>
+                        <dd className="flex items-center gap-2 text-sm font-medium">
+                            <Folder aria-hidden="true" />
+                            {link.folder?.name ?? 'No folder'}
+                        </dd>
+                    </div>
+                    {(link.availableFrom || link.expiresAt) && (
+                        <div className="flex flex-col gap-1">
+                            <dt className="text-sm text-muted-foreground">
+                                Availability
+                            </dt>
+                            <dd className="flex items-start gap-2 text-sm font-medium">
+                                <CalendarClock
+                                    className="mt-0.5 shrink-0"
+                                    aria-hidden="true"
+                                />
+                                <span>
+                                    {link.availableFrom && (
+                                        <span className="block">
+                                            Starts{' '}
+                                            {new Date(
+                                                link.availableFrom,
+                                            ).toLocaleString()}
+                                        </span>
+                                    )}
+                                    {link.expiresAt && (
+                                        <span className="block">
+                                            Expires{' '}
+                                            {new Date(
+                                                link.expiresAt,
+                                            ).toLocaleString()}
+                                        </span>
+                                    )}
+                                </span>
+                            </dd>
+                        </div>
+                    )}
+                    {link.hasAccessCode && (
+                        <div className="flex flex-col gap-1">
+                            <dt className="text-sm text-muted-foreground">
+                                Access
+                            </dt>
+                            <dd className="flex items-center gap-2 text-sm font-medium">
+                                <KeyRound aria-hidden="true" />
+                                Access code required
+                            </dd>
+                        </div>
+                    )}
                 </dl>
             </CardContent>
             <CardFooter className="flex-wrap gap-2">
-                <LinkActions link={link} />
+                <LinkActions link={link} folders={folders} />
             </CardFooter>
         </Card>
     );
 }
 
-export default function ShortLinks({ links: linkPayloads }: LinkIndexProps) {
+export default function ShortLinks({
+    links: linkPayloads,
+    folders,
+}: LinkIndexProps) {
     const links = linkPayloads.map(toLinkListItem);
 
     return (
@@ -259,7 +334,7 @@ export default function ShortLinks({ links: linkPayloads }: LinkIndexProps) {
                             and inspect the traffic they receive.
                         </p>
                     </div>
-                    <LinkFormDialog>
+                    <LinkFormDialog folders={folders}>
                         <Button>
                             <Plus data-icon="inline-start" />
                             Create short link
@@ -280,7 +355,7 @@ export default function ShortLinks({ links: linkPayloads }: LinkIndexProps) {
                             </EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
-                            <LinkFormDialog>
+                            <LinkFormDialog folders={folders}>
                                 <Button>
                                     <Plus data-icon="inline-start" />
                                     Create your first link
@@ -294,7 +369,11 @@ export default function ShortLinks({ links: linkPayloads }: LinkIndexProps) {
                         className="flex flex-col gap-3"
                     >
                         {links.map((link) => (
-                            <LinkRow key={link.id} link={link} />
+                            <LinkRow
+                                key={link.id}
+                                link={link}
+                                folders={folders}
+                            />
                         ))}
                     </section>
                 )}

@@ -3,6 +3,7 @@
 use App\Http\Controllers\BioLinkController;
 use App\Http\Controllers\BioPageController;
 use App\Http\Controllers\FolderController;
+use App\Http\Controllers\LinkAccessController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LinkInsightsController;
 use App\Http\Controllers\PublicBioPageController;
@@ -39,6 +40,10 @@ require __DIR__.'/settings.php';
 Route::get('bio/{handle}', PublicBioPageController::class)
     ->where('handle', '[a-z0-9-]{3,32}')
     ->name('bio-pages.public');
+
+Route::post('{slug}/unlock', LinkAccessController::class)
+    ->where('slug', '[a-z0-9-]{4,32}')
+    ->name('links.unlock');
 
 Route::get('{slug}', PublicLinkController::class)
     ->where('slug', '[a-z0-9-]{4,32}')

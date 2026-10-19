@@ -6,6 +6,7 @@ use App\Models\Click;
 use App\Models\Link;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -219,7 +220,12 @@ class LinkManagementTest extends TestCase
     public function test_index_only_includes_the_signed_in_owners_links(): void
     {
         $owner = User::factory()->create();
-        $ownerLink = $this->createLink($owner, ['slug' => 'owner-26']);
+        $folder = $owner->folders()->create(['name' => 'Campaigns']);
+        $ownerLink = $this->createLink($owner, [
+            'slug' => 'owner-26',
+            'folder_id' => $folder->id,
+            'access_code' => Hash::make('open-sesame'),
+        ]);
         Click::factory()->count(2)->for($ownerLink)->create();
         $this->createLink(User::factory()->create(), ['slug' => 'other-26']);
 
@@ -232,10 +238,69 @@ class LinkManagementTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('links/index', false)
                 ->has('links', 1)
+                ->has('folders', 1)
                 ->where('links.0.slug', 'owner-26')
                 ->where('links.0.is_active', true)
+                ->where('links.0.folder.id', $folder->id)
+                ->where('links.0.folder.name', 'Campaigns')
+                ->where('links.0.has_access_code', true)
+                ->missing('links.0.access_code')
                 ->where('links.0.clicks_count', 2),
             );
+    }
+
+    public function test_owner_can_assign_an_owned_folder_to_a_link(): void
+    {
+        $owner = User::factory()->create();
+        $folder = $owner->folders()->create(['name' => 'Campaigns']);
+
+        $this
+            ->actingAs($owner)
+            ->post('/links', [
+                'destination_url' => 'https://example.com/campaign',
+                'title' => 'Campaign',
+                'slug' => 'campaign-26',
+                'is_active' => true,
+                'folder_id' => $folder->id,
+            ])
+            ->assertRedirect('/links');
+
+        $this->assertDatabaseHas('links', [
+            'slug' => 'campaign-26',
+            'folder_id' => $folder->id,
+        ]);
+    }
+
+    public function test_folder_assignment_requires_ownership(): void
+    {
+        $folder = User::factory()
+            ->create()
+            ->folders()
+            ->create(['name' => 'Someone else']);
+
+        $this
+            ->actingAs(User::factory()->create())
+            ->post('/links', [
+                'destination_url' => 'https://example.com/forged-folder',
+                'slug' => 'forged-folder',
+                'is_active' => true,
+                'folder_id' => $folder->id,
+            ])
+            ->assertSessionHasErrors('folder_id');
+    }
+
+    public function test_availability_must_start_before_expiration(): void
+    {
+        $this
+            ->actingAs(User::factory()->create())
+            ->post('/links', [
+                'destination_url' => 'https://example.com/scheduled',
+                'slug' => 'scheduled-26',
+                'is_active' => true,
+                'available_from' => '2026-10-21T12:00',
+                'expires_at' => '2026-10-20T12:00',
+            ])
+            ->assertSessionHasErrors('expires_at');
     }
 
     /**

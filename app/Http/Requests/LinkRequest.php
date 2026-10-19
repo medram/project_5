@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Folder;
 use App\Models\Link;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
@@ -69,6 +70,16 @@ abstract class LinkRequest extends FormRequest
                 $uniqueSlug,
             ],
             'is_active' => ['required', 'boolean'],
+            'folder_id' => [
+                'nullable',
+                'integer',
+                Rule::exists(Folder::class, 'id')
+                    ->where('user_id', $this->user()->id),
+            ],
+            'access_code' => ['nullable', 'string', 'max:255'],
+            'clear_access_code' => ['nullable', 'boolean'],
+            'available_from' => ['nullable', 'date'],
+            'expires_at' => ['nullable', 'date', 'after:available_from'],
         ];
     }
 
