@@ -166,7 +166,7 @@ Expected: FAIL because `Link`, its routes, and its controller do not exist.
 
 Create the migration with a unique `slug`, foreign key to `users`, nullable 160-character `title`, 2048-character `destination_url`, and boolean `is_active` defaulting true. Implement the `Link` relation to `User`, its lowercasing/generated-slug behavior, and `LinkPolicy` owner checks.
 
-Implement both form requests. In `prepareForValidation`, lowercase non-empty identifiers. Validate title/destination limits, identifier regex, reserved words, uniqueness, and exact `APP_URL` scheme-host-effective-port loop rejection. Use `LinkController` with policy authorization and `Inertia::render('links/index', ...)`; include a database-side `clicks_count` in the list query without loading raw click rows.
+Implement both form requests. In `prepareForValidation`, lowercase non-empty identifiers. Validate title/destination limits, identifier regex, reserved words, uniqueness, and exact `APP_URL` scheme-host-effective-port loop rejection. Use `LinkController` with policy authorization and `Inertia::render('links/index', ...)`; Task 3 adds the database-side `clicks_count` once click storage exists.
 
 Place authenticated management routes in `routes/web.php` before all later public routes, replacing the generated dashboard endpoint with an authenticated redirect to `links.index`.
 
@@ -191,7 +191,7 @@ git commit -m "feat: add owned short links"
 - Create: `app/Http/Controllers/LinkInsightsController.php`
 - Create: `database/migrations/*_create_clicks_table.php`
 - Create: `database/factories/ClickFactory.php`
-- Modify: `app/Models/Link.php`
+- Modify: `app/Models/Link.php`, `app/Http/Controllers/LinkController.php`
 - Modify: `routes/web.php`
 - Test: `tests/Feature/Links/PublicRedirectTest.php`
 - Test: `tests/Feature/Links/LinkInsightsTest.php`
@@ -215,7 +215,7 @@ Expected: FAIL because clicks, the public route, and the insights controller do 
 
 - [ ] **Step 3: Implement click persistence, public 302 routing, and portable daily aggregation**
 
-Create `clicks` with a cascading `link_id` foreign key and non-null `occurred_at`. Add `Link::clicks()` and `Click::link()` relationships. `PublicLinkController` must resolve only active links, insert one `Click` with `occurred_at` set to the current application time, and return `redirect()->away($link->destination_url, 302)`.
+Create `clicks` with a cascading `link_id` foreign key and non-null `occurred_at`. Add `Link::clicks()` and `Click::link()` relationships. Update `LinkController`’s list query to add `withCount('clicks')`. `PublicLinkController` must resolve only active links, insert one `Click` with `occurred_at` set to the current application time, and return `redirect()->away($link->destination_url, 302)`.
 
 `LinkInsightsController` must authorize the link, derive the fourteen calendar dates from `config('app.timezone')`, fetch only the date-window records, group them in PHP by timezone-adjusted `occurred_at`, and return a zero-filled chronological series via `Inertia::render('links/insights', ...)`. Define public static routes and `/bio/{handle}` before placing the constrained `/{slug}` wildcard last in `routes/web.php`.
 
