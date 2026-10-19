@@ -1,0 +1,10 @@
+.env
+.git
+.worktrees
+.superpowers
+node_modules
+vendor
+bootstrap/cache
+storage/framework
+.phpunit.result.cache
+coverage

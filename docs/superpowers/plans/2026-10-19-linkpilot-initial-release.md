@@ -4,16 +4,16 @@
 
 **Goal:** Deliver the first complete LinkPilot loop: an authenticated user creates a short link, a visitor is redirected and recorded, the owner sees the insight, and the owner can publish an ordered link-in-bio page.
 
-**Architecture:** Laravel 13 owns authentication, persistence, authorization, public redirects, and Inertia page data. React page components use Inertia forms and server-side routes instead of a separate REST API. Because PHP, Composer, and the Laravel installer are absent locally while Docker is available, a small PHP 8.5 Docker runtime runs Laravel, migrations, and tests; host npm builds the React assets.
+**Architecture:** Laravel 13 owns authentication, persistence, authorization, public redirects, and Inertia page data. React page components use Inertia forms and server-side routes instead of a separate REST API. Because PHP, Composer, and the Laravel installer are absent locally while Docker is available, a unified PHP 8.5/Node 22 Docker runtime runs Laravel, migrations, tests, and Vite tasks.
 
-**Tech Stack:** Laravel 13, PHP 8.5 (Docker), Inertia 3, React 19, TypeScript, Tailwind 4, shadcn/ui from the official React starter kit, SQLite, Docker Compose, Node 22/npm 10.
+**Tech Stack:** Laravel 13, PHP 8.5/Node 22 (Docker), Inertia 3, React 19, TypeScript, Tailwind 4, shadcn/ui from the official React starter kit, SQLite, Docker Compose.
 
 **Spec:** `docs/superpowers/specs/2026-10-16-linkpilot-design.md`
 
 ## Environment Facts
 
 - Docker daemon is available; use it instead of modifying the host with a global PHP/Composer installation.
-- Node 22/npm 10 are available on the host.
+- Vite’s Wayfinder integration invokes `php artisan`, so JavaScript tasks run in the same Docker runtime rather than through host npm alone.
 - Laravel’s official React starter kit provides React 19, Inertia 3, TypeScript, Tailwind 4, shadcn/ui, and authentication scaffolding.
 
 ## Global Constraints
@@ -26,6 +26,8 @@
 - Use policies for ownership. An authenticated user may access only their links, clicks, bio pages, and bio links.
 - Inertia controllers render React pages and React forms use `useForm`; do not return JSON for first-party dashboard pages or use Axios/fetch for those form submissions.
 - Use visible labels, inline server validation errors, durable visible focus rings, keyboard-operable dialogs, and at least 44px touch targets for primary interactions.
+- Compose frontend UI from the official starter’s built-in shadcn components using its configured primitive base; do not add external UI kits or registry components.
+
 - Insights render a fourteen-day daily series in `config('app.timezone')`, defaulting to UTC. Render a truthful zero-data state instead of dummy chart values.
 - Use REA browser captures when a reference surface or the implemented UI needs evidence-based observation; capture only the required navigation, DOM, accessibility, and screenshots.
 
@@ -35,7 +37,7 @@
 | Path | Responsibility |
 |---|---|
 | `compose.yaml` | Bind-mounted local Laravel runtime on port 8000. |
-| `docker/php/Dockerfile` | PHP 8.5 CLI image with Composer and SQLite support. |
+| `docker/php/Dockerfile` | PHP 8.5/Node 22 CLI image with Composer and SQLite support. |
 | `.dockerignore` | Keeps local dependency/build noise out of the Docker image context. |
 | `app/Models/Link.php`, `Click.php` | Short-link records, generated-slug behavior, click relationship. |
 | `app/Models/BioPage.php`, `BioLink.php` | Published bio-page records, ordered button relationship. |
@@ -81,19 +83,19 @@
 
 **Interfaces:**
 - Produces a running Laravel application at `http://localhost:8000` with standard registration/login/logout routes and an Inertia React app shell.
-- Produces `docker compose run --rm app php artisan <command>` as the canonical PHP/Composer/test command.
+- Produces `docker compose run --rm app php artisan <command>` and `docker compose run --rm app npm <command>` as the canonical PHP/Composer/test and JavaScript commands.
 
 - [ ] **Step 1: Add a PHP 8.5 Compose runtime before creating app code**
 
-Create `docker/php/Dockerfile` from `php:8.5-cli-bookworm`, install `pdo_sqlite`, SQLite tooling, `git`, and `unzip`, then copy Composer from `composer:2`. Create `compose.yaml` with an `app` service that bind-mounts the repository at `/var/www`, exposes `8000:8000`, and runs `php artisan serve --host=0.0.0.0 --port=8000`. Add `.dockerignore` for `node_modules`, vendor output, test/cache output, and local environment files.
+Create `docker/php/Dockerfile` from `php:8.5-cli-bookworm`, retain its bundled `pdo_sqlite` support, install SQLite tooling, `git`, and `unzip`, then copy Composer and Node 22/npm from official stages and set `COMPOSER_HOME` to writable temporary storage. Create `compose.yaml` with an `app` service that bind-mounts the repository at `/var/www`, runs as the local UID/GID, exposes `8000:8000`, and runs `php artisan serve --host=0.0.0.0 --port=8000`. Add `.dockerignore` for `node_modules`, vendor output, test/cache output, and local environment files.
 
 - [ ] **Step 2: Generate the Laravel React starter application with the official installer in a one-shot Composer container**
 
-Run the installer in a disposable `composer:2` container mounted at the repository root. Install the Laravel installer inside that container, run `laravel new /tmp/linkpilot --database=sqlite --react --no-interaction`, then copy the generated application contents into the mounted root without deleting `docs/`. Do not use `--npm` because npm is available on the host. Do not add Laravel Boost, Laravel Cloud tooling, Sail, or another starter kit.
+Run the installer in a disposable `composer:2` container mounted at the repository root using the host UID/GID so generated files remain editable. Install the Laravel installer inside that container, temporarily prepend an `npm` shim that exits successfully because the current installer invokes `npm install` even in non-interactive mode, run `laravel new /tmp/linkpilot --database=sqlite --react --no-interaction`, then copy the generated application contents into the mounted root without deleting `docs/`. The shim exists only in the one-shot container; remove the starter’s generated Laravel Sail dev dependency, then Step 3 runs the real containerized `npm install`. Do not add Laravel Boost, Laravel Cloud tooling, Sail, or another starter kit.
 
 - [ ] **Step 3: Configure local SQLite and install JavaScript dependencies**
 
-Set `APP_URL=http://localhost:8000` and `APP_TIMEZONE=UTC` in `.env`, retain generated SQLite configuration, then run `npm install`, `npm run build`, and `docker compose run --rm app php artisan migrate --force`.
+Set `APP_URL=http://localhost:8000` and `APP_TIMEZONE=UTC` in `.env`, retain generated SQLite configuration, then run `docker compose run --rm app npm install`, `docker compose run --rm app npm run build`, and `docker compose run --rm app php artisan migrate --force`.
 
 - [ ] **Step 4: Run the generated baseline tests**
 
@@ -252,7 +254,7 @@ Adapt the starter kit’s sidebar app layout to a compact LinkPilot navigation w
 
 - [ ] **Step 2: Implement accessible link list and create/edit dialog**
 
-Use the starter kit’s existing shadcn/UI primitives and Inertia `useForm` in `link-form-dialog.tsx`. The dialog has persistent visible labels for destination URL, title, and optional custom slug; it renders field errors adjacent to controls, disables while processing, and returns focus to the trigger on close. `links/index.tsx` lists each link’s short URL, destination, active state, and click count with keyboard-operable edit, active/inactive, delete, and insights actions.
+Use the starter kit’s native shadcn components and Inertia `useForm` in `link-form-dialog.tsx`; before using a component, inspect its local shadcn documentation and existing implementation. The dialog has persistent visible labels for destination URL, title, and optional custom slug; it renders field errors adjacent to controls, disables while processing, and returns focus to the trigger on close. `links/index.tsx` lists each link’s short URL, destination, active state, and click count with keyboard-operable edit, active/inactive, delete, and insights actions.
 
 - [ ] **Step 3: Implement the truthful insight page**
 
@@ -260,7 +262,7 @@ Render total clicks plus a fourteen-day CSS/SVG-free bar list from `dailyClicks`
 
 - [ ] **Step 4: Build the React assets**
 
-Run: `npm run build`
+Run: `docker compose run --rm app npm run build`
 
 Expected: PASS with TypeScript/Vite assets emitted and no type/build errors.
 
@@ -361,7 +363,7 @@ Use `editor.tsx` to add/edit/disable/delete buttons and explicit, keyboard-opera
 
 - [ ] **Step 4: Build the React assets**
 
-Run: `npm run build`
+Run: `docker compose run --rm app npm run build`
 
 Expected: PASS with the editor and public page included in the Vite manifest.
 
@@ -385,7 +387,7 @@ git commit -m "feat: add bio page editor"
 
 - [ ] **Step 1: Document local setup and runtime commands**
 
-Update `README.md` with prerequisites (Docker and Node/npm), one-shot Laravel setup already performed, `docker compose up --build`, `docker compose run --rm app php artisan migrate`, `docker compose run --rm app php artisan test`, and `npm install && npm run build`. Explain that the app is served at `http://localhost:8000` and is configured for SQLite by default.
+Update `README.md` with prerequisites (Docker), one-shot Laravel setup already performed, `docker compose up --build`, `docker compose run --rm app php artisan migrate`, `docker compose run --rm app php artisan test`, `docker compose run --rm app npm install`, and `docker compose run --rm app npm run build`. Explain that the app is served at `http://localhost:8000` and is configured for SQLite by default.
 
 - [ ] **Step 2: Run the complete automated verification**
 
@@ -393,7 +395,7 @@ Run:
 
 ```bash
 docker compose run --rm app php artisan test
-npm run build
+docker compose run --rm app npm run build
 ```
 
 Expected: Laravel tests PASS and Vite build exits 0.
