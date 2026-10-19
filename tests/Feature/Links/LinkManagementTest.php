@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Links;
 
+use App\Models\Click;
 use App\Models\Link;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -197,7 +198,8 @@ class LinkManagementTest extends TestCase
     public function test_index_only_includes_the_signed_in_owners_links(): void
     {
         $owner = User::factory()->create();
-        $this->createLink($owner, ['slug' => 'owner-26']);
+        $ownerLink = $this->createLink($owner, ['slug' => 'owner-26']);
+        Click::factory()->count(2)->for($ownerLink)->create();
         $this->createLink(User::factory()->create(), ['slug' => 'other-26']);
 
         $this->withoutVite();
@@ -209,7 +211,9 @@ class LinkManagementTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('links/index', false)
                 ->has('links', 1)
-                ->where('links.0.slug', 'owner-26'),
+                ->where('links.0.slug', 'owner-26')
+                ->where('links.0.is_active', true)
+                ->where('links.0.clicks_count', 2),
             );
     }
 

@@ -217,7 +217,7 @@ Expected: FAIL because clicks, the public route, and the insights controller do 
 
 Create `clicks` with a cascading `link_id` foreign key and non-null `occurred_at`. Add `Link::clicks()` and `Click::link()` relationships. Update `LinkController`’s list query to add `withCount('clicks')`. `PublicLinkController` must resolve only active links, insert one `Click` with `occurred_at` set to the current application time, and return `redirect()->away($link->destination_url, 302)`.
 
-`LinkInsightsController` must authorize the link, derive the fourteen calendar dates from `config('app.timezone')`, fetch only the date-window records, group them in PHP by timezone-adjusted `occurred_at`, and return a zero-filled chronological series via `Inertia::render('links/insights', ...)`. Define public static routes and `/bio/{handle}` before placing the constrained `/{slug}` wildcard last in `routes/web.php`.
+`LinkInsightsController` must authorize the link, derive the fourteen calendar dates from `config('app.timezone')`, fetch only the date-window records, group them in PHP by timezone-adjusted `occurred_at`, and return a zero-filled chronological series via `Inertia::render('links/insights', ...)`. Place the constrained `/{slug}` wildcard last in `routes/web.php`; Task 5 adds `/bio/{handle}` before that wildcard when its controller exists.
 
 - [ ] **Step 4: Run the focused tests to verify green**
 
@@ -317,7 +317,7 @@ Expected: FAIL because the bio models, routes, and controllers do not exist.
 
 Create both migrations with cascade deletion and unique canonical `handle`. Add ordered relations (`bioLinks()->orderBy('position')`) and factories. Use `BioPagePolicy` for all parent resources; `BioLinkController` must authorize the containing page before every operation.
 
-Normalize handles in form requests, validate the specified lengths/URL policy, and assign new buttons `max(position) + 1`. For reorder, require the exact set of that page’s link IDs once each, then update positions in a transaction. `PublicBioPageController` resolves only published pages and eager-loads only active buttons in order before `Inertia::render('bio-pages/public', ...)`.
+Normalize handles in form requests, validate the specified lengths/URL policy, and assign new buttons `max(position) + 1`. For reorder, require the exact set of that page’s link IDs once each, then update positions in a transaction. Add `GET /bio/{handle}` before the existing constrained `/{slug}` wildcard. `PublicBioPageController` resolves only published pages and eager-loads only active buttons in order before `Inertia::render('bio-pages/public', ...)`.
 
 - [ ] **Step 4: Run the focused tests to verify green**
 

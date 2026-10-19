@@ -16,7 +16,7 @@ class LinkController extends Controller
     public function index(Request $request): Response
     {
         return Inertia::render('links/index', [
-            'links' => $request->user()->links()->latest()->get(),
+            'links' => $request->user()->links()->withCount('clicks')->latest()->get(),
         ]);
     }
 
