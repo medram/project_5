@@ -10,6 +10,7 @@ LinkPilot is a Laravel and React publishing console for owned short links and pu
 - Download locally generated SVG QR codes for owned short links.
 - Follow an active short URL and record one privacy-minimal click event.
 - Create multiple bio pages, order named outbound buttons, and publish only active buttons at `/bio/{handle}`.
+- Review local account plan limits and subscription usage at `/billing`; this is internal entitlement state, not payment collection.
 
 ## QR codes
 
@@ -18,6 +19,10 @@ The authenticated QR dashboard serves each owned link through
 Endroid QR Code; it does not send the destination or QR image through an
 external image service. Each QR code encodes the absolute public short-link
 URL, so normal availability and access-code controls still apply after a scan.
+
+## Account plans and local billing
+
+Every account receives a local free subscription after migration or registration. The billing page enforces short-link limits now and will show other metered resources as their modules are enabled. No Stripe, PayPal, checkout form, invoices, taxes, or payment processing are configured in this repository.
 
 ## Requirements
 

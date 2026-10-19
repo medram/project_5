@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BioLinkController;
 use App\Http\Controllers\BioPageController;
 use App\Http\Controllers\FolderController;
@@ -18,6 +19,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('dashboard', fn () => to_route('links.index'))->name('dashboard');
     Route::get('links', [LinkController::class, 'index'])->name('links.index');
     Route::get('dashboard/qr-codes', [QrCodeController::class, 'index'])->name('qr-codes.index');
+    Route::get('billing', [BillingController::class, 'index'])->name('billing.index');
+    Route::patch('billing/plan', [BillingController::class, 'selectFree'])->name('billing.plan.update');
     Route::post('links', [LinkController::class, 'store'])->name('links.store');
     Route::get('links/{link}/insights', LinkInsightsController::class)->name('links.insights');
     Route::get('links/{link}/qr-code.svg', LinkQrCodeController::class)->name('links.qr-code');

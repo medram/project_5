@@ -6,6 +6,7 @@ use App\Http\Requests\LinkRequest;
 use App\Http\Requests\StoreLinkRequest;
 use App\Http\Requests\UpdateLinkRequest;
 use App\Models\Link;
+use App\Services\Billing\EnforcesPlanLimits;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -15,6 +16,8 @@ use Inertia\Response;
 
 class LinkController extends Controller
 {
+    public function __construct(private readonly EnforcesPlanLimits $planLimits) {}
+
     public function index(Request $request): Response
     {
         return Inertia::render('links/index', [
@@ -31,7 +34,11 @@ class LinkController extends Controller
 
     public function store(StoreLinkRequest $request): RedirectResponse
     {
-        $request->user()->links()->create($this->attributesFrom($request));
+        $this->planLimits->create(
+            $request->user(),
+            'links',
+            fn ($user): Link => $user->links()->create($this->attributesFrom($request)),
+        );
 
         return to_route('links.index');
     }

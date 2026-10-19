@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Folder, Link2, PanelsTopLeft, QrCode } from 'lucide-react';
+import { CreditCard, Folder, Link2, PanelsTopLeft, QrCode } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -13,6 +13,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { index as linksIndex } from '@/routes/links';
+import { index as billingIndex } from '@/routes/billing';
 import { index as bioPagesIndex } from '@/routes/bio-pages';
 import { index as foldersIndex } from '@/routes/folders';
 import { index as qrCodesIndex } from '@/routes/qr-codes';
@@ -23,6 +24,11 @@ const mainNavItems: NavItem[] = [
         title: 'Short links',
         href: linksIndex(),
         icon: Link2,
+    },
+    {
+        title: 'Billing & usage',
+        href: billingIndex(),
+        icon: CreditCard,
     },
     {
         title: 'QR codes',
