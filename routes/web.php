@@ -6,8 +6,10 @@ use App\Http\Controllers\FolderController;
 use App\Http\Controllers\LinkAccessController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LinkInsightsController;
+use App\Http\Controllers\LinkQrCodeController;
 use App\Http\Controllers\PublicBioPageController;
 use App\Http\Controllers\PublicLinkController;
+use App\Http\Controllers\QrCodeController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -15,8 +17,10 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('dashboard', fn () => to_route('links.index'))->name('dashboard');
     Route::get('links', [LinkController::class, 'index'])->name('links.index');
+    Route::get('qr-codes', [QrCodeController::class, 'index'])->name('qr-codes.index');
     Route::post('links', [LinkController::class, 'store'])->name('links.store');
     Route::get('links/{link}/insights', LinkInsightsController::class)->name('links.insights');
+    Route::get('links/{link}/qr-code.svg', LinkQrCodeController::class)->name('links.qr-code');
     Route::patch('links/{link}', [LinkController::class, 'update'])->name('links.update');
     Route::get('folders', [FolderController::class, 'index'])->name('folders.index');
     Route::post('folders', [FolderController::class, 'store'])->name('folders.store');
