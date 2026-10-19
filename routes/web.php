@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BioLinkController;
 use App\Http\Controllers\BioPageController;
@@ -15,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function (): void {
+Route::middleware(['auth', 'verified', 'active-account'])->group(function (): void {
     Route::get('dashboard', fn () => to_route('links.index'))->name('dashboard');
     Route::get('links', [LinkController::class, 'index'])->name('links.index');
     Route::get('dashboard/qr-codes', [QrCodeController::class, 'index'])->name('qr-codes.index');
@@ -40,6 +42,16 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::patch('bio-pages/{bioPage}/links/reorder', [BioLinkController::class, 'reorder'])->name('bio-pages.links.reorder');
     Route::patch('bio-pages/{bioPage}/links/{bioLink}', [BioLinkController::class, 'update'])->name('bio-pages.links.update');
     Route::delete('bio-pages/{bioPage}/links/{bioLink}', [BioLinkController::class, 'destroy'])->name('bio-pages.links.destroy');
+
+    Route::prefix('admin')->name('admin.')->middleware('administrator')->group(function (): void {
+        Route::get('/', AdminDashboardController::class)->name('index');
+        Route::patch('users/{user}/suspension', [AdminUserController::class, 'updateSuspension'])
+            ->name('users.suspension.update');
+        Route::patch('users/{user}/administrator', [AdminUserController::class, 'updateAdministrator'])
+            ->name('users.administrator.update');
+        Route::patch('users/{user}/plan', [AdminUserController::class, 'updatePlan'])
+            ->name('users.plan.update');
+    });
 });
 
 require __DIR__.'/settings.php';

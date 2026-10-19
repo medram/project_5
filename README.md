@@ -24,6 +24,19 @@ URL, so normal availability and access-code controls still apply after a scan.
 
 Every account receives a local free subscription after migration or registration. The billing page enforces short-link limits now and will show other metered resources as their modules are enabled. No Stripe, PayPal, checkout form, invoices, taxes, or payment processing are configured in this repository.
 
+## Administration
+
+Grant administrator access only to an existing local account:
+
+```bash
+docker compose run --rm app php artisan linkpilot:grant-admin user@example.test
+```
+
+`/admin` exposes account metadata, subscription state, and aggregate ownership
+counts; it never lists private content, destinations, visitor data, or secrets.
+Suspending an account clears its database sessions and remember token while
+leaving its already-public content available.
+
 ## Requirements
 
 - Docker Engine with Docker Compose v2.

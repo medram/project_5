@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureActiveAccount;
+use App\Http\Middleware\EnsureAdministrator;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -16,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+
+        $middleware->alias([
+            'active-account' => EnsureActiveAccount::class,
+            'administrator' => EnsureAdministrator::class,
+        ]);
 
         $middleware->web(append: [
             HandleAppearance::class,

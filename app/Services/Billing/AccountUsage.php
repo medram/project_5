@@ -2,8 +2,10 @@
 
 namespace App\Services\Billing;
 
+use App\Models\Plan;
 use App\Models\User;
 use App\Models\UserSubscription;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class AccountUsage
@@ -44,6 +46,24 @@ class AccountUsage
         $subscription->loadMissing('plan');
 
         return $subscription;
+    }
+
+    public function assignPlan(User $user, Plan $plan): UserSubscription
+    {
+        return DB::transaction(function () use ($user, $plan): UserSubscription {
+            $account = User::query()->lockForUpdate()->findOrFail($user->id);
+            $subscription = $this->subscriptionFor($account);
+
+            $subscription->update([
+                'plan_id' => $plan->id,
+                'status' => 'active',
+                'source' => 'manual',
+            ]);
+
+            return UserSubscription::query()
+                ->with('plan')
+                ->findOrFail($subscription->id);
+        });
     }
 
     /**
