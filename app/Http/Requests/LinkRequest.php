@@ -37,8 +37,10 @@ abstract class LinkRequest extends FormRequest
     /**
      * @return array<string, array<int, mixed>>
      */
-    protected function linkRules(?Link $ignoredLink = null): array
-    {
+    protected function linkRules(
+        ?Link $ignoredLink = null,
+        bool $slugRequired = false,
+    ): array {
         $uniqueSlug = Rule::unique(Link::class, 'slug');
 
         if ($ignoredLink !== null) {
@@ -59,7 +61,7 @@ abstract class LinkRequest extends FormRequest
             ],
             'title' => ['nullable', 'string', 'max:160'],
             'slug' => [
-                'nullable',
+                $slugRequired ? 'required' : 'nullable',
                 'string',
                 'max:32',
                 'regex:/\A[a-z0-9-]{4,32}\z/',

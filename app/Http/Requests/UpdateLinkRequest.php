@@ -13,6 +13,6 @@ class UpdateLinkRequest extends LinkRequest
     {
         $link = $this->route('link');
 
-        return $this->linkRules($link instanceof Link ? $link : null);
+        return $this->linkRules($link instanceof Link ? $link : null, true);
     }
 }

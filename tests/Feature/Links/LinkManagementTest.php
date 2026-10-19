@@ -158,6 +158,27 @@ class LinkManagementTest extends TestCase
         ]);
     }
 
+    public function test_owner_cannot_clear_an_existing_slug(): void
+    {
+        $owner = User::factory()->create();
+        $link = $this->createLink($owner);
+
+        $this
+            ->actingAs($owner)
+            ->patch("/links/{$link->id}", [
+                'destination_url' => $link->destination_url,
+                'title' => $link->title,
+                'slug' => '',
+                'is_active' => true,
+            ])
+            ->assertSessionHasErrors('slug');
+
+        $this->assertDatabaseHas('links', [
+            'id' => $link->id,
+            'slug' => 'original-link',
+        ]);
+    }
+
     public function test_owner_can_delete_a_link(): void
     {
         $owner = User::factory()->create();
