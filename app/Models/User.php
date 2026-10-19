@@ -53,4 +53,9 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return $this->hasMany(Link::class);
     }
+
+    public function bioPages(): HasMany
+    {
+        return $this->hasMany(BioPage::class);
+    }
 }
