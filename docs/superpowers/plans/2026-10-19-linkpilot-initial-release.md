@@ -197,7 +197,7 @@ git commit -m "feat: add owned short links"
 **Interfaces:**
 - `GET /links/{link}/insights` (`links.insights`) renders `links/insights` with `link`, `totalClicks`, and `dailyClicks: Array<{ date: string, clicks: int }>` for exactly fourteen application-timezone days ending today.
 - Final route `GET /{slug}` (`links.redirect`) creates one click and returns HTTP 302 to an active link’s destination; inactive/missing slugs return 404.
-- `Click` belongs to `Link` and stores only `link_id` and timestamps.
+- `Click` belongs to `Link` and stores only `link_id` and non-null `occurred_at`; it does not store visitor attributes.
 
 - [ ] **Step 1: Write failing redirect and aggregation tests**
 
@@ -213,7 +213,7 @@ Expected: FAIL because clicks, the public route, and the insights controller do 
 
 - [ ] **Step 3: Implement click persistence, public 302 routing, and portable daily aggregation**
 
-Create `clicks` with a cascading `link_id` foreign key and timestamps. Add `Link::clicks()` and `Click::link()` relationships. `PublicLinkController` must resolve only active links, insert one `Click`, and return `redirect()->away($link->destination_url, 302)`.
+Create `clicks` with a cascading `link_id` foreign key and non-null `occurred_at`. Add `Link::clicks()` and `Click::link()` relationships. `PublicLinkController` must resolve only active links, insert one `Click` with `occurred_at` set to the current application time, and return `redirect()->away($link->destination_url, 302)`.
 
 `LinkInsightsController` must authorize the link, derive the fourteen calendar dates from `config('app.timezone')`, fetch only the date-window records, group them in PHP by timezone-adjusted `occurred_at`, and return a zero-filled chronological series via `Inertia::render('links/insights', ...)`. Define public static routes and `/bio/{handle}` before placing the constrained `/{slug}` wildcard last in `routes/web.php`.
 
