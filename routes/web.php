@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BioLinkController;
 use App\Http\Controllers\BioPageController;
+use App\Http\Controllers\FolderController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LinkInsightsController;
 use App\Http\Controllers\PublicBioPageController;
@@ -16,6 +17,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('links', [LinkController::class, 'store'])->name('links.store');
     Route::get('links/{link}/insights', LinkInsightsController::class)->name('links.insights');
     Route::patch('links/{link}', [LinkController::class, 'update'])->name('links.update');
+    Route::get('folders', [FolderController::class, 'index'])->name('folders.index');
+    Route::post('folders', [FolderController::class, 'store'])->name('folders.store');
+    Route::patch('folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
+    Route::delete('folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
     Route::delete('links/{link}', [LinkController::class, 'destroy'])->name('links.destroy');
 
     Route::get('bio-pages', [BioPageController::class, 'index'])->name('bio-pages.index');

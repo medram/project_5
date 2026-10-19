@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Link2, PanelsTopLeft } from 'lucide-react';
+import { Folder, Link2, PanelsTopLeft } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import { index as linksIndex } from '@/routes/links';
 import { index as bioPagesIndex } from '@/routes/bio-pages';
+import { index as foldersIndex } from '@/routes/folders';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -21,6 +22,11 @@ const mainNavItems: NavItem[] = [
         title: 'Short links',
         href: linksIndex(),
         icon: Link2,
+    },
+    {
+        title: 'Folders',
+        href: foldersIndex(),
+        icon: Folder,
     },
     {
         title: 'Bio pages',

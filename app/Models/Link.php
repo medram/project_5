@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
-#[Fillable(['destination_url', 'title', 'slug', 'is_active'])]
+#[Fillable(['folder_id', 'destination_url', 'title', 'slug', 'is_active'])]
 class Link extends Model
 {
     /** @use HasFactory<LinkFactory> */
@@ -36,6 +36,11 @@ class Link extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function folder(): BelongsTo
+    {
+        return $this->belongsTo(Folder::class);
     }
 
     public function clicks(): HasMany
