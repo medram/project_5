@@ -12,6 +12,7 @@
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
+    --font-bio-display: Calistoga, Georgia, ui-serif, serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -155,5 +156,82 @@
     button:not(:disabled),
     [role='button']:not(:disabled) {
         cursor: pointer;
+    }
+}
+
+.bio-page-shell {
+    min-height: 100svh;
+    overflow-x: clip;
+    background: var(--muted);
+    padding: 1rem;
+}
+
+.bio-page-frame {
+    width: min(100%, 38rem);
+    margin: auto;
+    padding-block: clamp(2rem, 8vh, 5rem);
+}
+
+.bio-page-presentation {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.bio-page-identity {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.5rem 1.5rem 0.5rem 1.5rem;
+    background: var(--linkpilot-ink);
+    padding: clamp(1.5rem, 6vw, 3rem);
+    color: var(--linkpilot-white);
+    box-shadow: 0 1.25rem 2.5rem
+        color-mix(in srgb, var(--linkpilot-ink) 22%, transparent);
+}
+
+.bio-page-identity::after {
+    position: absolute;
+    right: clamp(1.5rem, 6vw, 3rem);
+    bottom: 0;
+    width: 4rem;
+    height: 0.3rem;
+    border-radius: 999px 999px 0 0;
+    background: var(--linkpilot-action);
+    content: '';
+}
+
+.bio-page-handle {
+    overflow-wrap: anywhere;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    opacity: 0.78;
+}
+
+.bio-page-name {
+    margin-top: 1.5rem;
+    overflow-wrap: anywhere;
+    font-family: var(--font-bio-display);
+    font-size: clamp(2.25rem, 10vw, 4.75rem);
+    line-height: 0.98;
+    letter-spacing: -0.04em;
+}
+
+.bio-page-bio {
+    max-width: 36rem;
+    margin-top: 1.25rem;
+    overflow-wrap: anywhere;
+    font-size: 1rem;
+    line-height: 1.7;
+    opacity: 0.86;
+}
+
+.bio-page-links {
+    min-width: 0;
+}
+
+@media (min-width: 40rem) {
+    .bio-page-shell {
+        padding: 2rem;
     }
 }
