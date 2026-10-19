@@ -6,6 +6,8 @@ LinkPilot already provides short links, folders, availability controls, access c
 
 The product remains a Laravel 13 + Inertia React application. New dashboard surfaces use the repository's existing base shadcn/Radix components and Lucide icons; public pages stay deliberately simple, responsive, and keyboard-accessible.
 
+> **Implementation status update:** The user deferred workspace collaboration, membership, invitations, and active-workspace migration until further instruction. This document remains the detailed future workspace contract. Current implementation must instead follow `docs/superpowers/specs/2026-10-19-linkpilot-user-scoped-expansion-design.md` and use existing user ownership only.
+
 ## Reference evidence
 
 REA observed the reference login page at `https://belink.vebto.com/login` and statically analyzed all 123 observed JavaScript artifacts with zero parse failures in evidence `ev_3166f9b5f54416181d58a8a0ccf45470f64f0c7dc8c7f4032009525692347a0d`. Its route inventory contains custom domains, link overlays, tracking pixels, link pages, analytics, plans and billing, workspaces and invites, webhooks, API keys, and administrator routes for users, plans, permissions, security, and settings. Static routes are an inventory rather than proof of server behavior; LinkPilot deliberately implements its own model and wording.

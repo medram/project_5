@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-19-linkpilot-platform-expansion-design.md`; durable feature catalog: `PRD.md`.
 
+> **Superseded for current implementation:** The user deferred all workspace work after Task 1. Do not execute Tasks 2–11 from this plan. The owner-scoped implementation plan is `docs/superpowers/plans/2026-10-19-linkpilot-user-scoped-expansion.md`; this plan remains a future collaboration-slice record.
+
 ## Global Constraints
 
 - Keep every existing `links.user_id`, `folders.user_id`, and `bio_pages.user_id`; add/backfill nullable workspace ownership without destructive contraction.

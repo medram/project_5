@@ -8,7 +8,7 @@ LinkPilot is a Laravel + React publishing console for teams that create, govern,
 
 **Primary user:** a marketer, creator, or operations teammate who needs a branded destination, controlled delivery, understandable performance data, and reliable collaboration without handling raw analytics infrastructure.
 
-**Core promise:** create a link once, decide where and when it can be used, distribute it through a short URL, QR code, bio page, or link page, then see attributable privacy-minimal outcomes in the workspace that owns it.
+**Core promise:** create a link once, decide where and when it can be used, distribute it through a short URL, QR code, bio page, or link page, then see attributable privacy-minimal outcomes in the account that owns it today and the workspace that will own it after the deferred collaboration slice.
 
 ## 2. Research basis and confidence
 
@@ -22,6 +22,7 @@ This document treats that result as an **observed feature inventory**, not proof
 |---|---|
 | Delivered | Present in LinkPilot and covered by current verification. |
 | In active platform expansion | Designed and scheduled in the current implementation plan; do not describe as shipped until verified. |
+| Deferred by user | Intentionally not implemented until the user explicitly resumes the slice; its detailed requirements remain catalogued. |
 | Catalogued | A future requirement, intentionally retained here with scope and trigger. |
 | External prerequisite | Requires credentials, policy, or infrastructure that the repository does not contain. |
 
@@ -34,18 +35,23 @@ This document treats that result as an **observed feature inventory**, not proof
 - Basic published link-in-bio pages with ordered active outbound buttons.
 - Per-link 14-day click count series and total clicks.
 
-### 3.2 Active platform expansion
+### 3.2 Active owner-scoped expansion
 
-- Workspaces, memberships, invitations, and active-workspace scoping.
-- Custom domains with DNS TXT verification and host-aware public routing.
+- User-owned custom domains with DNS TXT verification and host-aware public routing.
 - CTA-overlay interstitials, safe tracking pixels, public link pages, and richer event analytics.
-- Plans, local subscriptions, usage limits, webhooks, and platform administration.
+- Account plans, local subscriptions, usage limits, webhooks, and platform administration.
 
-The detailed implementation design is `docs/superpowers/specs/2026-10-19-linkpilot-platform-expansion-design.md`.
+The active implementation design is `docs/superpowers/specs/2026-10-19-linkpilot-user-scoped-expansion-design.md`.
+
+### 3.3 Collaboration deferred by user
+
+Workspaces, memberships, invitations, active-workspace scoping, and every migration or UI required for collaboration are deferred until the user explicitly resumes them. The detailed future collaboration contract remains in `docs/superpowers/specs/2026-10-19-linkpilot-platform-expansion-design.md`. Until then, active modules remain strictly scoped to the existing authenticated `user_id`; they must not add workspace tables, role fields, membership joins, or invitations.
+
+Rows below that describe workspace ownership preserve the later collaboration contract. Their current owner-scoped equivalents are defined by the active implementation design above.
 
 ## 4. Product principles
 
-1. **Ownership is explicit.** Every content and integration object belongs to one workspace. Creator attribution remains available for audit.
+1. **Ownership is explicit.** In the active slice, every content and integration object belongs to one user account. The catalogued collaboration slice migrates this boundary to a workspace while retaining creator attribution for audit.
 2. **A link is safe by default.** Unsafe outbound schemes, self-redirect loops, inactive custom hosts, and unsafe webhook endpoints are rejected.
 3. **Public access checks precede side effects.** Inactive, future, expired, or locked links do not redirect or count a click until access succeeds.
 4. **Analytics minimizes visitor data.** No raw IP addresses, precise locations, browser fingerprints, access codes, or secrets are stored in analytics events.
@@ -61,26 +67,26 @@ The detailed implementation design is `docs/superpowers/specs/2026-10-19-linkpil
 |---|---|---|
 | Creator | Publish a controlled destination quickly | A link/QR/bio/link page reaches the right visitor at the right time. |
 | Marketer | Run and measure a campaign | Links are branded, scheduled, tracked, and explain performance by source/device. |
-| Workspace administrator | Govern a team and integrations | Members, domains, pixels, usage, and webhooks stay inside one workspace. |
-| Platform administrator | Operate the SaaS safely | Users and workspaces can be inspected, suspended, and entitled without self-escalation. |
+| Account owner | Govern their links and integrations | Domains, pixels, usage, and webhooks stay inside their account. |
+| Platform administrator | Operate the SaaS safely | Users and account-level entitlements can be inspected, suspended, and managed without self-escalation. |
 | Developer/automation consumer | Receive trusted operational signals | Signed webhooks have stable event names, payloads, and delivery history. |
 
 ## 6. Information architecture
 
-### 6.1 Authenticated workspace navigation
+### 6.1 Authenticated account navigation
 
 | Section | Route family | Purpose |
 |---|---|---|
 | Short links | `/links` | Create, organize, control, and inspect short links. |
 | QR codes | `/dashboard/qr-codes` | Display/download owned link QR codes. |
-| Folders | `/dashboard/folders` | Organize workspace links. |
+| Folders | `/dashboard/folders` | Organize owned links. |
 | Bio pages | `/bio-pages` | Publish creator-style multi-link profiles. |
 | Link pages | `/link-pages` | Build branded campaign/landing link collections. |
-| Analytics | `/analytics` | Aggregate active-workspace traffic and events. |
+| Analytics | `/analytics` | Aggregate owned traffic and events. |
 | Custom domains | `/custom-domains` | Verify and manage branded hosts. |
 | CTA overlays | `/overlays` | Configure branded pre-destination interstitials. |
 | Tracking pixels | `/tracking-pixels` | Create provider-specific tracking configurations. |
-| Workspaces | `/workspaces` | Switch, create, invite, and manage collaboration. |
+| Workspaces | `/workspaces` | Deferred by user; no route is implemented. |
 | Billing and usage | `/billing` | View plans, limits, local subscription state, and usage. |
 | Webhooks | `/webhooks` | Manage signed outbound subscriptions and delivery logs. |
 | Administration | `/admin` | Platform-only users, status, and plan controls. |
@@ -124,22 +130,22 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| LNK-1 | A workspace member can create a HTTP(S) short link with destination URL, title, active flag, and a unique normalized slug. | P0 | Delivered; workspace scoping in active expansion |
+| LNK-1 | An account owner can create a HTTP(S) short link with destination URL, title, active flag, and a unique normalized slug. | P0 | Delivered |
 | LNK-2 | Generated slugs retry on collision; custom slugs reject reserved application paths. | P0 | Delivered |
-| LNK-3 | A link can be placed in one folder. | P0 | Delivered; workspace scoping in active expansion |
+| LNK-3 | A link can be placed in one folder. | P0 | Delivered |
 | LNK-4 | A link can be scheduled with optional UTC start and expiry timestamps. | P0 | Delivered |
 | LNK-5 | A link can require an access code stored only as a Laravel hash; P1 makes unlocks link-specific, versioned, eight hours long, and rate-limited to five failed attempts per five minutes per link/visitor cache key. | P1 | Hardening in active platform expansion |
 | LNK-6 | Unavailable links return 404 without creating a click or event record. | P0 | Delivered |
-| LNK-7 | A link can select one active workspace custom domain. | P1 | In active platform expansion |
-| LNK-8 | A link can select one active workspace CTA overlay. | P1 | In active platform expansion |
+| LNK-7 | A link can select one active custom domain owned by its account. | P1 | In active platform expansion |
+| LNK-8 | A link can select one active CTA overlay owned by its account. | P1 | In active platform expansion |
 | LNK-9 | A final short-link delivery writes a rich event only after explicit tracking consent; the compatible aggregate click counter remains independent. | P1 | In active platform expansion |
 | LNK-10 | Link list supports filters, search, tags, export, preview, UTM builder, and link-type variants. | P2 | Catalogued |
 | LNK-11 | Link edits retain audit history and optional approval workflow. | P3 | Catalogued |
 
 #### Acceptance criteria
 
-- Only active-workspace members can see or modify a workspace link.
-- A non-member receives 403 for link management and insights.
+- Only the owning account can see or modify its link.
+- Other accounts receive 403 for link management and insights.
 - Direct links preserve one 302 redirect after all controls pass.
 - Overlay links record final completion only after the visitor chooses to continue.
 - Changing or clearing an access code invalidates every prior unlock; an unlocked session never applies to another link.
@@ -148,7 +154,7 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FOL-1 | Create, rename, list, and delete private folders. | P0 | Delivered; workspace scoping in active expansion |
+| FOL-1 | Create, rename, list, and delete private folders. | P0 | Delivered |
 | FOL-2 | Deleting a folder preserves its links and clears `folder_id`. | P0 | Delivered |
 | FOL-3 | Folder lists show link count and click/event rollups. | P2 | Catalogued |
 
@@ -156,7 +162,7 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| QR-1 | An owner can retrieve a locally generated SVG QR code for each owned short link. | P0 | Delivered; workspace permission in active expansion |
+| QR-1 | An owner can retrieve a locally generated SVG QR code for each owned short link. | P0 | Delivered |
 | QR-2 | QR data uses the link's canonical public URL and obeys link controls. | P0 | Delivered; custom-domain URL in active expansion |
 | QR-3 | A workspace can create direct-destination QR records with title, styling, and scan analytics. | P2 | Catalogued |
 | QR-4 | QR lists support export and QR-specific insights. | P2 | Catalogued |
@@ -165,7 +171,7 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| BIO-1 | Users create published/unpublished bio pages with normalized handles. | P0 | Delivered; workspace scoping in active expansion |
+| BIO-1 | Users create published/unpublished bio pages with normalized handles. | P0 | Delivered |
 | BIO-2 | Users create, reorder, activate, and delete outbound buttons. | P0 | Delivered |
 | BIO-3 | Public pages render only published pages and active items in order. | P0 | Delivered |
 | BIO-4 | Page views and button clicks record privacy-minimal events. | P1 | In active platform expansion |
@@ -175,15 +181,15 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 ### 7.6 Link pages — In active platform expansion
 
-**Purpose:** A workspace-owned branded public page for a campaign or curated destination list, distinct from creator-centric bio pages.
+**Purpose:** An account-owned branded public page for a campaign or curated destination list, distinct from creator-centric bio pages.
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| PAG-1 | A workspace member can create/update/delete a link page with name, a slug unique in the link-page route namespace, title, description, and publish state. | P1 | In active platform expansion |
+| PAG-1 | An account owner can create/update/delete a link page with name, a slug unique in the link-page route namespace, title, description, and publish state. | P1 | In active platform expansion |
 | PAG-2 | A page has ordered active outbound items with validated HTTP(S) destinations. | P1 | In active platform expansion |
 | PAG-3 | `/pages/{slug}` returns 404 when unpublished or unknown. | P1 | In active platform expansion |
 | PAG-4 | Page view and item click events are recorded only after explicit tracking consent and never store raw IP data. | P1 | In active platform expansion |
-| PAG-5 | A page attaches zero to five reusable, active workspace pixels. | P1 | In active platform expansion |
+| PAG-5 | A page attaches zero to five reusable, active account-owned pixels. | P1 | In active platform expansion |
 | PAG-6 | Template selection is eligible when a product owner defines supported templates, preview semantics, and migration behavior. | P3 | Catalogued |
 | PAG-7 | Custom CSS is excluded until there is an isolation/CSP security design. | P3 | Catalogued / security prerequisite |
 | PAG-8 | Forms and lead capture are eligible after field schema, consent, retention, and access rules are approved. | P3 | Catalogued / privacy prerequisite |
@@ -196,8 +202,8 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| OVR-1 | A workspace owner/admin can create/edit/delete an overlay with name, heading, body, CTA label, and active state. | P1 | In active platform expansion |
-| OVR-2 | A link selects at most one overlay in its own workspace. | P1 | In active platform expansion |
+| OVR-1 | An account owner can create/edit/delete an overlay with name, heading, body, CTA label, and active state. | P1 | In active platform expansion |
+| OVR-2 | A link selects at most one overlay owned by its account. | P1 | In active platform expansion |
 | OVR-3 | An eligible link visit renders the overlay before final delivery. | P1 | In active platform expansion |
 | OVR-4 | Continue revalidates link availability/access, records completion, and redirects. | P1 | In active platform expansion |
 | OVR-5 | Attached safe provider pixels run on the interstitial only after visitor consent. | P1 | In active platform expansion |
@@ -207,7 +213,7 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| DOM-1 | A workspace owner/admin can enter a normalized hostname for a workspace. | P1 | In active platform expansion |
+| DOM-1 | An account owner can enter a normalized hostname for their account. | P1 | In active platform expansion |
 | DOM-2 | IP literals, localhost, configured default hosts, malformed hosts, and duplicate claims are rejected. | P1 | In active platform expansion |
 | DOM-3 | LinkPilot generates a unique token and requires exact DNS TXT proof at `_linkpilot-verify.<domain>`. | P1 | In active platform expansion |
 | DOM-4 | A domain progresses through `pending_dns`, `pending_tls`, `active`, or `failed`; only an `active` domain with current TXT proof, application routing, and a valid HTTPS certificate may be assigned or used in canonical URLs. | P1 | In active platform expansion |
@@ -221,7 +227,7 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| PIX-1 | A workspace owner/admin can create an active provider pixel in the workspace. | P1 | In active platform expansion |
+| PIX-1 | An account owner can create an active provider pixel in their account. | P1 | In active platform expansion |
 | PIX-2 | Supported P1 providers are Meta Pixel and Google Analytics with validated IDs. | P1 | In active platform expansion |
 | PIX-3 | Pixels attach to LinkPilot-rendered link pages and CTA overlays. | P1 | In active platform expansion |
 | PIX-4 | Public React emits fixed provider-specific script shapes only after explicit visitor consent; arbitrary snippets and Google Tag Manager are rejected. | P1 | In active platform expansion |
@@ -246,13 +252,13 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 |---|---|---:|---|
 | ANL-1 | Each consented analytics event has an immutable UUID, exact content references, UTC occurrence time, coarse referrer/browser/platform, HMAC visitor hash, and hash-key version. | P1 | In active platform expansion |
 | ANL-2 | Never persist raw IP address, full user agent, access code, secret, password hash, or destination URL in analytics. | P1 | In active platform expansion |
-| ANL-3 | Workspace and link views support fixed UTC 7, 30, and 90 day windows. Historical short-link totals and daily series continue to use the existing `clicks` table; no historical event backfill occurs. | P1 | In active platform expansion |
+| ANL-3 | Account and link views support fixed UTC 7, 30, and 90 day windows. Historical short-link totals and daily series continue to use the existing `clicks` table; no historical event backfill occurs. | P1 | In active platform expansion |
 | ANL-4 | Views show total short-link clicks, consented unique visitor count, zero-filled daily short-link clicks, event totals, and top referrers/browsers/platforms. | P1 | In active platform expansion |
-| ANL-5 | Analytics respects active workspace and selected-resource authorization; telemetry failure never blocks public delivery. | P1 | In active platform expansion |
+| ANL-5 | Analytics respects the owning account and selected-resource authorization; telemetry failure never blocks public delivery. | P1 | In active platform expansion |
 | ANL-6 | Public rendered surfaces request a 180-day granted/denied tracking cookie before rich events or pixels. Production requires `ANALYTICS_HASH_KEY`, a key version, and 90-day event retention with daily pruning. | P1 | In active platform expansion |
 | ANL-7 | Geographic rollups, live traffic, CSV export, custom events, attribution models, and consent-mode integrations are available. | P2/P3 | Catalogued / policy prerequisite |
 
-### 7.11 Workspaces and invitations — In active platform expansion
+### 7.11 Workspaces and invitations — Deferred by user
 
 #### Roles
 
@@ -268,25 +274,25 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| WKS-1 | Every user receives a personal workspace and active-workspace pointer. | P1 | In active platform expansion |
-| WKS-2 | Existing links, folders, and bio pages are backfilled to the owner's personal workspace without losing `user_id` creator data. | P1 | In active platform expansion |
-| WKS-3 | Users can create and switch among valid member workspaces; an invalid pointer falls back to the personal workspace, then a remaining membership, and persists that repair. | P1 | In active platform expansion |
-| WKS-4 | Owners can invite `admin` or `member`; admins can invite only `member`; neither role can invite `owner`. | P1 | In active platform expansion |
-| WKS-5 | Invitations use the configured Laravel mailer and a one-time copyable acceptance URL, expire after seven days, and can be listed, resent, revoked, or replaced for the same pending email. | P1 | In active platform expansion |
-| WKS-6 | Invitation acceptance requires an authenticated non-suspended user whose normalized email matches the invitation, consumes the token atomically, and creates exactly one membership. Existing members cannot be reinvited. | P1 | In active platform expansion |
-| WKS-7 | Owners can change/remove admins or members except themselves; admins can change/remove only members. The final/only owner is immutable in P1. | P1 | In active platform expansion |
-| WKS-8 | A non-member cannot forge an active workspace or access its resources. P1 has no workspace deletion or ownership transfer. | P1 | In active platform expansion |
+| WKS-1 | Every user receives a personal workspace and active-workspace pointer. | P1 | Deferred by user |
+| WKS-2 | Existing links, folders, and bio pages are backfilled to the owner's personal workspace without losing `user_id` creator data. | P1 | Deferred by user |
+| WKS-3 | Users can create and switch among valid member workspaces; an invalid pointer falls back to the personal workspace, then a remaining membership, and persists that repair. | P1 | Deferred by user |
+| WKS-4 | Owners can invite `admin` or `member`; admins can invite only `member`; neither role can invite `owner`. | P1 | Deferred by user |
+| WKS-5 | Invitations use the configured Laravel mailer and a one-time copyable acceptance URL, expire after seven days, and can be listed, resent, revoked, or replaced for the same pending email. | P1 | Deferred by user |
+| WKS-6 | Invitation acceptance requires an authenticated non-suspended user whose normalized email matches the invitation, consumes the token atomically, and creates exactly one membership. Existing members cannot be reinvited. | P1 | Deferred by user |
+| WKS-7 | Owners can change/remove admins or members except themselves; admins can change/remove only members. The final/only owner is immutable in P1. | P1 | Deferred by user |
+| WKS-8 | A non-member cannot forge an active workspace or access its resources. P1 has no workspace deletion or ownership transfer. | P1 | Deferred by user |
 | WKS-9 | Ownership transfer, guest/viewer roles, SSO/SCIM, workspace archival/deletion, and audit-log exports are available. | P3 | Catalogued |
 
 ### 7.12 Plans, billing, and usage — In active platform expansion / external payment prerequisite
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| BIL-1 | Plans define active limits for links, domains, pixels, members, webhooks, and link pages. | P1 | In active platform expansion |
-| BIL-2 | Every workspace has one `active` local subscription state and a default free entitlement. | P1 | In active platform expansion |
+| BIL-1 | Plans define active limits for links, domains, pixels, webhooks, and link pages. | P1 | In active platform expansion |
+| BIL-2 | Every user has one `active` local subscription state and a default free entitlement. | P1 | In active platform expansion |
 | BIL-3 | The billing page shows plan, per-resource usage, limits, and overage-safe creation behavior. | P1 | In active platform expansion |
 | BIL-4 | Metered creation rejects before exceeding the current plan's non-null limit. Existing data remains usable after a downgrade. | P1 | In active platform expansion |
-| BIL-5 | Platform administrators can assign a plan to a workspace; a user can select only free for their own workspace. | P1 | In active platform expansion |
+| BIL-5 | Platform administrators can assign a plan to an account; a user can select only free for their own account. | P1 | In active platform expansion |
 | BIL-6 | Credit-card checkout, payment-method changes, cancellation/renewal, invoices, tax, and provider webhooks work through Stripe/PayPal. | P3 | External prerequisite |
 | BIL-7 | Usage invoices, proration, coupons, annual billing, and dunning are available. | P3 | Catalogued / external prerequisite |
 
@@ -296,7 +302,7 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 | `pro` | USD 29.00 | 500 | 3 | 10 | 5 | 5 | 25 |
 | `business` | USD 99.00 | unlimited | unlimited | unlimited | unlimited | unlimited | unlimited |
 
-`null` means unlimited. Links, domains (including pending), pixels, webhooks, and link pages count whether active or inactive; members include the owner; unexpired pending invitations reserve a member slot. The plan update and creation check lock the workspace. Downgrades never delete, disable, or unpublish existing records: they block new creation of the over-limit resource until deletion, revocation/expiry, or plan upgrade returns the workspace to compliance.
+`null` means unlimited. Links, domains (including pending), pixels, webhooks, and link pages count whether active or inactive. The account plan update and creation check lock the user row. Downgrades never delete, disable, or unpublish existing records: they block new creation of the over-limit resource until deletion or plan upgrade returns the account to compliance. Member capacity and invitation reservation are part of the deferred workspace slice.
 
 **External prerequisite for BIL-6:** merchant account, products/prices, API keys, webhook secret, tax/invoice policy, and a payment-data compliance owner.
 
@@ -304,10 +310,10 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| WHK-1 | A workspace owner/admin can create, update, disable, delete, and rotate a webhook endpoint for selected event names. | P1 | In active platform expansion |
+| WHK-1 | An authenticated account owner can create, update, disable, delete, and rotate a webhook endpoint for selected event names. | P1 | In active platform expansion |
 | WHK-2 | Creation and every delivery attempt require HTTPS and fresh public-address validation; private, loopback, link-local, reserved, unresolved, and redirected targets are rejected. | P1 | In active platform expansion |
 | WHK-3 | Each persisted consented analytics event creates a delivery record and queued job. | P1 | In active platform expansion |
-| WHK-4 | The immutable P1 envelope includes `schema_version: 1`, UUID `event_id`, event name, UTC occurrence time, workspace ID, and a minimal relevant resource-data object. The exact serialized bytes are signed and reused across retries. | P1 | In active platform expansion |
+| WHK-4 | The immutable P1 envelope includes `schema_version: 1`, UUID `event_id`, event name, UTC occurrence time, owner account ID, and a minimal relevant resource-data object. The exact serialized bytes are signed and reused across retries. | P1 | In active platform expansion |
 | WHK-5 | Delivery records include webhook revision, attempted count, `pending`/`delivered`/`failed`/`cancelled` state, response code, bounded response excerpt/failure detail, and completion time. | P1 | In active platform expansion |
 | WHK-6 | A delivery has three total attempts: initial, then 60-second and 300-second retries; only 2xx succeeds. The client has a 3-second connect and 10-second total timeout and does not follow redirects. | P1 | In active platform expansion |
 | WHK-7 | Updating, disabling, deleting, or rotating a webhook cancels its pending deliveries while preserving history. A generated 32-byte secret is encrypted and revealed only on create/rotate. | P1 | In active platform expansion |
