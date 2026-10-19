@@ -120,6 +120,21 @@ class PublicRedirectTest extends TestCase
         $this->assertDatabaseCount('clicks', 1);
     }
 
+    public function test_dashboard_routes_do_not_shadow_public_short_link_slugs(): void
+    {
+        Link::factory()->create([
+            'slug' => 'folders',
+            'destination_url' => 'https://example.com/folders-link',
+        ]);
+        Link::factory()->create([
+            'slug' => 'qr-codes',
+            'destination_url' => 'https://example.com/qr-codes-link',
+        ]);
+
+        $this->get('/folders')->assertRedirect('https://example.com/folders-link');
+        $this->get('/qr-codes')->assertRedirect('https://example.com/qr-codes-link');
+    }
+
     public function test_unknown_short_link_returns_not_found(): void
     {
         $this->get('/missing-26')->assertNotFound();

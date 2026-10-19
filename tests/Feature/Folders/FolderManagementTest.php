@@ -19,8 +19,8 @@ class FolderManagementTest extends TestCase
 
         $this
             ->actingAs($owner)
-            ->post('/folders', ['name' => '  Launch assets  '])
-            ->assertRedirect('/folders');
+            ->post('/dashboard/folders', ['name' => '  Launch assets  '])
+            ->assertRedirect('/dashboard/folders');
 
         $this->assertDatabaseHas('folders', [
             'user_id' => $owner->id,
@@ -40,7 +40,7 @@ class FolderManagementTest extends TestCase
 
         $this
             ->actingAs($owner)
-            ->get('/folders')
+            ->get('/dashboard/folders')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('folders/index', false)
@@ -58,8 +58,8 @@ class FolderManagementTest extends TestCase
 
         $this
             ->actingAs($owner)
-            ->patch("/folders/{$folder->id}", ['name' => '  Client work  '])
-            ->assertRedirect('/folders');
+            ->patch("/dashboard/folders/{$folder->id}", ['name' => '  Client work  '])
+            ->assertRedirect('/dashboard/folders');
 
         $this->assertDatabaseHas('folders', [
             'id' => $folder->id,
@@ -76,12 +76,12 @@ class FolderManagementTest extends TestCase
 
         $this
             ->actingAs($otherUser)
-            ->patch("/folders/{$folder->id}", ['name' => 'Nope'])
+            ->patch("/dashboard/folders/{$folder->id}", ['name' => 'Nope'])
             ->assertForbidden();
 
         $this
             ->actingAs($otherUser)
-            ->delete("/folders/{$folder->id}")
+            ->delete("/dashboard/folders/{$folder->id}")
             ->assertForbidden();
     }
 
@@ -93,8 +93,8 @@ class FolderManagementTest extends TestCase
 
         $this
             ->actingAs($owner)
-            ->delete("/folders/{$folder->id}")
-            ->assertRedirect('/folders');
+            ->delete("/dashboard/folders/{$folder->id}")
+            ->assertRedirect('/dashboard/folders');
 
         $this->assertDatabaseMissing('folders', ['id' => $folder->id]);
         $this->assertDatabaseHas('links', [

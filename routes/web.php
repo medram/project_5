@@ -17,15 +17,15 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('dashboard', fn () => to_route('links.index'))->name('dashboard');
     Route::get('links', [LinkController::class, 'index'])->name('links.index');
-    Route::get('qr-codes', [QrCodeController::class, 'index'])->name('qr-codes.index');
+    Route::get('dashboard/qr-codes', [QrCodeController::class, 'index'])->name('qr-codes.index');
     Route::post('links', [LinkController::class, 'store'])->name('links.store');
     Route::get('links/{link}/insights', LinkInsightsController::class)->name('links.insights');
     Route::get('links/{link}/qr-code.svg', LinkQrCodeController::class)->name('links.qr-code');
     Route::patch('links/{link}', [LinkController::class, 'update'])->name('links.update');
-    Route::get('folders', [FolderController::class, 'index'])->name('folders.index');
-    Route::post('folders', [FolderController::class, 'store'])->name('folders.store');
-    Route::patch('folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
-    Route::delete('folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
+    Route::get('dashboard/folders', [FolderController::class, 'index'])->name('folders.index');
+    Route::post('dashboard/folders', [FolderController::class, 'store'])->name('folders.store');
+    Route::patch('dashboard/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
+    Route::delete('dashboard/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
     Route::delete('links/{link}', [LinkController::class, 'destroy'])->name('links.destroy');
 
     Route::get('bio-pages', [BioPageController::class, 'index'])->name('bio-pages.index');

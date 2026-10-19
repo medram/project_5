@@ -22,7 +22,7 @@ class QrCodeTest extends TestCase
 
         $this
             ->actingAs($owner)
-            ->get('/qr-codes')
+            ->get('/dashboard/qr-codes')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('qr-codes/index', false)

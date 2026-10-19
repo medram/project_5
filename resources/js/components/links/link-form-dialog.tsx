@@ -66,6 +66,16 @@ function dateTimeLocalValue(value: string | null | undefined): string {
         .slice(0, 16);
 }
 
+function dateTimeUtcValue(value: string): string {
+    if (value === '') {
+        return '';
+    }
+
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime()) ? value : date.toISOString();
+}
+
 function formDataFor(link?: LinkListItem): LinkFormData {
     return {
         destination_url: link?.destinationUrl ?? '',
@@ -118,6 +128,12 @@ export function LinkFormDialog({
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
+
+        form.transform((data) => ({
+            ...data,
+            available_from: dateTimeUtcValue(data.available_from),
+            expires_at: dateTimeUtcValue(data.expires_at),
+        }));
         const options = {
             preserveScroll: true,
             onSuccess: () => {
