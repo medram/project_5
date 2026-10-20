@@ -9,10 +9,10 @@ use App\Services\Analytics\AnalyticsTracker;
 use App\Services\Analytics\TrackingConsent;
 use App\Services\Domains\PublicLinkHostResolver;
 use App\Services\Links\LinkAccessUnlocks;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Throwable;
 
 class PublicLinkOverlayController extends Controller
@@ -58,7 +58,7 @@ class PublicLinkOverlayController extends Controller
         ]);
     }
 
-    public function continue(Request $request, string $slug): RedirectResponse|Response
+    public function continue(Request $request, string $slug): Response|SymfonyResponse
     {
         $link = $this->hosts->resolveLink($request, $slug);
 
@@ -86,7 +86,7 @@ class PublicLinkOverlayController extends Controller
             report($exception);
         }
 
-        return redirect()->away($link->destination_url, 302);
+        return Inertia::location($link->destination_url);
     }
 
     /**

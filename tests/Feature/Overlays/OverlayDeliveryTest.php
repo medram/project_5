@@ -161,6 +161,28 @@ class OverlayDeliveryTest extends TestCase
         ]);
     }
 
+    public function test_continue_answers_inertia_visits_with_a_client_location_redirect(): void
+    {
+        $owner = User::factory()->create();
+        $overlay = $this->createOverlay($owner);
+        Link::factory()->for($owner)->create([
+            'slug' => 'overlay-inertia',
+            'destination_url' => 'https://example.com/final',
+            'link_overlay_id' => $overlay->id,
+        ]);
+
+        // The interstitial posts through Inertia, so the visitor only reaches the
+        // destination when the server answers with the client-side location header.
+        $this
+            ->withCookie(TrackingConsent::COOKIE_NAME, TrackingConsent::GRANTED)
+            ->withHeaders(['X-Inertia' => 'true'])
+            ->post('/overlay-inertia/continue')
+            ->assertStatus(409)
+            ->assertHeader('X-Inertia-Location', 'https://example.com/final');
+
+        $this->assertDatabaseCount('clicks', 1);
+    }
+
     public function test_access_code_gates_overlay_render_and_continue(): void
     {
         $owner = User::factory()->create();
