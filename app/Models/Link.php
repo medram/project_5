@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 
 #[Fillable([
     'folder_id',
+    'custom_domain_id',
     'destination_url',
     'title',
     'slug',
@@ -63,6 +64,11 @@ class Link extends Model
     public function folder(): BelongsTo
     {
         return $this->belongsTo(Folder::class);
+    }
+
+    public function customDomain(): BelongsTo
+    {
+        return $this->belongsTo(CustomDomain::class);
     }
 
     public function isAvailableAt(CarbonInterface $at): bool

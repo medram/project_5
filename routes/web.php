@@ -5,6 +5,9 @@ use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BioLinkController;
 use App\Http\Controllers\BioPageController;
+use App\Http\Controllers\CustomDomainController;
+use App\Http\Controllers\CustomDomainVerificationController;
+use App\Http\Controllers\DomainChallengeController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\LinkAccessController;
 use App\Http\Controllers\LinkController;
@@ -23,6 +26,15 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
     Route::get('dashboard/qr-codes', [QrCodeController::class, 'index'])->name('qr-codes.index');
     Route::get('billing', [BillingController::class, 'index'])->name('billing.index');
     Route::patch('billing/plan', [BillingController::class, 'selectFree'])->name('billing.plan.update');
+    Route::get('custom-domains', [CustomDomainController::class, 'index'])->name('custom-domains.index');
+    Route::post('custom-domains', [CustomDomainController::class, 'store'])->name('custom-domains.store');
+    Route::post('custom-domains/{customDomain}/verify', [CustomDomainVerificationController::class, 'verify'])
+        ->name('custom-domains.verify');
+    Route::post('custom-domains/{customDomain}/reissue', [CustomDomainVerificationController::class, 'reissue'])
+        ->name('custom-domains.reissue');
+    Route::delete('custom-domains/{customDomain}', [CustomDomainController::class, 'destroy'])
+        ->name('custom-domains.destroy');
+
     Route::post('links', [LinkController::class, 'store'])->name('links.store');
     Route::get('links/{link}/insights', LinkInsightsController::class)->name('links.insights');
     Route::get('links/{link}/qr-code.svg', LinkQrCodeController::class)->name('links.qr-code');
@@ -59,6 +71,9 @@ require __DIR__.'/settings.php';
 Route::get('bio/{handle}', PublicBioPageController::class)
     ->where('handle', '[a-z0-9-]{3,32}')
     ->name('bio-pages.public');
+
+Route::get('.well-known/linkpilot-domain/{token}', DomainChallengeController::class)
+    ->name('custom-domains.challenge');
 
 Route::post('{slug}/unlock', LinkAccessController::class)
     ->where('slug', '[a-z0-9-]{4,32}')

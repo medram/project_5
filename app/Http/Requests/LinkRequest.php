@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\CustomDomain;
 use App\Models\Folder;
 use App\Models\Link;
 use Closure;
@@ -75,6 +76,33 @@ abstract class LinkRequest extends FormRequest
                 'integer',
                 Rule::exists(Folder::class, 'id')
                     ->where('user_id', $this->user()->id),
+            ],
+            'custom_domain_id' => [
+                'nullable',
+                'integer',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if ($value === null || $value === '') {
+                        return;
+                    }
+
+                    $domain = CustomDomain::query()->find($value);
+
+                    if ($domain === null || $domain->user_id !== $this->user()->id) {
+                        $fail('The selected custom domain is unavailable.');
+
+                        return;
+                    }
+
+                    $link = $this->route('link');
+
+                    if ($link instanceof Link && $link->custom_domain_id === $domain->id) {
+                        return;
+                    }
+
+                    if ($domain->status !== 'active') {
+                        $fail('Only an active custom domain can be assigned to a link.');
+                    }
+                },
             ],
             'access_code' => ['nullable', 'string', 'max:255'],
             'clear_access_code' => ['nullable', 'boolean'],

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Link;
+use App\Services\Domains\PublicLinkHostResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -10,11 +10,11 @@ use Inertia\Response;
 
 class PublicLinkController extends Controller
 {
+    public function __construct(private readonly PublicLinkHostResolver $hosts) {}
+
     public function __invoke(Request $request, string $slug): RedirectResponse|Response
     {
-        $link = Link::query()
-            ->where('slug', $slug)
-            ->firstOrFail();
+        $link = $this->hosts->resolveLink($request, $slug);
 
         abort_unless($link->isAvailableAt(now()), 404);
 

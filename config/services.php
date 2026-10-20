@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'linkpilot' => [
+        'default_hosts' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('LINKPILOT_DEFAULT_HOSTS', '')),
+        ))),
+    ],
+
 ];

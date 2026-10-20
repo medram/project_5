@@ -32,5 +32,6 @@ export type BillingPageProps = {
     plans: BillingPlan[];
     usage: {
         links: UsageMetric;
+        domains: UsageMetric;
     };
 };

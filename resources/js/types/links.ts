@@ -1,9 +1,11 @@
+import type { CustomDomainOption } from '@/types/custom-domains';
 import type { FolderOption } from '@/types/folders';
-
 export type LinkPayload = {
     id: number;
     folder_id: number | null;
     folder: FolderOption | null;
+    custom_domain_id: number | null;
+    custom_domain: CustomDomainOption | null;
     title: string | null;
     slug: string;
     destination_url: string;
@@ -20,6 +22,8 @@ export type LinkListItem = {
     id: number;
     folderId: number | null;
     folder: FolderOption | null;
+    customDomainId: number | null;
+    customDomain: CustomDomainOption | null;
     title: string | null;
     slug: string;
     destinationUrl: string;
@@ -40,6 +44,7 @@ export type DailyClick = {
 export type LinkIndexProps = {
     links: LinkPayload[];
     folders: FolderOption[];
+    customDomains: CustomDomainOption[];
 };
 
 export type LinkInsightProps = {
@@ -57,6 +62,8 @@ export function toLinkListItem(link: LinkPayload): LinkListItem {
         id: link.id,
         folderId: link.folder_id,
         folder: link.folder,
+        customDomainId: link.custom_domain_id,
+        customDomain: link.custom_domain,
         title: link.title,
         slug: link.slug,
         destinationUrl: link.destination_url,

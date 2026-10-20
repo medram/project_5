@@ -33,6 +33,7 @@ export default function BillingIndex({
     usage,
 }: BillingPageProps) {
     const linkUsage = usage.links;
+    const domainUsage = usage.domains;
 
     function selectFreePlan() {
         router.patch('/billing/plan', { plan: 'free' }, { preserveScroll: true });
@@ -101,6 +102,29 @@ export default function BillingIndex({
                                     <p className="mt-2 text-sm text-destructive">
                                         New links are blocked until usage is back
                                         within this plan’s limit.
+                                    </p>
+                                )}
+                            </div>
+                            <div className="rounded-lg border p-3">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <Gauge
+                                            className="size-4 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                        <span className="font-medium">
+                                            {domainUsage.label}
+                                        </span>
+                                    </div>
+                                    <span className="text-sm text-muted-foreground">
+                                        {domainUsage.used.toLocaleString()} /{' '}
+                                        {limitLabel(domainUsage.limit)}
+                                    </span>
+                                </div>
+                                {domainUsage.overLimit && (
+                                    <p className="mt-2 text-sm text-destructive">
+                                        New domains are blocked until usage is
+                                        back within this plan’s limit.
                                     </p>
                                 )}
                             </div>

@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { store, update } from '@/routes/links';
+import type { CustomDomainOption } from '@/types/custom-domains';
 import type { FolderOption } from '@/types/folders';
 import type { LinkListItem } from '@/types/links';
 
@@ -38,6 +39,7 @@ type LinkFormData = {
     slug: string;
     is_active: boolean;
     folder_id: string;
+    custom_domain_id: string;
     available_from: string;
     expires_at: string;
     access_code: string;
@@ -47,6 +49,7 @@ type LinkFormData = {
 type LinkFormDialogProps = {
     link?: LinkListItem;
     folders: FolderOption[];
+    customDomains: CustomDomainOption[];
     children: ReactNode;
 };
 
@@ -83,6 +86,7 @@ function formDataFor(link?: LinkListItem): LinkFormData {
         slug: link?.slug ?? '',
         is_active: link?.isActive ?? true,
         folder_id: link?.folderId?.toString() ?? '',
+        custom_domain_id: link?.customDomainId?.toString() ?? '',
         available_from: dateTimeLocalValue(link?.availableFrom),
         expires_at: dateTimeLocalValue(link?.expiresAt),
         access_code: '',
@@ -93,6 +97,7 @@ function formDataFor(link?: LinkListItem): LinkFormData {
 export function LinkFormDialog({
     link,
     folders,
+    customDomains,
     children,
 }: LinkFormDialogProps) {
     const [open, setOpen] = useState(false);
@@ -127,7 +132,6 @@ export function LinkFormDialog({
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-
 
         form.transform((data) => ({
             ...data,
@@ -278,8 +282,49 @@ export function LinkFormDialog({
                                 </SelectContent>
                             </Select>
                             {form.errors.folder_id && (
+                                <FieldError>{form.errors.folder_id}</FieldError>
+                            )}
+                        </Field>
+
+                        <Field
+                            data-invalid={Boolean(form.errors.custom_domain_id)}
+                        >
+                            <FieldLabel htmlFor="link-custom-domain">
+                                Short-link host
+                            </FieldLabel>
+                            <Select
+                                value={form.data.custom_domain_id || 'default'}
+                                onValueChange={(value) =>
+                                    form.setData(
+                                        'custom_domain_id',
+                                        value === 'default' ? '' : value,
+                                    )
+                                }
+                                disabled={form.processing}
+                            >
+                                <SelectTrigger id="link-custom-domain">
+                                    <SelectValue placeholder="LinkPilot default host" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="default">
+                                        LinkPilot default host
+                                    </SelectItem>
+                                    {customDomains.map((domain) => (
+                                        <SelectItem
+                                            key={domain.id}
+                                            value={domain.id.toString()}
+                                        >
+                                            {domain.hostname}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FieldDescription>
+                                Only active, verified domains are available.
+                            </FieldDescription>
+                            {form.errors.custom_domain_id && (
                                 <FieldError>
-                                    {form.errors.folder_id}
+                                    {form.errors.custom_domain_id}
                                 </FieldError>
                             )}
                         </Field>

@@ -23,12 +23,17 @@ class LinkController extends Controller
         return Inertia::render('links/index', [
             'links' => $request->user()->links()
                 ->with('folder:id,name')
+                ->with('customDomain:id,hostname,status')
                 ->withCount('clicks')
                 ->latest()
                 ->get(),
             'folders' => $request->user()->folders()
                 ->orderBy('name')
                 ->get(['id', 'name']),
+            'customDomains' => $request->user()->customDomains()
+                ->where('status', 'active')
+                ->orderBy('hostname')
+                ->get(['id', 'hostname']),
         ]);
     }
 

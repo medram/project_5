@@ -47,6 +47,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { destroy, index, insights, update } from '@/routes/links';
+import type { CustomDomainOption } from '@/types/custom-domains';
 import type { FolderOption } from '@/types/folders';
 import {
     type LinkIndexProps,
@@ -118,9 +119,11 @@ function DeleteLinkDialog({ link }: { link: LinkListItem }) {
 function LinkActions({
     link,
     folders,
+    customDomains,
 }: {
     link: LinkListItem;
     folders: FolderOption[];
+    customDomains: CustomDomainOption[];
 }) {
     const [updatingStatus, setUpdatingStatus] = useState(false);
 
@@ -133,6 +136,7 @@ function LinkActions({
                 slug: link.slug,
                 is_active: !link.isActive,
                 folder_id: link.folderId,
+                custom_domain_id: link.customDomainId,
                 available_from: link.availableFrom,
                 expires_at: link.expiresAt,
                 access_code: '',
@@ -148,7 +152,11 @@ function LinkActions({
 
     return (
         <div className="flex flex-wrap gap-2">
-            <LinkFormDialog link={link} folders={folders}>
+            <LinkFormDialog
+                link={link}
+                folders={folders}
+                customDomains={customDomains}
+            >
                 <Button variant="outline" size="sm">
                     <Pencil data-icon="inline-start" />
                     Edit
@@ -184,10 +192,19 @@ function LinkActions({
 function LinkRow({
     link,
     folders,
+    customDomains,
 }: {
     link: LinkListItem;
     folders: FolderOption[];
+    customDomains: CustomDomainOption[];
 }) {
+    const shortLinkUrl = link.customDomain
+        ? `https://${link.customDomain.hostname}/${link.slug}`
+        : `/${link.slug}`;
+    const shortLinkLabel = link.customDomain
+        ? `${link.customDomain.hostname}/${link.slug}`
+        : `/${link.slug}`;
+
     return (
         <Card>
             <CardHeader className="gap-4">
@@ -208,12 +225,12 @@ function LinkRow({
                         </CardDescription>
                     </div>
                     <a
-                        href={`/${link.slug}`}
+                        href={shortLinkUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="flex w-fit items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
                     >
-                        /{link.slug}
+                        {shortLinkLabel}
                         <ExternalLink aria-hidden="true" />
                         <span className="sr-only">Open short link</span>
                     </a>
@@ -301,7 +318,11 @@ function LinkRow({
                 </dl>
             </CardContent>
             <CardFooter className="flex-wrap gap-2">
-                <LinkActions link={link} folders={folders} />
+                <LinkActions
+                    link={link}
+                    folders={folders}
+                    customDomains={customDomains}
+                />
             </CardFooter>
         </Card>
     );
@@ -310,6 +331,7 @@ function LinkRow({
 export default function ShortLinks({
     links: linkPayloads,
     folders,
+    customDomains,
 }: LinkIndexProps) {
     const links = linkPayloads.map(toLinkListItem);
 
@@ -334,7 +356,10 @@ export default function ShortLinks({
                             and inspect the traffic they receive.
                         </p>
                     </div>
-                    <LinkFormDialog folders={folders}>
+                    <LinkFormDialog
+                        folders={folders}
+                        customDomains={customDomains}
+                    >
                         <Button>
                             <Plus data-icon="inline-start" />
                             Create short link
@@ -355,7 +380,10 @@ export default function ShortLinks({
                             </EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
-                            <LinkFormDialog folders={folders}>
+                            <LinkFormDialog
+                                folders={folders}
+                                customDomains={customDomains}
+                            >
                                 <Button>
                                     <Plus data-icon="inline-start" />
                                     Create your first link
@@ -373,6 +401,7 @@ export default function ShortLinks({
                                 key={link.id}
                                 link={link}
                                 folders={folders}
+                                customDomains={customDomains}
                             />
                         ))}
                     </section>

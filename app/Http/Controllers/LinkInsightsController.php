@@ -14,7 +14,7 @@ class LinkInsightsController extends Controller
     {
         Gate::authorize('view', $link);
 
-        $link->load('folder:id,name');
+        $link->load('folder:id,name', 'customDomain:id,hostname');
 
         $timezone = config('app.timezone', 'UTC');
         $today = now($timezone)->startOfDay();

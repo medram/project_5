@@ -19,6 +19,7 @@ class AccountUsage
     {
         return [
             'links' => $this->metricFor($user, 'links'),
+            'domains' => $this->metricFor($user, 'domains'),
         ];
     }
 
@@ -31,6 +32,7 @@ class AccountUsage
 
         return match ($metric) {
             'links' => $this->metric('Short links', $user->links()->count(), $subscription->plan->link_limit),
+            'domains' => $this->metric('Custom domains', $user->customDomains()->count(), $subscription->plan->domain_limit),
             default => throw new InvalidArgumentException("Unknown metered resource [{$metric}]."),
         };
     }

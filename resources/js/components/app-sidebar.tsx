@@ -1,5 +1,13 @@
 import { Link, usePage } from '@inertiajs/react';
-import { CreditCard, Folder, Link2, PanelsTopLeft, QrCode, ShieldCheck } from 'lucide-react';
+import {
+    CreditCard,
+    Folder,
+    Globe2,
+    Link2,
+    PanelsTopLeft,
+    QrCode,
+    ShieldCheck,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -14,6 +22,7 @@ import {
 } from '@/components/ui/sidebar';
 import { index as linksIndex } from '@/routes/links';
 import { index as billingIndex } from '@/routes/billing';
+import { index as customDomainsIndex } from '@/routes/custom-domains';
 import { index as adminIndex } from '@/routes/admin';
 import { index as bioPagesIndex } from '@/routes/bio-pages';
 import { index as foldersIndex } from '@/routes/folders';
@@ -30,6 +39,11 @@ const mainNavItems: NavItem[] = [
         title: 'Billing & usage',
         href: billingIndex(),
         icon: CreditCard,
+    },
+    {
+        title: 'Custom domains',
+        href: customDomainsIndex(),
+        icon: Globe2,
     },
     {
         title: 'QR codes',
