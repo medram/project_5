@@ -20,6 +20,14 @@ return new class extends Migration
 
     public function down(): void
     {
+        // The explicit folder index must go first: SQLite rebuilds the table on
+        // dropColumn and fails while an index still references the column.
+        if (Schema::hasIndex('links', 'links_folder_id_index')) {
+            Schema::table('links', function (Blueprint $table): void {
+                $table->dropIndex(['folder_id']);
+            });
+        }
+
         Schema::table('links', function (Blueprint $table): void {
             $table->dropConstrainedForeignId('folder_id');
         });

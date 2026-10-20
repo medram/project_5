@@ -35,19 +35,23 @@ This document treats that result as an **observed feature inventory**, not proof
 - Basic published link-in-bio pages with ordered active outbound buttons.
 - Per-link 14-day click count series and total clicks.
 
-### 3.2 Active owner-scoped expansion
+### 3.2 Delivered owner-scoped expansion
 
 - User-owned custom domains with DNS TXT verification and host-aware public routing.
 - CTA-overlay interstitials, safe tracking pixels, public link pages, and richer event analytics.
-- Account plans, local subscriptions, usage limits, webhooks, and platform administration.
+- Account plans, local subscriptions, usage limits, signed webhooks with retry handling, and platform administration.
 
-The active implementation design is `docs/superpowers/specs/2026-10-19-linkpilot-user-scoped-expansion-design.md`.
+Every requirement marked `Delivered` in section 7 was exercised by the automated
+suite (148 tests, 1072 assertions) and by browser smoke scenarios against the
+running Compose stack; webhook delivery, retry exhaustion, and cancellation were
+additionally observed against the live queue worker. The design is
+`docs/superpowers/specs/2026-10-19-linkpilot-user-scoped-expansion-design.md`.
 
 ### 3.3 Collaboration deferred by user
 
 Workspaces, memberships, invitations, active-workspace scoping, and every migration or UI required for collaboration are deferred until the user explicitly resumes them. The detailed future collaboration contract remains in `docs/superpowers/specs/2026-10-19-linkpilot-platform-expansion-design.md`. Until then, active modules remain strictly scoped to the existing authenticated `user_id`; they must not add workspace tables, role fields, membership joins, or invitations.
 
-Rows below that describe workspace ownership preserve the later collaboration contract. Their current owner-scoped equivalents are defined by the active implementation design above.
+Rows below that describe workspace ownership preserve the later collaboration contract. Their current owner-scoped equivalents are delivered as described above.
 
 ## 4. Product principles
 
@@ -120,7 +124,7 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 |---|---|---:|---|
 | ID-1 | Profile name/email updates preserve verification semantics. | P0 | Delivered foundation |
 | ID-2 | Password, passkey, and two-factor management use current Fortify security flows. | P0 | Delivered foundation |
-| ID-3 | A suspended account cannot access authenticated LinkPilot resources. | P1 | In active platform expansion |
+| ID-3 | A suspended account cannot access authenticated LinkPilot resources. | P1 | Delivered |
 | ID-4 | Account notifications and notification preferences are configurable. | P3 | Catalogued |
 | ID-5 | Account deletion follows retention and billing policy. | P3 | Catalogued |
 
@@ -136,9 +140,9 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 | LNK-4 | A link can be scheduled with optional UTC start and expiry timestamps. | P0 | Delivered |
 | LNK-5 | A link can require an access code stored only as a Laravel hash; P1 makes unlocks link-specific, versioned, eight hours long, and rate-limited to five failed attempts per five minutes per link/visitor cache key. | P1 | Hardening in active platform expansion |
 | LNK-6 | Unavailable links return 404 without creating a click or event record. | P0 | Delivered |
-| LNK-7 | A link can select one active custom domain owned by its account. | P1 | In active platform expansion |
-| LNK-8 | A link can select one active CTA overlay owned by its account. | P1 | In active platform expansion |
-| LNK-9 | A final short-link delivery writes a rich event only after explicit tracking consent; the compatible aggregate click counter remains independent. | P1 | In active platform expansion |
+| LNK-7 | A link can select one active custom domain owned by its account. | P1 | Delivered |
+| LNK-8 | A link can select one active CTA overlay owned by its account. | P1 | Delivered |
+| LNK-9 | A final short-link delivery writes a rich event only after explicit tracking consent; the compatible aggregate click counter remains independent. | P1 | Delivered |
 | LNK-10 | Link list supports filters, search, tags, export, preview, UTM builder, and link-type variants. | P2 | Catalogued |
 | LNK-11 | Link edits retain audit history and optional approval workflow. | P3 | Catalogued |
 
@@ -174,66 +178,66 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 | BIO-1 | Users create published/unpublished bio pages with normalized handles. | P0 | Delivered |
 | BIO-2 | Users create, reorder, activate, and delete outbound buttons. | P0 | Delivered |
 | BIO-3 | Public pages render only published pages and active items in order. | P0 | Delivered |
-| BIO-4 | Page views and button clicks record privacy-minimal events. | P1 | In active platform expansion |
+| BIO-4 | Page views and button clicks record privacy-minimal events. | P1 | Delivered |
 | BIO-5 | Content blocks include image, text, social profiles, and media embeds (YouTube, SoundCloud, Vimeo, Spotify, Twitch, TikTok). | P2 | Catalogued |
 | BIO-6 | Appearance controls include theme, typography, color, background, and responsive preview. | P2 | Catalogued |
 | BIO-7 | Per-block scheduling, pinning, disable rules, and bio-specific insights are available. | P2 | Catalogued |
 
-### 7.6 Link pages — In active platform expansion
+### 7.6 Link pages — Delivered
 
 **Purpose:** An account-owned branded public page for a campaign or curated destination list, distinct from creator-centric bio pages.
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| PAG-1 | An account owner can create/update/delete a link page with name, a slug unique in the link-page route namespace, title, description, and publish state. | P1 | In active platform expansion |
-| PAG-2 | A page has ordered active outbound items with validated HTTP(S) destinations. | P1 | In active platform expansion |
-| PAG-3 | `/pages/{slug}` returns 404 when unpublished or unknown. | P1 | In active platform expansion |
-| PAG-4 | Page view and item click events are recorded only after explicit tracking consent and never store raw IP data. | P1 | In active platform expansion |
-| PAG-5 | A page attaches zero to five reusable, active account-owned pixels. | P1 | In active platform expansion |
+| PAG-1 | An account owner can create/update/delete a link page with name, a slug unique in the link-page route namespace, title, description, and publish state. | P1 | Delivered |
+| PAG-2 | A page has ordered active outbound items with validated HTTP(S) destinations. | P1 | Delivered |
+| PAG-3 | `/pages/{slug}` returns 404 when unpublished or unknown. | P1 | Delivered |
+| PAG-4 | Page view and item click events are recorded only after explicit tracking consent and never store raw IP data. | P1 | Delivered |
+| PAG-5 | A page attaches zero to five reusable, active account-owned pixels. | P1 | Delivered |
 | PAG-6 | Template selection is eligible when a product owner defines supported templates, preview semantics, and migration behavior. | P3 | Catalogued |
 | PAG-7 | Custom CSS is excluded until there is an isolation/CSP security design. | P3 | Catalogued / security prerequisite |
 | PAG-8 | Forms and lead capture are eligible after field schema, consent, retention, and access rules are approved. | P3 | Catalogued / privacy prerequisite |
 | PAG-9 | File delivery is eligible after storage, file-type/size, malware scanning, and retention policy are approved. | P3 | Catalogued / operational prerequisite |
 | PAG-10 | A/B experiments are eligible after assignment, reporting, and consent rules are approved. | P3 | Catalogued / analytics prerequisite |
 
-### 7.7 CTA overlays — In active platform expansion
+### 7.7 CTA overlays — Delivered
 
 **Product decision:** Implement as a branded LinkPilot-controlled interstitial. Do not inject content over a remote destination.
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| OVR-1 | An account owner can create/edit/delete an overlay with name, heading, body, CTA label, and active state. | P1 | In active platform expansion |
-| OVR-2 | A link selects at most one overlay owned by its account. | P1 | In active platform expansion |
-| OVR-3 | An eligible link visit renders the overlay before final delivery. | P1 | In active platform expansion |
-| OVR-4 | Continue revalidates link availability/access, records completion, and redirects. | P1 | In active platform expansion |
-| OVR-5 | Attached safe provider pixels run on the interstitial only after visitor consent. | P1 | In active platform expansion |
+| OVR-1 | An account owner can create/edit/delete an overlay with name, heading, body, CTA label, and active state. | P1 | Delivered |
+| OVR-2 | A link selects at most one overlay owned by its account. | P1 | Delivered |
+| OVR-3 | An eligible link visit renders the overlay before final delivery. | P1 | Delivered |
+| OVR-4 | Continue revalidates link availability/access, records completion, and redirects. | P1 | Delivered |
+| OVR-5 | Attached safe provider pixels run on the interstitial only after visitor consent. | P1 | Delivered |
 | OVR-6 | Timed interstitial variants, visual experiments, and targeting are eligible only on LinkPilot-controlled overlay pages. Remote-page injection is not a planned capability. | P3 | Catalogued |
 
-### 7.8 Custom domains — In active platform expansion
+### 7.8 Custom domains — Delivered
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| DOM-1 | An account owner can enter a normalized hostname for their account. | P1 | In active platform expansion |
-| DOM-2 | IP literals, localhost, configured default hosts, malformed hosts, and duplicate claims are rejected. | P1 | In active platform expansion |
-| DOM-3 | LinkPilot generates a unique token and requires exact DNS TXT proof at `_linkpilot-verify.<domain>`. | P1 | In active platform expansion |
-| DOM-4 | A domain progresses through `pending_dns`, `pending_tls`, `active`, or `failed`; only an `active` domain with current TXT proof, application routing, and a valid HTTPS certificate may be assigned or used in canonical URLs. | P1 | In active platform expansion |
-| DOM-5 | Requests for custom-domain links must match the active domain; the default host must not reveal an assigned link. Failed revalidation pauses delivery rather than silently falling back. | P1 | In active platform expansion |
-| DOM-6 | Daily revalidation checks DNS and a no-redirect LinkPilot HTTPS challenge; token rotation returns the domain to pending DNS. Domain deletion must explicitly warn that assigned links return to default-host delivery. | P1 | In active platform expansion |
+| DOM-1 | An account owner can enter a normalized hostname for their account. | P1 | Delivered |
+| DOM-2 | IP literals, localhost, configured default hosts, malformed hosts, and duplicate claims are rejected. | P1 | Delivered |
+| DOM-3 | LinkPilot generates a unique token and requires exact DNS TXT proof at `_linkpilot-verify.<domain>`. | P1 | Delivered |
+| DOM-4 | A domain progresses through `pending_dns`, `pending_tls`, `active`, or `failed`; only an `active` domain with current TXT proof, application routing, and a valid HTTPS certificate may be assigned or used in canonical URLs. | P1 | Delivered |
+| DOM-5 | Requests for custom-domain links must match the active domain; the default host must not reveal an assigned link. Failed revalidation pauses delivery rather than silently falling back. | P1 | Delivered |
+| DOM-6 | Daily revalidation checks DNS and a no-redirect LinkPilot HTTPS challenge; token rotation returns the domain to pending DNS. Domain deletion must explicitly warn that assigned links return to default-host delivery. | P1 | Delivered |
 | DOM-7 | Automated certificate issuance, CNAME/provider APIs, wildcard hosts, and advanced apex guidance are available. | P2 | Catalogued / external infrastructure |
 
 **Operational prerequisite:** DNS and reverse-proxy/application host routing must direct the host to LinkPilot. The HTTPS challenge at `/.well-known/linkpilot-domain/{token}` proves application delivery and TLS before activation.
 
-### 7.9 Tracking pixels — In active platform expansion
+### 7.9 Tracking pixels — Delivered
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| PIX-1 | An account owner can create an active provider pixel in their account. | P1 | In active platform expansion |
-| PIX-2 | Supported P1 providers are Meta Pixel and Google Analytics with validated IDs. | P1 | In active platform expansion |
-| PIX-3 | Pixels attach to LinkPilot-rendered link pages and CTA overlays. | P1 | In active platform expansion |
-| PIX-4 | Public React emits fixed provider-specific script shapes only after explicit visitor consent; arbitrary snippets and Google Tag Manager are rejected. | P1 | In active platform expansion |
+| PIX-1 | An account owner can create an active provider pixel in their account. | P1 | Delivered |
+| PIX-2 | Supported P1 providers are Meta Pixel and Google Analytics with validated IDs. | P1 | Delivered |
+| PIX-3 | Pixels attach to LinkPilot-rendered link pages and CTA overlays. | P1 | Delivered |
+| PIX-4 | Public React emits fixed provider-specific script shapes only after explicit visitor consent; arbitrary snippets and Google Tag Manager are rejected. | P1 | Delivered |
 | PIX-5 | Pixel attachment to bio pages, event-specific triggering, server-side conversion APIs, and consent-mode integrations are eligible after provider and privacy review. | P2 | Catalogued |
 
-### 7.10 Analytics and events — In active platform expansion
+### 7.10 Analytics and events — Delivered
 
 #### Event taxonomy
 
@@ -250,12 +254,12 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| ANL-1 | Each consented analytics event has an immutable UUID, exact content references, UTC occurrence time, coarse referrer/browser/platform, HMAC visitor hash, and hash-key version. | P1 | In active platform expansion |
-| ANL-2 | Never persist raw IP address, full user agent, access code, secret, password hash, or destination URL in analytics. | P1 | In active platform expansion |
-| ANL-3 | Account and link views support fixed UTC 7, 30, and 90 day windows. Historical short-link totals and daily series continue to use the existing `clicks` table; no historical event backfill occurs. | P1 | In active platform expansion |
-| ANL-4 | Views show total short-link clicks, consented unique visitor count, zero-filled daily short-link clicks, event totals, and top referrers/browsers/platforms. | P1 | In active platform expansion |
-| ANL-5 | Analytics respects the owning account and selected-resource authorization; telemetry failure never blocks public delivery. | P1 | In active platform expansion |
-| ANL-6 | Public rendered surfaces request a 180-day granted/denied tracking cookie before rich events or pixels. Production requires `ANALYTICS_HASH_KEY`, a key version, and 90-day event retention with daily pruning. | P1 | In active platform expansion |
+| ANL-1 | Each consented analytics event has an immutable UUID, exact content references, UTC occurrence time, coarse referrer/browser/platform, HMAC visitor hash, and hash-key version. | P1 | Delivered |
+| ANL-2 | Never persist raw IP address, full user agent, access code, secret, password hash, or destination URL in analytics. | P1 | Delivered |
+| ANL-3 | Account and link views support fixed UTC 7, 30, and 90 day windows. Historical short-link totals and daily series continue to use the existing `clicks` table; no historical event backfill occurs. | P1 | Delivered |
+| ANL-4 | Views show total short-link clicks, consented unique visitor count, zero-filled daily short-link clicks, event totals, and top referrers/browsers/platforms. | P1 | Delivered |
+| ANL-5 | Analytics respects the owning account and selected-resource authorization; telemetry failure never blocks public delivery. | P1 | Delivered |
+| ANL-6 | Public rendered surfaces request a 180-day granted/denied tracking cookie before rich events or pixels. Production requires `ANALYTICS_HASH_KEY`, a key version, and 90-day event retention with daily pruning. | P1 | Delivered |
 | ANL-7 | Geographic rollups, live traffic, CSV export, custom events, attribution models, and consent-mode integrations are available. | P2/P3 | Catalogued / policy prerequisite |
 
 ### 7.11 Workspaces and invitations — Deferred by user
@@ -284,15 +288,15 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 | WKS-8 | A non-member cannot forge an active workspace or access its resources. P1 has no workspace deletion or ownership transfer. | P1 | Deferred by user |
 | WKS-9 | Ownership transfer, guest/viewer roles, SSO/SCIM, workspace archival/deletion, and audit-log exports are available. | P3 | Catalogued |
 
-### 7.12 Plans, billing, and usage — In active platform expansion / external payment prerequisite
+### 7.12 Plans, billing, and usage — Delivered / external payment prerequisite
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| BIL-1 | Plans define active limits for links, domains, pixels, webhooks, and link pages. | P1 | In active platform expansion |
-| BIL-2 | Every user has one `active` local subscription state and a default free entitlement. | P1 | In active platform expansion |
-| BIL-3 | The billing page shows plan, per-resource usage, limits, and overage-safe creation behavior. | P1 | In active platform expansion |
-| BIL-4 | Metered creation rejects before exceeding the current plan's non-null limit. Existing data remains usable after a downgrade. | P1 | In active platform expansion |
-| BIL-5 | Platform administrators can assign a plan to an account; a user can select only free for their own account. | P1 | In active platform expansion |
+| BIL-1 | Plans define active limits for links, domains, pixels, webhooks, and link pages. | P1 | Delivered |
+| BIL-2 | Every user has one `active` local subscription state and a default free entitlement. | P1 | Delivered |
+| BIL-3 | The billing page shows plan, per-resource usage, limits, and overage-safe creation behavior. | P1 | Delivered |
+| BIL-4 | Metered creation rejects before exceeding the current plan's non-null limit. Existing data remains usable after a downgrade. | P1 | Delivered |
+| BIL-5 | Platform administrators can assign a plan to an account; a user can select only free for their own account. | P1 | Delivered |
 | BIL-6 | Credit-card checkout, payment-method changes, cancellation/renewal, invoices, tax, and provider webhooks work through Stripe/PayPal. | P3 | External prerequisite |
 | BIL-7 | Usage invoices, proration, coupons, annual billing, and dunning are available. | P3 | Catalogued / external prerequisite |
 
@@ -306,17 +310,17 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 **External prerequisite for BIL-6:** merchant account, products/prices, API keys, webhook secret, tax/invoice policy, and a payment-data compliance owner.
 
-### 7.13 Webhooks — In active platform expansion
+### 7.13 Webhooks — Delivered
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| WHK-1 | An authenticated account owner can create, update, disable, delete, and rotate a webhook endpoint for selected event names. | P1 | In active platform expansion |
-| WHK-2 | Creation and every delivery attempt require HTTPS and fresh public-address validation; private, loopback, link-local, reserved, unresolved, and redirected targets are rejected. | P1 | In active platform expansion |
-| WHK-3 | Each persisted consented analytics event creates a delivery record and queued job. | P1 | In active platform expansion |
-| WHK-4 | The immutable P1 envelope includes `schema_version: 1`, UUID `event_id`, event name, UTC occurrence time, owner account ID, and a minimal relevant resource-data object. The exact serialized bytes are signed and reused across retries. | P1 | In active platform expansion |
-| WHK-5 | Delivery records include webhook revision, attempted count, `pending`/`delivered`/`failed`/`cancelled` state, response code, bounded response excerpt/failure detail, and completion time. | P1 | In active platform expansion |
-| WHK-6 | A delivery has three total attempts: initial, then 60-second and 300-second retries; only 2xx succeeds. The client has a 3-second connect and 10-second total timeout and does not follow redirects. | P1 | In active platform expansion |
-| WHK-7 | Updating, disabling, deleting, or rotating a webhook cancels its pending deliveries while preserving history. A generated 32-byte secret is encrypted and revealed only on create/rotate. | P1 | In active platform expansion |
+| WHK-1 | An authenticated account owner can create, update, disable, delete, and rotate a webhook endpoint for selected event names. | P1 | Delivered |
+| WHK-2 | Creation and every delivery attempt require HTTPS and fresh public-address validation; private, loopback, link-local, reserved, unresolved, and redirected targets are rejected. | P1 | Delivered |
+| WHK-3 | Each persisted consented analytics event creates a delivery record and queued job. | P1 | Delivered |
+| WHK-4 | The immutable P1 envelope includes `schema_version: 1`, UUID `event_id`, event name, UTC occurrence time, owner account ID, and a minimal relevant resource-data object. The exact serialized bytes are signed and reused across retries. | P1 | Delivered |
+| WHK-5 | Delivery records include webhook revision, attempted count, `pending`/`delivered`/`failed`/`cancelled` state, response code, bounded response excerpt/failure detail, and completion time. | P1 | Delivered |
+| WHK-6 | A delivery has three total attempts: initial, then 60-second and 300-second retries; only 2xx succeeds. The client has a 3-second connect and 10-second total timeout and does not follow redirects. | P1 | Delivered |
+| WHK-7 | Updating, disabling, deleting, or rotating a webhook cancels its pending deliveries while preserving history. A generated 32-byte secret is encrypted and revealed only on create/rotate. | P1 | Delivered |
 | WHK-8 | Manual redelivery, endpoint health reporting, IP allow lists, and inbound webhook handling are available. | P2 | Catalogued |
 
 Every attempt resolves the URL again, rejects every unsafe answer, and forces the connection to a validated address while retaining TLS hostname validation. Payloads never include raw visitor data, destination URLs, access codes, hashes, or secrets.
@@ -348,15 +352,15 @@ The exact transmitted JSON preserves this key order and uses unescaped Unicode/s
 | API-2 | API keys are shown once, stored as hashes, and never returned in subsequent payloads. | P2 | Catalogued |
 | API-3 | A versioned API exposes links, pages, analytics, and webhooks with rate limits and audit logs. | P2 | Catalogued |
 
-### 7.15 Platform administration — In active platform expansion / catalogued depth
+### 7.15 Platform administration — Delivered / catalogued depth
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| ADM-1 | Platform access requires explicit `users.is_admin`; no self-service path grants it. | P1 | In active platform expansion |
-| ADM-2 | An admin dashboard lists user/workspace metadata, account status, plans/subscriptions, and aggregate counts without granting non-member access to content destinations or visitor dimensions. | P1 | In active platform expansion |
-| ADM-3 | A platform admin can suspend/unsuspend another account and grant/revoke another admin. Suspending clears database sessions and remember tokens but does not disable public workspace content. | P1 | In active platform expansion |
-| ADM-4 | An admin cannot self-suspend or self-demote. | P1 | In active platform expansion |
-| ADM-5 | `php artisan linkpilot:grant-admin {email}` is an operations-only provisioning route. | P1 | In active platform expansion |
+| ADM-1 | Platform access requires explicit `users.is_admin`; no self-service path grants it. | P1 | Delivered |
+| ADM-2 | An admin dashboard lists user/workspace metadata, account status, plans/subscriptions, and aggregate counts without granting non-member access to content destinations or visitor dimensions. | P1 | Delivered |
+| ADM-3 | A platform admin can suspend/unsuspend another account and grant/revoke another admin. Suspending clears database sessions and remember tokens but does not disable public workspace content. | P1 | Delivered |
+| ADM-4 | An admin cannot self-suspend or self-demote. | P1 | Delivered |
+| ADM-5 | `php artisan linkpilot:grant-admin {email}` is an operations-only provisioning route. | P1 | Delivered |
 | ADM-6 | Role/permission matrix editor, global insight dashboards, localization, site, system, SEO, email, auth, GDPR, and analytics settings exist. | P3 | Catalogued |
 
 ## 8. Data model reference

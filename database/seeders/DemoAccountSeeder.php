@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\Hash;
 
 /**
  * Create the local accounts used for manual testing and browser smoke runs.
- * Safe to re-run: accounts are created once and existing accounts are left
- * untouched, so seeded content never accumulates duplicates.
+ * Safe to re-run: account credentials and plans converge on every run while
+ * content is seeded once, so repeated runs never duplicate records.
  */
 class DemoAccountSeeder extends Seeder
 {
@@ -28,22 +28,22 @@ class DemoAccountSeeder extends Seeder
 
     public const ADMIN_EMAIL = 'admin@linkpilot.test';
 
-    public const DEMO_EMAIL = 'demo@linkpilot.test';
+    public const USER_EMAIL = 'user@linkpilot.test';
 
     public function run(): void
     {
-        $this->createUser(self::ADMIN_EMAIL, 'LinkPilot Admin', 'pro', administrator: true);
+        // Administrator access is granted through `linkpilot:grant-admin`, not
+        // here, so the provisioning path stays the only source of the flag.
+        $this->convergeUser(self::ADMIN_EMAIL, 'LinkPilot Admin', 'pro');
 
-        $demo = $this->createUser(self::DEMO_EMAIL, 'Demo Owner', 'pro');
+        $user = $this->convergeUser(self::USER_EMAIL, 'Demo Owner', 'pro');
 
-        if ($demo === null) {
-            return;
+        if ($user !== null) {
+            $this->seedDemoContent($user);
         }
-
-        $this->seedDemoContent($demo);
     }
 
-    private function createUser(string $email, string $name, string $plan, bool $administrator = false): ?User
+    private function convergeUser(string $email, string $name, string $plan): ?User
     {
         $existing = User::query()->where('email', $email)->first();
 
@@ -52,13 +52,10 @@ class DemoAccountSeeder extends Seeder
             'email' => $email,
         ]);
 
-        // The documented credentials must keep working, so converge the
-        // account state on every run; only content stays first-run.
         $user->forceFill([
             'name' => $name,
             'password' => Hash::make(self::PASSWORD),
             'email_verified_at' => $user->email_verified_at ?? now(),
-            'is_admin' => $administrator,
         ])->save();
 
         $user->subscription()->update([
@@ -68,8 +65,7 @@ class DemoAccountSeeder extends Seeder
         ]);
 
         $this->command?->info(
-            ($existing === null ? 'Created' : 'Updated')
-            ." [{$email}] with the {$plan} plan and password [".self::PASSWORD.'].'
+            ($existing === null ? 'Created' : 'Updated')." [{$email}] on the {$plan} plan."
         );
 
         return $existing === null ? $user : null;

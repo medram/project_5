@@ -33,22 +33,45 @@ Every account receives a local free subscription after migration or registration
 
 ## Local test accounts
 
-Seed the documented accounts used for manual testing:
+Seed the local accounts used for manual testing:
 
 ```bash
 docker compose run --rm app php artisan db:seed --force
 ```
 
-| Account | Password | Access |
-| --- | --- | --- |
-| `admin@linkpilot.test` | `password` | Administrator, `pro` plan |
-| `demo@linkpilot.test` | `password` | Owner with one of every module's content, `pro` plan |
+- `user@linkpilot.test` — owner on the `pro` plan with one of every module's
+  content: folders, short links, a pending custom domain, a tracking pixel, a
+  published bio page and link page, an active CTA overlay, a signed webhook, and
+  click history.
+- `admin@linkpilot.test` — the account to grant platform administrator access to
+  with `linkpilot:grant-admin` (see below). Seeding never sets `is_admin`.
 
-The seeder converges both accounts on every run — credentials and plans keep
-working — and only creates the `demo` account's content on first run, so
-re-seeding never duplicates links, pages, or webhooks. Content includes folders,
-short links, a pending custom domain, a tracking pixel, a published bio page and
-link page, an active CTA overlay, a signed webhook, and click history.
+The seeder converges both accounts' credentials and plans on every run and
+creates the content only on first run, so re-seeding never duplicates records.
+The local password for both accounts is supplied in the run handoff rather than
+stored in this repository.
+
+## Environment configuration
+
+| Variable | Purpose |
+| --- | --- |
+| `LINKPILOT_DEFAULT_HOSTS` | Comma-separated hostnames the app answers on for plain short links, beyond `APP_URL`. |
+| `PUBLIC_PRIVACY_URL` | Optional privacy-policy link shown next to the public-page consent banner. |
+| `ANALYTICS_HASH_KEY`, `ANALYTICS_HASH_KEY_VERSION` | Secret and version label used to hash visitor identifiers; rotate the key and bump the version together. |
+| `ANALYTICS_RETENTION_DAYS` | Retention window for consent-gated analytics events before `linkpilot:prune-analytics` removes them. |
+| `WEBHOOK_RETRY_DELAYS` | Comma-separated retry delays in seconds for failed webhook deliveries (`60,300` by default). |
+| `WEBHOOK_CONNECT_TIMEOUT`, `WEBHOOK_TIMEOUT` | Connection and total timeouts for a delivery attempt. |
+| `WEBHOOK_MAX_ATTEMPTS` | Attempts per delivery before it is marked failed. |
+| `WEBHOOK_EXCERPT_BYTES` | Response bytes retained as a non-sensitive delivery excerpt. |
+
+Custom domains are verified with a DNS TXT record (`_linkpilot-verify.<host>`)
+or an HTTPS challenge document served at
+`/.well-known/linkpilot-domain/<token>`, then a TLS check;
+`linkpilot:verify-custom-domains` and `linkpilot:prune-analytics` are scheduled
+daily, and both can be run manually. Tracking pixels are limited to fixed Meta
+Pixel and GA4 integrations — arbitrary third-party scripts are not accepted.
+Workspace collaboration (shared workspaces, memberships, invitations) is
+deliberately deferred; every resource is owned by a single account today.
 
 ## Administration
 
