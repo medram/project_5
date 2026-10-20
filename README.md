@@ -10,7 +10,14 @@ LinkPilot is a Laravel and React publishing console for owned short links and pu
 - Download locally generated SVG QR codes for owned short links.
 - Follow an active short URL and record one privacy-minimal click event.
 - Create multiple bio pages, order named outbound buttons, and publish only active buttons at `/bio/{handle}`.
+- Publish branded link pages with managed destination items at `/pages/{slug}`.
+- Serve an active CTA overlay as an interstitial before a short link redirects.
+- Verify owned custom domains and route short links through the resolved host.
+- Attach fixed Meta Pixel or GA4 integrations to published pages after consent.
+- Review consent-gated account analytics and per-link insights.
+- Register signed webhook endpoints for consented events with retry handling.
 - Review local account plan limits and subscription usage at `/billing`; this is internal entitlement state, not payment collection.
+- Administer account status, administrator access, and local entitlements at `/admin`.
 
 ## QR codes
 
@@ -23,6 +30,25 @@ URL, so normal availability and access-code controls still apply after a scan.
 ## Account plans and local billing
 
 Every account receives a local free subscription after migration or registration. The billing page reports usage for short links, custom domains, tracking pixels, link pages, and webhooks and enforces their plan limits. No Stripe, PayPal, checkout form, invoices, taxes, or payment processing are configured in this repository.
+
+## Local test accounts
+
+Seed the documented accounts used for manual testing:
+
+```bash
+docker compose run --rm app php artisan db:seed --force
+```
+
+| Account | Password | Access |
+| --- | --- | --- |
+| `admin@linkpilot.test` | `password` | Administrator, `pro` plan |
+| `demo@linkpilot.test` | `password` | Owner with one of every module's content, `pro` plan |
+
+The seeder converges both accounts on every run — credentials and plans keep
+working — and only creates the `demo` account's content on first run, so
+re-seeding never duplicates links, pages, or webhooks. Content includes folders,
+short links, a pending custom domain, a tracking pixel, a published bio page and
+link page, an active CTA overlay, a signed webhook, and click history.
 
 ## Administration
 
