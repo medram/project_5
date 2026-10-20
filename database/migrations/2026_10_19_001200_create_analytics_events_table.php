@@ -12,9 +12,9 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('link_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('bio_page_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('bio_link_id')->nullable()->constrained()->nullOnDelete();
+            $table->unsignedBigInteger('link_id')->nullable();
+            $table->unsignedBigInteger('bio_page_id')->nullable();
+            $table->unsignedBigInteger('bio_link_id')->nullable();
             $table->string('event_name', 64);
             $table->timestamp('occurred_at');
             $table->char('visitor_hash', 64);

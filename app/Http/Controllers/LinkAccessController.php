@@ -6,7 +6,6 @@ use App\Http\Requests\UnlockLinkRequest;
 use App\Services\Domains\PublicLinkHostResolver;
 use App\Services\Links\LinkAccessUnlocks;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class LinkAccessController extends Controller
@@ -22,18 +21,19 @@ class LinkAccessController extends Controller
 
         abort_unless($link->isAvailableAt(now()) && $link->requiresAccessCode(), 404);
 
-        abort_if($this->unlocks->tooManyFailures($request, $link), 429);
+        $result = $this->unlocks->attempt(
+            $request,
+            $link,
+            (string) $request->validated('access_code'),
+        );
 
-        if (! Hash::check((string) $request->validated('access_code'), (string) $link->access_code)) {
-            $this->unlocks->recordFailure($request, $link);
+        abort_if($result === null, 429);
 
+        if (! $result) {
             throw ValidationException::withMessages([
                 'access_code' => 'The access code is incorrect.',
             ]);
         }
-
-        $this->unlocks->clearFailures($request, $link);
-        $this->unlocks->grant($request, $link);
 
         return redirect()->to($this->hosts->canonicalUrl($link));
     }

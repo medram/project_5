@@ -321,6 +321,25 @@ class AnalyticsTrackingTest extends TestCase
         $this->assertDatabaseHas('analytics_events', ['id' => $retained->id]);
     }
 
+    public function test_deleting_content_preserves_retained_analytics_reference_ids(): void
+    {
+        $owner = User::factory()->create();
+        $page = BioPage::factory()->for($owner)->create();
+        $bioLink = BioLink::factory()->for($page)->create();
+        $event = $this->eventFor($owner, now('UTC'), [
+            'bio_page_id' => $page->id,
+            'bio_link_id' => $bioLink->id,
+        ]);
+
+        $bioLink->delete();
+        $page->delete();
+
+        $event = $event->fresh();
+
+        $this->assertSame($page->id, $event->bio_page_id);
+        $this->assertSame($bioLink->id, $event->bio_link_id);
+    }
+
     /**
      * @param  array<string, int|null>  $references
      */

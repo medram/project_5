@@ -9,6 +9,7 @@ use App\Models\Link;
 use App\Services\Billing\EnforcesPlanLimits;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -52,7 +53,11 @@ class LinkController extends Controller
     {
         Gate::authorize('update', $link);
 
-        $link->update($this->attributesFrom($request, $link));
+        DB::transaction(function () use ($request, $link): void {
+            $lockedLink = Link::query()->lockForUpdate()->findOrFail($link->id);
+
+            $lockedLink->update($this->attributesFrom($request, $lockedLink));
+        });
 
         return to_route('links.index');
     }
