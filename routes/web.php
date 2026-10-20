@@ -25,9 +25,9 @@ use App\Http\Controllers\PublicLinkPageController;
 use App\Http\Controllers\PublicLinkPageItemController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\TrackingConsentController;
+use App\Http\Controllers\TrackingPixelController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\WebhookDeliveryController;
-use App\Http\Controllers\TrackingPixelController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -40,7 +40,6 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
     Route::patch('billing/plan', [BillingController::class, 'selectFree'])->name('billing.plan.update');
     Route::get('custom-domains', [CustomDomainController::class, 'index'])->name('custom-domains.index');
     Route::get('analytics', AccountAnalyticsController::class)->name('analytics.index');
-
 
     Route::get('webhooks', [WebhookController::class, 'index'])->name('webhooks.index');
     Route::post('webhooks', [WebhookController::class, 'store'])->name('webhooks.store');

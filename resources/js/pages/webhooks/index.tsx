@@ -198,6 +198,10 @@ function CreateWebhookDialog({
         });
     }
 
+    // Plan enforcement answers with a `plan` validation error rather than a
+    // field error, so surface it where the form can be seen.
+    const planError = (form.errors as Record<string, string | undefined>).plan;
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
@@ -209,6 +213,9 @@ function CreateWebhookDialog({
                         shown once, when the webhook is created.
                     </DialogDescription>
                 </DialogHeader>
+                {planError && (
+                    <p className="text-sm text-destructive">{planError}</p>
+                )}
                 <form onSubmit={submit}>
                     <WebhookFormFields
                         data={form.data}
