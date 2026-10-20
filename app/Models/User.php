@@ -84,6 +84,11 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $this->hasMany(LinkPage::class);
     }
 
+    public function linkOverlays(): HasMany
+    {
+        return $this->hasMany(LinkOverlay::class);
+    }
+
     public function subscription(): HasOne
     {
         return $this->hasOne(UserSubscription::class);

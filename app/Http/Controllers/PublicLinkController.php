@@ -14,6 +14,7 @@ class PublicLinkController extends Controller
     public function __construct(
         private readonly PublicLinkHostResolver $hosts,
         private readonly LinkAccessUnlocks $unlocks,
+        private readonly PublicLinkOverlayController $overlays,
     ) {}
 
     public function __invoke(Request $request, string $slug): RedirectResponse|Response
@@ -30,6 +31,12 @@ class PublicLinkController extends Controller
                 'slug' => $link->slug,
                 'title' => $link->title,
             ]);
+        }
+
+        $overlay = $link->activeLinkOverlay();
+
+        if ($overlay !== null) {
+            return $this->overlays->render($request, $link, $overlay);
         }
 
         $link->clicks()->create([

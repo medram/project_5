@@ -13,12 +13,14 @@ use App\Http\Controllers\FolderController;
 use App\Http\Controllers\LinkAccessController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LinkInsightsController;
+use App\Http\Controllers\LinkOverlayController;
 use App\Http\Controllers\LinkPageController;
 use App\Http\Controllers\LinkPageItemController;
 use App\Http\Controllers\LinkQrCodeController;
 use App\Http\Controllers\PublicBioLinkController;
 use App\Http\Controllers\PublicBioPageController;
 use App\Http\Controllers\PublicLinkController;
+use App\Http\Controllers\PublicLinkOverlayController;
 use App\Http\Controllers\PublicLinkPageController;
 use App\Http\Controllers\PublicLinkPageItemController;
 use App\Http\Controllers\QrCodeController;
@@ -85,6 +87,12 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
     Route::delete('link-pages/{linkPage}/items/{linkPageItem}', [LinkPageItemController::class, 'destroy'])
         ->name('link-pages.items.destroy');
 
+    Route::get('overlays', [LinkOverlayController::class, 'index'])->name('overlays.index');
+    Route::post('overlays', [LinkOverlayController::class, 'store'])->name('overlays.store');
+    Route::get('overlays/{linkOverlay}', [LinkOverlayController::class, 'show'])->name('overlays.show');
+    Route::patch('overlays/{linkOverlay}', [LinkOverlayController::class, 'update'])->name('overlays.update');
+    Route::delete('overlays/{linkOverlay}', [LinkOverlayController::class, 'destroy'])->name('overlays.destroy');
+
     Route::prefix('admin')->name('admin.')->middleware('administrator')->group(function (): void {
         Route::get('/', AdminDashboardController::class)->name('index');
         Route::patch('users/{user}/suspension', [AdminUserController::class, 'updateSuspension'])
@@ -119,6 +127,10 @@ Route::get('bio/{handle}', PublicBioPageController::class)
 
 Route::get('.well-known/linkpilot-domain/{token}', DomainChallengeController::class)
     ->name('custom-domains.challenge');
+
+Route::post('{slug}/continue', [PublicLinkOverlayController::class, 'continue'])
+    ->where('slug', '[a-z0-9-]{4,32}')
+    ->name('links.continue');
 
 Route::post('{slug}/unlock', LinkAccessController::class)
     ->where('slug', '[a-z0-9-]{4,32}')

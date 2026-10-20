@@ -32,6 +32,7 @@ import { store, update } from '@/routes/links';
 import type { CustomDomainOption } from '@/types/custom-domains';
 import type { FolderOption } from '@/types/folders';
 import type { LinkListItem } from '@/types/links';
+import type { LinkOverlayOption } from '@/types/overlays';
 
 type LinkFormData = {
     destination_url: string;
@@ -40,6 +41,7 @@ type LinkFormData = {
     is_active: boolean;
     folder_id: string;
     custom_domain_id: string;
+    link_overlay_id: string;
     available_from: string;
     expires_at: string;
     access_code: string;
@@ -50,6 +52,7 @@ type LinkFormDialogProps = {
     link?: LinkListItem;
     folders: FolderOption[];
     customDomains: CustomDomainOption[];
+    linkOverlays: LinkOverlayOption[];
     children: ReactNode;
 };
 
@@ -87,6 +90,7 @@ function formDataFor(link?: LinkListItem): LinkFormData {
         is_active: link?.isActive ?? true,
         folder_id: link?.folderId?.toString() ?? '',
         custom_domain_id: link?.customDomainId?.toString() ?? '',
+        link_overlay_id: link?.linkOverlayId?.toString() ?? '',
         available_from: dateTimeLocalValue(link?.availableFrom),
         expires_at: dateTimeLocalValue(link?.expiresAt),
         access_code: '',
@@ -98,6 +102,7 @@ export function LinkFormDialog({
     link,
     folders,
     customDomains,
+    linkOverlays,
     children,
 }: LinkFormDialogProps) {
     const [open, setOpen] = useState(false);
@@ -325,6 +330,48 @@ export function LinkFormDialog({
                             {form.errors.custom_domain_id && (
                                 <FieldError>
                                     {form.errors.custom_domain_id}
+                                </FieldError>
+                            )}
+                        </Field>
+
+                        <Field data-invalid={Boolean(form.errors.link_overlay_id)}>
+                            <FieldLabel htmlFor="link-overlay">
+                                CTA overlay
+                            </FieldLabel>
+                            <Select
+                                value={form.data.link_overlay_id || 'none'}
+                                onValueChange={(value) =>
+                                    form.setData(
+                                        'link_overlay_id',
+                                        value === 'none' ? '' : value,
+                                    )
+                                }
+                                disabled={form.processing}
+                            >
+                                <SelectTrigger id="link-overlay">
+                                    <SelectValue placeholder="No overlay" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">
+                                        No overlay
+                                    </SelectItem>
+                                    {linkOverlays.map((overlay) => (
+                                        <SelectItem
+                                            key={overlay.id}
+                                            value={overlay.id.toString()}
+                                        >
+                                            {overlay.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FieldDescription>
+                                An active overlay shows a branded interstitial
+                                before delivering the destination.
+                            </FieldDescription>
+                            {form.errors.link_overlay_id && (
+                                <FieldError>
+                                    {form.errors.link_overlay_id}
                                 </FieldError>
                             )}
                         </Field>

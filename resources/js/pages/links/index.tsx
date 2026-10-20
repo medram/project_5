@@ -54,6 +54,7 @@ import {
     type LinkListItem,
     toLinkListItem,
 } from '@/types/links';
+import type { LinkOverlayOption } from '@/types/overlays';
 
 function DeleteLinkDialog({ link }: { link: LinkListItem }) {
     const [open, setOpen] = useState(false);
@@ -120,10 +121,12 @@ function LinkActions({
     link,
     folders,
     customDomains,
+    linkOverlays,
 }: {
     link: LinkListItem;
     folders: FolderOption[];
     customDomains: CustomDomainOption[];
+    linkOverlays: LinkOverlayOption[];
 }) {
     const [updatingStatus, setUpdatingStatus] = useState(false);
 
@@ -155,7 +158,7 @@ function LinkActions({
             <LinkFormDialog
                 link={link}
                 folders={folders}
-                customDomains={customDomains}
+                customDomains={customDomains} linkOverlays={linkOverlays}
             >
                 <Button variant="outline" size="sm">
                     <Pencil data-icon="inline-start" />
@@ -193,10 +196,12 @@ function LinkRow({
     link,
     folders,
     customDomains,
+    linkOverlays,
 }: {
     link: LinkListItem;
     folders: FolderOption[];
     customDomains: CustomDomainOption[];
+    linkOverlays: LinkOverlayOption[];
 }) {
     const shortLinkUrl = link.customDomain
         ? `https://${link.customDomain.hostname}/${link.slug}`
@@ -321,7 +326,7 @@ function LinkRow({
                 <LinkActions
                     link={link}
                     folders={folders}
-                    customDomains={customDomains}
+                    customDomains={customDomains} linkOverlays={linkOverlays}
                 />
             </CardFooter>
         </Card>
@@ -332,6 +337,7 @@ export default function ShortLinks({
     links: linkPayloads,
     folders,
     customDomains,
+    linkOverlays,
 }: LinkIndexProps) {
     const links = linkPayloads.map(toLinkListItem);
 
@@ -358,7 +364,7 @@ export default function ShortLinks({
                     </div>
                     <LinkFormDialog
                         folders={folders}
-                        customDomains={customDomains}
+                        customDomains={customDomains} linkOverlays={linkOverlays}
                     >
                         <Button>
                             <Plus data-icon="inline-start" />
@@ -382,7 +388,7 @@ export default function ShortLinks({
                         <EmptyContent>
                             <LinkFormDialog
                                 folders={folders}
-                                customDomains={customDomains}
+                                customDomains={customDomains} linkOverlays={linkOverlays}
                             >
                                 <Button>
                                     <Plus data-icon="inline-start" />
@@ -401,7 +407,7 @@ export default function ShortLinks({
                                 key={link.id}
                                 link={link}
                                 folders={folders}
-                                customDomains={customDomains}
+                                customDomains={customDomains} linkOverlays={linkOverlays}
                             />
                         ))}
                     </section>

@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\CustomDomain;
 use App\Models\Folder;
 use App\Models\Link;
+use App\Models\LinkOverlay;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -106,6 +107,33 @@ abstract class LinkRequest extends FormRequest
             ],
             'access_code' => ['nullable', 'string', 'max:255'],
             'clear_access_code' => ['nullable', 'boolean'],
+            'link_overlay_id' => [
+                'nullable',
+                'integer',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if ($value === null || $value === '') {
+                        return;
+                    }
+
+                    $overlay = LinkOverlay::query()->find($value);
+
+                    if ($overlay === null || $overlay->user_id !== $this->user()->id) {
+                        $fail('The selected overlay is unavailable.');
+
+                        return;
+                    }
+
+                    $link = $this->route('link');
+
+                    if ($link instanceof Link && $link->link_overlay_id === $overlay->id) {
+                        return;
+                    }
+
+                    if (! $overlay->is_active) {
+                        $fail('Only an active overlay can be assigned to a link.');
+                    }
+                },
+            ],
             'available_from' => ['nullable', 'date'],
             'expires_at' => ['nullable', 'date', 'after:available_from'],
         ];

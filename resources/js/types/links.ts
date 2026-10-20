@@ -1,12 +1,15 @@
 import type { AnalyticsWindows } from '@/types/analytics';
 import type { CustomDomainOption } from '@/types/custom-domains';
 import type { FolderOption } from '@/types/folders';
+import type { LinkOverlayOption } from '@/types/overlays';
 export type LinkPayload = {
     id: number;
     folder_id: number | null;
     folder: FolderOption | null;
     custom_domain_id: number | null;
     custom_domain: CustomDomainOption | null;
+    link_overlay_id: number | null;
+    link_overlay: LinkOverlayOption | null;
     title: string | null;
     slug: string;
     destination_url: string;
@@ -25,6 +28,8 @@ export type LinkListItem = {
     folder: FolderOption | null;
     customDomainId: number | null;
     customDomain: CustomDomainOption | null;
+    linkOverlayId: number | null;
+    linkOverlay: LinkOverlayOption | null;
     title: string | null;
     slug: string;
     destinationUrl: string;
@@ -46,6 +51,7 @@ export type LinkIndexProps = {
     links: LinkPayload[];
     folders: FolderOption[];
     customDomains: CustomDomainOption[];
+    linkOverlays: LinkOverlayOption[];
 };
 
 export type LinkInsightProps = {
@@ -66,6 +72,8 @@ export function toLinkListItem(link: LinkPayload): LinkListItem {
         folder: link.folder,
         customDomainId: link.custom_domain_id,
         customDomain: link.custom_domain,
+        linkOverlayId: link.link_overlay_id,
+        linkOverlay: link.link_overlay,
         title: link.title,
         slug: link.slug,
         destinationUrl: link.destination_url,

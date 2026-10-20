@@ -5,6 +5,7 @@ import {
     CreditCard,
     Folder,
     Globe2,
+    Layers,
     Link2,
     Megaphone,
     PanelsTopLeft,
@@ -30,6 +31,7 @@ import { index as customDomainsIndex } from '@/routes/custom-domains';
 import { index as adminIndex } from '@/routes/admin';
 import { index as bioPagesIndex } from '@/routes/bio-pages';
 import { index as linkPagesIndex } from '@/routes/link-pages';
+import { index as overlaysIndex } from '@/routes/overlays';
 import { index as trackingPixelsIndex } from '@/routes/tracking-pixels';
 import { index as foldersIndex } from '@/routes/folders';
 import { index as qrCodesIndex } from '@/routes/qr-codes';
@@ -75,6 +77,11 @@ const mainNavItems: NavItem[] = [
         title: 'Link pages',
         href: linkPagesIndex(),
         icon: Megaphone,
+    },
+    {
+        title: 'CTA overlays',
+        href: overlaysIndex(),
+        icon: Layers,
     },
     {
         title: 'Tracking pixels',

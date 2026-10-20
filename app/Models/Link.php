@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 #[Fillable([
     'folder_id',
     'custom_domain_id',
+    'link_overlay_id',
     'destination_url',
     'title',
     'slug',
@@ -71,6 +72,22 @@ class Link extends Model
     public function customDomain(): BelongsTo
     {
         return $this->belongsTo(CustomDomain::class);
+    }
+
+    public function linkOverlay(): BelongsTo
+    {
+        return $this->belongsTo(LinkOverlay::class);
+    }
+
+    public function activeLinkOverlay(): ?LinkOverlay
+    {
+        $overlay = $this->linkOverlay;
+
+        if ($overlay === null || ! $overlay->is_active || $overlay->user_id !== $this->user_id) {
+            return null;
+        }
+
+        return $overlay;
     }
 
     public function isAvailableAt(CarbonInterface $at): bool

@@ -6,6 +6,7 @@ use App\Models\AnalyticsEvent;
 use App\Models\BioLink;
 use App\Models\BioPage;
 use App\Models\Link;
+use App\Models\LinkOverlay;
 use App\Models\LinkPage;
 use App\Models\LinkPageItem;
 use App\Models\User;
@@ -73,6 +74,7 @@ class AnalyticsTracker
         $bioLink = $references['bioLink'] ?? null;
         $linkPage = $references['linkPage'] ?? null;
         $linkPageItem = $references['linkPageItem'] ?? null;
+        $linkOverlay = $references['linkOverlay'] ?? null;
 
         if ($link !== null) {
             if (! $link instanceof Link || $link->user_id !== $user->id) {
@@ -124,6 +126,14 @@ class AnalyticsTracker
             }
 
             $attributes['link_page_item_id'] = $linkPageItem->id;
+        }
+
+        if ($linkOverlay !== null) {
+            if (! $linkOverlay instanceof LinkOverlay || $linkOverlay->user_id !== $user->id) {
+                throw new InvalidArgumentException('Analytics link overlay reference must belong to the account.');
+            }
+
+            $attributes['link_overlay_id'] = $linkOverlay->id;
         }
 
         return $attributes;

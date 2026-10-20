@@ -25,6 +25,7 @@ class LinkController extends Controller
             'links' => $request->user()->links()
                 ->with('folder:id,name')
                 ->with('customDomain:id,hostname,status')
+                ->with('linkOverlay:id,name')
                 ->withCount('clicks')
                 ->latest()
                 ->get(),
@@ -35,6 +36,10 @@ class LinkController extends Controller
                 ->where('status', 'active')
                 ->orderBy('hostname')
                 ->get(['id', 'hostname']),
+            'linkOverlays' => $request->user()->linkOverlays()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 
