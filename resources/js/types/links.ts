@@ -1,3 +1,4 @@
+import type { AnalyticsWindows } from '@/types/analytics';
 import type { CustomDomainOption } from '@/types/custom-domains';
 import type { FolderOption } from '@/types/folders';
 export type LinkPayload = {
@@ -51,6 +52,7 @@ export type LinkInsightProps = {
     link: LinkListItem;
     totalClicks: number;
     dailyClicks: DailyClick[];
+    analyticsWindows: AnalyticsWindows;
 };
 
 export type LinkInsightPageProps = Omit<LinkInsightProps, 'link'> & {

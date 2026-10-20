@@ -19,6 +19,7 @@ use Illuminate\Support\Str;
     'slug',
     'is_active',
     'access_code',
+    'access_code_version',
     'available_from',
     'expires_at',
 ])]
@@ -30,7 +31,7 @@ class Link extends Model
     /**
      * @var array<int, string>
      */
-    protected $hidden = ['access_code'];
+    protected $hidden = ['access_code', 'access_code_version'];
 
     /**
      * @var array<int, string>
@@ -44,6 +45,7 @@ class Link extends Model
     {
         return [
             'is_active' => 'boolean',
+            'access_code_version' => 'integer',
             'available_from' => 'datetime',
             'expires_at' => 'datetime',
         ];
@@ -91,6 +93,11 @@ class Link extends Model
     public function clicks(): HasMany
     {
         return $this->hasMany(Click::class);
+    }
+
+    public function analyticsEvents(): HasMany
+    {
+        return $this->hasMany(AnalyticsEvent::class);
     }
 
     private static function generateSlug(): string

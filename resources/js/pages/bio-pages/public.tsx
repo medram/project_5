@@ -1,4 +1,5 @@
 import { Head } from '@inertiajs/react';
+import { TrackingConsent } from '@/components/analytics/tracking-consent';
 import { BioPagePresentation } from '@/components/bio-pages/live-preview';
 import type { BioPagePublicProps } from '@/types/bio-pages';
 
@@ -7,6 +8,8 @@ export default function PublicBioPage({
     bio,
     handle,
     links,
+    trackingConsent,
+    privacyUrl,
 }: BioPagePublicProps) {
     return (
         <>
@@ -21,6 +24,10 @@ export default function PublicBioPage({
                         links={links}
                     />
                 </div>
+                <TrackingConsent
+                    consent={trackingConsent}
+                    privacyUrl={privacyUrl}
+                />
             </main>
         </>
     );

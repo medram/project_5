@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    BarChart3,
     CreditCard,
     Folder,
     Globe2,
@@ -21,6 +22,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { index as linksIndex } from '@/routes/links';
+import { index as analyticsIndex } from '@/routes/analytics';
 import { index as billingIndex } from '@/routes/billing';
 import { index as customDomainsIndex } from '@/routes/custom-domains';
 import { index as adminIndex } from '@/routes/admin';
@@ -34,6 +36,11 @@ const mainNavItems: NavItem[] = [
         title: 'Short links',
         href: linksIndex(),
         icon: Link2,
+    },
+    {
+        title: 'Analytics',
+        href: analyticsIndex(),
+        icon: BarChart3,
     },
     {
         title: 'Billing & usage',

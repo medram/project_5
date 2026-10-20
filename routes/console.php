@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('linkpilot:verify-custom-domains')->daily();
+Schedule::command('linkpilot:prune-analytics')->daily();

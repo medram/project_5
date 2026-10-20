@@ -92,6 +92,7 @@ export default function LinkInsights({
     link: linkPayload,
     totalClicks,
     dailyClicks,
+    analyticsWindows,
 }: LinkInsightPageProps) {
     const link = toLinkListItem({
         ...linkPayload,
@@ -173,6 +174,30 @@ export default function LinkInsights({
                         </CardContent>
                     </Card>
                 </section>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Consented analytics</CardTitle>
+                        <CardDescription>
+                            Rich events appear only after visitors grant consent
+                            on a LinkPilot public surface.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 sm:grid-cols-3">
+                        {[7, 30, 90].map((days) => (
+                            <div key={days}>
+                                <p className="text-sm text-muted-foreground">
+                                    Last {days} days
+                                </p>
+                                <p className="mt-1 text-2xl font-semibold tabular-nums">
+                                    {analyticsWindows[
+                                        days as 7 | 30 | 90
+                                    ].total.toLocaleString()}
+                                </p>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
 
                 <Card>
                     <CardHeader>

@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Click;
 use App\Models\Link;
+use App\Services\Analytics\AnalyticsInsights;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class LinkInsightsController extends Controller
 {
+    public function __construct(private readonly AnalyticsInsights $analytics) {}
+
     public function __invoke(Link $link): Response
     {
         Gate::authorize('view', $link);
@@ -43,6 +46,7 @@ class LinkInsightsController extends Controller
             'link' => $link,
             'totalClicks' => $link->clicks()->count(),
             'dailyClicks' => $dailyClicks,
+            'analyticsWindows' => $this->analytics->forLink($link),
         ]);
     }
 }

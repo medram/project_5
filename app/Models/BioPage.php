@@ -34,4 +34,9 @@ class BioPage extends Model
     {
         return $this->hasMany(BioLink::class)->orderBy('position');
     }
+
+    public function analyticsEvents(): HasMany
+    {
+        return $this->hasMany(AnalyticsEvent::class);
+    }
 }

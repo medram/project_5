@@ -55,7 +55,7 @@ export function BioPagePresentation({
                                     className="h-auto min-h-11 w-full min-w-0 justify-between py-2 text-left whitespace-normal"
                                 >
                                     <a
-                                        href={link.destinationUrl}
+                                        href={link.url}
                                         target="_blank"
                                         rel="noreferrer"
                                     >

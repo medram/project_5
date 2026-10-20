@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountAnalyticsController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\BillingController;
@@ -13,9 +14,11 @@ use App\Http\Controllers\LinkAccessController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LinkInsightsController;
 use App\Http\Controllers\LinkQrCodeController;
+use App\Http\Controllers\PublicBioLinkController;
 use App\Http\Controllers\PublicBioPageController;
 use App\Http\Controllers\PublicLinkController;
 use App\Http\Controllers\QrCodeController;
+use App\Http\Controllers\TrackingConsentController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -27,6 +30,7 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
     Route::get('billing', [BillingController::class, 'index'])->name('billing.index');
     Route::patch('billing/plan', [BillingController::class, 'selectFree'])->name('billing.plan.update');
     Route::get('custom-domains', [CustomDomainController::class, 'index'])->name('custom-domains.index');
+    Route::get('analytics', AccountAnalyticsController::class)->name('analytics.index');
     Route::post('custom-domains', [CustomDomainController::class, 'store'])->name('custom-domains.store');
     Route::post('custom-domains/{customDomain}/verify', [CustomDomainVerificationController::class, 'verify'])
         ->name('custom-domains.verify');
@@ -67,6 +71,13 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
 });
 
 require __DIR__.'/settings.php';
+
+Route::post('tracking-consent', TrackingConsentController::class)
+    ->name('tracking-consent.store');
+
+Route::get('bio/{handle}/links/{bioLink}', PublicBioLinkController::class)
+    ->where('handle', '[a-z0-9-]{3,32}')
+    ->name('bio-pages.links.public');
 
 Route::get('bio/{handle}', PublicBioPageController::class)
     ->where('handle', '[a-z0-9-]{3,32}')

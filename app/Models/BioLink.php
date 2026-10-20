@@ -28,4 +28,9 @@ class BioLink extends Model
     {
         return $this->belongsTo(BioPage::class);
     }
+
+    public function analyticsEvents(): HasMany
+    {
+        return $this->hasMany(AnalyticsEvent::class);
+    }
 }

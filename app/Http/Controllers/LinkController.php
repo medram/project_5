@@ -79,8 +79,13 @@ class LinkController extends Controller
 
         if (is_string($accessCode) && $accessCode !== '') {
             $attributes['access_code'] = Hash::make($accessCode);
-        } elseif ($link !== null && $clearAccessCode) {
+
+            if ($link !== null) {
+                $attributes['access_code_version'] = $link->access_code_version + 1;
+            }
+        } elseif ($link !== null && $clearAccessCode && $link->requiresAccessCode()) {
             $attributes['access_code'] = null;
+            $attributes['access_code_version'] = $link->access_code_version + 1;
         }
 
         return $attributes;

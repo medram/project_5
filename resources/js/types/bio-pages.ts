@@ -52,7 +52,7 @@ export type BioPageEditorProps = {
 export type BioPagePublicLink = {
     id: number;
     title: string;
-    destinationUrl: string;
+    url: string;
 };
 
 export type BioPagePublicProps = {
@@ -60,6 +60,8 @@ export type BioPagePublicProps = {
     bio: string | null;
     handle: string;
     links: BioPagePublicLink[];
+    trackingConsent: 'granted' | 'denied' | null;
+    privacyUrl: string | null;
 };
 
 export function toBioPage(bioPage: BioPagePayload): BioPage {

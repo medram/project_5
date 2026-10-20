@@ -474,7 +474,7 @@ export function BioPageEditor({
         .map((bioLink) => ({
             id: bioLink.id,
             title: bioLink.title,
-            destinationUrl: bioLink.destinationUrl,
+            url: bioLink.destinationUrl,
         }));
 
     function submitProfile(event: FormEvent<HTMLFormElement>) {

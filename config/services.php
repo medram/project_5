@@ -40,6 +40,12 @@ return [
             'trim',
             explode(',', (string) env('LINKPILOT_DEFAULT_HOSTS', '')),
         ))),
+        'analytics' => [
+            'privacy_url' => env('PUBLIC_PRIVACY_URL'),
+            'hash_key' => env('ANALYTICS_HASH_KEY'),
+            'hash_key_version' => env('ANALYTICS_HASH_KEY_VERSION'),
+            'retention_days' => (int) env('ANALYTICS_RETENTION_DAYS', 90),
+        ],
     ],
 
 ];
