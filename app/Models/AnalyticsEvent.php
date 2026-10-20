@@ -13,6 +13,8 @@ use LogicException;
     'link_id',
     'bio_page_id',
     'bio_link_id',
+    'link_page_id',
+    'link_page_item_id',
     'event_name',
     'occurred_at',
     'visitor_hash',
@@ -63,5 +65,15 @@ class AnalyticsEvent extends Model
     public function bioLink(): BelongsTo
     {
         return $this->belongsTo(BioLink::class);
+    }
+
+    public function linkPage(): BelongsTo
+    {
+        return $this->belongsTo(LinkPage::class);
+    }
+
+    public function linkPageItem(): BelongsTo
+    {
+        return $this->belongsTo(LinkPageItem::class);
     }
 }

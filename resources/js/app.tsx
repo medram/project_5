@@ -14,6 +14,7 @@ void createInertiaApp({
         switch (true) {
             case name === 'welcome':
             case name === 'bio-pages/public':
+            case name === 'link-pages/public':
             case name === 'links/unlock':
                 return null;
             case name.startsWith('auth/'):

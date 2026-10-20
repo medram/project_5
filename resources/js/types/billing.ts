@@ -33,5 +33,7 @@ export type BillingPageProps = {
     usage: {
         links: UsageMetric;
         domains: UsageMetric;
+        pixels: UsageMetric;
+        linkPages: UsageMetric;
     };
 };

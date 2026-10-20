@@ -34,6 +34,8 @@ export default function BillingIndex({
 }: BillingPageProps) {
     const linkUsage = usage.links;
     const domainUsage = usage.domains;
+    const pixelUsage = usage.pixels;
+    const linkPageUsage = usage.linkPages;
 
     function selectFreePlan() {
         router.patch('/billing/plan', { plan: 'free' }, { preserveScroll: true });
@@ -124,6 +126,52 @@ export default function BillingIndex({
                                 {domainUsage.overLimit && (
                                     <p className="mt-2 text-sm text-destructive">
                                         New domains are blocked until usage is
+                                        back within this plan’s limit.
+                                    </p>
+                                )}
+                            </div>
+                            <div className="rounded-lg border p-3">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <Gauge
+                                            className="size-4 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                        <span className="font-medium">
+                                            {pixelUsage.label}
+                                        </span>
+                                    </div>
+                                    <span className="text-sm text-muted-foreground">
+                                        {pixelUsage.used.toLocaleString()} /{' '}
+                                        {limitLabel(pixelUsage.limit)}
+                                    </span>
+                                </div>
+                                {pixelUsage.overLimit && (
+                                    <p className="mt-2 text-sm text-destructive">
+                                        New pixels are blocked until usage is
+                                        back within this plan’s limit.
+                                    </p>
+                                )}
+                            </div>
+                            <div className="rounded-lg border p-3">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <Gauge
+                                            className="size-4 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                        <span className="font-medium">
+                                            {linkPageUsage.label}
+                                        </span>
+                                    </div>
+                                    <span className="text-sm text-muted-foreground">
+                                        {linkPageUsage.used.toLocaleString()} /{' '}
+                                        {limitLabel(linkPageUsage.limit)}
+                                    </span>
+                                </div>
+                                {linkPageUsage.overLimit && (
+                                    <p className="mt-2 text-sm text-destructive">
+                                        New link pages are blocked until usage is
                                         back within this plan’s limit.
                                     </p>
                                 )}

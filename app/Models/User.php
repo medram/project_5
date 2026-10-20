@@ -74,6 +74,16 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $this->hasMany(CustomDomain::class);
     }
 
+    public function trackingPixels(): HasMany
+    {
+        return $this->hasMany(TrackingPixel::class);
+    }
+
+    public function linkPages(): HasMany
+    {
+        return $this->hasMany(LinkPage::class);
+    }
+
     public function subscription(): HasOne
     {
         return $this->hasOne(UserSubscription::class);

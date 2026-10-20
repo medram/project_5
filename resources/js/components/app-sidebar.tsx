@@ -1,10 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Activity,
     BarChart3,
     CreditCard,
     Folder,
     Globe2,
     Link2,
+    Megaphone,
     PanelsTopLeft,
     QrCode,
     ShieldCheck,
@@ -27,6 +29,8 @@ import { index as billingIndex } from '@/routes/billing';
 import { index as customDomainsIndex } from '@/routes/custom-domains';
 import { index as adminIndex } from '@/routes/admin';
 import { index as bioPagesIndex } from '@/routes/bio-pages';
+import { index as linkPagesIndex } from '@/routes/link-pages';
+import { index as trackingPixelsIndex } from '@/routes/tracking-pixels';
 import { index as foldersIndex } from '@/routes/folders';
 import { index as qrCodesIndex } from '@/routes/qr-codes';
 import type { NavItem } from '@/types';
@@ -66,6 +70,16 @@ const mainNavItems: NavItem[] = [
         title: 'Bio pages',
         href: bioPagesIndex(),
         icon: PanelsTopLeft,
+    },
+    {
+        title: 'Link pages',
+        href: linkPagesIndex(),
+        icon: Megaphone,
+    },
+    {
+        title: 'Tracking pixels',
+        href: trackingPixelsIndex(),
+        icon: Activity,
     },
 ];
 

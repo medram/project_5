@@ -6,6 +6,8 @@ use App\Models\AnalyticsEvent;
 use App\Models\BioLink;
 use App\Models\BioPage;
 use App\Models\Link;
+use App\Models\LinkPage;
+use App\Models\LinkPageItem;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -24,6 +26,11 @@ class AnalyticsTracker
 
     public function __construct(private readonly TrackingConsent $consent) {}
 
+    public function canTrack(Request $request): bool
+    {
+        return $this->isEnabled() && $this->consent->allows($request);
+    }
+
     /**
      * @param  array<string, mixed>  $references
      */
@@ -37,7 +44,7 @@ class AnalyticsTracker
             throw new InvalidArgumentException("Unsupported analytics event [{$eventName}].");
         }
 
-        if (! $this->isEnabled() || ! $this->consent->allows($request)) {
+        if (! $this->canTrack($request)) {
             return null;
         }
 
@@ -64,6 +71,8 @@ class AnalyticsTracker
         $link = $references['link'] ?? null;
         $bioPage = $references['bioPage'] ?? null;
         $bioLink = $references['bioLink'] ?? null;
+        $linkPage = $references['linkPage'] ?? null;
+        $linkPageItem = $references['linkPageItem'] ?? null;
 
         if ($link !== null) {
             if (! $link instanceof Link || $link->user_id !== $user->id) {
@@ -93,6 +102,28 @@ class AnalyticsTracker
             }
 
             $attributes['bio_link_id'] = $bioLink->id;
+        }
+
+        if ($linkPage !== null) {
+            if (! $linkPage instanceof LinkPage || $linkPage->user_id !== $user->id) {
+                throw new InvalidArgumentException('Analytics link page reference must belong to the account.');
+            }
+
+            $attributes['link_page_id'] = $linkPage->id;
+        }
+
+        if ($linkPageItem !== null) {
+            if (! $linkPageItem instanceof LinkPageItem) {
+                throw new InvalidArgumentException('Analytics link page item reference is invalid.');
+            }
+
+            $linkPageItemOwnerId = $linkPageItem->linkPage()->value('user_id');
+
+            if ((int) $linkPageItemOwnerId !== $user->id) {
+                throw new InvalidArgumentException('Analytics link page item reference must belong to the account.');
+            }
+
+            $attributes['link_page_item_id'] = $linkPageItem->id;
         }
 
         return $attributes;

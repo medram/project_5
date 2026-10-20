@@ -159,17 +159,22 @@
     }
 }
 
-.bio-page-shell {
+.bio-page-shell,
+.link-page-shell {
     min-height: 100svh;
     overflow-x: clip;
     background: var(--muted);
     padding: 1rem;
 }
 
-.bio-page-frame {
+.bio-page-frame,
+.link-page-frame {
     width: min(100%, 38rem);
     margin: auto;
     padding-block: clamp(2rem, 8vh, 5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
 .bio-page-presentation {
@@ -231,7 +236,8 @@
 }
 
 @media (min-width: 40rem) {
-    .bio-page-shell {
+    .bio-page-shell,
+    .link-page-shell {
         padding: 2rem;
     }
 }
