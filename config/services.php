@@ -46,6 +46,13 @@ return [
             'hash_key_version' => env('ANALYTICS_HASH_KEY_VERSION'),
             'retention_days' => (int) env('ANALYTICS_RETENTION_DAYS', 90),
         ],
+        'webhooks' => [
+            'retry_delays' => array_map('intval', explode(',', (string) env('WEBHOOK_RETRY_DELAYS', '60,300'))),
+            'connect_timeout' => (int) env('WEBHOOK_CONNECT_TIMEOUT', 3),
+            'timeout' => (int) env('WEBHOOK_TIMEOUT', 10),
+            'max_attempts' => (int) env('WEBHOOK_MAX_ATTEMPTS', 3),
+            'excerpt_bytes' => (int) env('WEBHOOK_EXCERPT_BYTES', 500),
+        ],
     ],
 
 ];

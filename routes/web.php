@@ -25,6 +25,8 @@ use App\Http\Controllers\PublicLinkPageController;
 use App\Http\Controllers\PublicLinkPageItemController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\TrackingConsentController;
+use App\Http\Controllers\WebhookController;
+use App\Http\Controllers\WebhookDeliveryController;
 use App\Http\Controllers\TrackingPixelController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +41,14 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
     Route::get('custom-domains', [CustomDomainController::class, 'index'])->name('custom-domains.index');
     Route::get('analytics', AccountAnalyticsController::class)->name('analytics.index');
 
+
+    Route::get('webhooks', [WebhookController::class, 'index'])->name('webhooks.index');
+    Route::post('webhooks', [WebhookController::class, 'store'])->name('webhooks.store');
+    Route::patch('webhooks/{webhook}', [WebhookController::class, 'update'])->name('webhooks.update');
+    Route::post('webhooks/{webhook}/rotate', [WebhookController::class, 'rotate'])->name('webhooks.rotate');
+    Route::delete('webhooks/{webhook}', [WebhookController::class, 'destroy'])->name('webhooks.destroy');
+    Route::get('webhooks/{webhook}/deliveries', [WebhookDeliveryController::class, 'index'])
+        ->name('webhooks.deliveries.index');
     Route::get('tracking-pixels', [TrackingPixelController::class, 'index'])->name('tracking-pixels.index');
     Route::post('tracking-pixels', [TrackingPixelController::class, 'store'])->name('tracking-pixels.store');
     Route::patch('tracking-pixels/{trackingPixel}', [TrackingPixelController::class, 'update'])

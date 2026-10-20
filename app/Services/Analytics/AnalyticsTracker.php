@@ -10,9 +10,11 @@ use App\Models\LinkOverlay;
 use App\Models\LinkPage;
 use App\Models\LinkPageItem;
 use App\Models\User;
+use App\Services\Webhooks\WebhookDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Throwable;
 
 class AnalyticsTracker
 {
@@ -25,7 +27,10 @@ class AnalyticsTracker
         'bio_page.clicked',
     ];
 
-    public function __construct(private readonly TrackingConsent $consent) {}
+    public function __construct(
+        private readonly TrackingConsent $consent,
+        private readonly WebhookDispatcher $webhooks,
+    ) {}
 
     public function canTrack(Request $request): bool
     {
@@ -49,7 +54,7 @@ class AnalyticsTracker
             return null;
         }
 
-        return $user->analyticsEvents()->create([
+        $event = $user->analyticsEvents()->create([
             'uuid' => (string) Str::uuid(),
             'event_name' => $eventName,
             'occurred_at' => now('UTC'),
@@ -60,6 +65,14 @@ class AnalyticsTracker
             'platform' => $this->platform($request),
             ...$this->referenceAttributes($user, $references),
         ]);
+
+        try {
+            $this->webhooks->dispatch($event);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        return $event;
     }
 
     /**

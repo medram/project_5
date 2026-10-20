@@ -35,5 +35,6 @@ export type BillingPageProps = {
         domains: UsageMetric;
         pixels: UsageMetric;
         linkPages: UsageMetric;
+        webhooks: UsageMetric;
     };
 };

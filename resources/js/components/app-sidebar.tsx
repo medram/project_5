@@ -11,6 +11,7 @@ import {
     PanelsTopLeft,
     QrCode,
     ShieldCheck,
+    Webhook,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -33,6 +34,7 @@ import { index as bioPagesIndex } from '@/routes/bio-pages';
 import { index as linkPagesIndex } from '@/routes/link-pages';
 import { index as overlaysIndex } from '@/routes/overlays';
 import { index as trackingPixelsIndex } from '@/routes/tracking-pixels';
+import { index as webhooksIndex } from '@/routes/webhooks';
 import { index as foldersIndex } from '@/routes/folders';
 import { index as qrCodesIndex } from '@/routes/qr-codes';
 import type { NavItem } from '@/types';
@@ -87,6 +89,11 @@ const mainNavItems: NavItem[] = [
         title: 'Tracking pixels',
         href: trackingPixelsIndex(),
         icon: Activity,
+    },
+    {
+        title: 'Webhooks',
+        href: webhooksIndex(),
+        icon: Webhook,
     },
 ];
 

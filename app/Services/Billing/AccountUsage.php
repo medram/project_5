@@ -22,6 +22,7 @@ class AccountUsage
             'domains' => $this->metricFor($user, 'domains'),
             'pixels' => $this->metricFor($user, 'pixels'),
             'linkPages' => $this->metricFor($user, 'link_pages'),
+            'webhooks' => $this->metricFor($user, 'webhooks'),
         ];
     }
 
@@ -37,6 +38,7 @@ class AccountUsage
             'domains' => $this->metric('Custom domains', $user->customDomains()->count(), $subscription->plan->domain_limit),
             'pixels' => $this->metric('Tracking pixels', $user->trackingPixels()->count(), $subscription->plan->pixel_limit),
             'link_pages' => $this->metric('Link pages', $user->linkPages()->count(), $subscription->plan->link_page_limit),
+            'webhooks' => $this->metric('Webhooks', $user->webhooks()->count(), $subscription->plan->webhook_limit),
             default => throw new InvalidArgumentException("Unknown metered resource [{$metric}]."),
         };
     }

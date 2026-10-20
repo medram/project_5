@@ -22,7 +22,7 @@ URL, so normal availability and access-code controls still apply after a scan.
 
 ## Account plans and local billing
 
-Every account receives a local free subscription after migration or registration. The billing page enforces short-link limits now and will show other metered resources as their modules are enabled. No Stripe, PayPal, checkout form, invoices, taxes, or payment processing are configured in this repository.
+Every account receives a local free subscription after migration or registration. The billing page reports usage for short links, custom domains, tracking pixels, link pages, and webhooks and enforces their plan limits. No Stripe, PayPal, checkout form, invoices, taxes, or payment processing are configured in this repository.
 
 ## Administration
 
@@ -36,6 +36,35 @@ docker compose run --rm app php artisan linkpilot:grant-admin user@example.test
 counts; it never lists private content, destinations, visitor data, or secrets.
 Suspending an account clears its database sessions and remember token while
 leaving its already-public content available.
+
+## Webhooks
+
+Each account can register HTTPS endpoints that receive consented analytics
+events for that account. `Pro` accounts may keep five webhooks; the `Free`
+plan allows none.
+
+Deliveries are queued, so a worker must be running:
+
+```bash
+docker compose up app queue
+```
+
+Every delivery is a JSON `POST` signed with HMAC-SHA256 over the raw body:
+
+```bash
+X-LinkPilot-Signature: sha256=<hex digest>
+X-LinkPilot-Event: link.clicked
+X-LinkPilot-Timestamp: 2026-01-01T00:00:00Z
+User-Agent: LinkPilot-Webhooks/1.0
+```
+
+LinkPilot signs with the secret printed once when a webhook is created or its
+secret is rotated; secrets are stored encrypted and never shown again. Endpoints
+must be public HTTPS URLs without embedded credentials, and non-public
+addresses (loopback, private, link-local, reserved) are rejected and re-checked
+before every attempt, so deliveries never reach an internal host. Failed
+deliveries retry with the delays in `WEBHOOK_RETRY_DELAYS` before the delivery
+is marked failed; the retry schedule and timeouts live under `services.linkpilot.webhooks`.
 
 ## Requirements
 
@@ -57,7 +86,14 @@ docker compose run --rm app npm run build
 docker compose up --build
 ```
 
-Keep the final command running while using the application. In another terminal, rerun migrations after pulling schema changes:
+Keep the final command running while using the application, and run the queue
+worker alongside it so queued webhook deliveries are attempted:
+
+```bash
+docker compose up app queue
+```
+
+In another terminal, rerun migrations after pulling schema changes:
 
 ```bash
 docker compose run --rm app php artisan migrate
