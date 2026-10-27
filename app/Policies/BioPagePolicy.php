@@ -9,16 +9,16 @@ class BioPagePolicy
 {
     public function view(User $user, BioPage $bioPage): bool
     {
-        return $user->is($bioPage->user);
+        return $bioPage->workspace !== null && $user->can('manageContent', $bioPage->workspace);
     }
 
     public function update(User $user, BioPage $bioPage): bool
     {
-        return $user->is($bioPage->user);
+        return $this->view($user, $bioPage);
     }
 
     public function delete(User $user, BioPage $bioPage): bool
     {
-        return $user->is($bioPage->user);
+        return $this->view($user, $bioPage);
     }
 }

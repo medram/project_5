@@ -1,41 +1,62 @@
-import { useEffect, useRef } from 'react';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    type ReactNode,
+} from 'react';
 import type {
     PublicTrackingPixel,
+    PublicTrackingPixelsByTrigger,
     TrackingPixelProvider,
 } from '@/types/link-pages';
 
+type TrackingTrigger = keyof PublicTrackingPixelsByTrigger;
 type MetaPixelFunction = ((...args: unknown[]) => void) & {
+    callMethod?: (...args: unknown[]) => void;
     loaded?: boolean;
+    push?: MetaPixelFunction;
     queue?: unknown[][];
     version?: string;
 };
-
 type PixelRuntime = {
     initializedMeta: Set<string>;
     initializedGoogle: Set<string>;
 };
+type PublicTrackingContextValue = (trigger: TrackingTrigger) => void;
+
+const PublicTrackingContext = createContext<PublicTrackingContextValue>(
+    () => {},
+);
+
+const eventNames: Record<TrackingTrigger, { meta: string; google: string }> = {
+    page_view: { meta: 'PageView', google: 'page_view' },
+    button_click: { meta: 'ButtonClick', google: 'select_content' },
+    lead_submit: { meta: 'Lead', google: 'generate_lead' },
+};
 
 declare global {
     interface Window {
-        __linkpilotPixelRuntime?: PixelRuntime;
-        dataLayer?: unknown[];
         fbq?: MetaPixelFunction;
-        gtag?: (...args: unknown[]) => void;
         _fbq?: MetaPixelFunction;
+        gtag?: (...args: unknown[]) => void;
+        dataLayer?: unknown[][];
+        __linkPilotPixelRuntime?: PixelRuntime;
     }
 }
 
-function providerIdIsSafe(provider: TrackingPixelProvider, identifier: string): boolean {
+function providerIdIsSafe(
+    provider: TrackingPixelProvider,
+    identifier: string,
+): boolean {
     return provider === 'meta_pixel'
         ? /^\d{5,20}$/.test(identifier)
         : /^G-[A-Z0-9]{6,20}$/.test(identifier);
 }
 
 function appendScript(id: string, source: string): void {
-    if (document.getElementById(id) !== null) {
-        return;
-    }
-
+    if (document.getElementById(id) !== null) return;
     const script = document.createElement('script');
     script.id = id;
     script.async = true;
@@ -44,96 +65,138 @@ function appendScript(id: string, source: string): void {
 }
 
 function runtime(): PixelRuntime {
-    window.__linkpilotPixelRuntime ??= {
-        initializedMeta: new Set<string>(),
-        initializedGoogle: new Set<string>(),
+    window.__linkPilotPixelRuntime ??= {
+        initializedMeta: new Set(),
+        initializedGoogle: new Set(),
     };
-
-    return window.__linkpilotPixelRuntime;
+    return window.__linkPilotPixelRuntime;
 }
 
 function metaPixel(): MetaPixelFunction {
-    if (window.fbq) {
-        return window.fbq;
-    }
-
+    if (window.fbq) return window.fbq;
     const fbq = ((...args: unknown[]) => {
-        fbq.queue?.push(args);
+        if (fbq.callMethod) {
+            fbq.callMethod.apply(fbq, args);
+        } else {
+            fbq.queue?.push(args);
+        }
     }) as MetaPixelFunction;
-
-    fbq.queue = [];
     fbq.loaded = true;
     fbq.version = '2.0';
-    window.fbq = fbq;
-    window._fbq = fbq;
-
+    fbq.push = fbq;
+    fbq.queue = [];
+    window.fbq = window._fbq = fbq;
     return fbq;
 }
 
 function googleTag(): (...args: unknown[]) => void {
     window.dataLayer ??= [];
-    window.gtag ??= (...args: unknown[]) => {
-        window.dataLayer?.push(args);
-    };
-
+    window.gtag ??= (...args: unknown[]) => window.dataLayer?.push(args);
     return window.gtag;
+}
+
+function uniqueSafePixels(
+    pixels: PublicTrackingPixel[],
+): PublicTrackingPixel[] {
+    const seen = new Set<string>();
+    return pixels.filter((pixel) => {
+        if (!providerIdIsSafe(pixel.provider, pixel.identifier)) return false;
+        const key = `${pixel.provider}:${pixel.identifier}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
+function initializeAndTrack(
+    pixel: PublicTrackingPixel,
+    trigger: TrackingTrigger,
+): void {
+    const event = eventNames[trigger];
+    if (pixel.provider === 'meta_pixel') {
+        const fbq = metaPixel();
+        appendScript(
+            'linkpilot-meta-pixel',
+            'https://connect.facebook.net/en_US/fbevents.js',
+        );
+        if (!runtime().initializedMeta.has(pixel.identifier)) {
+            fbq('init', pixel.identifier);
+            runtime().initializedMeta.add(pixel.identifier);
+        }
+        if (trigger === 'button_click') {
+            fbq('trackSingleCustom', pixel.identifier, event.meta);
+        } else {
+            fbq('trackSingle', pixel.identifier, event.meta);
+        }
+        return;
+    }
+
+    const gtag = googleTag();
+    appendScript(
+        `linkpilot-google-analytics-${pixel.identifier}`,
+        `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(pixel.identifier)}`,
+    );
+    if (!runtime().initializedGoogle.has(pixel.identifier)) {
+        gtag('js', new Date());
+        gtag('config', pixel.identifier, { send_page_view: false });
+        runtime().initializedGoogle.add(pixel.identifier);
+    }
+    gtag('event', event.google, {
+        page_path: window.location.pathname,
+    });
+}
+
+export function usePublicTrackingEvent(): PublicTrackingContextValue {
+    return useContext(PublicTrackingContext);
 }
 
 export function PublicTrackingPixels({
     pixels,
+    consent,
+    children,
 }: {
-    pixels: PublicTrackingPixel[];
+    pixels: PublicTrackingPixelsByTrigger;
+    consent: 'granted' | 'denied' | null;
+    children: ReactNode;
 }) {
     const emittedViews = useRef(new Set<string>());
+    const safePixels = {
+        page_view: uniqueSafePixels(pixels.page_view),
+        button_click: uniqueSafePixels(pixels.button_click),
+        lead_submit: uniqueSafePixels(pixels.lead_submit),
+    };
+
+    const emit = useCallback<PublicTrackingContextValue>(
+        (trigger) => {
+            if (consent !== 'granted') return;
+            for (const pixel of safePixels[trigger]) {
+                initializeAndTrack(pixel, trigger);
+            }
+        },
+        [consent, pixels],
+    );
 
     useEffect(() => {
-        const safePixels = pixels.filter((pixel) =>
-            providerIdIsSafe(pixel.provider, pixel.identifier),
-        );
-        const viewKey = `${window.location.pathname}:${safePixels
+        if (consent !== 'granted') return;
+        const viewKey = `${window.location.pathname}:${safePixels.page_view
             .map((pixel) => `${pixel.provider}:${pixel.identifier}`)
             .sort()
             .join(',')}`;
-
-        if (safePixels.length === 0 || emittedViews.current.has(viewKey)) {
+        if (
+            safePixels.page_view.length === 0 ||
+            emittedViews.current.has(viewKey)
+        ) {
             return;
         }
-
         emittedViews.current.add(viewKey);
-
-        for (const pixel of safePixels) {
-            if (pixel.provider === 'meta_pixel') {
-                appendScript(
-                    'linkpilot-meta-pixel',
-                    'https://connect.facebook.net/en_US/fbevents.js',
-                );
-
-                const fbq = metaPixel();
-                if (!runtime().initializedMeta.has(pixel.identifier)) {
-                    fbq('init', pixel.identifier);
-                    runtime().initializedMeta.add(pixel.identifier);
-                }
-
-                fbq('track', 'PageView');
-                continue;
-            }
-
-            appendScript(
-                `linkpilot-google-analytics-${pixel.identifier}`,
-                `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(pixel.identifier)}`,
-            );
-
-            const gtag = googleTag();
-            if (!runtime().initializedGoogle.has(pixel.identifier)) {
-                gtag('js', new Date());
-                runtime().initializedGoogle.add(pixel.identifier);
-            }
-
-            gtag('config', pixel.identifier, {
-                page_path: window.location.pathname,
-            });
+        for (const pixel of safePixels.page_view) {
+            initializeAndTrack(pixel, 'page_view');
         }
-    }, [pixels]);
+    }, [consent, pixels]);
 
-    return null;
+    return (
+        <PublicTrackingContext.Provider value={emit}>
+            {children}
+        </PublicTrackingContext.Provider>
+    );
 }

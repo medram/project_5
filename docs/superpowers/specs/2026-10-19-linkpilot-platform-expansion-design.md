@@ -42,11 +42,11 @@ The existing LinkPilot sidebar is the product's visual system. New sections use 
 
 ### Workspace roles
 
-| Role | Content | Active integration association | Integration records | Members | Billing | P1 workspace deletion |
-|---|---|---|---|---|---|---|
-| `owner` | manage | select | manage | manage admins and members | manage | unavailable |
-| `admin` | manage | select | manage | invite, change, and remove members only | view | unavailable |
-| `member` | manage | select | view | view | view | unavailable |
+| Role     | Content | Active integration association | Integration records | Members                                 | Billing | P1 workspace deletion |
+| -------- | ------- | ------------------------------ | ------------------- | --------------------------------------- | ------- | --------------------- |
+| `owner`  | manage  | select                         | manage              | manage admins and members               | manage  | unavailable           |
+| `admin`  | manage  | select                         | manage              | invite, change, and remove members only | view    | unavailable           |
+| `member` | manage  | select                         | view                | view                                    | view    | unavailable           |
 
 Content means folders, short links, QR access, bio pages, link pages, and overlays. A member may select an already-active workspace domain, overlay, or pixel while editing content, but cannot create, edit, delete, activate, or deactivate an integration record. A platform administrator is not silently made a member of every workspace; platform authority is restricted to `/admin` controls.
 
@@ -75,11 +75,11 @@ The active workspace is stored on the user record, not in an untrusted browser-o
 
 The migration seeds this exact USD catalog. A `null` resource limit means unlimited; initial plans otherwise use the values below.
 
-| Code | Monthly minor units | Links | Domains | Pixels | Members | Webhooks | Link pages |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| `free` | 0 | 25 | 0 | 0 | 1 | 0 | 1 |
-| `pro` | 2900 | 500 | 3 | 10 | 5 | 5 | 25 |
-| `business` | 9900 | unlimited | unlimited | unlimited | unlimited | unlimited | unlimited |
+| Code       | Monthly minor units |     Links |   Domains |    Pixels |   Members |  Webhooks | Link pages |
+| ---------- | ------------------: | --------: | --------: | --------: | --------: | --------: | ---------: |
+| `free`     |                   0 |        25 |         0 |         0 |         1 |         0 |          1 |
+| `pro`      |                2900 |       500 |         3 |        10 |         5 |         5 |         25 |
+| `business` |                9900 | unlimited | unlimited | unlimited | unlimited | unlimited |  unlimited |
 
 Personal and newly created shared workspaces begin on `free`; P1 subscriptions are always `active`. A platform administrator can directly replace a workspace plan in one transaction. A user can only choose the free plan for their own workspace. A downgrade never deletes, disables, or unpublishes existing resources: it blocks only future creation of the over-limit resource and visibly reports the count. Links, domains, pixels, webhooks, and link pages count whether active or inactive; active members include the owner; unexpired pending invitations reserve a member slot. Deletion, invitation revocation, or expiry frees capacity. Acceptance rechecks the member limit under a workspace lock.
 
@@ -148,14 +148,14 @@ The exact body preserves this key order and uses JSON with unescaped slashes/uni
 
 ```json
 {
-  "schema_version": 1,
-  "event_id": "uuid",
-  "event": "link.clicked",
-  "occurred_at": "2026-10-19T12:00:00Z",
-  "workspace_id": 123,
-  "data": {
-    "link": {"id": 456, "slug": "launch"}
-  }
+    "schema_version": 1,
+    "event_id": "uuid",
+    "event": "link.clicked",
+    "occurred_at": "2026-10-19T12:00:00Z",
+    "workspace_id": 123,
+    "data": {
+        "link": { "id": 456, "slug": "launch" }
+    }
 }
 ```
 
@@ -198,11 +198,11 @@ Creation and every attempt resolve the endpoint fresh, reject unresolved/private
 
 The following reference inventory remains intentionally catalogued, not silently omitted. It becomes eligible only after the platform expansion above is stable:
 
-| Slice | Deferred capability | Trigger to start |
-|---|---|---|
-| Developer platform | API keys and authenticated public API | A consumer needs automation beyond outbound webhooks. |
-| Bio depth | widgets, media embeds, social profiles, themes, scheduling, and bio-specific insights | A creator needs a richer public profile than link pages. |
-| Link creation depth | tags, previews, UTM builder, direct QR records, QR styling, files, and exports | A team needs campaign production at scale. |
-| Billing provider | Stripe/PayPal checkout, invoice/tax handling, provider webhooks | Merchant account, products, keys, and compliance policy are supplied. |
-| Platform settings | notifications, localization, email/auth/GDPR/SEO/system configuration | There is an operational owner for product-wide policy. |
-| Analytics depth | geographic aggregation, live traffic, custom events, attribution, and exports | Privacy policy and data-processing basis are approved. |
+| Slice               | Deferred capability                                                                   | Trigger to start                                                      |
+| ------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Developer platform  | API keys and authenticated public API                                                 | A consumer needs automation beyond outbound webhooks.                 |
+| Bio depth           | widgets, media embeds, social profiles, themes, scheduling, and bio-specific insights | A creator needs a richer public profile than link pages.              |
+| Link creation depth | tags, previews, UTM builder, direct QR records, QR styling, files, and exports        | A team needs campaign production at scale.                            |
+| Billing provider    | Stripe/PayPal checkout, invoice/tax handling, provider webhooks                       | Merchant account, products, keys, and compliance policy are supplied. |
+| Platform settings   | notifications, localization, email/auth/GDPR/SEO/system configuration                 | There is an operational owner for product-wide policy.                |
+| Analytics depth     | geographic aggregation, live traffic, custom events, attribution, and exports         | Privacy policy and data-processing basis are approved.                |

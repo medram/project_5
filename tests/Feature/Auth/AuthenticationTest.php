@@ -32,6 +32,31 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('dashboard', absolute: false));
     }
 
+    public function test_users_can_authenticate_with_inertia_json_credentials(): void
+    {
+        $user = User::factory()->create();
+
+        $this->call(
+            'POST',
+            route('login.store'),
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'text/html, application/xhtml+xml',
+                'HTTP_X_INERTIA' => 'true',
+                'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest',
+            ],
+            json_encode([
+                'email' => $user->email,
+                'password' => 'password',
+            ], JSON_THROW_ON_ERROR),
+        );
+
+        $this->assertAuthenticated();
+    }
+
     public function test_users_with_two_factor_enabled_are_redirected_to_two_factor_challenge()
     {
         $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());

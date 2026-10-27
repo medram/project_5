@@ -1,0 +1,266 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "admin-settings",
+    "area": "Administration",
+    "name": "Platform settings",
+    "status": "planned",
+    "requirements": [
+        {
+            "id": "ADM-6",
+            "text": "Platform administration includes roles, global insights, localization, and site, system, SEO, email, auth, GDPR, and analytics settings.",
+            "priority": "P3",
+            "status": "planned"
+        },
+        {
+            "id": "ASET-1",
+            "text": "A typed settings repository accepts only whitelisted fields per section and encrypts secrets while environment security values take precedence.",
+            "priority": "P0",
+            "status": "planned"
+        },
+        {
+            "id": "ASET-2",
+            "text": "Settings drive real site, link, bio, subscription, localization, authentication, upload, email, system, analytics, GDPR, captcha, SEO, ads, and safe brand-verification behavior.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "ASET-3",
+            "text": "Theme, menu, ad, verification, and branding extensibility is allowlisted; raw HTML, JavaScript, and unrestricted CSS are never stored or rendered.",
+            "priority": "P0",
+            "status": "planned"
+        }
+    ],
+    "routes": [
+        "/admin/settings/general",
+        "/admin/settings/links",
+        "/admin/settings/biolinks",
+        "/admin/settings/landing",
+        "/admin/settings/themes",
+        "/admin/settings/menus",
+        "/admin/settings/subscriptions",
+        "/admin/settings/localization",
+        "/admin/settings/authentication",
+        "/admin/settings/uploading",
+        "/admin/settings/email",
+        "/admin/settings/system",
+        "/admin/settings/analytics",
+        "/admin/settings/brand-verification",
+        "/admin/settings/captcha",
+        "/admin/settings/gdpr",
+        "/admin/settings/seo",
+        "/admin/settings/ads"
+    ],
+    "dependencies": ["admin-users-roles", "billing", "analytics"],
+    "externalPrerequisites": [
+        "Mailer credentials for live test-email action",
+        "Configured captcha credentials when captcha is enabled"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "ASET-AC-1",
+            "text": "Every settings field is validated by a section whitelist and every mutation produces a redacted admin audit log."
+        },
+        {
+            "id": "ASET-AC-2",
+            "text": "Partially configured external providers remain disabled rather than appearing operational."
+        },
+        {
+            "id": "ASET-AC-3",
+            "text": "The reference custom-code screen is treated as a safety divergence and is not reproduced."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/admin/settings",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:02Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-index-desktop.png",
+            "observedBehaviors": [
+                "The settings index presents categories in a secondary navigation.",
+                "The administration sidebar remains distinct from user resource navigation."
+            ]
+        },
+        {
+            "route": "/admin/settings/general",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:42Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-general-desktop.png",
+            "observedBehaviors": [
+                "General platform identity and contact fields appear in a labelled form."
+            ]
+        },
+        {
+            "route": "/admin/settings/links",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:44Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-links-desktop.png",
+            "observedBehaviors": [
+                "Short-link defaults and feature controls appear in a dedicated settings section."
+            ]
+        },
+        {
+            "route": "/admin/settings/biolinks",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:46Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-biolinks-desktop.png",
+            "observedBehaviors": [
+                "Bio-page defaults and feature controls appear in a labelled settings form."
+            ]
+        },
+        {
+            "route": "/admin/settings/landing",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:41Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-landing-desktop.png",
+            "observedBehaviors": [
+                "Landing-page controls are grouped in a dedicated settings section."
+            ]
+        },
+        {
+            "route": "/admin/settings/themes",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:42Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-themes-desktop.png",
+            "observedBehaviors": [
+                "Theme selection and visual-token controls appear in a dedicated settings section."
+            ]
+        },
+        {
+            "route": "/admin/settings/menus",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:52Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-menus-desktop.png",
+            "observedBehaviors": [
+                "Menu/navigation controls appear in a dedicated settings section."
+            ]
+        },
+        {
+            "route": "/admin/settings/subscriptions",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:53Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-subscriptions-desktop.png",
+            "observedBehaviors": [
+                "Subscription defaults and payment-related controls appear in the settings form."
+            ]
+        },
+        {
+            "route": "/admin/settings/localization",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:55Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-localization-desktop.png",
+            "observedBehaviors": [
+                "Default language, timezone, and locale controls appear in the localization section."
+            ]
+        },
+        {
+            "route": "/admin/settings/authentication",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:57Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-authentication-desktop.png",
+            "observedBehaviors": [
+                "Authentication settings expose registration and sign-in controls."
+            ]
+        },
+        {
+            "route": "/admin/settings/uploading",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:59Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-uploading-desktop.png",
+            "observedBehaviors": [
+                "Upload limits and accepted-file controls appear in a dedicated settings section."
+            ]
+        },
+        {
+            "route": "/admin/settings/email",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:01Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-email-desktop.png",
+            "observedBehaviors": [
+                "Email sender and transport fields are grouped in the settings form."
+            ]
+        },
+        {
+            "route": "/admin/settings/system",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:44Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-system-desktop.png",
+            "observedBehaviors": [
+                "System settings show runtime/maintenance controls and system information."
+            ]
+        },
+        {
+            "route": "/admin/settings/analytics",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:45Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-analytics-desktop.png",
+            "observedBehaviors": [
+                "Analytics settings are grouped into labelled provider/configuration sections."
+            ]
+        },
+        {
+            "route": "/admin/settings/captcha",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:47Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-captcha-desktop.png",
+            "observedBehaviors": [
+                "Captcha provider selection and credential fields appear in a labelled form."
+            ]
+        },
+        {
+            "route": "/admin/settings/gdpr",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:48Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-gdpr-desktop.png",
+            "observedBehaviors": [
+                "GDPR settings expose consent and policy-related controls."
+            ]
+        },
+        {
+            "route": "/admin/settings/seo",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:17Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-seo-desktop.png",
+            "observedBehaviors": [
+                "SEO title, description, and sharing fields appear in a dedicated settings section."
+            ]
+        },
+        {
+            "route": "/admin/settings/ads",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:19Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-ads-desktop.png",
+            "observedBehaviors": [
+                "The reference settings form exposes advertising-provider fields and enablement controls."
+            ]
+        },
+        {
+            "route": "/admin/settings/custom-code",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:10Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-custom-code-desktop.png",
+            "observedBehaviors": [
+                "The reference exposes custom-code text areas; LinkPilot treats this as a safety divergence."
+            ]
+        }
+    ],
+    "implementationEvidence": []
+}

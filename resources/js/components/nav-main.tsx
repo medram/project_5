@@ -5,32 +5,64 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem } from '@/types';
 
-export function NavMain({ items }: { items: NavItem[] }) {
-    const { isCurrentUrl } = useCurrentUrl();
+type Section = {
+    title: string;
+    items: NavItem[];
+};
+
+export function NavMain({ sections }: { sections: Section[] }) {
+    const { isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
+    const { isMobile, setOpenMobile } = useSidebar();
 
     return (
-        <SidebarGroup className="px-2 py-0">
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
-            <SidebarMenu>
-                {items.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                            asChild
-                            isActive={isCurrentUrl(item.href)}
-                            tooltip={{ children: item.title }}
-                        >
-                            <Link href={item.href} prefetch>
-                                {item.icon && <item.icon />}
-                                <span>{item.title}</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                ))}
-            </SidebarMenu>
-        </SidebarGroup>
+        <>
+            {sections.map((section) => (
+                <SidebarGroup key={section.title} className="px-2 py-0">
+                    <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+                    <SidebarMenu>
+                        {section.items.map((item) => {
+                            const active = isCurrentOrParentUrl(item.href);
+                            const current = active && isCurrentUrl(item.href);
+
+                            return (
+                                <SidebarMenuItem key={item.title}>
+                                    <SidebarMenuButton
+                                        asChild
+                                        className="min-h-11"
+                                        isActive={active}
+                                        tooltip={{ children: item.title }}
+                                    >
+                                        <Link
+                                            href={item.href}
+                                            prefetch
+                                            aria-current={
+                                                active
+                                                    ? current
+                                                        ? 'page'
+                                                        : 'location'
+                                                    : undefined
+                                            }
+                                            onClick={() => {
+                                                if (isMobile) {
+                                                    setOpenMobile(false);
+                                                }
+                                            }}
+                                        >
+                                            {item.icon && <item.icon />}
+                                            <span>{item.title}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            );
+                        })}
+                    </SidebarMenu>
+                </SidebarGroup>
+            ))}
+        </>
     );
 }

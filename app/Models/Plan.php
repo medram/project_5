@@ -15,7 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'domain_limit',
     'pixel_limit',
     'webhook_limit',
-    'link_page_limit',
+    'member_limit',
+    'qr_campaign_limit',
     'is_active',
 ])]
 class Plan extends Model
@@ -32,12 +33,13 @@ class Plan extends Model
             'pixel_limit' => 'integer',
             'webhook_limit' => 'integer',
             'link_page_limit' => 'integer',
-            'is_active' => 'boolean',
+            'qr_campaign_limit' => 'integer',
+            'member_limit' => 'integer',
         ];
     }
 
-    public function subscriptions(): HasMany
+    public function workspaceSubscriptions(): HasMany
     {
-        return $this->hasMany(UserSubscription::class);
+        return $this->hasMany(WorkspaceSubscription::class);
     }
 }

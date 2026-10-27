@@ -4,15 +4,19 @@ namespace App\Http\Requests;
 
 use App\Models\CustomDomain;
 use App\Services\Domains\PublicLinkHostResolver;
+use App\Services\Workspaces\WorkspaceContext;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class StoreCustomDomainRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $workspace = app(WorkspaceContext::class)->currentFor($this->user());
+
+        return Gate::allows('manageIntegrations', $workspace);
     }
 
     protected function prepareForValidation(): void
@@ -62,23 +66,6 @@ class StoreCustomDomainRequest extends FormRequest
             return false;
         }
 
-        $labels = explode('.', $hostname);
-
-        if (count($labels) < 2) {
-            return false;
-        }
-
-        foreach ($labels as $label) {
-            if (
-                $label === ''
-                || strlen($label) > 63
-                || str_starts_with($label, '-')
-                || str_ends_with($label, '-')
-            ) {
-                return false;
-            }
-        }
-
-        return true;
+        return str_contains($hostname, '.');
     }
 }

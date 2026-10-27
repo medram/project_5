@@ -1,0 +1,315 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "short-links",
+    "area": "Resources",
+    "name": "Short links",
+    "status": "in_progress",
+    "requirements": [
+        {
+            "id": "LNK-1",
+            "text": "An active-workspace member can create an HTTP(S) short link with destination URL, title, active flag, and a unique normalized slug.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-2",
+            "text": "Generated slugs retry on collision; custom slugs reject reserved application paths.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-3",
+            "text": "A link can be placed in one folder.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-4",
+            "text": "A link can be scheduled with optional UTC start and expiry timestamps.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-5",
+            "text": "A link can require an access code stored only as a Laravel hash; unlocks are link-specific, versioned, valid for eight hours, and rate-limited to five failed attempts per five minutes per link/visitor cache key.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-6",
+            "text": "Unavailable links return 404 without creating a click or event record.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-7",
+            "text": "A link can select one active custom domain in the active workspace.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-8",
+            "text": "A link can select one active CTA overlay in the active workspace.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-9",
+            "text": "A final short-link delivery writes a rich event only after explicit tracking consent; the aggregate click counter remains independent.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-10",
+            "text": "Link lists support search, filters, tags, safe preview, UTM/custom-parameter building, delivery variants, CSV import/export, and capped bulk actions; mobile cards replace unavailable tables without a misleading view selector, long active-filter values/no-result text stay within the list card, and long destination URLs truncate within short-link cards while preserving full link text.",
+            "priority": "P2",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-11",
+            "text": "Link edits retain immutable delivery snapshots and support an optional owner/admin approval workflow.",
+            "priority": "P3",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-12",
+            "text": "Existing short-link, bio-link, and link-page item destinations reject LinkPilot default aliases and every claimed custom-domain host.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-13",
+            "text": "Published links support guarded direct, splash, local published-page, and LinkPilot-controlled CTA-overlay delivery plus ordered country/device/platform rules.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "LNK-14",
+            "text": "Bulk actions and CSV import/export preserve workspace authorization and return row-level validation outcomes.",
+            "priority": "P2",
+            "status": "in_progress"
+        }
+    ],
+    "routes": [
+        "/dashboard/links",
+        "/dashboard/links/export",
+        "/dashboard/links/import",
+        "/dashboard/links/bulk",
+        "/dashboard/links/{link}",
+        "/dashboard/links/{link}/revisions",
+        "/dashboard/links/{link}/revisions/{revision}/approve",
+        "/dashboard/links/{link}/revisions/{revision}/reject",
+        "/dashboard/link-tags",
+        "/dashboard/links/{link}/insights",
+        "/dashboard/links/{link}/qr-code.svg",
+        "/{slug}",
+        "/{slug}/unlock",
+        "/{slug}/continue"
+    ],
+    "dependencies": [
+        "folders",
+        "custom-domains",
+        "overlays",
+        "tracking-pixels",
+        "analytics",
+        "workspaces"
+    ],
+    "externalPrerequisites": [],
+    "acceptanceCriteria": [
+        {
+            "id": "LNK-AC-1",
+            "text": "Only active-workspace members can view or manage links; mutations and referenced folders, tags, pages, domains, and overlays are checked against that workspace."
+        },
+        {
+            "id": "LNK-AC-2",
+            "text": "Availability, schedule, access code, approval, active/archive state, target validity, and maximum-click checks precede final delivery; stale concurrent requests cannot exceed the configured click limit."
+        },
+        {
+            "id": "LNK-AC-3",
+            "text": "The non-executing preview and final delivery replace every existing occurrence of a configured key, preserve unrelated repeated query values and the fragment, apply non-empty UTM values before non-empty custom values, and use the last non-empty value for each key, including custom over UTM; an empty later duplicate custom row does not erase an earlier non-empty custom value."
+        },
+        {
+            "id": "LNK-AC-4",
+            "text": "No remote frame delivery is exposed; intermediate pages remain LinkPilot-controlled."
+        },
+        {
+            "id": "LNK-AC-5",
+            "text": "Pending revisions are reviewable by authorized owners/admins while the current live delivery remains unchanged until approval; rejection notes and immutable snapshots remain available in history."
+        },
+        {
+            "id": "LNK-AC-6",
+            "text": "CSV import processes rows independently, enforces file-size, row-count, current-workspace reference, and plan/quota limits, and returns bounded row-index/status/error outcomes without echoing sensitive input. Export is deterministic and excludes access-code plaintext and hashes; bulk actions are capped."
+        },
+        {
+            "id": "LNK-AC-7",
+            "text": "Public delivery checks availability, schedule, access, approval, active/archive state, target validity, and click limits before side effects; aggregate count and click row commit atomically, then consented rich events are attempted. Intermediate splash/overlay views create no final click; continuation creates exactly one."
+        },
+        {
+            "id": "LNK-AC-8",
+            "text": "At mobile widths, link lists show cards and hide the table selector; long active search values retain their full accessible filter name while truncating visually, no-result text stays within the empty card, and long destination URLs truncate inside cards while preserving the full destination as link text."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/dashboard",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:00Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/links-list-desktop.png",
+            "observedBehaviors": [
+                "Short links are shown in a dense resource list with per-row actions and metrics.",
+                "The desktop shell includes a left resource navigation and top search."
+            ]
+        },
+        {
+            "route": "/dashboard",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:07:27Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/new-link-dialog-desktop.png",
+            "observedBehaviors": [
+                "A centred link-creation dialog overlays the links list.",
+                "Destination, short URL, title, QR, and advanced-option controls are visible."
+            ]
+        },
+        {
+            "route": "/dashboard",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:07:33Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/new-link-tracking-desktop.png",
+            "observedBehaviors": [
+                "A nested Tracking panel exposes UTM parameter fields and custom parameters.",
+                "The underlying link-creation dialog remains visible behind the nested panel."
+            ]
+        },
+        {
+            "route": "/dashboard",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:07:37Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/new-link-retargeting-desktop.png",
+            "observedBehaviors": [
+                "A nested Retargeting panel shows country, device, and platform destination-rule sections.",
+                "The underlying link-creation dialog remains visible behind the nested panel."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Generated/reserved slugs, unavailable-link side effects, consented direct-link telemetry, telemetry failure resilience, and first-party destination rejection pass behavior coverage.",
+            "reference": "tests/Feature/Links/LinkManagementTest.php; tests/Feature/Links/PublicRedirectTest.php; tests/Feature/Analytics/AnalyticsTrackingTest.php; tests/Feature/BioPages/BioPageManagementTest.php; tests/Feature/LinkPages/LinkPageTest.php; php artisan test (168 tests, 10,347 assertions)",
+            "verifiedAt": "2026-10-21T14:57:29Z"
+        },
+        {
+            "type": "browser",
+            "description": "A consented public direct-link visit redirected to its destination, incremented one aggregate click, and emitted one link.clicked event.",
+            "reference": "http://localhost:8000/phase2-browser",
+            "verifiedAt": "2026-10-21T09:44:31Z"
+        },
+        {
+            "type": "browser",
+            "description": "A zero-link quota account retained the create dialog and rendered its form-level plan limit.",
+            "reference": "http://localhost:8000/links",
+            "verifiedAt": "2026-10-21T09:44:31Z"
+        },
+        {
+            "type": "test",
+            "description": "Workspace-scoped tag creation, generated unique slugs, foreign-tag rejection, tag replacement semantics, and tag filtering with serialized options pass focused regression tests.",
+            "reference": "tests/Feature/Links/LinkTagsTest.php (4 tests, 32 assertions); tests/Feature/Links/LinkManagementTest.php; tests/Feature/Links/LinkInsightsTest.php",
+            "verifiedAt": "2026-10-22T17:33:09Z"
+        },
+        {
+            "type": "browser",
+            "description": "Created a workspace tag, assigned it to a short link, verified the list chip/filter and edit selection, and confirmed a 390px layout without horizontal overflow.",
+            "reference": "product/verification/phase5-link-tags-desktop.png; product/verification/phase5-link-tags-mobile.png; http://localhost:8101/dashboard/links?tag=1",
+            "verifiedAt": "2026-10-22T17:33:09Z"
+        },
+        {
+            "type": "test",
+            "description": "Phase 5A focused suites passed 84 tests and 834 assertions, covering final-delivery guards and telemetry ordering, ordered routing, revision approval/rejection, CSV/bulk scope, workspace-safe folder rollups, link-page target metadata, and legacy migration/backfill/rollback safety.",
+            "reference": "tests/Feature/Links/PublicRedirectTest.php; tests/Feature/Links/PublicLinkDeliveryControlsTest.php; tests/Feature/Links/LinkManagementTest.php; tests/Feature/Links/LinkInsightsTest.php; tests/Feature/Links/LinkTagsTest.php; tests/Feature/Links/LinkCsvTest.php; tests/Feature/Links/LinkRevisionTest.php; tests/Feature/Links/PublicLinkRoutingTest.php; tests/Feature/Folders/FolderManagementTest.php; tests/Feature/Links/AdvancedLinkMigrationTest.php",
+            "verifiedAt": "2026-10-22T20:32:03Z"
+        },
+        {
+            "type": "migration",
+            "description": "A persistent disposable SQLite migration check backfilled click_count from two legacy click rows, set legacy links approved and overlays to their prior explicit mode, preserved link/folder/overlay/click data, and refused rollback after campaign revisions/rules and a click limit were added; SQLite integrity and foreign-key checks passed.",
+            "reference": "tests/Feature/Links/AdvancedLinkMigrationTest.php",
+            "verifiedAt": "2026-10-22T20:32:03Z"
+        },
+        {
+            "type": "browser",
+            "description": "The mobile create-link capture documents the 390px form layout inside the modal, including destination, title, slug, folder, tags, and host controls.",
+            "reference": "product/verification/phase5-link-form-mobile-focused.webp",
+            "verifiedAt": "2026-10-22T20:32:03Z"
+        },
+
+        {
+            "type": "test",
+            "description": "The complete Laravel suite passed 314 tests and 12,845 assertions. Regression coverage verifies claimed-host delivery rejection, stale approval after a host claim, validated list-state preservation through revision review, spreadsheet-safe CSV titles, and explicit overlay delivery mode.",
+            "reference": "php artisan test; tests/Feature/Links/PublicLinkDeliveryControlsTest.php; tests/Feature/Links/LinkRevisionTest.php; tests/Feature/Links/LinkCsvTest.php; tests/Feature/Overlays/OverlayDeliveryTest.php",
+            "verifiedAt": "2026-10-22T20:53:46Z"
+        },
+        {
+            "type": "browser",
+            "description": "At a 390px viewport, revision history shows the expanded delivery snapshot, preserves validated list state in both the page and shell breadcrumbs, and wraps a full 500-character rejection note without horizontal overflow; the desktop capture shows the complete note.",
+            "reference": "product/verification/phase5-link-form-mobile-focused.webp; product/verification/phase5-revision-history-mobile.webp; product/verification/phase5-revision-history-desktop.webp; http://localhost:8101/dashboard/links/27/revisions?search=Phase%205%20Revision%20Reject%20QA&status=pending&sort=title&direction=asc&page=1&view=cards",
+            "verifiedAt": "2026-10-22T21:24:45Z"
+        },
+        {
+            "type": "test",
+            "description": "The complete Laravel suite passed 324 tests and 13,081 assertions after the Phase 5A review fixes, including pending-revision visibility, workspace revision isolation, initial revision snapshots, state-preserving CSV results, review evidence, conditional delivery writes, and link-page/overlay status actions.",
+            "reference": "DB_CONNECTION=sqlite DB_DATABASE=:memory: DB_URL= php artisan test; tests/Feature/Links/LinkManagementTest.php; tests/Feature/Links/LinkCsvTest.php; tests/Feature/Links/LinkRevisionReviewEvidenceTest.php; tests/Feature/Links/LinkRevisionTest.php; tests/Feature/Links/PublicLinkDeliveryControlsTest.php",
+            "verifiedAt": "2026-10-22T21:24:45Z"
+        },
+        {
+            "type": "test",
+            "description": "Phase 5A follow-up suites passed 73 tests and 10,775 assertions, covering exact per-IP access-code throttle expiry, initial pending-link filters, immutable revision labels, stale slug and overlay checks, query-key replacement, and public delivery controls.",
+            "reference": "tests/Feature/Analytics/AnalyticsTrackingTest.php; tests/Feature/Links/LinkManagementTest.php; tests/Feature/Links/LinkRevisionReviewEvidenceTest.php; tests/Feature/Links/LinkRevisionTest.php; tests/Feature/Links/PublicLinkDeliveryControlsTest.php; tests/Feature/Overlays/OverlayDeliveryTest.php; tests/Feature/ProductCatalogTest.php",
+            "verifiedAt": "2026-10-22T22:18:09Z"
+        },
+        {
+            "type": "browser",
+            "description": "At 390x844, an approved link with a pending revision shows Live separately from Pending changes; an unbroken revision title wraps; direct, published-page, and overlay drafts survive mode changes while only the selected target is submitted; the preview replaces old configured query values and preserves unrelated repeated pairs and the fragment.",
+            "reference": "product/verification/phase5a-link-review-state-mobile.png; product/verification/phase5a-unbroken-revision-title-mobile.png; product/verification/phase5a-query-preview-mobile.png",
+            "verifiedAt": "2026-10-22T22:18:09Z"
+        },
+        {
+            "type": "test",
+            "description": "The complete Laravel suite passed 365 tests and 13,994 assertions after the query-preview collision fix, responsive UI corrections, mobile destination truncation fix, and product-catalog updates; short-link behavior remains covered alongside folders, QR campaigns, and the rest of the app.",
+            "reference": "docker exec --user 0:0 -w /var/www -e HOME=/tmp -e XDG_CONFIG_HOME=/tmp -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= -e CACHE_STORE=array -e SESSION_DRIVER=array -e QUEUE_CONNECTION=sync linkpilot-manual-fixed php artisan test",
+            "verifiedAt": "2026-10-23T11:31:00Z"
+        },
+        {
+            "type": "test",
+            "description": "ProductCatalogTest passed 3 tests and 10,447 assertions after the final query-preview, responsive UX, QR evidence, and product-catalog updates.",
+            "reference": "tests/Feature/ProductCatalogTest.php",
+            "verifiedAt": "2026-10-23T11:36:53Z"
+        },
+        {
+            "type": "browser",
+            "description": "At 390x844, the non-executing preview shows only the final non-empty value for colliding keys (UTM first, custom last), removes the old configured destination value, preserves repeated unrelated query values and #section, and matches the saved link's 302 Location without loading the destination.",
+            "reference": "product/verification/phase5a-query-collision-preview-mobile.webp; isolated browser at http://localhost:8107/dashboard/links; local GET /phase5-query-collision (302 Location)",
+            "verifiedAt": "2026-10-23T10:27:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "At 390x844, a 100-character unbroken active search value truncates with the full accessible name retained, and no-result text stays within the padded empty card. A view=table URL renders link cards and hides the view/table controls; at 1440x1000, the table and view controls are visible.",
+            "reference": "product/verification/phase5a-responsive-filter-mobile.png; product/verification/phase5a-mobile-table-fallback.png; isolated browser at http://localhost:8107/dashboard/links",
+            "verifiedAt": "2026-10-23T10:55:10Z"
+        },
+        {
+            "type": "browser",
+            "description": "The later empty duplicate custom-parameter row does not erase the prior non-empty value: the non-executing preview matches the saved link's 302 Location exactly, preserving unrelated repeated query values and #part.",
+            "reference": "product/verification/phase5a-empty-duplicate-preview-mobile.png; product/verification/phase5a-empty-duplicate-rows-mobile.png; GET /phase5a-empty-duplicate-evidence (302 Location)",
+            "verifiedAt": "2026-10-23T11:07:01Z"
+        },
+        {
+            "type": "browser",
+            "description": "At 390x844, a long short-link destination now truncates with an ellipsis inside its mobile card. Before the fix the 475px destination box extended 142px beyond the card; afterward the box was 308px wide and ended at x=349 inside the card's x=16..374 bounds. The document remained 390px wide; at 1440x1000 the table remained visible without horizontal overflow.",
+            "reference": "Isolated browser at http://localhost:8107/dashboard/links; long test destination on /phase5a-empty-duplicate-evidence.",
+            "verifiedAt": "2026-10-23T11:26:59Z"
+        }
+    ]
+}

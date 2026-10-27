@@ -1,0 +1,66 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "admin-plans-subscriptions",
+    "area": "Administration",
+    "name": "Plan and subscription operations",
+    "status": "in_progress",
+    "requirements": [
+        {
+            "id": "APLN-1",
+            "text": "Authorized billing administrators manage plan catalog metadata, Stripe mappings, and explicit workspace overrides.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "APLN-2",
+            "text": "Admin overrides require actor, reason, source, optional expiry, and an immutable audit record.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "APLN-3",
+            "text": "Stripe-owned subscription state changes continue through Cashier and Stripe rather than local imitation.",
+            "priority": "P1",
+            "status": "planned"
+        }
+    ],
+    "routes": ["/admin/plans", "/admin/subscriptions"],
+    "dependencies": ["billing", "admin-users-roles"],
+    "externalPrerequisites": [
+        "Stripe credentials for live subscription operations"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "APLN-AC-1",
+            "text": "Plan and subscription mutations require admin.billing.manage and produce redacted audit records."
+        },
+        {
+            "id": "APLN-AC-2",
+            "text": "An override is visibly distinct from provider-owned subscription state and expires predictably."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/admin/plans",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:36Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/plans-desktop.png",
+            "observedBehaviors": [
+                "Plans are listed with price and plan-state metadata.",
+                "A plan-management action appears in the toolbar."
+            ]
+        },
+        {
+            "route": "/admin/subscriptions",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:38Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/subscriptions-desktop.png",
+            "observedBehaviors": [
+                "Subscriptions appear in a table with account, plan, status, and date metadata."
+            ]
+        }
+    ],
+    "implementationEvidence": []
+}

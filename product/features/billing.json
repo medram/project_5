@@ -1,0 +1,117 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "billing",
+    "area": "Monetization",
+    "name": "Plans, Stripe billing, and usage",
+    "status": "in_progress",
+    "requirements": [
+        {
+            "id": "BIL-1",
+            "text": "The active workspace entitlement enforces limits for short links, domains, pixels, webhooks, link pages, and members; extended catalog limits remain planned.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "BIL-2",
+            "text": "Each workspace has one active local entitlement; new workspaces default to Free and existing owner plans are backfilled to workspace subscriptions.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "BIL-3",
+            "text": "Workspace billing shows the active workspace plan and usage for short links, domains, pixels, link pages, and webhooks.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "BIL-4",
+            "text": "Workspace metered creation rejects before exceeding a non-null plan limit while preserving existing data after downgrade.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "BIL-5",
+            "text": "Platform administrators assign plan overrides to a user's personal workspace; workspace owners may select Free for their current workspace.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "BIL-6",
+            "text": "Checkout, payment methods, cancellation/resume, invoices, tax, and provider webhooks use verified Stripe state; this integration is not implemented.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "BIL-7",
+            "text": "Annual billing, provider-supported proration, coupons, and dunning remain planned Stripe capabilities.",
+            "priority": "P3",
+            "status": "planned"
+        },
+        {
+            "id": "BIL-8",
+            "text": "Workspace effective plans resolve an unexpired administrator override, active or trialing Cashier subscription, then Free.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "BIL-9",
+            "text": "Phase 8 target catalog: Free $0/$0, Pro $29/$290, Business $99/$990; limits are respectively 25/500/unlimited links, 5/100/unlimited folders, 5/250/unlimited QR codes, 1/10/unlimited bio pages, 0/3/unlimited domains, 0/10/unlimited pixels, 1/5/unlimited members, 0/5/unlimited webhooks, 1/25/unlimited link pages, 0/5/unlimited API keys, and 100 MB/10 GB/unlimited storage.",
+            "priority": "P1",
+            "status": "planned"
+        }
+    ],
+    "routes": [
+        "/pricing",
+        "/account-settings/billing",
+        "/billing/checkout/{plan}/{interval}",
+        "/billing/portal",
+        "/stripe/webhook"
+    ],
+    "dependencies": ["workspaces"],
+    "externalPrerequisites": [
+        "Stripe API credentials and webhook secret",
+        "Configured monthly/yearly Stripe price IDs",
+        "Merchant tax, invoice, and compliance policy"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "BIL-AC-1",
+            "text": "Checkout requires a visible active plan with a configured price and never infers success from query parameters."
+        },
+        {
+            "id": "BIL-AC-2",
+            "text": "Quota checks share one workspace usage service, lock the workspace, and never delete existing data after downgrade."
+        },
+        {
+            "id": "BIL-AC-3",
+            "text": "Missing Stripe configuration disables external actions truthfully without simulating payment success."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/account-settings/billing",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:49Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/settings-billing-desktop.png",
+            "observedBehaviors": [
+                "The billing screen shows current-plan details and usage meters.",
+                "An upgrade action and resource limits are visible."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Workspace billing, workspace usage, metered resource boundaries, and the complete Laravel suite passed (218 tests, 10,891 assertions).",
+            "reference": "docker exec linkpilot-parity-smoke php artisan test --no-ansi; tests/Feature/Billing/WorkspaceBillingTest.php; tests/Feature/Workspaces/WorkspaceUsageTest.php; tests/Feature/Domains/CustomDomainTest.php; tests/Feature/LinkPages/LinkPageTest.php; tests/Feature/Webhooks/WebhookDeliveryTest.php",
+            "verifiedAt": "2026-10-22T10:40:27Z"
+        },
+        {
+            "type": "browser",
+            "description": "At localhost:8101, the owner billing page showed current workspace Pro usage and a Free-only change action; the workspace-admin page stated that only owners can change plans and contained no plan-change controls.",
+            "reference": "http://localhost:8101/billing; product/verification/workspace-owner-billing-mobile.png; product/verification/workspace-admin-billing-desktop.png",
+            "verifiedAt": "2026-10-22T09:37:06Z"
+        }
+    ]
+}

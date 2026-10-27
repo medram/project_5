@@ -1,0 +1,124 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "api-keys",
+    "area": "Developer",
+    "name": "API keys and versioned API",
+    "status": "verified",
+    "requirements": [
+        {
+            "id": "API-1",
+            "text": "Workspace owners and admins can create, name, scope, expire, revoke, and view last use of workspace-bound API keys.",
+            "priority": "P2",
+            "status": "verified"
+        },
+        {
+            "id": "API-2",
+            "text": "API keys are shown once, stored as hashes, and never returned later.",
+            "priority": "P2",
+            "status": "verified"
+        },
+        {
+            "id": "API-3",
+            "text": "A versioned API exposes links, pages, analytics, and webhooks with rate limits and audit logs.",
+            "priority": "P2",
+            "status": "verified"
+        },
+        {
+            "id": "API-4",
+            "text": "Sanctum keys are permanently bound to one workspace and enforce explicit abilities, expiry, and rate limits.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "API-5",
+            "text": "Create endpoints support idempotency keys, stable validation JSON, and cursor pagination where applicable.",
+            "priority": "P2",
+            "status": "verified"
+        },
+        {
+            "id": "API-6",
+            "text": "API audit logs retain actor, workspace, route, method, status, and time without bodies, destinations, or secrets.",
+            "priority": "P1",
+            "status": "verified"
+        }
+    ],
+    "routes": [
+        "/account-settings/api-keys",
+        "/api/v1/links",
+        "/api/v1/bio-pages",
+        "/api/v1/link-pages",
+        "/api/v1/analytics/exports",
+        "/api/v1/webhooks",
+        "/api/v1/events",
+        "/docs/api",
+        "/docs/api.json"
+    ],
+    "dependencies": [
+        "workspaces",
+        "short-links",
+        "bio-pages",
+        "link-pages",
+        "analytics",
+        "webhooks"
+    ],
+    "externalPrerequisites": [],
+    "acceptanceCriteria": [
+        {
+            "id": "API-AC-1",
+            "text": "A raw token is displayed exactly once and cannot select any workspace other than its token owner."
+        },
+        {
+            "id": "API-AC-2",
+            "text": "Abilities, expiry, rate limits, idempotency, and cross-workspace authorization are enforced consistently."
+        },
+        {
+            "id": "API-AC-3",
+            "text": "OpenAPI documentation is generated from the final request and response contracts."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/account-settings/api-keys",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:51Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/settings-api-keys-desktop.png",
+            "observedBehaviors": [
+                "The API-key screen shows a tabular list with name and lifecycle columns.",
+                "A create-key action is present."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "The final isolated Laravel suite passed 475 tests and 16,100 assertions with one conditional skip, including API-key authorization, lifecycle, and versioned API coverage.",
+            "reference": "docker compose exec -T -w /var/www -e APP_ENV=testing -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= app php -d memory_limit=512M vendor/bin/phpunit",
+            "verifiedAt": "2026-10-26T16:41:06Z"
+        },
+        {
+            "type": "browser",
+            "description": "At desktop and 390px mobile widths, the account API-key page showed a key row and create/revoke controls without horizontal overflow. Reload did not expose the one-time secret.",
+            "reference": "Disposable review app http://localhost:8013/account-settings/api-keys",
+            "verifiedAt": "2026-10-26T15:41:21Z"
+        },
+        {
+            "type": "review",
+            "description": "Independent regular-user review: API-key creation validation worked on mobile without creating or exposing a token; the 680px table scrolls inside its container with no page-level overflow.",
+            "reference": "RegularUserUX-2 review; /account-settings/api-keys on disposable app http://localhost:8013",
+            "verifiedAt": "2026-10-26T16:21:50Z"
+        },
+        {
+            "type": "review",
+            "description": "Fresh PRD-alignment review passed: generated analytics days schema, API requirement catalog, progress evidence, and verified state align; no external prerequisite remains.",
+            "reference": "PRDAlignment-2 final review; PRD.md and product/features/api-keys.json",
+            "verifiedAt": "2026-10-26T16:33:15Z"
+        },
+        {
+            "type": "review",
+            "description": "Non-security implementation review confirmed the int-backed analytics-window request validation and generated OpenAPI contract; no actionable findings.",
+            "reference": "Phase7CodeReview; AnalyticsWindow, AnalyticsFilterRequest.php",
+            "verifiedAt": "2026-10-26T16:31:18Z"
+        }
+    ]
+}

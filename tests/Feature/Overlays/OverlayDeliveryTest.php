@@ -22,8 +22,8 @@ class OverlayDeliveryTest extends TestCase
         $other = User::factory()->create();
 
         $this->actingAs($owner)
-            ->post('/overlays', $this->overlayPayload())
-            ->assertRedirect('/overlays');
+            ->post('/dashboard/link-overlays', $this->overlayPayload())
+            ->assertRedirect('/dashboard/link-overlays');
 
         $overlay = LinkOverlay::query()->sole();
 
@@ -37,19 +37,19 @@ class OverlayDeliveryTest extends TestCase
         ]);
 
         $this->actingAs($other)
-            ->patch("/overlays/{$overlay->id}", $this->overlayPayload())
-            ->assertForbidden();
+            ->patch("/dashboard/link-overlays/{$overlay->id}", $this->overlayPayload())
+            ->assertNotFound();
 
         $this->actingAs($other)
-            ->delete("/overlays/{$overlay->id}")
-            ->assertForbidden();
+            ->delete("/dashboard/link-overlays/{$overlay->id}")
+            ->assertNotFound();
 
         $this->actingAs($owner)
-            ->patch("/overlays/{$overlay->id}", $this->overlayPayload([
+            ->patch("/dashboard/link-overlays/{$overlay->id}", $this->overlayPayload([
                 'heading' => 'One more thing',
                 'is_active' => false,
             ]))
-            ->assertRedirect('/overlays');
+            ->assertRedirect('/dashboard/link-overlays');
 
         $this->assertDatabaseHas('link_overlays', [
             'id' => $overlay->id,
@@ -58,8 +58,8 @@ class OverlayDeliveryTest extends TestCase
         ]);
 
         $this->actingAs($owner)
-            ->delete("/overlays/{$overlay->id}")
-            ->assertRedirect('/overlays');
+            ->delete("/dashboard/link-overlays/{$overlay->id}")
+            ->assertRedirect('/dashboard/link-overlays');
 
         $this->assertDatabaseMissing('link_overlays', ['id' => $overlay->id]);
     }
@@ -74,21 +74,24 @@ class OverlayDeliveryTest extends TestCase
         $link = Link::factory()->for($owner)->create(['slug' => 'overlay-assign']);
 
         $this->actingAs($owner)
-            ->patch("/links/{$link->id}", $this->linkPayload($link, [
+            ->patch("/dashboard/links/{$link->id}", $this->linkPayload($link, [
+                'delivery_mode' => 'overlay',
                 'link_overlay_id' => $ownedActive->id,
             ]))
-            ->assertRedirect('/links');
+            ->assertRedirect('/dashboard/links');
 
         $this->assertSame($ownedActive->id, $link->refresh()->link_overlay_id);
 
         $this->actingAs($owner)
-            ->patch("/links/{$link->id}", $this->linkPayload($link, [
+            ->patch("/dashboard/links/{$link->id}", $this->linkPayload($link, [
+                'delivery_mode' => 'overlay',
                 'link_overlay_id' => $foreignActive->id,
             ]))
             ->assertSessionHasErrors('link_overlay_id');
 
         $this->actingAs($owner)
-            ->patch("/links/{$link->id}", $this->linkPayload($link, [
+            ->patch("/dashboard/links/{$link->id}", $this->linkPayload($link, [
+                'delivery_mode' => 'overlay',
                 'link_overlay_id' => $ownedInactive->id,
             ]))
             ->assertSessionHasErrors('link_overlay_id');
@@ -99,7 +102,9 @@ class OverlayDeliveryTest extends TestCase
         $owner = User::factory()->create();
         $overlay = $this->createOverlay($owner);
         $pixel = $this->createPixel($owner);
-        $overlay->trackingPixels()->attach($pixel->id);
+        $this->actingAs($owner)->post("/dashboard/pixels/{$pixel->id}/rules", [
+            'target_type' => 'link_overlay', 'target_id' => $overlay->id, 'trigger' => 'page_view',
+        ])->assertRedirect();
         $link = Link::factory()->for($owner)->create([
             'slug' => 'overlay-view',
             'destination_url' => 'https://example.com/dest',
@@ -115,7 +120,7 @@ class OverlayDeliveryTest extends TestCase
                 ->component('links/overlay', false)
                 ->where('overlay.heading', 'Before you go')
                 ->where('overlay.ctaLabel', 'Continue')
-                ->has('pixels', 0),
+                ->where('pixels', ['page_view' => [], 'button_click' => [], 'lead_submit' => []]),
             );
 
         $this->assertDatabaseCount('clicks', 0);
@@ -126,8 +131,11 @@ class OverlayDeliveryTest extends TestCase
             ->get('/overlay-view')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->has('pixels', 1)
-                ->where('pixels.0.identifier', $pixel->provider_id),
+                ->where('pixels', [
+                    'page_view' => [['provider' => 'meta_pixel', 'identifier' => $pixel->provider_id]],
+                    'button_click' => [],
+                    'lead_submit' => [],
+                ]),
             );
 
         $this->assertDatabaseCount('clicks', 0);
@@ -135,6 +143,35 @@ class OverlayDeliveryTest extends TestCase
             'event_name' => 'overlay.view',
             'link_id' => $link->id,
             'link_overlay_id' => $overlay->id,
+        ]);
+    }
+
+    public function test_overlay_view_records_event_when_resources_have_different_creators_in_one_workspace(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $workspace = $owner->currentWorkspace;
+        $workspace->members()->attach($member, ['role' => 'member']);
+        $overlay = LinkOverlay::factory()->create([
+            'user_id' => $member->id,
+            'workspace_id' => $workspace->id,
+        ]);
+        $link = Link::factory()->for($owner)->create([
+            'slug' => 'shared-overlay-view',
+            'workspace_id' => $workspace->id,
+            'link_overlay_id' => $overlay->id,
+        ]);
+
+        $this->withCookie(TrackingConsent::COOKIE_NAME, TrackingConsent::GRANTED)
+            ->get('/shared-overlay-view')
+            ->assertOk();
+
+        $this->assertDatabaseHas('analytics_events', [
+            'user_id' => $owner->id,
+            'workspace_id' => $workspace->id,
+            'link_id' => $link->id,
+            'link_overlay_id' => $overlay->id,
+            'event_name' => 'overlay.view',
         ]);
     }
 
@@ -272,7 +309,6 @@ class OverlayDeliveryTest extends TestCase
             'body' => 'Check out the launch details.',
             'cta_label' => 'Continue',
             'is_active' => true,
-            'tracking_pixel_ids' => [],
         ], $overrides);
     }
 
@@ -281,7 +317,8 @@ class OverlayDeliveryTest extends TestCase
      */
     private function createOverlay(User $user, array $overrides = []): LinkOverlay
     {
-        return $user->linkOverlays()->create(array_merge([
+        return $user->currentWorkspace->linkOverlays()->create(array_merge([
+            'user_id' => $user->id,
             'name' => 'Overlay',
             'heading' => 'Before you go',
             'body' => 'Overlay body.',
@@ -292,7 +329,8 @@ class OverlayDeliveryTest extends TestCase
 
     private function createPixel(User $user): TrackingPixel
     {
-        return $user->trackingPixels()->create([
+        return $user->currentWorkspace->trackingPixels()->create([
+            'user_id' => $user->id,
             'name' => 'Launch pixel',
             'provider' => 'meta_pixel',
             'provider_id' => '123456789012345',

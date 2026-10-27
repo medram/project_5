@@ -29,6 +29,7 @@ export type UsageMetric = {
 
 export type BillingPageProps = {
     subscription: Subscription;
+    canManageBilling: boolean;
     plans: BillingPlan[];
     usage: {
         links: UsageMetric;

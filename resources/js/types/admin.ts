@@ -12,6 +12,7 @@ export type AdminAccount = {
     isAdmin: boolean;
     isSuspended: boolean;
     suspendedAt: string | null;
+    personalWorkspaceName: string | null;
     subscription: {
         status: string | null;
         planCode: string | null;
@@ -31,5 +32,6 @@ export type AdminPageProps = {
         shortLinks: number;
     };
     plans: AdminPlan[];
+    search: string;
     users: AdminAccount[];
 };

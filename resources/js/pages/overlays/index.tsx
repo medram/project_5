@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { Layers, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,12 +41,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { destroy, index, store, update } from '@/routes/overlays';
-import type {
-    LinkOverlay,
-    OverlayPixel,
-    OverlaysPageProps,
-} from '@/types/overlays';
+import { destroy, store, update } from '@/routes/overlays';
+import type { LinkOverlay, OverlaysPageProps } from '@/types/overlays';
 
 type OverlayFormData = {
     name: string;
@@ -53,41 +50,39 @@ type OverlayFormData = {
     body: string;
     cta_label: string;
     is_active: boolean;
-    tracking_pixel_ids: number[];
+    starts_at: string;
+    expires_at: string;
+    display_delay_seconds: number;
 };
 
 type OverlayFormFieldsProps = {
     data: OverlayFormData;
     errors: Partial<Record<keyof OverlayFormData, string>>;
     processing: boolean;
-    availablePixels: OverlayPixel[];
-    setData: (key: keyof OverlayFormData, value: string | boolean) => void;
+    setData: (
+        key: keyof OverlayFormData,
+        value: string | boolean | number,
+    ) => void;
 };
 
-function providerLabel(pixel: OverlayPixel): string {
-    return pixel.provider === 'meta_pixel' ? 'Meta Pixel' : 'Google Analytics';
+function utcDateTimeInput(value: string | null): string {
+    return value ? new Date(value).toISOString().slice(0, 16) : '';
+}
+
+function withUtcSchedule(data: OverlayFormData): OverlayFormData {
+    return {
+        ...data,
+        starts_at: data.starts_at ? `${data.starts_at}:00Z` : '',
+        expires_at: data.expires_at ? `${data.expires_at}:00Z` : '',
+    };
 }
 
 function OverlayFormFields({
     data,
     errors,
     processing,
-    availablePixels,
     setData,
 }: OverlayFormFieldsProps) {
-    function togglePixel(pixel: OverlayPixel) {
-        if (!pixel.isActive) {
-            return;
-        }
-
-        setData(
-            'tracking_pixel_ids',
-            data.tracking_pixel_ids.includes(pixel.id)
-                ? data.tracking_pixel_ids.filter((id) => id !== pixel.id)
-                : [...data.tracking_pixel_ids, pixel.id],
-        );
-    }
-
     return (
         <FieldGroup>
             <Field data-invalid={Boolean(errors.name)}>
@@ -150,7 +145,7 @@ function OverlayFormFields({
                 )}
             </Field>
 
-            <Field orientation="horizontal">
+            <Field className="flex-row items-center">
                 <Checkbox
                     id="overlay-active"
                     checked={data.is_active}
@@ -167,69 +162,89 @@ function OverlayFormFields({
                 </div>
             </Field>
 
-            {availablePixels.length > 0 && (
-                <Field>
-                    <FieldLabel>Tracking pixels</FieldLabel>
+            <div className="grid gap-5 sm:grid-cols-2">
+                <Field data-invalid={Boolean(errors.starts_at)}>
+                    <FieldLabel htmlFor="overlay-starts-at">
+                        Starts at (UTC)
+                    </FieldLabel>
+                    <Input
+                        id="overlay-starts-at"
+                        type="datetime-local"
+                        value={data.starts_at}
+                        onChange={(event) =>
+                            setData('starts_at', event.target.value)
+                        }
+                        disabled={processing}
+                        aria-invalid={Boolean(errors.starts_at)}
+                    />
                     <FieldDescription>
-                        Attach up to five active pixels. They load only after a
-                        visitor grants consent.
+                        The overlay is available at this exact time. Leave empty
+                        to start immediately.
                     </FieldDescription>
-                    <div className="mt-2 space-y-2">
-                        {availablePixels.map((pixel) => {
-                            const attached =
-                                data.tracking_pixel_ids.includes(pixel.id);
-
-                            return (
-                                <label
-                                    key={pixel.id}
-                                    className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
-                                >
-                                    <Checkbox
-                                        checked={attached}
-                                        onCheckedChange={() => togglePixel(pixel)}
-                                        disabled={
-                                            !pixel.isActive ||
-                                            (data.tracking_pixel_ids.length >= 5 &&
-                                                !attached) ||
-                                            processing
-                                        }
-                                    />
-                                    <span className="grid gap-1">
-                                        <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
-                                            {pixel.name}
-                                            {!pixel.isActive && (
-                                                <Badge variant="secondary">
-                                                    Inactive
-                                                </Badge>
-                                            )}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {providerLabel(pixel)} ·{' '}
-                                            {pixel.providerId}
-                                        </span>
-                                    </span>
-                                </label>
-                            );
-                        })}
-                    </div>
-                    {errors.tracking_pixel_ids && (
-                        <FieldError className="mt-2">
-                            {errors.tracking_pixel_ids}
-                        </FieldError>
+                    {errors.starts_at && (
+                        <FieldError>{errors.starts_at}</FieldError>
                     )}
                 </Field>
-            )}
+
+                <Field data-invalid={Boolean(errors.expires_at)}>
+                    <FieldLabel htmlFor="overlay-expires-at">
+                        Expires at (UTC)
+                    </FieldLabel>
+                    <Input
+                        id="overlay-expires-at"
+                        type="datetime-local"
+                        value={data.expires_at}
+                        onChange={(event) =>
+                            setData('expires_at', event.target.value)
+                        }
+                        disabled={processing}
+                        aria-invalid={Boolean(errors.expires_at)}
+                    />
+                    <FieldDescription>
+                        The overlay is unavailable at this exact time. Leave
+                        empty for no expiry.
+                    </FieldDescription>
+                    {errors.expires_at && (
+                        <FieldError>{errors.expires_at}</FieldError>
+                    )}
+                </Field>
+            </div>
+
+            <Field data-invalid={Boolean(errors.display_delay_seconds)}>
+                <FieldLabel htmlFor="overlay-display-delay">
+                    Continue delay (seconds)
+                </FieldLabel>
+                <Input
+                    id="overlay-display-delay"
+                    type="number"
+                    min={0}
+                    max={60}
+                    step={1}
+                    value={data.display_delay_seconds}
+                    onChange={(event) =>
+                        setData(
+                            'display_delay_seconds',
+                            event.target.value === ''
+                                ? 0
+                                : event.target.valueAsNumber,
+                        )
+                    }
+                    disabled={processing}
+                    aria-invalid={Boolean(errors.display_delay_seconds)}
+                />
+                <FieldDescription>
+                    Visitors wait for this LinkPilot-enforced countdown before
+                    the button becomes available (0–60 seconds).
+                </FieldDescription>
+                {errors.display_delay_seconds && (
+                    <FieldError>{errors.display_delay_seconds}</FieldError>
+                )}
+            </Field>
         </FieldGroup>
     );
 }
 
-function CreateOverlayDialog({
-    children,
-    availablePixels,
-}: {
-    children: ReactNode;
-    availablePixels: OverlayPixel[];
-}) {
+function CreateOverlayDialog({ children }: { children: ReactNode }) {
     const [open, setOpen] = useState(false);
     const form = useForm<OverlayFormData>({
         name: '',
@@ -237,11 +252,14 @@ function CreateOverlayDialog({
         body: '',
         cta_label: 'Continue',
         is_active: true,
-        tracking_pixel_ids: [],
+        starts_at: '',
+        expires_at: '',
+        display_delay_seconds: 0,
     });
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
+        form.transform(withUtcSchedule);
         form.post(store().url, {
             onSuccess: () => {
                 form.reset();
@@ -253,7 +271,7 @@ function CreateOverlayDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Create overlay</DialogTitle>
                     <DialogDescription>
@@ -266,7 +284,6 @@ function CreateOverlayDialog({
                         data={form.data}
                         errors={form.errors}
                         processing={form.processing}
-                        availablePixels={availablePixels}
                         setData={form.setData}
                     />
                     <DialogFooter className="mt-6">
@@ -292,13 +309,7 @@ function CreateOverlayDialog({
     );
 }
 
-function EditOverlayDialog({
-    overlay,
-    availablePixels,
-}: {
-    overlay: LinkOverlay;
-    availablePixels: OverlayPixel[];
-}) {
+function EditOverlayDialog({ overlay }: { overlay: LinkOverlay }) {
     const [open, setOpen] = useState(false);
     const form = useForm<OverlayFormData>({
         name: overlay.name,
@@ -306,15 +317,14 @@ function EditOverlayDialog({
         body: overlay.body ?? '',
         cta_label: overlay.ctaLabel,
         is_active: overlay.isActive,
-        tracking_pixel_ids: overlay.trackingPixelIds.filter((pixelId) =>
-            availablePixels.some(
-                (pixel) => pixel.id === pixelId && pixel.isActive,
-            ),
-        ),
+        starts_at: utcDateTimeInput(overlay.startsAt),
+        expires_at: utcDateTimeInput(overlay.expiresAt),
+        display_delay_seconds: overlay.displayDelaySeconds,
     });
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
+        form.transform(withUtcSchedule);
         form.patch(update(overlay).url, {
             preserveScroll: true,
             onSuccess: () => setOpen(false),
@@ -329,7 +339,7 @@ function EditOverlayDialog({
                     Edit
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Edit {overlay.name}</DialogTitle>
                     <DialogDescription>
@@ -342,7 +352,6 @@ function EditOverlayDialog({
                         data={form.data}
                         errors={form.errors}
                         processing={form.processing}
-                        availablePixels={availablePixels}
                         setData={form.setData}
                     />
                     <DialogFooter className="mt-6">
@@ -424,36 +433,29 @@ function DeleteOverlayDialog({ overlay }: { overlay: LinkOverlay }) {
 
 export default function OverlaysIndex({
     overlays,
-    availablePixels,
+    canManageIntegrations,
 }: OverlaysPageProps) {
     return (
         <>
             <Head title="CTA overlays" />
 
             <div className="flex flex-col gap-6 p-4 sm:p-6">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Layers className="size-4" aria-hidden="true" />
-                            <span className="text-sm font-medium">
-                                Branded interstitials
-                            </span>
-                        </div>
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            CTA overlays
-                        </h1>
-                        <p className="max-w-2xl text-sm text-muted-foreground">
-                            Show a LinkPilot-controlled message before a short
-                        link delivers its destination.
-                        </p>
-                    </div>
-                    <CreateOverlayDialog availablePixels={availablePixels}>
-                        <Button>
-                            <Plus data-icon="inline-start" />
-                            Create overlay
-                        </Button>
-                    </CreateOverlayDialog>
-                </header>
+                <PageHeader
+                    title="CTA overlays"
+                    eyebrow="Branded interstitials"
+                    icon={Layers}
+                    description="Show a LinkPilot-controlled message before a short link delivers its destination."
+                    actions={
+                        canManageIntegrations ? (
+                            <CreateOverlayDialog>
+                                <Button>
+                                    <Plus data-icon="inline-start" />
+                                    Create overlay
+                                </Button>
+                            </CreateOverlayDialog>
+                        ) : undefined
+                    }
+                />
 
                 {overlays.length === 0 ? (
                     <Empty className="border">
@@ -463,27 +465,36 @@ export default function OverlaysIndex({
                             </EmptyMedia>
                             <EmptyTitle>No overlays yet</EmptyTitle>
                             <EmptyDescription>
-                                Create an interstitial, then assign it to a
-                                short link from the links page.
+                                {canManageIntegrations
+                                    ? 'Create an interstitial, then assign it to a short link from the links page.'
+                                    : 'There are no overlays in this workspace yet. An owner or admin can add one.'}
                             </EmptyDescription>
                         </EmptyHeader>
-                        <EmptyContent>
-                            <CreateOverlayDialog availablePixels={availablePixels}>
-                                <Button>
-                                    <Plus data-icon="inline-start" />
-                                    Create your first overlay
-                                </Button>
-                            </CreateOverlayDialog>
-                        </EmptyContent>
+                        {canManageIntegrations && (
+                            <EmptyContent>
+                                <CreateOverlayDialog>
+                                    <Button>
+                                        <Plus data-icon="inline-start" />
+                                        Create your first overlay
+                                    </Button>
+                                </CreateOverlayDialog>
+                            </EmptyContent>
+                        )}
                     </Empty>
                 ) : (
                     <div className="grid gap-4 lg:grid-cols-2">
                         {overlays.map((overlay) => (
-                            <Card key={overlay.id}>
+                            <Card
+                                id={`overlay-${overlay.id}`}
+                                key={overlay.id}
+                                className="scroll-mt-20"
+                            >
                                 <CardHeader>
                                     <div className="flex flex-wrap items-start justify-between gap-3">
                                         <div className="min-w-0 space-y-1">
-                                            <CardTitle>{overlay.name}</CardTitle>
+                                            <CardTitle>
+                                                {overlay.name}
+                                            </CardTitle>
                                             <CardDescription>
                                                 {overlay.heading}
                                             </CardDescription>
@@ -510,20 +521,15 @@ export default function OverlaysIndex({
                                             ? 'link'
                                             : 'links'}
                                     </p>
-                                    <p>
-                                        {overlay.trackingPixelIds.length} attached{' '}
-                                        {overlay.trackingPixelIds.length === 1
-                                            ? 'pixel'
-                                            : 'pixels'}
-                                    </p>
                                 </CardContent>
-                                <CardFooter className="flex flex-wrap gap-2">
-                                    <EditOverlayDialog
-                                        overlay={overlay}
-                                        availablePixels={availablePixels}
-                                    />
-                                    <DeleteOverlayDialog overlay={overlay} />
-                                </CardFooter>
+                                {canManageIntegrations && (
+                                    <CardFooter className="flex flex-wrap gap-2">
+                                        <EditOverlayDialog overlay={overlay} />
+                                        <DeleteOverlayDialog
+                                            overlay={overlay}
+                                        />
+                                    </CardFooter>
+                                )}
                             </Card>
                         ))}
                     </div>

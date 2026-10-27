@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\LinkPage;
-use App\Models\LinkPageItem;
-use App\Models\TrackingPixel;
 use App\Services\Analytics\AnalyticsTracker;
+use App\Services\Analytics\PublicTrackingPixelProjection;
 use App\Services\Analytics\TrackingConsent;
+use App\Services\LinkPages\LinkPagePresentation;
+use App\Services\LinkPages\LinkPageVariantAssignment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,6 +18,9 @@ class PublicLinkPageController extends Controller
     public function __construct(
         private readonly AnalyticsTracker $analytics,
         private readonly TrackingConsent $consent,
+        private readonly LinkPagePresentation $presentation,
+        private readonly LinkPageVariantAssignment $variants,
+        private readonly PublicTrackingPixelProjection $pixelProjection,
     ) {}
 
     public function __invoke(Request $request, string $slug): Response
@@ -24,51 +28,39 @@ class PublicLinkPageController extends Controller
         $linkPage = LinkPage::query()
             ->where('slug', $slug)
             ->where('is_published', true)
-            ->with([
-                'user:id',
-                'items' => fn ($query) => $query
-                    ->where('is_active', true)
-                    ->orderBy('position'),
-                'trackingPixels' => fn ($query) => $query
-                    ->where('tracking_pixels.is_active', true)
-                    ->orderBy('tracking_pixels.name'),
-            ])
+            ->with('user:id')
             ->firstOrFail();
+        $variant = $this->variants->forPageView($request, $linkPage);
+        $this->variants->queueCookie($variant);
 
         try {
             $this->analytics->record($request, 'link_page.view', $linkPage->user, [
                 'linkPage' => $linkPage,
+                'linkPageVariant' => $variant,
             ]);
         } catch (Throwable $exception) {
             report($exception);
         }
 
-        $pixels = $this->analytics->canTrack($request)
-            ? $linkPage->trackingPixels
-                ->map(fn (TrackingPixel $pixel): array => [
-                    'provider' => $pixel->provider,
-                    'identifier' => $pixel->provider_id,
-                ])
-                ->values()
-                ->all()
-            : [];
+        $privacyUrl = config('services.linkpilot.analytics.privacy_url');
+        $items = $this->presentation->make($linkPage, variant: $variant);
+        if (config('app.env') === 'production' && blank($privacyUrl)) {
+            $items = array_values(array_filter(
+                $items,
+                fn (array $item): bool => $item['type'] !== 'form',
+            ));
+        }
 
         return Inertia::render('link-pages/public', [
-            'name' => $linkPage->name,
             'title' => $linkPage->title,
             'description' => $linkPage->description,
             'slug' => $linkPage->slug,
-            'items' => $linkPage->items
-                ->map(fn (LinkPageItem $item): array => [
-                    'id' => $item->id,
-                    'title' => $item->title,
-                    'url' => "/pages/{$linkPage->slug}/items/{$item->id}",
-                ])
-                ->values()
-                ->all(),
-            'pixels' => $pixels,
+            'template' => $linkPage->template,
+            'items' => $items,
+            'pixels' => $this->pixelProjection->forSurface($linkPage, $this->analytics->canTrack($request)),
             'trackingConsent' => $this->consent->choice($request),
-            'privacyUrl' => config('services.linkpilot.analytics.privacy_url'),
+            'privacyUrl' => $privacyUrl,
+            'canGrantConsent' => $this->consent->canGrant(),
         ]);
     }
 }

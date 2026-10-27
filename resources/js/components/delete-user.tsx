@@ -22,9 +22,9 @@ export default function DeleteUser() {
     return (
         <div className="space-y-6">
             <Heading
-                variant="small"
                 title="Delete account"
-                description="Delete your account and all of its resources"
+                variant="small"
+                description="Delete your account and the workspaces you own alone. Transfer every collaborative workspace to another member first."
             />
             <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
                 <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
@@ -48,10 +48,12 @@ export default function DeleteUser() {
                             Are you sure you want to delete your account?
                         </DialogTitle>
                         <DialogDescription>
-                            Once your account is deleted, all of its resources
-                            and data will also be permanently deleted. Please
-                            enter your password to confirm you would like to
-                            permanently delete your account.
+                            Deleting your account permanently removes every
+                            workspace you own that has no other members, along
+                            with its resources. Ownership of a workspace with
+                            other members must be transferred first. Resources
+                            you created in other shared workspaces are retained;
+                            only your creator attribution is cleared.
                         </DialogDescription>
 
                         <Form
@@ -83,6 +85,7 @@ export default function DeleteUser() {
 
                                         <InputError message={errors.password} />
                                     </div>
+                                    <InputError message={errors.workspaces} />
 
                                     <DialogFooter className="gap-2">
                                         <DialogClose asChild>

@@ -2,7 +2,8 @@ import { createInertiaApp } from '@inertiajs/react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
-import AppLayout from '@/layouts/app-layout';
+import UserLayout from '@/layouts/user-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
@@ -17,13 +18,20 @@ void createInertiaApp({
             case name === 'link-pages/public':
             case name === 'links/overlay':
             case name === 'links/unlock':
+            case name === 'qr-codes/unlock':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
+            case name.startsWith('admin/'):
+                return AdminLayout;
             case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
+                return [UserLayout, SettingsLayout];
+            case name.startsWith('webhooks/'):
+                return [UserLayout, SettingsLayout];
+            case name.startsWith('billing/'):
+                return [UserLayout, SettingsLayout];
             default:
-                return AppLayout;
+                return UserLayout;
         }
     },
     strictMode: true,

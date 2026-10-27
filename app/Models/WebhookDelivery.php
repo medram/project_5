@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'webhook_id',
+    'source_delivery_id',
     'revision',
     'event_uuid',
     'event_name',
@@ -36,5 +38,15 @@ class WebhookDelivery extends Model
     public function webhook(): BelongsTo
     {
         return $this->belongsTo(Webhook::class);
+    }
+
+    public function sourceDelivery(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'source_delivery_id');
+    }
+
+    public function redeliveries(): HasMany
+    {
+        return $this->hasMany(self::class, 'source_delivery_id');
     }
 }

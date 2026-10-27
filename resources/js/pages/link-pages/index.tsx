@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ExternalLink, FilePenLine, Plus, Rocket, Trash2 } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,7 +41,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { destroy, index, show, store } from '@/routes/link-pages';
+import { destroy, show, store } from '@/routes/link-pages';
 import type { LinkPage, LinkPageIndexProps } from '@/types/link-pages';
 
 type LinkPageFormData = {
@@ -49,7 +50,6 @@ type LinkPageFormData = {
     title: string;
     description: string;
     is_published: boolean;
-    tracking_pixel_ids: number[];
 };
 
 type LinkPageFieldsProps = {
@@ -138,7 +138,7 @@ function LinkPageFields({
                 )}
             </Field>
 
-            <Field orientation="horizontal">
+            <Field className="flex-row items-center">
                 <Checkbox
                     id="link-page-published"
                     checked={data.is_published}
@@ -168,7 +168,6 @@ function CreateLinkPageDialog({ children }: { children: ReactNode }) {
         title: '',
         description: '',
         is_published: false,
-        tracking_pixel_ids: [],
     });
 
     function submit(event: FormEvent<HTMLFormElement>) {
@@ -181,6 +180,8 @@ function CreateLinkPageDialog({ children }: { children: ReactNode }) {
         });
     }
 
+    const planError = (form.errors as Record<string, string | undefined>).plan;
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
@@ -192,6 +193,9 @@ function CreateLinkPageDialog({ children }: { children: ReactNode }) {
                         consent-gated pixels in the editor.
                     </DialogDescription>
                 </DialogHeader>
+                {planError && (
+                    <p className="text-sm text-destructive">{planError}</p>
+                )}
                 <form onSubmit={submit}>
                     <LinkPageFields
                         data={form.data}
@@ -282,29 +286,20 @@ export default function LinkPagesIndex({ linkPages }: LinkPageIndexProps) {
             <Head title="Link pages" />
 
             <div className="flex flex-col gap-6 p-4 sm:p-6">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Rocket className="size-4" aria-hidden="true" />
-                            <span className="text-sm font-medium">
-                                Campaign destinations
-                            </span>
-                        </div>
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            Link pages
-                        </h1>
-                        <p className="max-w-2xl text-sm text-muted-foreground">
-                            Publish branded, account-owned destination pages for
-                            launches and campaigns.
-                        </p>
-                    </div>
-                    <CreateLinkPageDialog>
-                        <Button>
-                            <Plus data-icon="inline-start" />
-                            Create page
-                        </Button>
-                    </CreateLinkPageDialog>
-                </header>
+                <PageHeader
+                    title="Link pages"
+                    eyebrow="Campaign destinations"
+                    icon={Rocket}
+                    description="Publish branded, workspace-owned destination pages for launches and campaigns."
+                    actions={
+                        <CreateLinkPageDialog>
+                            <Button>
+                                <Plus data-icon="inline-start" />
+                                Create page
+                            </Button>
+                        </CreateLinkPageDialog>
+                    }
+                />
 
                 {linkPages.length === 0 ? (
                     <Empty className="border">
@@ -354,12 +349,6 @@ export default function LinkPagesIndex({ linkPages }: LinkPageIndexProps) {
                                 </CardHeader>
                                 <CardContent className="space-y-2 text-sm text-muted-foreground">
                                     <p>{page.itemsCount} destinations</p>
-                                    <p>
-                                        {page.trackingPixelIds.length} attached{' '}
-                                        {page.trackingPixelIds.length === 1
-                                            ? 'pixel'
-                                            : 'pixels'}
-                                    </p>
                                 </CardContent>
                                 <CardFooter className="flex flex-wrap gap-2">
                                     <Button asChild size="sm">
@@ -369,7 +358,11 @@ export default function LinkPagesIndex({ linkPages }: LinkPageIndexProps) {
                                         </Link>
                                     </Button>
                                     {page.isPublished && (
-                                        <Button asChild size="sm" variant="outline">
+                                        <Button
+                                            asChild
+                                            size="sm"
+                                            variant="outline"
+                                        >
                                             <a
                                                 href={page.publicUrl}
                                                 target="_blank"

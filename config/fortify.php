@@ -95,13 +95,16 @@ return [
     | Fortify Routes Middleware
     |--------------------------------------------------------------------------
     |
-    | Here you may specify which middleware Fortify will assign to the routes
-    | that it registers with the application. If necessary, you may change
-    | these middleware but typically this provided default is preferred.
+    | Here you may specify which middleware Fortify will assign to all the routes
+    | that it registers with the application. If necessary, you may change these
+    | middleware but typically this provided default is preferred. The
+    | active-account check keeps suspended sessions out of Fortify's
+    | authenticated management surfaces; it passes guests, so login and
+    | reset screens keep working.
     |
     */
 
-    'middleware' => ['web'],
+    'middleware' => ['web', 'active-account'],
 
     /*
     |--------------------------------------------------------------------------

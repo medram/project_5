@@ -1,0 +1,75 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "admin-insights",
+    "area": "Administration",
+    "name": "Platform insights",
+    "status": "in_progress",
+    "requirements": [
+        {
+            "id": "ADM-2",
+            "text": "An admin dashboard lists privacy-safe user/workspace, plan/subscription, resource, and aggregate metadata without tenant-private destinations or visitor dimensions.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "AINS-1",
+            "text": "Authorized administrators can inspect aggregate workspace, user, subscription, revenue, resource, event, country, and client health.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "AINS-2",
+            "text": "Visitor insights expose privacy-safe aggregates without raw IPs, visitor hashes, destinations, or tenant-private dimensions.",
+            "priority": "P1",
+            "status": "planned"
+        }
+    ],
+    "routes": ["/admin/insights", "/admin/insights/visitors"],
+    "dependencies": ["analytics", "billing", "admin-users-roles"],
+    "externalPrerequisites": [],
+    "acceptanceCriteria": [
+        {
+            "id": "AINS-AC-1",
+            "text": "Every insight query requires the matching platform permission."
+        },
+        {
+            "id": "AINS-AC-2",
+            "text": "Desktop charts and mobile stacked summaries expose the same aggregate scope without horizontal overflow."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/admin/insights",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:08:58Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/insights-desktop.png",
+            "observedBehaviors": [
+                "The administration overview shows platform totals and a time-series chart.",
+                "Country and client-dimension summaries appear below the chart."
+            ]
+        },
+        {
+            "route": "/admin/insights/visitors",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:35Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/insights-visitors-desktop.png",
+            "observedBehaviors": [
+                "The visitor view contains chart and summary regions for privacy-safe traffic analysis."
+            ]
+        },
+        {
+            "route": "/admin/insights",
+            "role": "admin",
+            "viewport": "390x844",
+            "capturedAt": "2026-10-20T17:11:11Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/insights-mobile.png",
+            "observedBehaviors": [
+                "Platform metrics and chart regions stack vertically on mobile.",
+                "The mobile header replaces the desktop sidebar."
+            ]
+        }
+    ],
+    "implementationEvidence": []
+}

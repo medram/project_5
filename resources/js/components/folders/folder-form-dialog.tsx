@@ -24,6 +24,7 @@ import type { FolderPayload } from '@/types/folders';
 
 type FolderFormDialogProps = {
     folder?: FolderPayload;
+    listQuery: string;
     children: ReactNode;
 };
 
@@ -31,8 +32,12 @@ function dataFor(folder?: FolderPayload) {
     return { name: folder?.name ?? '' };
 }
 
+function withListQuery(url: string, listQuery: string): string {
+    return listQuery === '' ? url : `${url}?${listQuery}`;
+}
 export function FolderFormDialog({
     folder,
+    listQuery,
     children,
 }: FolderFormDialogProps) {
     const [open, setOpen] = useState(false);
@@ -64,20 +69,32 @@ export function FolderFormDialog({
         };
 
         if (folder) {
-            form.patch(update(folder.id).url, options);
+            form.patch(
+                withListQuery(update(folder.id).url, listQuery),
+                options,
+            );
 
             return;
         }
 
-        form.post(store().url, options);
+        form.post(withListQuery(store().url, listQuery), options);
     }
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent>
+            <DialogContent
+                onOpenAutoFocus={(event) => {
+                    if (window.matchMedia('(max-width: 640px)').matches) {
+                        event.preventDefault();
+                        document
+                            .getElementById('folder-form-dialog-title')
+                            ?.focus();
+                    }
+                }}
+            >
                 <DialogHeader>
-                    <DialogTitle>
+                    <DialogTitle id="folder-form-dialog-title" tabIndex={-1}>
                         {isEditing ? 'Rename folder' : 'Create folder'}
                     </DialogTitle>
                     <DialogDescription>
@@ -99,7 +116,6 @@ export function FolderFormDialog({
                                 placeholder="Product launches"
                                 maxLength={80}
                                 autoComplete="off"
-                                autoFocus
                                 disabled={form.processing}
                                 aria-invalid={Boolean(form.errors.name)}
                             />

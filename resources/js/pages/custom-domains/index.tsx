@@ -8,6 +8,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -77,7 +78,7 @@ function DeleteDomainDialog({ domain }: { domain: CustomDomain }) {
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        form.delete(`/custom-domains/${domain.id}`, {
+        form.delete(`/dashboard/custom-domains/${domain.id}`, {
             preserveScroll: true,
             onSuccess: () => {
                 setOpen(false);
@@ -157,12 +158,18 @@ function DeleteDomainDialog({ domain }: { domain: CustomDomain }) {
     );
 }
 
-function DomainCard({ domain }: { domain: CustomDomain }) {
+function DomainCard({
+    domain,
+    canManageIntegrations,
+}: {
+    domain: CustomDomain;
+    canManageIntegrations: boolean;
+}) {
     const [working, setWorking] = useState(false);
 
     function verify() {
         router.post(
-            `/custom-domains/${domain.id}/verify`,
+            `/dashboard/custom-domains/${domain.id}/verify`,
             {},
             {
                 preserveScroll: true,
@@ -174,7 +181,7 @@ function DomainCard({ domain }: { domain: CustomDomain }) {
 
     function reissue() {
         router.post(
-            `/custom-domains/${domain.id}/reissue`,
+            `/dashboard/custom-domains/${domain.id}/reissue`,
             {},
             {
                 preserveScroll: true,
@@ -185,7 +192,7 @@ function DomainCard({ domain }: { domain: CustomDomain }) {
     }
 
     return (
-        <Card>
+        <Card id={`custom-domain-${domain.id}`} className="scroll-mt-20">
             <CardHeader className="gap-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 space-y-1">
@@ -222,73 +229,81 @@ function DomainCard({ domain }: { domain: CustomDomain }) {
                     )}
                 </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="rounded-lg border bg-muted/20 p-3 text-sm">
-                    <p className="font-medium">DNS TXT record</p>
-                    <dl className="mt-2 grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)]">
-                        <dt className="text-muted-foreground">Host</dt>
-                        <dd className="font-mono text-xs break-all">
-                            {domain.txtHost}
-                        </dd>
-                        <dt className="text-muted-foreground">Value</dt>
-                        <dd className="font-mono text-xs break-all">
-                            {domain.txtValue}
-                        </dd>
-                    </dl>
-                </div>
-                <div className="rounded-lg border bg-muted/20 p-3 text-sm">
-                    <p className="font-medium">HTTPS challenge</p>
-                    <p className="mt-1 font-mono text-xs break-all text-muted-foreground">
-                        Serve exactly{' '}
-                        <span className="font-semibold text-foreground">
-                            {domain.verificationToken}
-                        </span>{' '}
-                        at {domain.challengeUrl}
-                    </p>
-                </div>
-                {domain.failureReason && (
-                    <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                        {domain.failureReason}
-                    </p>
-                )}
-            </CardContent>
-            <CardFooter className="flex flex-wrap gap-2">
-                <Button
-                    type="button"
-                    size="sm"
-                    onClick={verify}
-                    disabled={working}
-                >
-                    {working ? (
-                        <Spinner data-icon="inline-start" />
-                    ) : (
-                        <ShieldCheck data-icon="inline-start" />
+            {canManageIntegrations && (
+                <CardContent className="space-y-4">
+                    <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+                        <p className="font-medium">DNS TXT record</p>
+                        <dl className="mt-2 grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)]">
+                            <dt className="text-muted-foreground">Host</dt>
+                            <dd className="font-mono text-xs break-all">
+                                {domain.txtHost}
+                            </dd>
+                            <dt className="text-muted-foreground">Value</dt>
+                            <dd className="font-mono text-xs break-all">
+                                {domain.txtValue}
+                            </dd>
+                        </dl>
+                    </div>
+                    <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+                        <p className="font-medium">HTTPS challenge</p>
+                        <p className="mt-1 font-mono text-xs break-all text-muted-foreground">
+                            Serve exactly{' '}
+                            <span className="font-semibold text-foreground">
+                                {domain.verificationToken}
+                            </span>{' '}
+                            at {domain.challengeUrl}
+                        </p>
+                    </div>
+                    {domain.failureReason && (
+                        <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                            {domain.failureReason}
+                        </p>
                     )}
-                    Check verification
-                </Button>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={reissue}
-                    disabled={working}
-                >
-                    <RefreshCw data-icon="inline-start" />
-                    Reissue token
-                </Button>
-                <DeleteDomainDialog domain={domain} />
-            </CardFooter>
+                </CardContent>
+            )}
+
+            {canManageIntegrations && (
+                <CardFooter className="flex flex-wrap gap-2">
+                    <Button
+                        type="button"
+                        size="sm"
+                        onClick={verify}
+                        disabled={working}
+                    >
+                        {working ? (
+                            <Spinner data-icon="inline-start" />
+                        ) : (
+                            <ShieldCheck data-icon="inline-start" />
+                        )}
+                        Check verification
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={reissue}
+                        disabled={working}
+                    >
+                        <RefreshCw data-icon="inline-start" />
+                        Reissue token
+                    </Button>
+                    <DeleteDomainDialog domain={domain} />
+                </CardFooter>
+            )}
         </Card>
     );
 }
 
-export default function CustomDomains({ domains }: CustomDomainsPageProps) {
+export default function CustomDomains({
+    domains,
+    canManageIntegrations,
+}: CustomDomainsPageProps) {
     const [open, setOpen] = useState(false);
     const form = useForm({ hostname: '' });
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        form.post('/custom-domains', {
+        form.post('/dashboard/custom-domains', {
             preserveScroll: true,
             onSuccess: () => {
                 setOpen(false);
@@ -297,103 +312,104 @@ export default function CustomDomains({ domains }: CustomDomainsPageProps) {
         });
     }
 
+    const planError = (form.errors as Record<string, string | undefined>).plan;
+
     return (
         <>
             <Head title="Custom domains" />
             <div className="flex flex-col gap-6 p-4 sm:p-6">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="max-w-2xl space-y-2">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Globe2 className="size-4" aria-hidden="true" />
-                            <span className="text-sm font-medium">
-                                Publishing
-                            </span>
-                        </div>
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            Custom domains
-                        </h1>
-                        <p className="text-sm leading-6 text-muted-foreground">
-                            Verify a domain before assigning it to a short link.
-                            LinkPilot checks an exact DNS TXT record and a
-                            no-redirect HTTPS challenge before delivery starts.
-                        </p>
-                    </div>
-                    <Dialog open={open} onOpenChange={setOpen}>
-                        <DialogTrigger asChild>
-                            <Button>
-                                <Plus data-icon="inline-start" />
-                                Add custom domain
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add a custom domain</DialogTitle>
-                                <DialogDescription>
-                                    Enter the hostname only. Add its DNS TXT and
-                                    HTTPS challenge next.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <form onSubmit={submit}>
-                                <FieldGroup>
-                                    <Field
-                                        data-invalid={Boolean(
-                                            form.errors.hostname,
-                                        )}
-                                    >
-                                        <FieldLabel htmlFor="domain-hostname">
-                                            Hostname
-                                        </FieldLabel>
-                                        <Input
-                                            id="domain-hostname"
-                                            value={form.data.hostname}
-                                            onChange={(event) =>
-                                                form.setData(
-                                                    'hostname',
-                                                    event.target.value,
-                                                )
-                                            }
-                                            placeholder="go.example.com"
-                                            autoComplete="url"
-                                            disabled={form.processing}
-                                            aria-invalid={Boolean(
+                <PageHeader
+                    title="Custom domains"
+                    eyebrow="Publishing"
+                    icon={Globe2}
+                    description="Verify a domain before assigning it to a short link. LinkPilot checks an exact DNS TXT record and a no-redirect HTTPS challenge before delivery starts."
+                />
+                <div className="flex justify-end">
+                    {canManageIntegrations && (
+                        <Dialog open={open} onOpenChange={setOpen}>
+                            <DialogTrigger asChild>
+                                <Button>
+                                    <Plus data-icon="inline-start" />
+                                    Add custom domain
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>
+                                        Add a custom domain
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        Enter the hostname only. Add its DNS TXT
+                                        and HTTPS challenge next.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                {planError && (
+                                    <p className="text-sm text-destructive">
+                                        {planError}
+                                    </p>
+                                )}
+                                <form onSubmit={submit}>
+                                    <FieldGroup>
+                                        <Field
+                                            data-invalid={Boolean(
                                                 form.errors.hostname,
                                             )}
-                                        />
-                                        <FieldDescription>
-                                            Do not include https://, a path, or
-                                            a port.
-                                        </FieldDescription>
-                                        {form.errors.hostname && (
-                                            <FieldError>
-                                                {form.errors.hostname}
-                                            </FieldError>
-                                        )}
-                                    </Field>
-                                    <DialogFooter>
-                                        <DialogClose asChild>
+                                        >
+                                            <FieldLabel htmlFor="domain-hostname">
+                                                Hostname
+                                            </FieldLabel>
+                                            <Input
+                                                id="domain-hostname"
+                                                value={form.data.hostname}
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'hostname',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                placeholder="go.example.com"
+                                                autoComplete="url"
+                                                disabled={form.processing}
+                                                aria-invalid={Boolean(
+                                                    form.errors.hostname,
+                                                )}
+                                            />
+                                            <FieldDescription>
+                                                Do not include https://, a path,
+                                                or a port.
+                                            </FieldDescription>
+                                            {form.errors.hostname && (
+                                                <FieldError>
+                                                    {form.errors.hostname}
+                                                </FieldError>
+                                            )}
+                                        </Field>
+                                        <DialogFooter>
+                                            <DialogClose asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    disabled={form.processing}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            </DialogClose>
                                             <Button
-                                                type="button"
-                                                variant="outline"
+                                                type="submit"
                                                 disabled={form.processing}
                                             >
-                                                Cancel
+                                                {form.processing && (
+                                                    <Spinner data-icon="inline-start" />
+                                                )}
+                                                Add domain
                                             </Button>
-                                        </DialogClose>
-                                        <Button
-                                            type="submit"
-                                            disabled={form.processing}
-                                        >
-                                            {form.processing && (
-                                                <Spinner data-icon="inline-start" />
-                                            )}
-                                            Add domain
-                                        </Button>
-                                    </DialogFooter>
-                                </FieldGroup>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                </header>
+                                        </DialogFooter>
+                                    </FieldGroup>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+                    )}
+                </div>
 
                 {domains.length === 0 ? (
                     <Empty className="border bg-muted/20">
@@ -408,10 +424,15 @@ export default function CustomDomains({ domains }: CustomDomainsPageProps) {
                             </EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
-                            <Button type="button" onClick={() => setOpen(true)}>
-                                <Plus data-icon="inline-start" />
-                                Add custom domain
-                            </Button>
+                            {canManageIntegrations && (
+                                <Button
+                                    type="button"
+                                    onClick={() => setOpen(true)}
+                                >
+                                    <Plus data-icon="inline-start" />
+                                    Add custom domain
+                                </Button>
+                            )}
                         </EmptyContent>
                     </Empty>
                 ) : (
@@ -420,7 +441,11 @@ export default function CustomDomains({ domains }: CustomDomainsPageProps) {
                         aria-label="Custom domains"
                     >
                         {domains.map((domain) => (
-                            <DomainCard key={domain.id} domain={domain} />
+                            <DomainCard
+                                key={domain.id}
+                                domain={domain}
+                                canManageIntegrations={canManageIntegrations}
+                            />
                         ))}
                     </section>
                 )}

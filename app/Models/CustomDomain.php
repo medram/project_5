@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Domains\HostNormalizer;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 #[Fillable([
+    'user_id',
     'hostname',
     'verification_token',
     'status',
@@ -36,18 +38,12 @@ class CustomDomain extends Model
 
     public static function normalizeHostname(string $hostname): ?string
     {
-        $hostname = strtolower(rtrim(trim($hostname), '.'));
+        return app(HostNormalizer::class)->normalizeHostname($hostname);
+    }
 
-        if (
-            $hostname === ''
-            || strlen($hostname) > 253
-            || str_contains($hostname, '..')
-            || preg_match('/\A[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\z/', $hostname) !== 1
-        ) {
-            return null;
-        }
-
-        return $hostname;
+    public function workspace(): BelongsTo
+    {
+        return $this->belongsTo(Workspace::class);
     }
 
     public function user(): BelongsTo

@@ -8,6 +8,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -408,30 +409,21 @@ export default function BioPages({
         <>
             <Head title="Bio pages" />
 
-            <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="flex max-w-2xl flex-col gap-2">
-                        <div className="flex items-center gap-2 text-linkpilot-creator">
-                            <PanelsTopLeft aria-hidden="true" />
-                            <span className="text-sm font-medium">
-                                Publishing desk
-                            </span>
-                        </div>
-                        <h1 className="text-3xl font-semibold tracking-tight">
-                            Bio pages
-                        </h1>
-                        <p className="text-sm leading-6 text-muted-foreground">
-                            Build a focused public profile and direct visitors
-                            to the destinations that matter.
-                        </p>
-                    </div>
-                    <CreateBioPageDialog>
-                        <Button>
-                            <Plus data-icon="inline-start" />
-                            Create bio page
-                        </Button>
-                    </CreateBioPageDialog>
-                </section>
+            <section className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+                <PageHeader
+                    title="Bio pages"
+                    eyebrow="Publishing desk"
+                    icon={PanelsTopLeft}
+                    description="Build a focused public profile and direct visitors to the destinations that matter."
+                    actions={
+                        <CreateBioPageDialog>
+                            <Button>
+                                <Plus data-icon="inline-start" />
+                                Create bio page
+                            </Button>
+                        </CreateBioPageDialog>
+                    }
+                />
 
                 {bioPages.length === 0 ? (
                     <Empty className="bg-muted/30">
@@ -464,7 +456,7 @@ export default function BioPages({
                         ))}
                     </section>
                 )}
-            </main>
+            </section>
         </>
     );
 }

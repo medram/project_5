@@ -10,6 +10,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use App\Models\Workspace;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
 class ProfileController extends Controller
@@ -50,9 +53,38 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        Auth::logout();
+        DB::transaction(function () use ($user): void {
+            $ownedWorkspaces = Workspace::query()
+                ->where('owner_id', $user->getKey())
+                ->lockForUpdate()
+                ->get();
 
-        $user->delete();
+            foreach ($ownedWorkspaces as $workspace) {
+                $hasOtherMembers = DB::table('workspace_user')
+                    ->where('workspace_id', $workspace->getKey())
+                    ->where('user_id', '!=', $user->getKey())
+                    ->exists();
+
+                if ($hasOtherMembers) {
+                    throw ValidationException::withMessages([
+                        'workspaces' => "Transfer ownership of {$workspace->name} to another member before deleting your account.",
+                    ]);
+                }
+            }
+
+            foreach ($ownedWorkspaces as $workspace) {
+                foreach (['analytics_events', 'custom_domains', 'webhooks', 'tracking_pixels', 'link_pages', 'link_overlays', 'bio_pages', 'folders', 'links'] as $table) {
+                    DB::table($table)->where('workspace_id', $workspace->getKey())->delete();
+                }
+
+                $workspace->delete();
+            }
+
+            $user->refresh();
+            Auth::logout();
+            $user->delete();
+        });
+
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

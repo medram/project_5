@@ -1,6 +1,12 @@
 import { Head, router } from '@inertiajs/react';
-import { Check, CreditCard, Gauge, Infinity } from 'lucide-react';
+import {
+    Check,
+    CreditCard,
+    Gauge,
+    Infinity as InfinityIcon,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -60,6 +66,7 @@ export default function BillingIndex({
     subscription,
     plans,
     usage,
+    canManageBilling,
 }: BillingPageProps) {
     const usageMetrics: { metric: UsageMetric; noun: string }[] = [
         { metric: usage.links, noun: 'links' },
@@ -71,7 +78,7 @@ export default function BillingIndex({
 
     function selectFreePlan() {
         router.patch(
-            '/billing/plan',
+            '/account-settings/billing/plan',
             { plan: 'free' },
             { preserveScroll: true },
         );
@@ -82,30 +89,21 @@ export default function BillingIndex({
             <Head title="Billing & usage" />
 
             <div className="flex flex-col gap-6 p-4 sm:p-6">
-                <header className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <CreditCard className="size-4" aria-hidden="true" />
-                        <span className="text-sm font-medium">
-                            Account billing
-                        </span>
-                    </div>
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Plan and usage
-                    </h1>
-                    <p className="max-w-2xl text-sm text-muted-foreground">
-                        Plans control LinkPilot account limits. Payment
-                        collection is not configured in this local environment.
-                    </p>
-                </header>
+                <PageHeader
+                    title="Plan and usage"
+                    eyebrow="Workspace billing"
+                    icon={CreditCard}
+                    description="Plans control the current workspace limits. Payment collection is not configured in this local environment."
+                />
 
-                <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                <div className="grid gap-4">
                     <Card>
                         <CardHeader>
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <CardTitle>Current plan</CardTitle>
                                     <CardDescription>
-                                        Your active local entitlement.
+                                        Limits apply to the active workspace.
                                     </CardDescription>
                                 </div>
                                 <Badge variant="secondary">
@@ -132,7 +130,7 @@ export default function BillingIndex({
                         </CardContent>
                     </Card>
 
-                    <div className="grid gap-4 md:grid-cols-3">
+                    <div className="grid gap-4 xl:grid-cols-3">
                         {plans.map((plan) => {
                             const active = plan.code === subscription.plan.code;
 
@@ -185,16 +183,23 @@ export default function BillingIndex({
                                                 Active plan
                                             </span>
                                         ) : plan.code === 'free' ? (
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={selectFreePlan}
-                                            >
-                                                Select Free
-                                            </Button>
+                                            canManageBilling ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={selectFreePlan}
+                                                >
+                                                    Select Free
+                                                </Button>
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    Only workspace owners can
+                                                    change plans
+                                                </span>
+                                            )
                                         ) : (
                                             <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <Infinity
+                                                <InfinityIcon
                                                     className="size-4"
                                                     aria-hidden="true"
                                                 />

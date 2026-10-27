@@ -10,15 +10,15 @@ REA analyzed the public reference application's login-loaded bundle as `ev_35f2c
 
 Observed end-user capabilities:
 
-| Area | Observed capabilities |
-|---|---|
-| Short links | Direct destinations, branded-domain selection, custom back-half, folders, tags, preview/title, tracking, retargeting, password, scheduling, list filtering/export, per-link analytics |
-| QR codes | Direct or short-link destination, optional title, optional short-link sharing settings, tracking/retargeting/password/schedule, list/export, settings and insights |
-| Link in bio | Content, appearance, and insights views; links, images, text, social icons, pinning, scheduling/disable controls, and YouTube/SoundCloud/Vimeo/Spotify/Twitch/TikTok embeds |
-| Analytics | Time-range filter, engagements and tracked events, devices, referrers, locations, browsers, and platforms |
-| Organization and delivery | Folders, custom domains, CTA overlays, tracking pixels, and link landing pages |
-| Account and collaboration | API keys, notifications, billing, workspaces, members/invites, webhooks, pricing, and usage limits |
-| Platform administration | Roles, users, plans/subscriptions, localization, site/system/SEO/email/auth/GDPR/analytics configuration and administrator insights |
+| Area                      | Observed capabilities                                                                                                                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Short links               | Direct destinations, branded-domain selection, custom back-half, folders, tags, preview/title, tracking, retargeting, password, scheduling, list filtering/export, per-link analytics |
+| QR codes                  | Direct or short-link destination, optional title, optional short-link sharing settings, tracking/retargeting/password/schedule, list/export, settings and insights                    |
+| Link in bio               | Content, appearance, and insights views; links, images, text, social icons, pinning, scheduling/disable controls, and YouTube/SoundCloud/Vimeo/Spotify/Twitch/TikTok embeds           |
+| Analytics                 | Time-range filter, engagements and tracked events, devices, referrers, locations, browsers, and platforms                                                                             |
+| Organization and delivery | Folders, custom domains, CTA overlays, tracking pixels, and link landing pages                                                                                                        |
+| Account and collaboration | API keys, notifications, billing, workspaces, members/invites, webhooks, pricing, and usage limits                                                                                    |
+| Platform administration   | Roles, users, plans/subscriptions, localization, site/system/SEO/email/auth/GDPR/analytics configuration and administrator insights                                                   |
 
 The reference's browser scenario tool timed out at the MCP transport layer, so REA did not claim to perform that click. The authenticated user-surface observations were performed separately through the browser automation layer. The REA static feature inventory remains the authority for the broader route/module catalog.
 

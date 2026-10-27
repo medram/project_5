@@ -31,8 +31,14 @@ class StoreLinkOverlayRequest extends FormRequest
             'body' => ['nullable', 'string', 'max:500'],
             'cta_label' => ['required', 'string', 'max:100'],
             'is_active' => ['required', 'boolean'],
-            'tracking_pixel_ids' => ['nullable', 'array', 'max:5'],
-            'tracking_pixel_ids.*' => ['integer', 'distinct'],
+            'starts_at' => ['sometimes', 'nullable', 'date'],
+            'expires_at' => [
+                'sometimes',
+                'nullable',
+                'date',
+                ...($this->filled('starts_at') ? ['after:starts_at'] : []),
+            ],
+            'display_delay_seconds' => ['sometimes', 'integer', 'between:0,60'],
         ];
     }
 }

@@ -18,7 +18,7 @@ class WebhookDispatcher
         $body = WebhookPayload::fromEvent($event);
 
         Webhook::query()
-            ->where('user_id', $event->user_id)
+            ->where('workspace_id', $event->workspace_id)
             ->where('is_active', true)
             ->get()
             ->filter(fn (Webhook $webhook): bool => in_array(

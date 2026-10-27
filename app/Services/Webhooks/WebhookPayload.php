@@ -17,10 +17,9 @@ class WebhookPayload
             'event_id' => $event->uuid,
             'event' => $event->event_name,
             'occurred_at' => $event->occurred_at->utc()->format('Y-m-d\TH:i:s\Z'),
-            'account_id' => $event->user_id,
+            'workspace_id' => $event->workspace_id,
             'data' => static::dataFor($event),
         ];
-
         return json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 
@@ -39,10 +38,20 @@ class WebhookPayload
             ],
             'link_page.view' => [
                 'link_page' => static::ref($event->link_page_id, $event->linkPage?->slug, 'slug'),
+                ...($event->link_page_variant_id === null ? [] : [
+                    'link_page_variant' => static::ref($event->link_page_variant_id, $event->linkPageVariant?->name, 'name'),
+                ]),
             ],
             'link_page.clicked' => [
                 'link_page' => static::ref($event->link_page_id, $event->linkPage?->slug, 'slug'),
                 'link_page_item' => static::ref($event->link_page_item_id),
+                ...($event->link_page_variant_id === null ? [] : [
+                    'link_page_variant' => static::ref($event->link_page_variant_id, $event->linkPageVariant?->name, 'name'),
+                ]),
+            ],
+            'link_page.lead_submitted' => [
+                'link_page' => static::ref($event->link_page_id, $event->linkPage?->slug, 'slug'),
+                'link_page_variant' => static::ref($event->link_page_variant_id, $event->linkPageVariant?->name, 'name'),
             ],
             'bio_page.view' => [
                 'bio_page' => static::ref($event->bio_page_id, $event->bioPage?->handle, 'handle'),

@@ -1,0 +1,941 @@
+{
+    "schemaVersion": "1.0.0",
+    "referenceProduct": "BeLink",
+    "purpose": "Authenticated reference evidence for LinkPilot information architecture, density, responsive behavior, and interaction sequencing; never a source of branding, copy, assets, or proprietary implementation.",
+    "captureContext": {
+        "capturedOn": "2026-10-20",
+        "desktopViewport": "1440x1000",
+        "mobileViewport": "390x844",
+        "deviceScaleFactor": 1.25,
+        "timestampSource": "PNG filesystem modification time retained at capture"
+    },
+    "screenshots": [
+        {
+            "path": "product/reference/belink/screenshots/user/bio-appearance-desktop.png",
+            "role": "user",
+            "route": "/dashboard/biolinks/{bioLink}/edit",
+            "state": "appearance tab",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:08:24Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "An Appearance tab is selected beside Content and Insights.",
+                "Background, profile, button, and font controls appear beside a phone preview."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/bio-content-desktop.png",
+            "role": "user",
+            "route": "/dashboard/biolinks/{bioLink}/edit",
+            "state": "content tab",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:08:04Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "A Content tab shows an ordered list of bio blocks.",
+                "A live phone-shaped preview occupies the right side of the editor."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/bio-insights-desktop.png",
+            "role": "user",
+            "route": "/dashboard/biolinks/{bioLink}/edit",
+            "state": "insights tab",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:08:06Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "An Insights tab contains summary and chart regions.",
+                "The phone preview is replaced by analytics content in this tab."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/custom-domains-desktop.png",
+            "role": "user",
+            "route": "/dashboard/custom-domains",
+            "state": "empty list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:32Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The custom-domain screen shows an empty state.",
+                "A primary action offers creation of a custom domain."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/folders-desktop.png",
+            "role": "user",
+            "route": "/dashboard/folders",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:29Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Folders appear as compact rows with counts and row actions.",
+                "Search/filter controls and a new-folder action are visible."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/insights-desktop.png",
+            "role": "user",
+            "route": "/dashboard/insights",
+            "state": "engagement overview",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:24Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The overview uses summary metrics, a time-series chart, and a circular breakdown.",
+                "Date and engagement/event controls are visible above the report."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/insights-events-desktop.png",
+            "role": "user",
+            "route": "/dashboard/insights/events",
+            "state": "event table",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:27Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Events are presented in a dense table.",
+                "Rows expose event, resource, time, and coarse client-dimension columns."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/link-pages-desktop.png",
+            "role": "user",
+            "route": "/dashboard/link-pages",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:39Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Link pages are listed as resource rows with status and action controls.",
+                "A create action and list toolbar are visible."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/links-list-desktop.png",
+            "role": "user",
+            "route": "/dashboard",
+            "state": "links list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:00Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Short links are shown in a dense resource list with per-row actions and metrics.",
+                "The desktop shell includes a left resource navigation and top search."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/login-desktop.png",
+            "role": "guest",
+            "route": "/login",
+            "state": "login form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:20:32Z",
+            "redactionNote": "The demo email was replaced in the rendered form with redacted@example.test before capture; no LinkPilot customer data or credential is present.",
+            "observedBehaviors": [
+                "A centered login card presents email, password, persistent-session, password-recovery, Google login, and registration controls.",
+                "Separate demo-mode shortcuts expose the reference product's user and administrator entry points."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/mobile-bio-editor.png",
+            "role": "user",
+            "route": "/dashboard/biolinks/{bioLink}/edit",
+            "state": "mobile content editor",
+            "viewport": "390x844",
+            "capturedAt": "2026-10-20T17:11:08Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The bio editor collapses to a narrow single-column content view.",
+                "A fixed five-item bottom navigation is visible."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/mobile-bottom-nav.png",
+            "role": "user",
+            "route": "/dashboard",
+            "state": "mobile links list",
+            "viewport": "390x844",
+            "capturedAt": "2026-10-20T17:11:06Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The resource list is presented without desktop sidebar navigation.",
+                "A fixed bottom navigation exposes five labelled destinations."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/new-link-dialog-desktop.png",
+            "role": "user",
+            "route": "/dashboard",
+            "state": "new-link dialog",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:07:27Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "A centred link-creation dialog overlays the links list.",
+                "Destination, short URL, title, QR, and advanced-option controls are visible."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/new-link-retargeting-desktop.png",
+            "role": "user",
+            "route": "/dashboard",
+            "state": "retargeting subdialog",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:07:37Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "A nested Retargeting panel shows country, device, and platform destination-rule sections.",
+                "The underlying link-creation dialog remains visible behind the nested panel."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/new-link-tracking-desktop.png",
+            "role": "user",
+            "route": "/dashboard",
+            "state": "tracking subdialog",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:07:33Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "A nested Tracking panel exposes UTM parameter fields and custom parameters.",
+                "The underlying link-creation dialog remains visible behind the nested panel."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/new-qr-dialog-desktop.png",
+            "role": "user",
+            "route": "/dashboard/qr-codes",
+            "state": "new-QR dialog",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:07:50Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "A QR creation dialog pairs destination/title inputs with a QR preview.",
+                "Tracking, retargeting, password, and schedule affordances appear in the dialog footer."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/notification-menu-desktop.png",
+            "role": "user",
+            "route": "/dashboard",
+            "state": "notification menu open",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:55Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "A right-aligned notification popover lists recent notification cards.",
+                "Unread/all filtering and a route to the full notification view are visible."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/overlays-desktop.png",
+            "role": "user",
+            "route": "/dashboard/link-overlays",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:34Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "CTA overlays are shown as rows with status and row actions.",
+                "A create action appears in the resource toolbar."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/pixels-desktop.png",
+            "role": "user",
+            "route": "/dashboard/pixels",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:36Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The tracking-pixel screen presents a resource table and create action.",
+                "Provider and status columns are visible."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/qr-list-desktop.png",
+            "role": "user",
+            "route": "/dashboard/qr-codes",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:15Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "QR campaigns appear as rows with thumbnail previews and row actions.",
+                "A create action and list toolbar are visible."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/settings-api-keys-desktop.png",
+            "role": "user",
+            "route": "/account-settings/api-keys",
+            "state": "API key list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:51Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The API-key screen shows a tabular list with name and lifecycle columns.",
+                "A create-key action is present."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/settings-billing-desktop.png",
+            "role": "user",
+            "route": "/account-settings/billing",
+            "state": "billing summary",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:49Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The billing screen shows current-plan details and usage meters.",
+                "An upgrade action and resource limits are visible."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/settings-general-desktop.png",
+            "role": "user",
+            "route": "/account-settings/general",
+            "state": "general settings",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:42Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "General settings group profile image, basic account details, social sign-in, and locale controls.",
+                "Account-settings navigation is separate from the resource sidebar."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/settings-security-desktop.png",
+            "role": "user",
+            "route": "/account-settings/security",
+            "state": "security settings",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:44Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Security settings group password, two-factor authentication, and session controls.",
+                "Actions are presented in distinct labelled sections."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/settings-webhooks-desktop.png",
+            "role": "user",
+            "route": "/account-settings/webhooks",
+            "state": "webhook list with delivery summary",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:17:54Z",
+            "redactionNote": "The demo endpoint UUID was irreversibly replaced in the rendered page with [redacted-id] before capture; no LinkPilot secret is present.",
+            "observedBehaviors": [
+                "The webhook settings list shows endpoint status, subscribed event, delivery count, overflow actions, and a create action.",
+                "The account settings navigation groups webhook management with API keys under a Developer section."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/user/settings-workspaces-desktop.png",
+            "role": "user",
+            "route": "/account-settings/workspaces",
+            "state": "workspace list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:47Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Workspaces are listed with role and member information.",
+                "A create-workspace action is visible."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/biolinks-desktop.png",
+            "role": "admin",
+            "route": "/admin/biolinks",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:21Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Bio pages appear in an administration table with owner and status metadata."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/custom-domains-desktop.png",
+            "role": "admin",
+            "route": "/admin/custom-domains",
+            "state": "empty list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:25Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The administration custom-domain screen shows an empty-state action."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/custom-pages-desktop.png",
+            "role": "admin",
+            "route": "/admin/custom-pages",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:33Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Custom pages are managed from a table with publication metadata and actions."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/files-desktop.png",
+            "role": "admin",
+            "route": "/admin/files",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:35Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Uploaded files appear in a metadata table with owner, size, and time columns."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/folders-desktop.png",
+            "role": "admin",
+            "route": "/admin/folders",
+            "state": "card list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:23Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Folders are displayed as metadata cards with owner and count information."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/insights-desktop.png",
+            "role": "admin",
+            "route": "/admin/insights",
+            "state": "overview",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:08:58Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The administration overview shows platform totals and a time-series chart.",
+                "Country and client-dimension summaries appear below the chart."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/insights-mobile.png",
+            "role": "admin",
+            "route": "/admin/insights",
+            "state": "mobile overview",
+            "viewport": "390x844",
+            "capturedAt": "2026-10-20T17:11:11Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Platform metrics and chart regions stack vertically on mobile.",
+                "The mobile header replaces the desktop sidebar."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/insights-visitors-desktop.png",
+            "role": "admin",
+            "route": "/admin/insights/visitors",
+            "state": "visitor overview",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:35Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The visitor view contains chart and summary regions for privacy-safe traffic analysis."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/link-pages-desktop.png",
+            "role": "admin",
+            "route": "/admin/link-pages",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:29Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Link pages are shown in a cross-owner administration table with status metadata."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/links-desktop.png",
+            "role": "admin",
+            "route": "/admin/links",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:19Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Short links are shown in a cross-owner administration table with metadata and actions."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/localizations-desktop.png",
+            "role": "admin",
+            "route": "/admin/localizations",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:37Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Locales are listed with language, direction, publication, and action columns."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/logs-desktop.png",
+            "role": "admin",
+            "route": "/admin/logs",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:40Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Operational log records are presented in a filterable table with level and timestamp metadata."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/overlays-desktop.png",
+            "role": "admin",
+            "route": "/admin/link-overlays",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:27Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "CTA overlays appear in a cross-owner administration table."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/pixels-desktop.png",
+            "role": "admin",
+            "route": "/admin/pixels",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:39Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Tracking pixels appear in a cross-owner administration table with provider metadata."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/plans-desktop.png",
+            "role": "admin",
+            "route": "/admin/plans",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:36Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Plans are listed with price and plan-state metadata.",
+                "A plan-management action appears in the toolbar."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/roles-desktop.png",
+            "role": "admin",
+            "route": "/admin/roles",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:17Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Roles are listed with permission/member metadata and row actions."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-ads-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/ads",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:19Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The reference settings form exposes advertising-provider fields and enablement controls."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-analytics-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/analytics",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:45Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Analytics settings are grouped into labelled provider/configuration sections."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-authentication-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/authentication",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:57Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Authentication settings expose registration and sign-in controls."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-biolinks-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/biolinks",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:46Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Bio-page defaults and feature controls appear in a labelled settings form."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-captcha-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/captcha",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:47Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Captcha provider selection and credential fields appear in a labelled form."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-custom-code-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/custom-code",
+            "state": "unsafe reference setting",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:10Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The reference exposes custom-code text areas; LinkPilot treats this as a safety divergence."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-email-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/email",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:01Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Email sender and transport fields are grouped in the settings form."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-gdpr-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/gdpr",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:48Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "GDPR settings expose consent and policy-related controls."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-general-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/general",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:42Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "General platform identity and contact fields appear in a labelled form."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-index-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings",
+            "state": "settings index",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:02Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "The settings index presents categories in a secondary navigation.",
+                "The administration sidebar remains distinct from user resource navigation."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-landing-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/landing",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:41Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Landing-page controls are grouped in a dedicated settings section."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-links-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/links",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:44Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Short-link defaults and feature controls appear in a dedicated settings section."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-localization-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/localization",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:55Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Default language, timezone, and locale controls appear in the localization section."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-menus-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/menus",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:52Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Menu/navigation controls appear in a dedicated settings section."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-seo-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/seo",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:17Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "SEO title, description, and sharing fields appear in a dedicated settings section."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-subscriptions-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/subscriptions",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:53Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Subscription defaults and payment-related controls appear in the settings form."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-system-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/system",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:44Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "System settings show runtime/maintenance controls and system information."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-themes-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/themes",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:42Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Theme selection and visual-token controls appear in a dedicated settings section."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/settings-uploading-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/uploading",
+            "state": "settings form",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:59Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Upload limits and accepted-file controls appear in a dedicated settings section."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/subscriptions-desktop.png",
+            "role": "admin",
+            "route": "/admin/subscriptions",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:38Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Subscriptions appear in a table with account, plan, status, and date metadata."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/users-desktop.png",
+            "role": "admin",
+            "route": "/admin/users",
+            "state": "list",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:14Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "Users appear in a dense table with account, status, role, and usage metadata."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        },
+        {
+            "path": "product/reference/belink/screenshots/admin/users-mobile.png",
+            "role": "admin",
+            "route": "/admin/users",
+            "state": "mobile card list",
+            "viewport": "390x844",
+            "capturedAt": "2026-10-20T17:11:36Z",
+            "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
+            "observedBehaviors": [
+                "User records collapse into labelled mobile cards.",
+                "The mobile header replaces the desktop sidebar."
+            ],
+            "evidenceStatus": "retained",
+            "exclusionReason": null
+        }
+    ]
+}

@@ -44,12 +44,13 @@ class PublicBioPageTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('bio-pages/public', false)
-                ->where('displayName', 'Creator Name')
-                ->where('bio', 'Links and notes from a creator.')
-                ->where('handle', 'creator-26')
-                ->has('links', 2)
-                ->where('links.0.title', 'First')
-                ->where('links.1.title', 'Later'),
+                ->where('presentation.displayName', 'Creator Name')
+                ->where('presentation.bio', 'Links and notes from a creator.')
+                ->where('presentation.handle', 'creator-26')
+                ->has('presentation.items', 2)
+                ->where('presentation.items.0.type', 'link')
+                ->where('presentation.items.0.title', 'First')
+                ->where('presentation.items.1.title', 'Later'),
             );
     }
 

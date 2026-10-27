@@ -31,35 +31,34 @@
 - Insights render a fourteen-day daily series in `config('app.timezone')`, defaulting to UTC. Render a truthful zero-data state instead of dummy chart values.
 - Use REA browser captures when a reference surface or the implemented UI needs evidence-based observation; capture only the required navigation, DOM, accessibility, and screenshots.
 
-
 ## File Structure
 
-| Path | Responsibility |
-|---|---|
-| `compose.yaml` | Bind-mounted local Laravel runtime on port 8000. |
-| `docker/php/Dockerfile` | PHP 8.5/Node 22 CLI image with Composer and SQLite support. |
-| `.dockerignore` | Keeps local dependency/build noise out of the Docker image context. |
-| `app/Models/Link.php`, `Click.php` | Short-link records, generated-slug behavior, click relationship. |
-| `app/Models/BioPage.php`, `BioLink.php` | Published bio-page records, ordered button relationship. |
-| `app/Policies/LinkPolicy.php`, `BioPagePolicy.php` | Owner-only authorization. |
-| `app/Http/Requests/*LinkRequest.php`, `*BioPageRequest.php`, `*BioLinkRequest.php` | Normalization and validation at write boundaries. |
-| `app/Http/Controllers/LinkController.php` | Authenticated short-link list and CRUD. |
-| `app/Http/Controllers/LinkInsightsController.php` | Total and fourteen-day click aggregation. |
-| `app/Http/Controllers/PublicLinkController.php` | Public 302 redirect and click persistence. |
-| `app/Http/Controllers/BioPageController.php`, `BioLinkController.php` | Authenticated bio-page and ordered-link management. |
-| `app/Http/Controllers/PublicBioPageController.php` | Published public bio-page rendering. |
-| `database/migrations/*_create_links_table.php`, `*_create_clicks_table.php` | Link/click storage and referential cleanup. |
-| `database/migrations/*_create_bio_pages_table.php`, `*_create_bio_links_table.php` | Bio-page/button storage and referential cleanup. |
-| `database/factories/{Link,Click,BioPage,BioLink}Factory.php` | Isolated feature-test fixtures. |
-| `resources/js/pages/links/index.tsx`, `insights.tsx` | Link management and insight pages. |
-| `resources/js/components/links/link-form-dialog.tsx` | Reusable accessible create/edit form. |
-| `resources/js/pages/bio-pages/index.tsx`, `edit.tsx`, `public.tsx` | Bio-page index, editor, and public surface. |
-| `resources/js/components/bio-pages/{editor,live-preview}.tsx` | Ordered editor controls and shared preview presentation. |
-| `resources/js/types/{links,bio-pages}.ts` | Server-prop and UI data contracts. |
-| `resources/js/components/app-sidebar.tsx`, `resources/css/app.css` | LinkPilot navigation and original visual tokens. |
-| `routes/web.php` | Authenticated management routes followed by public bio and final wildcard redirect routes. |
-| `tests/Feature/Links/*.php`, `tests/Feature/BioPages/*.php` | Behavioral regression coverage. |
-| `README.md` | Containerized setup, development, test, and build commands. |
+| Path                                                                               | Responsibility                                                                             |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `compose.yaml`                                                                     | Bind-mounted local Laravel runtime on port 8000.                                           |
+| `docker/php/Dockerfile`                                                            | PHP 8.5/Node 22 CLI image with Composer and SQLite support.                                |
+| `.dockerignore`                                                                    | Keeps local dependency/build noise out of the Docker image context.                        |
+| `app/Models/Link.php`, `Click.php`                                                 | Short-link records, generated-slug behavior, click relationship.                           |
+| `app/Models/BioPage.php`, `BioLink.php`                                            | Published bio-page records, ordered button relationship.                                   |
+| `app/Policies/LinkPolicy.php`, `BioPagePolicy.php`                                 | Owner-only authorization.                                                                  |
+| `app/Http/Requests/*LinkRequest.php`, `*BioPageRequest.php`, `*BioLinkRequest.php` | Normalization and validation at write boundaries.                                          |
+| `app/Http/Controllers/LinkController.php`                                          | Authenticated short-link list and CRUD.                                                    |
+| `app/Http/Controllers/LinkInsightsController.php`                                  | Total and fourteen-day click aggregation.                                                  |
+| `app/Http/Controllers/PublicLinkController.php`                                    | Public 302 redirect and click persistence.                                                 |
+| `app/Http/Controllers/BioPageController.php`, `BioLinkController.php`              | Authenticated bio-page and ordered-link management.                                        |
+| `app/Http/Controllers/PublicBioPageController.php`                                 | Published public bio-page rendering.                                                       |
+| `database/migrations/*_create_links_table.php`, `*_create_clicks_table.php`        | Link/click storage and referential cleanup.                                                |
+| `database/migrations/*_create_bio_pages_table.php`, `*_create_bio_links_table.php` | Bio-page/button storage and referential cleanup.                                           |
+| `database/factories/{Link,Click,BioPage,BioLink}Factory.php`                       | Isolated feature-test fixtures.                                                            |
+| `resources/js/pages/links/index.tsx`, `insights.tsx`                               | Link management and insight pages.                                                         |
+| `resources/js/components/links/link-form-dialog.tsx`                               | Reusable accessible create/edit form.                                                      |
+| `resources/js/pages/bio-pages/index.tsx`, `edit.tsx`, `public.tsx`                 | Bio-page index, editor, and public surface.                                                |
+| `resources/js/components/bio-pages/{editor,live-preview}.tsx`                      | Ordered editor controls and shared preview presentation.                                   |
+| `resources/js/types/{links,bio-pages}.ts`                                          | Server-prop and UI data contracts.                                                         |
+| `resources/js/components/app-sidebar.tsx`, `resources/css/app.css`                 | LinkPilot navigation and original visual tokens.                                           |
+| `routes/web.php`                                                                   | Authenticated management routes followed by public bio and final wildcard redirect routes. |
+| `tests/Feature/Links/*.php`, `tests/Feature/BioPages/*.php`                        | Behavioral regression coverage.                                                            |
+| `README.md`                                                                        | Containerized setup, development, test, and build commands.                                |
 
 ## Review Focus
 
@@ -74,6 +73,7 @@
 ### Task 1: Bootstrap the Containerized Laravel React Application
 
 **Files:**
+
 - Create: `compose.yaml`
 - Create: `docker/php/Dockerfile`
 - Create: `.dockerignore`
@@ -82,6 +82,7 @@
 - Test: generated `tests/Feature/Auth/*` and `tests/Feature/ExampleTest.php`
 
 **Interfaces:**
+
 - Produces a running Laravel application at `http://localhost:8000` with standard registration/login/logout routes and an Inertia React app shell.
 - Produces `docker compose run --rm app php artisan <command>` and `docker compose run --rm app npm <command>` as the canonical PHP/Composer/test and JavaScript commands.
 
@@ -113,6 +114,7 @@ git commit -m "feat: bootstrap Laravel React application"
 ### Task 2: Build Owner-Authorized Short-Link Management
 
 **Files:**
+
 - Create: `app/Models/Link.php`
 - Create: `app/Policies/LinkPolicy.php`
 - Create: `app/Http/Requests/StoreLinkRequest.php`
@@ -124,6 +126,7 @@ git commit -m "feat: bootstrap Laravel React application"
 - Test: `tests/Feature/Links/LinkManagementTest.php`
 
 **Interfaces:**
+
 - `GET /dashboard` redirects an authenticated user to `links.index`.
 - `GET /links` (`links.index`) renders `links/index` with the signed-in owner’s links and total click counts.
 - `POST /links` (`links.store`) accepts `destination_url`, nullable `title`, nullable `slug`, and `is_active`; it redirects to `links.index`.
@@ -186,6 +189,7 @@ git commit -m "feat: add owned short links"
 ### Task 3: Record Public Redirects and Serve Per-Link Insights
 
 **Files:**
+
 - Create: `app/Models/Click.php`
 - Create: `app/Http/Controllers/PublicLinkController.php`
 - Create: `app/Http/Controllers/LinkInsightsController.php`
@@ -197,6 +201,7 @@ git commit -m "feat: add owned short links"
 - Test: `tests/Feature/Links/LinkInsightsTest.php`
 
 **Interfaces:**
+
 - `GET /links/{link}/insights` (`links.insights`) renders `links/insights` with `link`, `totalClicks`, and `dailyClicks: Array<{ date: string, clicks: int }>` for exactly fourteen application-timezone days ending today.
 - Final route `GET /{slug}` (`links.redirect`) creates one click and returns HTTP 302 to an active link’s destination; inactive/missing slugs return 404.
 - `Click` belongs to `Link` and stores only `link_id` and non-null `occurred_at`; it does not store visitor attributes.
@@ -235,6 +240,7 @@ git commit -m "feat: track short link redirects"
 ### Task 4: Deliver the Short-Link Dashboard Surface
 
 **Files:**
+
 - Create: `resources/js/types/links.ts`
 - Create: `resources/js/pages/links/index.tsx`
 - Create: `resources/js/pages/links/insights.tsx`
@@ -244,6 +250,7 @@ git commit -m "feat: track short link redirects"
 - Modify: `resources/css/app.css`
 
 **Interfaces:**
+
 - `LinkListItem` includes `id`, `title`, `slug`, `destinationUrl`, `isActive`, `clicksCount`, and timestamps.
 - `LinkInsightProps` includes one `LinkListItem`, `totalClicks: number`, and `dailyClicks: Array<{ date: string; clicks: number }>`.
 - The UI submits only through named Inertia routes/forms from Tasks 2–3.
@@ -276,6 +283,7 @@ git commit -m "feat: add short link dashboard"
 ### Task 5: Build Bio-Page Persistence, Authorization, and Public Resolution
 
 **Files:**
+
 - Create: `app/Models/BioPage.php`
 - Create: `app/Models/BioLink.php`
 - Create: `app/Policies/BioPagePolicy.php`
@@ -296,6 +304,7 @@ git commit -m "feat: add short link dashboard"
 - Test: `tests/Feature/BioPages/PublicBioPageTest.php`
 
 **Interfaces:**
+
 - Authenticated `GET /bio-pages`, `POST /bio-pages`, `GET/PATCH/DELETE /bio-pages/{bioPage}`.
 - Authenticated `POST /bio-pages/{bioPage}/links`, `PATCH/DELETE /bio-pages/{bioPage}/links/{bioLink}`, and `PATCH /bio-pages/{bioPage}/links/reorder` with a complete ordered `link_ids` array.
 - Public `GET /bio/{handle}` renders `bio-pages/public` only for a published page, with its active `bioLinks` ordered by `position`.
@@ -335,6 +344,7 @@ git commit -m "feat: add publishable bio pages"
 ### Task 6: Deliver the Bio-Page Editor and Original Public Presentation
 
 **Files:**
+
 - Create: `resources/js/types/bio-pages.ts`
 - Create: `resources/js/pages/bio-pages/index.tsx`
 - Create: `resources/js/pages/bio-pages/edit.tsx`
@@ -345,6 +355,7 @@ git commit -m "feat: add publishable bio pages"
 - Modify: `resources/css/app.css`
 
 **Interfaces:**
+
 - `BioPageEditorProps` contains one owner-authorized page and its ordered buttons.
 - `BioPagePublicProps` contains `displayName`, nullable `bio`, `handle`, and active ordered buttons only.
 - Editor mutations submit through the routes from Task 5; reordering is explicit “move up”/“move down”, not drag-and-drop.
@@ -377,11 +388,13 @@ git commit -m "feat: add bio page editor"
 ### Task 7: Document, Exercise, and Verify the Complete Release
 
 **Files:**
+
 - Modify: `README.md`
 - Modify: `docs/superpowers/specs/2026-10-16-linkpilot-design.md` only if implementation exposes a real spec mismatch
 - Test: full Laravel suite and Vite production build
 
 **Interfaces:**
+
 - README documents the only supported local commands: Docker build/serve, migrations, tests, and npm build.
 - The checked path is registration → create link → public redirect/click → insight count → create/publish bio page → public bio page.
 

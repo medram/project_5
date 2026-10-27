@@ -1,22 +1,22 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
-    working_dir: /var/www
-    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
-    volumes:
-      - .:/var/www
-    ports:
-      - "8000:8000"
-    command: php artisan serve --host=0.0.0.0 --port=8000
+    app:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+        working_dir: /var/www
+        user: '${LOCAL_UID:-1000}:${LOCAL_GID:-1000}'
+        volumes:
+            - .:/var/www
+        ports:
+            - '8000:8000'
+        command: php artisan serve --host=0.0.0.0 --port=8000
 
-  queue:
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
-    working_dir: /var/www
-    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
-    volumes:
-      - .:/var/www
-    command: php artisan queue:work --tries=3 --sleep=1
+    queue:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+        working_dir: /var/www
+        user: '${LOCAL_UID:-1000}:${LOCAL_GID:-1000}'
+        volumes:
+            - .:/var/www
+        command: php artisan queue:work --tries=3 --sleep=1

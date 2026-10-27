@@ -15,6 +15,7 @@ class LinkFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
+            'workspace_id' => fn (array $attributes): int => User::query()->findOrFail($attributes['user_id'])->current_workspace_id,
             'slug' => fake()->unique()->regexify('[a-z0-9]{7}'),
             'destination_url' => 'https://'.fake()->domainName().'/'.fake()->slug(),
             'title' => fake()->sentence(3),

@@ -1,22 +1,45 @@
+import { usePublicTrackingEvent } from '@/components/analytics/public-tracking-pixels';
 import { Head, router } from '@inertiajs/react';
 import { ArrowRight, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PublicTrackingPixels } from '@/components/analytics/public-tracking-pixels';
 import { TrackingConsent } from '@/components/analytics/tracking-consent';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { OverlayPublicProps } from '@/types/overlays';
 
-export default function PublicLinkOverlay({
+function PublicLinkOverlayContent({
     slug,
     overlay,
-    pixels,
     trackingConsent,
     privacyUrl,
+    canGrantConsent,
+    remainingDelaySeconds,
 }: OverlayPublicProps) {
+    const trackEvent = usePublicTrackingEvent();
     const [processing, setProcessing] = useState(false);
+    const [secondsRemaining, setSecondsRemaining] = useState(
+        remainingDelaySeconds,
+    );
+
+    useEffect(() => {
+        setSecondsRemaining(remainingDelaySeconds);
+    }, [remainingDelaySeconds]);
+
+    useEffect(() => {
+        if (secondsRemaining <= 0) {
+            return;
+        }
+
+        const timeout = window.setTimeout(() => {
+            setSecondsRemaining((current) => Math.max(0, current - 1));
+        }, 1000);
+
+        return () => window.clearTimeout(timeout);
+    }, [secondsRemaining]);
 
     function continueToDestination() {
+        trackEvent('button_click');
         router.post(
             `/${slug}/continue`,
             {},
@@ -31,7 +54,6 @@ export default function PublicLinkOverlay({
     return (
         <>
             <Head title={overlay.heading} />
-
             <main className="link-page-shell">
                 <div className="link-page-frame items-center text-center">
                     <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
@@ -46,8 +68,14 @@ export default function PublicLinkOverlay({
                             {overlay.heading}
                         </h1>
                         {overlay.body && (
-                            <p className="text-base leading-7 text-muted-foreground break-words">
+                            <p className="text-base leading-7 break-words text-muted-foreground">
                                 {overlay.body}
+                            </p>
+                        )}
+                        {secondsRemaining > 0 && (
+                            <p role="status" aria-live="polite">
+                                Continue available in {secondsRemaining}{' '}
+                                {secondsRemaining === 1 ? 'second' : 'seconds'}.
                             </p>
                         )}
                     </header>
@@ -55,7 +83,7 @@ export default function PublicLinkOverlay({
                     <Button
                         size="lg"
                         onClick={continueToDestination}
-                        disabled={processing}
+                        disabled={processing || secondsRemaining > 0}
                         className="w-full sm:w-auto"
                     >
                         {processing && <Spinner data-icon="inline-start" />}
@@ -66,11 +94,21 @@ export default function PublicLinkOverlay({
                     <TrackingConsent
                         consent={trackingConsent}
                         privacyUrl={privacyUrl}
+                        canGrantConsent={canGrantConsent}
                     />
                 </div>
-
-                <PublicTrackingPixels pixels={pixels} />
             </main>
         </>
+    );
+}
+
+export default function PublicLinkOverlay(props: OverlayPublicProps) {
+    return (
+        <PublicTrackingPixels
+            pixels={props.pixels}
+            consent={props.trackingConsent}
+        >
+            <PublicLinkOverlayContent {...props} />
+        </PublicTrackingPixels>
     );
 }

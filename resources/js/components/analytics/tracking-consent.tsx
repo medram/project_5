@@ -7,9 +7,17 @@ import { Spinner } from '@/components/ui/spinner';
 type TrackingConsentProps = {
     consent: 'granted' | 'denied' | null;
     privacyUrl: string | null;
+    /**
+     * Whether granting is available with the current privacy notice and analytics keys.
+     */
+    canGrantConsent: boolean;
 };
 
-export function TrackingConsent({ consent, privacyUrl }: TrackingConsentProps) {
+export function TrackingConsent({
+    consent,
+    privacyUrl,
+    canGrantConsent,
+}: TrackingConsentProps) {
     const [processing, setProcessing] = useState(false);
 
     if (consent !== null) {
@@ -60,16 +68,24 @@ export function TrackingConsent({ consent, privacyUrl }: TrackingConsentProps) {
                     </p>
                 </div>
             </div>
-            <div className="flex flex-wrap gap-2 pl-8">
-                <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => choose('granted')}
-                    disabled={processing}
-                >
-                    {processing && <Spinner data-icon="inline-start" />}
-                    Allow analytics
-                </Button>
+            <div className="flex flex-wrap items-center gap-2 pl-8">
+                {canGrantConsent ? (
+                    <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => choose('granted')}
+                        disabled={processing}
+                    >
+                        {processing && <Spinner data-icon="inline-start" />}
+                        Allow analytics
+                    </Button>
+                ) : (
+                    <p className="text-sm text-muted-foreground">
+                        Allowing analytics is unavailable until the privacy
+                        notice and analytics keys are configured. You can still
+                        decline.
+                    </p>
+                )}
                 <Button
                     type="button"
                     size="sm"

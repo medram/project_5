@@ -1,0 +1,109 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "admin-users-roles",
+    "area": "Administration",
+    "name": "Platform users, roles, and permissions",
+    "status": "in_progress",
+    "requirements": [
+        {
+            "id": "ADM-1",
+            "text": "Platform access requires an explicit seeded platform role with admin.access; no self-service path grants it.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "ADM-3",
+            "text": "An authorized administrator can suspend or restore another account and manage platform roles only after a confirmation identifies the target account and action; last-super-admin protections remain mandatory.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "ADM-4",
+            "text": "An administrator cannot self-suspend, self-demote, or remove the last super administrator.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "ADM-5",
+            "text": "The operations provisioning command grants the seeded super-admin role rather than a user boolean.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "AUSR-1",
+            "text": "Immutable super-admin and support roles receive the approved platform permission sets.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "AUSR-2",
+            "text": "User management exposes status, verification, platform roles, workspace membership metadata, restoration, and broadcasts.",
+            "priority": "P1",
+            "status": "planned"
+        }
+    ],
+    "routes": ["/admin/users", "/admin/roles"],
+    "dependencies": ["auth-account", "workspaces"],
+    "externalPrerequisites": [],
+    "acceptanceCriteria": [
+        {
+            "id": "AUSR-AC-1",
+            "text": "All administration entry and mutation routes check explicit platform permissions."
+        },
+        {
+            "id": "AUSR-AC-2",
+            "text": "The last super administrator cannot be suspended, deleted, or stripped of platform access."
+        },
+        {
+            "id": "AUSR-AC-3",
+            "text": "User records collapse to labelled cards on mobile without exposing tenant-private data."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/admin/users",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:14Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/users-desktop.png",
+            "observedBehaviors": [
+                "Users appear in a dense table with account, status, role, and usage metadata."
+            ]
+        },
+        {
+            "route": "/admin/users",
+            "role": "admin",
+            "viewport": "390x844",
+            "capturedAt": "2026-10-20T17:11:36Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/users-mobile.png",
+            "observedBehaviors": [
+                "User records collapse into labelled mobile cards.",
+                "The mobile header replaces the desktop sidebar."
+            ]
+        },
+        {
+            "route": "/admin/roles",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:17Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/roles-desktop.png",
+            "observedBehaviors": [
+                "Roles are listed with permission/member metadata and row actions."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "browser",
+            "description": "The limited /admin interface requires target/action confirmation before suspension, restoration, administrator grants/revocations, and plan assignment. A synthetic account completed suspend/restore and grant/revoke round trips; an ordinary user received 403 from /admin. Immutable role provisioning and last-super-admin protections remain outstanding.",
+            "reference": "Disposable review app http://localhost:8101/admin; confirmation workflows at 1440x900 and ordinary-user access check at /admin.",
+            "verifiedAt": "2026-10-22T16:17:41Z"
+        },
+        {
+            "type": "browser",
+            "description": "At 390x844, /admin displayed labelled account cards without horizontal document overflow. Account metadata remains visible; private tenant content and visitor data are absent.",
+            "reference": "Disposable review app http://localhost:8101/admin; product/verification/phase4-admin-shell-mobile.png.",
+            "verifiedAt": "2026-10-22T17:41:53Z"
+        }
+    ]
+}

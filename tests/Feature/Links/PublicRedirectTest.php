@@ -5,6 +5,7 @@ namespace Tests\Feature\Links;
 use App\Models\Link;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -47,13 +48,13 @@ class PublicRedirectTest extends TestCase
 
         $this
             ->actingAs($owner)
-            ->post('/links', [
+            ->post('/dashboard/links', [
                 'destination_url' => 'https://example.com/future',
                 'slug' => 'future-26',
                 'is_active' => true,
                 'available_from' => now()->addDay()->toDateTimeString(),
             ])
-            ->assertRedirect('/links');
+            ->assertRedirect('/dashboard/links');
 
         $this->get('/future-26')->assertNotFound();
 
@@ -66,13 +67,13 @@ class PublicRedirectTest extends TestCase
 
         $this
             ->actingAs($owner)
-            ->post('/links', [
+            ->post('/dashboard/links', [
                 'destination_url' => 'https://example.com/expired',
                 'slug' => 'expired-26',
                 'is_active' => true,
                 'expires_at' => now()->subMinute()->toDateTimeString(),
             ])
-            ->assertRedirect('/links');
+            ->assertRedirect('/dashboard/links');
 
         $this->get('/expired-26')->assertNotFound();
 
@@ -85,13 +86,13 @@ class PublicRedirectTest extends TestCase
 
         $this
             ->actingAs($owner)
-            ->post('/links', [
+            ->post('/dashboard/links', [
                 'destination_url' => 'https://example.com/private',
                 'slug' => 'private-26',
                 'is_active' => true,
                 'access_code' => 'open-sesame',
             ])
-            ->assertRedirect('/links');
+            ->assertRedirect('/dashboard/links');
 
         $this->withoutVite();
 
@@ -118,6 +119,38 @@ class PublicRedirectTest extends TestCase
             ->assertRedirect('https://example.com/private');
 
         $this->assertDatabaseCount('clicks', 1);
+    }
+
+    public function test_access_code_throttle_holds_when_the_user_agent_rotates(): void
+    {
+        Link::factory()->create([
+            'slug' => 'ua-rotating',
+            'destination_url' => 'https://example.com/ua-rotating',
+            'access_code' => Hash::make('correct-code'),
+            'access_code_version' => 1,
+        ]);
+        Link::factory()->create([
+            'slug' => 'ua-other-link',
+            'destination_url' => 'https://example.com/ua-other',
+            'access_code' => Hash::make('correct-code'),
+            'access_code_version' => 1,
+        ]);
+
+        foreach (range(1, 5) as $attempt) {
+            $this
+                ->post('/ua-rotating/unlock', ['access_code' => 'wrong-code'], ['User-Agent' => "Rotator/{$attempt}"])
+                ->assertSessionHasErrors('access_code');
+        }
+
+        $this
+            ->post('/ua-rotating/unlock', ['access_code' => 'wrong-code'], ['User-Agent' => 'Rotator/final'])
+            ->assertTooManyRequests();
+
+        // The security throttle stays scoped per link: another link is still
+        // reachable for the same client identity.
+        $this
+            ->post('/ua-other-link/unlock', ['access_code' => 'wrong-code'], ['User-Agent' => 'Rotator/final'])
+            ->assertSessionHasErrors('access_code');
     }
 
     public function test_dashboard_routes_do_not_shadow_public_short_link_slugs(): void

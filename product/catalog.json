@@ -1,0 +1,94 @@
+{
+    "schemaVersion": "1.0.0",
+    "productName": "LinkPilot",
+    "features": [
+        {
+            "id": "auth-account",
+            "file": "product/features/auth-account.json"
+        },
+        {
+            "id": "dashboard-shell",
+            "file": "product/features/dashboard-shell.json"
+        },
+        {
+            "id": "short-links",
+            "file": "product/features/short-links.json"
+        },
+        {
+            "id": "folders",
+            "file": "product/features/folders.json"
+        },
+        {
+            "id": "qr-codes",
+            "file": "product/features/qr-codes.json"
+        },
+        {
+            "id": "bio-pages",
+            "file": "product/features/bio-pages.json"
+        },
+        {
+            "id": "analytics",
+            "file": "product/features/analytics.json"
+        },
+        {
+            "id": "custom-domains",
+            "file": "product/features/custom-domains.json"
+        },
+        {
+            "id": "overlays",
+            "file": "product/features/overlays.json"
+        },
+        {
+            "id": "tracking-pixels",
+            "file": "product/features/tracking-pixels.json"
+        },
+        {
+            "id": "link-pages",
+            "file": "product/features/link-pages.json"
+        },
+        {
+            "id": "workspaces",
+            "file": "product/features/workspaces.json"
+        },
+        {
+            "id": "billing",
+            "file": "product/features/billing.json"
+        },
+        {
+            "id": "api-keys",
+            "file": "product/features/api-keys.json"
+        },
+        {
+            "id": "webhooks",
+            "file": "product/features/webhooks.json"
+        },
+        {
+            "id": "notifications",
+            "file": "product/features/notifications.json"
+        },
+        {
+            "id": "admin-insights",
+            "file": "product/features/admin-insights.json"
+        },
+        {
+            "id": "admin-plans-subscriptions",
+            "file": "product/features/admin-plans-subscriptions.json"
+        },
+        {
+            "id": "admin-users-roles",
+            "file": "product/features/admin-users-roles.json"
+        },
+        {
+            "id": "admin-content",
+            "file": "product/features/admin-content.json"
+        },
+        {
+            "id": "admin-settings",
+            "file": "product/features/admin-settings.json"
+        },
+        {
+            "id": "admin-files-pages-localization-logs",
+            "file": "product/features/admin-files-pages-localization-logs.json"
+        }
+    ]
+}

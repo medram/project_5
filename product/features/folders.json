@@ -1,0 +1,99 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "folders",
+    "area": "Resources",
+    "name": "Folders",
+    "status": "in_progress",
+    "requirements": [
+        {
+            "id": "FOL-1",
+            "text": "Create, rename, list, search, sort, paginate, and delete private folders in the active workspace; mobile cards replace unavailable tables without a misleading view selector, and long active-filter values/no-result text stay within the list card.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "FOL-2",
+            "text": "Deleting one or more folders preserves their links and clears folder_id on each affected link.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "FOL-3",
+            "text": "Folder lists show link count and click/event rollups.",
+            "priority": "P2",
+            "status": "in_progress"
+        },
+        {
+            "id": "FOL-4",
+            "text": "Folder queries, mutations, counts, and rollups are scoped to the active workspace.",
+            "priority": "P1",
+            "status": "in_progress"
+        }
+    ],
+    "routes": ["/dashboard/folders", "/dashboard/folders/{folder}"],
+    "dependencies": ["short-links", "analytics", "workspaces"],
+    "externalPrerequisites": [],
+    "acceptanceCriteria": [
+        {
+            "id": "FOL-AC-1",
+            "text": "Bulk deletion of one or more folders clears folder_id on affected links and never deletes those links."
+        },
+        {
+            "id": "FOL-AC-2",
+            "text": "Folder queries, mutations, link counts, and click/event rollups use only authorized active-workspace resources."
+        },
+        {
+            "id": "FOL-AC-3",
+            "text": "Folder cards and rows visibly show link counts and workspace-safe click and analytics-event rollups."
+        },
+        {
+            "id": "FOL-AC-4",
+            "text": "At mobile widths, folder lists show cards and hide the table selector; long active search values retain their full accessible filter name while truncating visually, and no-result text stays within the folder card."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/dashboard/folders",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:29Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/folders-desktop.png",
+            "observedBehaviors": [
+                "Folders appear as compact rows with counts and row actions.",
+                "Search/filter controls and a new-folder action are visible."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Folder list mutation regression passed in the focused management suites: deleting the only result on the last page returns to page 1 while preserving validated filters, sort, and view; update and bulk mutations also drop the stale page number.",
+            "reference": "docker exec -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= linkpilot-parity-smoke php artisan test tests/Feature/Links/LinkManagementTest.php tests/Feature/Folders/FolderManagementTest.php",
+            "verifiedAt": "2026-10-22T17:41:53Z"
+        },
+        {
+            "type": "test",
+            "description": "Folder behavior tests verify workspace-scoped listing and mutations, link preservation on deletion, link/click/event rollups, and exclusion of deliberately mismatched foreign-workspace link and event rows.",
+            "reference": "tests/Feature/Folders/FolderManagementTest.php",
+            "verifiedAt": "2026-10-22T20:32:03Z"
+        },
+        {
+            "type": "browser",
+            "description": "The desktop browser capture shows a folder rollup with 3 links, 2 clicks, and 0 consented events.",
+            "reference": "product/verification/phase5-folders-desktop.png",
+            "verifiedAt": "2026-10-22T20:32:03Z"
+        },
+        {
+            "type": "browser",
+            "description": "At 390x844, the folder card visibly showed 1 link, 14 clicks, and 3 events with no horizontal page overflow.",
+            "reference": "product/verification/phase5-folders-mobile.png",
+            "verifiedAt": "2026-10-23T09:44:35Z"
+        },
+        {
+            "type": "browser",
+            "description": "At 390x844, a 100-character unbroken folder search stays within the active-filter chip and no-results card, with the full accessible filter name retained. A view=table URL renders folders as cards and hides the unavailable table control.",
+            "reference": "product/verification/phase5a-responsive-folder-search-mobile.png; isolated browser at http://localhost:8107/dashboard/folders",
+            "verifiedAt": "2026-10-23T10:55:10Z"
+        }
+    ]
+}

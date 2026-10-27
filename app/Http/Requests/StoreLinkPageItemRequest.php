@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\Links\FirstPartyDestinationGuard;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Url;
@@ -26,39 +27,14 @@ class StoreLinkPageItemRequest extends FormRequest
                 'max:2048',
                 (new Url)->protocols(['http', 'https']),
                 function (string $attribute, mixed $value, Closure $fail): void {
-                    if (is_string($value) && $this->isApplicationOrigin($value)) {
+                    if (is_string($value) && app(FirstPartyDestinationGuard::class)->rejects($value)) {
                         $fail('The destination URL must not target this application.');
                     }
                 },
             ],
             'is_active' => ['required', 'boolean'],
+            'link_page_variant_id' => ['sometimes', 'integer', 'min:1'],
         ];
     }
 
-    private function isApplicationOrigin(string $url): bool
-    {
-        $destinationOrigin = $this->originFor($url);
-        $applicationOrigin = $this->originFor((string) config('app.url'));
-
-        return $destinationOrigin !== null && $destinationOrigin === $applicationOrigin;
-    }
-
-    private function originFor(string $url): ?string
-    {
-        $parts = parse_url($url);
-
-        if (! is_array($parts) || ! isset($parts['scheme'], $parts['host'])) {
-            return null;
-        }
-
-        $scheme = strtolower($parts['scheme']);
-        $host = strtolower($parts['host']);
-        $port = $parts['port'] ?? match ($scheme) {
-            'http' => 80,
-            'https' => 443,
-            default => null,
-        };
-
-        return $port === null ? null : "{$scheme}://{$host}:{$port}";
-    }
 }

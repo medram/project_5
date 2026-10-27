@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Domains\PublicLinkHostResolver;
 use App\Services\Links\LinkAccessUnlocks;
+use App\Services\Links\LinkDeliveryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,6 +14,7 @@ class PublicLinkController extends Controller
 {
     public function __construct(
         private readonly PublicLinkHostResolver $hosts,
+        private readonly LinkDeliveryService $delivery,
         private readonly LinkAccessUnlocks $unlocks,
         private readonly PublicLinkOverlayController $overlays,
     ) {}
@@ -20,8 +22,7 @@ class PublicLinkController extends Controller
     public function __invoke(Request $request, string $slug): RedirectResponse|Response
     {
         $link = $this->hosts->resolveLink($request, $slug);
-
-        abort_unless($link->isAvailableAt(now()), 404);
+        $this->delivery->assertAvailable($link);
 
         if (
             $link->requiresAccessCode()
@@ -33,16 +34,21 @@ class PublicLinkController extends Controller
             ]);
         }
 
-        $overlay = $link->activeLinkOverlay();
+        if ($link->delivery_mode === 'overlay') {
+            $overlay = $link->activeLinkOverlay();
 
-        if ($overlay !== null) {
-            return $this->overlays->render($request, $link, $overlay);
+            if ($overlay !== null) {
+                return $this->overlays->render($request, $link, $overlay);
+            }
         }
 
-        $link->clicks()->create([
-            'occurred_at' => now(),
-        ]);
+        if ($link->delivery_mode === 'splash') {
+            return Inertia::render('links/splash', [
+                'slug' => $link->slug,
+                'title' => $link->title,
+            ]);
+        }
 
-        return redirect()->away($link->destination_url, 302);
+        return redirect()->away($this->delivery->complete($request, $link), 302);
     }
 }

@@ -1,0 +1,162 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "bio-pages",
+    "area": "Publishing",
+    "name": "Bio pages",
+    "status": "blocked_external",
+    "requirements": [
+        {
+            "id": "BIO-1",
+            "text": "Users create published/unpublished bio pages with normalized handles.",
+            "priority": "P0",
+            "status": "verified"
+        },
+        {
+            "id": "BIO-2",
+            "text": "Users create, reorder, activate, and delete outbound buttons.",
+            "priority": "P0",
+            "status": "verified"
+        },
+        {
+            "id": "BIO-3",
+            "text": "Public pages render only published pages and active items in order.",
+            "priority": "P0",
+            "status": "verified"
+        },
+        {
+            "id": "BIO-4",
+            "text": "Page views and button clicks record privacy-minimal events.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "BIO-5",
+            "text": "Content blocks include image, text, social profiles, and allowlisted media embeds.",
+            "priority": "P2",
+            "status": "verified"
+        },
+        {
+            "id": "BIO-6",
+            "text": "Appearance controls include theme, typography, color, background, and responsive preview.",
+            "priority": "P2",
+            "status": "verified"
+        },
+        {
+            "id": "BIO-7",
+            "text": "Per-block scheduling, pinning, disable rules, and bio-specific insights are available.",
+            "priority": "P2",
+            "status": "verified"
+        },
+        {
+            "id": "BIO-8",
+            "text": "Third-party media blocks use canonical provider IDs, sandboxed renderers, and click-to-load consent before provider requests.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "BIO-9",
+            "text": "The editor Content, Appearance, and Insights tabs share one public render model and keyboard-accessible block ordering.",
+            "priority": "P1",
+            "status": "verified"
+        }
+    ],
+    "routes": [
+        "/dashboard/biolinks",
+        "/dashboard/biolinks/{bioPage}",
+        "/dashboard/biolinks/{bioPage}/insights",
+        "/bio/{handle}",
+        "/bio/{handle}/links/{bioLink}",
+        "/bio/{handle}/blocks/{bioBlock}",
+        "/bio/{handle}/blocks/{bioBlock}/image"
+    ],
+    "dependencies": ["analytics", "tracking-pixels", "workspaces"],
+    "externalPrerequisites": [
+        "Configured durable private media storage through LINKPILOT_MEDIA_DISK"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "BIO-AC-1",
+            "text": "Only published pages and currently eligible active blocks render publicly."
+        },
+        {
+            "id": "BIO-AC-2",
+            "text": "No bio setting permits custom HTML, CSS, or JavaScript."
+        },
+        {
+            "id": "BIO-AC-3",
+            "text": "Editor preview and public output use the same validated appearance and block model."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/dashboard/biolinks/{bioLink}/edit",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:08:04Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/bio-content-desktop.png",
+            "observedBehaviors": [
+                "A Content tab shows an ordered list of bio blocks.",
+                "A live phone-shaped preview occupies the right side of the editor."
+            ]
+        },
+        {
+            "route": "/dashboard/biolinks/{bioLink}/edit",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:08:24Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/bio-appearance-desktop.png",
+            "observedBehaviors": [
+                "An Appearance tab is selected beside Content and Insights.",
+                "Background, profile, button, and font controls appear beside a phone preview."
+            ]
+        },
+        {
+            "route": "/dashboard/biolinks/{bioLink}/edit",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:08:06Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/bio-insights-desktop.png",
+            "observedBehaviors": [
+                "An Insights tab contains summary and chart regions.",
+                "The phone preview is replaced by analytics content in this tab."
+            ]
+        },
+        {
+            "route": "/dashboard/biolinks/{bioLink}/edit",
+            "role": "user",
+            "viewport": "390x844",
+            "capturedAt": "2026-10-20T17:11:08Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/mobile-bio-editor.png",
+            "observedBehaviors": [
+                "The bio editor collapses to a narrow single-column content view.",
+                "A fixed five-item bottom navigation is visible."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Bio-link destinations reject application aliases plus pending, active, and failed claimed custom hosts while accepting unrelated HTTP(S) destinations.",
+            "reference": "tests/Feature/BioPages/BioPageManagementTest.php; tests/Feature/Links/LinkManagementTest.php; php artisan test (168 tests, 10,347 assertions)",
+            "verifiedAt": "2026-10-21T14:57:29Z"
+        },
+        {
+            "type": "test",
+            "description": "The full isolated Laravel suite passed 428 tests and 15,151 assertions; one successful PDF-delivery test was skipped because ClamAV is unavailable. Bio management, content, projection, insight, and media-validation tests passed.",
+            "reference": "tests/Feature/BioPages/BioPageManagementTest.php; tests/Feature/BioPages/BioContentBlockTest.php; tests/Feature/BioPages/BioPageInsightsTest.php; tests/Feature/BioPages/PublicBioPageTest.php; php artisan test",
+            "verifiedAt": "2026-10-24T06:00:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Owner browser at 1440x1000 and 390x844 reviewed Content, Appearance, Insights, click-to-load embeds, and keyboard block ordering; the mobile document width stayed 390px.",
+            "reference": "http://localhost:8108/dashboard/biolinks/1",
+            "verifiedAt": "2026-10-24T05:40:47Z"
+        },
+        {
+            "type": "browser",
+            "description": "At 390x844, a rejected first-party Bio-link destination displayed its server validation alert with aria-invalid=true while preserving submitted values; editing the URL cleared the alert and invalid state.",
+            "reference": "http://localhost:8108/dashboard/biolinks/2",
+            "verifiedAt": "2026-10-24T06:01:23Z"
+        }
+    ]
+}

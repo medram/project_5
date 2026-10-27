@@ -23,6 +23,6 @@ class DashboardTest extends TestCase
         $this
             ->actingAs($user)
             ->get(route('dashboard'))
-            ->assertRedirect('/links');
+            ->assertRedirect('/dashboard/links');
     }
 }

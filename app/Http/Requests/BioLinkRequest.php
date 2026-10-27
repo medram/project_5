@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\Links\FirstPartyDestinationGuard;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Url;
@@ -26,39 +27,21 @@ abstract class BioLinkRequest extends FormRequest
                 'max:2048',
                 (new Url)->protocols(['http', 'https']),
                 function (string $attribute, mixed $value, Closure $fail): void {
-                    if (is_string($value) && $this->isApplicationOrigin($value)) {
+                    if (is_string($value) && app(FirstPartyDestinationGuard::class)->rejects($value)) {
                         $fail('The destination URL must not target this application.');
                     }
                 },
             ],
+            'is_pinned' => ['sometimes', 'boolean'],
+            'starts_at' => ['nullable', 'date'],
+            'ends_at' => ['nullable', 'date', 'after:starts_at'],
             'is_active' => ['required', 'boolean'],
+            'embed_url' => ['prohibited'],
+            'image_url' => ['prohibited'],
+            'content_media_id' => ['prohibited'],
+            'media_id' => ['prohibited'],
+            'disk' => ['prohibited'],
+            'path' => ['prohibited'],
         ];
-    }
-
-    private function isApplicationOrigin(string $url): bool
-    {
-        $destinationOrigin = $this->originFor($url);
-        $applicationOrigin = $this->originFor((string) config('app.url'));
-
-        return $destinationOrigin !== null && $destinationOrigin === $applicationOrigin;
-    }
-
-    private function originFor(string $url): ?string
-    {
-        $parts = parse_url($url);
-
-        if (! is_array($parts) || ! isset($parts['scheme'], $parts['host'])) {
-            return null;
-        }
-
-        $scheme = strtolower($parts['scheme']);
-        $host = strtolower($parts['host']);
-        $port = $parts['port'] ?? match ($scheme) {
-            'http' => 80,
-            'https' => 443,
-            default => null,
-        };
-
-        return $port === null ? null : "{$scheme}://{$host}:{$port}";
     }
 }

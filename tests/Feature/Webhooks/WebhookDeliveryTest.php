@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class WebhookDeliveryTest extends TestCase
@@ -42,17 +43,17 @@ class WebhookDeliveryTest extends TestCase
             ] as $badUrl
         ) {
             $this->actingAs($owner)
-                ->post('/webhooks', $this->webhookPayload(['url' => $badUrl]))
+                ->post('/account-settings/webhooks', $this->webhookPayload(['url' => $badUrl]))
                 ->assertSessionHasErrors('url');
         }
 
         $this->actingAs($owner)
-            ->post('/webhooks', $this->webhookPayload(['events' => ['bogus.event']]))
+            ->post('/account-settings/webhooks', $this->webhookPayload(['events' => ['bogus.event']]))
             ->assertSessionHasErrors('events.0');
 
         $this->actingAs($owner)
-            ->post('/webhooks', $this->webhookPayload())
-            ->assertRedirect('/webhooks');
+            ->post('/account-settings/webhooks', $this->webhookPayload())
+            ->assertRedirect('/account-settings/webhooks');
 
         $this->assertDatabaseCount('webhooks', 1);
     }
@@ -64,7 +65,7 @@ class WebhookDeliveryTest extends TestCase
         $free = User::factory()->create();
 
         $this->actingAs($free)
-            ->post('/webhooks', $this->webhookPayload())
+            ->post('/account-settings/webhooks', $this->webhookPayload())
             ->assertSessionHasErrors('plan');
 
         $this->assertDatabaseCount('webhooks', 0);
@@ -74,15 +75,15 @@ class WebhookDeliveryTest extends TestCase
 
         foreach (range(1, 5) as $index) {
             $this->actingAs($pro)
-                ->post('/webhooks', $this->webhookPayload(['name' => "Hook {$index}"]))
-                ->assertRedirect('/webhooks');
+                ->post('/account-settings/webhooks', $this->webhookPayload(['name' => "Hook {$index}"]))
+                ->assertRedirect('/account-settings/webhooks');
         }
 
         $this->actingAs($pro)
-            ->post('/webhooks', $this->webhookPayload(['name' => 'Hook 6']))
+            ->post('/account-settings/webhooks', $this->webhookPayload(['name' => 'Hook 6']))
             ->assertSessionHasErrors('plan');
 
-        $this->assertSame(5, $pro->webhooks()->count());
+        $this->assertSame(5, $pro->currentWorkspace()->firstOrFail()->webhooks()->count());
     }
 
     public function test_webhook_rejects_hosts_resolving_to_non_public_addresses(): void
@@ -97,7 +98,7 @@ class WebhookDeliveryTest extends TestCase
             $this->bindEndpointResolution($addresses);
 
             $this->actingAs($owner)
-                ->post('/webhooks', $this->webhookPayload())
+                ->post('/account-settings/webhooks', $this->webhookPayload())
                 ->assertSessionHasErrors('url');
         }
 
@@ -111,8 +112,8 @@ class WebhookDeliveryTest extends TestCase
         $this->bindEndpointResolution(['8.8.8.8']);
 
         $this->actingAs($owner)
-            ->post('/webhooks', $this->webhookPayload())
-            ->assertRedirect('/webhooks')
+            ->post('/account-settings/webhooks', $this->webhookPayload())
+            ->assertRedirect('/account-settings/webhooks')
             ->assertSessionHas('webhookSecret');
 
         $secret = session('webhookSecret');
@@ -125,8 +126,8 @@ class WebhookDeliveryTest extends TestCase
         $webhook = Webhook::query()->sole();
 
         $this->actingAs($owner)
-            ->post("/webhooks/{$webhook->id}/rotate")
-            ->assertRedirect('/webhooks')
+            ->post("/account-settings/webhooks/{$webhook->id}/rotate")
+            ->assertRedirect('/account-settings/webhooks')
             ->assertSessionHas('webhookSecret');
 
         $rotated = session('webhookSecret');
@@ -135,34 +136,136 @@ class WebhookDeliveryTest extends TestCase
         $this->assertNotSame($rotated, DB::table('webhooks')->value('secret'));
 
         // The rotate flash shows the new secret once; after that the list is secret-free.
-        $this->actingAs($owner)->get('/webhooks')->assertOk();
+        $this->actingAs($owner)->get('/account-settings/webhooks')->assertOk();
 
         $this->actingAs($owner)
-            ->get('/webhooks')
+            ->get('/account-settings/webhooks')
             ->assertOk()
             ->assertDontSee($secret)
             ->assertDontSee($rotated);
     }
 
-    public function test_webhook_owner_scoping_prevents_foreign_mutation(): void
+    public function test_webhook_management_is_scoped_to_the_active_workspace_and_integration_managers(): void
     {
         $owner = User::factory()->create();
         $other = User::factory()->create();
+        $otherWorkspace = $other->personalWorkspace()->firstOrFail();
+        $owner->workspaces()->attach($otherWorkspace, ['role' => 'member']);
+        $otherWorkspace->subscription()->update([
+            'plan_id' => Plan::query()->where('code', 'pro')->sole()->id,
+        ]);
         $this->bindEndpointResolution(['8.8.8.8']);
         $webhook = $this->createWebhook($owner);
 
-        $this->actingAs($other)
-            ->patch("/webhooks/{$webhook->id}", $this->webhookPayload())
+        $this->actingAs($owner)
+            ->get('/account-settings/webhooks')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('canManageIntegrations', true)
+                ->has('webhooks', 1));
+
+        $this->app->make(\App\Services\Workspaces\WorkspaceContext::class)
+            ->activate($owner, $otherWorkspace);
+        $owner->refresh();
+        $this->assertSame((int) $otherWorkspace->id, (int) $owner->current_workspace_id);
+        $this->assertNotSame((int) $otherWorkspace->id, (int) $webhook->workspace_id);
+        $this->actingAs($owner)
+            ->get('/account-settings/webhooks')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('canManageIntegrations', false)
+                ->has('webhooks', 0));
+
+        $this->actingAs($owner)
+            ->patch("/account-settings/webhooks/{$webhook->id}", $this->webhookPayload())
+            ->assertNotFound();
+        $this->actingAs($owner)
+            ->post("/account-settings/webhooks/{$webhook->id}/rotate")
+            ->assertNotFound();
+        $this->actingAs($owner)
+            ->delete("/account-settings/webhooks/{$webhook->id}")
+            ->assertNotFound();
+
+        $this->actingAs($owner)
+            ->post('/account-settings/webhooks', $this->webhookPayload())
             ->assertForbidden();
 
-        $this->actingAs($other)
-            ->post("/webhooks/{$webhook->id}/rotate")
-            ->assertForbidden();
+        $this->app->make(\App\Services\Workspaces\WorkspaceContext::class)
+            ->activate($owner, $otherWorkspace);
+        $otherWorkspace->members()->updateExistingPivot($owner->id, ['role' => 'admin']);
 
-        $this->actingAs($other)
-            ->delete("/webhooks/{$webhook->id}")
+        $this->actingAs($owner)
+            ->post('/account-settings/webhooks', $this->webhookPayload())
+            ->assertRedirect('/account-settings/webhooks');
+
+        $this->assertSame(1, $otherWorkspace->webhooks()->count());
+        $this->assertSame($owner->id, $otherWorkspace->webhooks()->sole()->user_id);
+    }
+    public function test_workspace_members_can_read_redacted_webhook_metadata_but_not_delivery_details(): void
+    {
+        $owner = User::factory()->create();
+        $workspace = $owner->currentWorkspace()->firstOrFail();
+        $member = User::factory()->create();
+        $member->workspaces()->attach($workspace, ['role' => 'member']);
+        $webhook = $this->createWebhook($owner, ['url' => 'https://hooks.example.test/private/token']);
+        $delivery = $this->createDelivery(
+            $webhook,
+            $this->makeEvent($owner, Link::factory()->for($owner)->create()),
+        );
+        app(\App\Services\Workspaces\WorkspaceContext::class)->activate($member, $workspace);
+
+        $this->actingAs($member)
+            ->get('/account-settings/webhooks')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('canManageIntegrations', false)
+                ->where('webhooks.0.url', null))
+            ->assertDontSee('/private/token');
+        $this->actingAs($member)
+            ->getJson(route('webhooks.deliveries.index', $webhook))
             ->assertForbidden();
     }
+
+
+
+    public function test_webhook_payload_carries_immutable_workspace_snapshot(): void
+    {
+        $owner = User::factory()->create();
+        $workspace = $owner->personalWorkspace()->firstOrFail();
+        $link = Link::factory()->create([
+            'user_id' => $owner->id,
+            'workspace_id' => $workspace->id,
+        ]);
+        $event = $this->makeEvent($owner, $link);
+        $payload = json_decode(WebhookPayload::fromEvent($event), true, flags: JSON_THROW_ON_ERROR);
+
+        $this->assertSame($workspace->id, $event->workspace_id);
+        $this->assertSame($workspace->id, $payload['workspace_id']);
+        $this->assertArrayNotHasKey('account_id', $payload);
+    }
+    public function test_workspace_webhook_receives_events_from_other_workspace_members(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $workspace = $owner->personalWorkspace()->firstOrFail();
+        $workspace->members()->attach($member, ['role' => 'member']);
+        $link = Link::factory()->create([
+            'user_id' => $member->id,
+            'workspace_id' => $workspace->id,
+        ]);
+        $webhook = $this->createWebhook($owner);
+        Queue::fake();
+
+        $this->recordEvent($this->requestWithConsent('granted'), $member, $link);
+
+        $delivery = WebhookDelivery::query()->sole();
+        $this->assertSame($webhook->id, $delivery->webhook_id);
+        $payload = json_decode($delivery->body, true, flags: JSON_THROW_ON_ERROR);
+        $this->assertSame($workspace->id, $payload['workspace_id']);
+        $this->assertArrayNotHasKey('account_id', $payload);
+        Queue::assertPushed(DeliverWebhook::class);
+    }
+
 
     public function test_persisting_consented_event_creates_delivery_and_dispatches_job(): void
     {
@@ -188,6 +291,27 @@ class WebhookDeliveryTest extends TestCase
         $this->assertDatabaseCount('webhook_deliveries', 1);
     }
 
+    public function test_consented_public_redirect_dispatches_the_link_clicked_webhook(): void
+    {
+        $owner = User::factory()->create();
+        $link = Link::factory()->for($owner)->create([
+            'slug' => 'webhook-direct',
+            'destination_url' => 'https://example.com/webhook-direct',
+        ]);
+        $webhook = $this->createWebhook($owner, ['events' => ['link.clicked']]);
+        Queue::fake();
+
+        $this->withCookie(TrackingConsent::COOKIE_NAME, 'granted')
+            ->get('/webhook-direct')
+            ->assertRedirect('https://example.com/webhook-direct');
+
+        $this->assertDatabaseHas('webhook_deliveries', [
+            'webhook_id' => $webhook->id,
+            'event_name' => 'link.clicked',
+        ]);
+        Queue::assertPushed(DeliverWebhook::class, 1);
+    }
+
     public function test_webhook_payload_is_exact_and_delivery_is_signed(): void
     {
         $owner = User::factory()->create();
@@ -198,7 +322,7 @@ class WebhookDeliveryTest extends TestCase
 
         $expected = '{"schema_version":1,"event_id":"'.$event->uuid.'","event":"link.clicked","occurred_at":"'
             .$event->occurred_at->utc()->format('Y-m-d\TH:i:s\Z')
-            .'","account_id":'.$owner->id.',"data":{"link":{"id":'.$link->id.',"slug":"'.$link->slug.'"}}}';
+            .'","workspace_id":'.$link->workspace_id.',"data":{"link":{"id":'.$link->id.',"slug":"'.$link->slug.'"}}}';
         $this->assertSame($expected, WebhookPayload::fromEvent($event));
 
         $delivery = $this->createDelivery($webhook, $event);
@@ -218,6 +342,80 @@ class WebhookDeliveryTest extends TestCase
         });
 
         $this->assertSame('delivered', $delivery->fresh()->state);
+    }
+
+    public function test_delivery_history_exposes_the_bounded_response_excerpt_to_its_owner(): void
+    {
+        $owner = User::factory()->create();
+        $webhook = $this->createWebhook($owner);
+        $delivery = $this->createDelivery(
+            $webhook,
+            $this->makeEvent($owner, Link::factory()->for($owner)->create()),
+        );
+        $delivery->update([
+            'attempt_count' => 1,
+            'state' => 'failed',
+            'response_code' => 500,
+            'response_excerpt' => 'Temporary upstream failure.',
+            'failure_detail' => 'Non-2xx response',
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($owner)
+            ->getJson(route('webhooks.deliveries.index', $webhook))
+            ->assertOk()
+            ->assertJsonPath('deliveries.0.responseExcerpt', 'Temporary upstream failure.');
+    }
+
+    public function test_successful_retry_clears_the_previous_failure_state(): void
+    {
+        $owner = User::factory()->create();
+        $this->bindEndpointResolution(['8.8.8.8']);
+        $webhook = $this->createWebhook($owner);
+        $delivery = $this->createDelivery(
+            $webhook,
+            $this->makeEvent($owner, Link::factory()->for($owner)->create()),
+        );
+        $delivery->update([
+            'attempt_count' => 1,
+            'response_code' => 500,
+            'response_excerpt' => 'Temporary upstream failure.',
+            'failure_detail' => 'Non-2xx response',
+        ]);
+        Http::fake(['*' => Http::response('', 204)]);
+
+        $this->runJob($delivery);
+
+        $fresh = $delivery->fresh();
+        $this->assertSame('delivered', $fresh->state);
+        $this->assertSame(2, $fresh->attempt_count);
+        $this->assertSame(204, $fresh->response_code);
+        $this->assertNull($fresh->failure_detail);
+        $this->assertNull($fresh->response_excerpt);
+    }
+
+    public function test_failed_response_excerpt_is_bounded_to_configured_bytes_and_valid_utf8(): void
+    {
+        $owner = User::factory()->create();
+        $this->bindEndpointResolution(['8.8.8.8']);
+        $webhook = $this->createWebhook($owner);
+        $delivery = $this->createDelivery(
+            $webhook,
+            $this->makeEvent($owner, Link::factory()->for($owner)->create()),
+        );
+        $responseBody = str_repeat('😀', 150);
+
+        config(['services.linkpilot.webhooks.excerpt_bytes' => 499]);
+        Queue::fake();
+        Http::fake(['*' => Http::response($responseBody, 500)]);
+
+        $this->runJob($delivery);
+
+        $excerpt = $delivery->fresh()->response_excerpt;
+        $this->assertSame(496, strlen($excerpt));
+        $this->assertLessThanOrEqual(499, strlen($excerpt));
+        $this->assertSame(str_repeat('😀', 124), $excerpt);
+        $this->assertTrue(mb_check_encoding($excerpt, 'UTF-8'));
     }
 
     public function test_delivery_retries_follow_configured_schedule_then_fail(): void
@@ -294,10 +492,10 @@ class WebhookDeliveryTest extends TestCase
             $this->actingAs($owner);
 
             match ($mutation) {
-                'update' => $this->patch("/webhooks/{$webhook->id}", $this->webhookPayload()),
-                'rotate' => $this->post("/webhooks/{$webhook->id}/rotate"),
-                'disable' => $this->patch("/webhooks/{$webhook->id}", $this->webhookPayload(['is_active' => false])),
-                'delete' => $this->delete("/webhooks/{$webhook->id}"),
+                'update' => $this->patch("/account-settings/webhooks/{$webhook->id}", $this->webhookPayload()),
+                'rotate' => $this->post("/account-settings/webhooks/{$webhook->id}/rotate"),
+                'disable' => $this->patch("/account-settings/webhooks/{$webhook->id}", $this->webhookPayload(['is_active' => false])),
+                'delete' => $this->delete("/account-settings/webhooks/{$webhook->id}"),
             };
 
             $this->assertSame('cancelled', $delivery->fresh()->state);
@@ -320,16 +518,18 @@ class WebhookDeliveryTest extends TestCase
         $secret = $overrides['secret'] ?? ('secret-'.Str::random(8));
         unset($overrides['secret']);
 
-        $webhook = new Webhook(array_merge([
+        $workspace = $user->currentWorkspace()->firstOrFail();
+        $webhook = $workspace->webhooks()->make(array_merge([
             'name' => 'Hook',
             'url' => 'https://hooks.example.test/hook',
             'events' => ['link.clicked'],
             'revision' => 1,
             'is_active' => true,
         ], $overrides));
-        $webhook->user_id = $user->id;
-        $webhook->secret = $secret;
-        $webhook->save();
+        $webhook->forceFill([
+            'user_id' => $user->id,
+            'secret' => $secret,
+        ])->save();
 
         return $webhook;
     }
@@ -351,6 +551,7 @@ class WebhookDeliveryTest extends TestCase
     {
         return AnalyticsEvent::query()->create([
             'uuid' => (string) Str::uuid(),
+            'workspace_id' => $link->workspace_id,
             'user_id' => $user->id,
             'link_id' => $link->id,
             'event_name' => $eventName,
@@ -404,7 +605,7 @@ class WebhookDeliveryTest extends TestCase
 
     private function makePro(User $user): void
     {
-        $user->subscription()->update([
+        $user->currentWorkspace()->firstOrFail()->subscription()->update([
             'plan_id' => Plan::query()->where('code', 'pro')->sole()->id,
         ]);
     }

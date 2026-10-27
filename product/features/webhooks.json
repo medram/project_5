@@ -1,0 +1,132 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "webhooks",
+    "area": "Developer",
+    "name": "Outbound webhooks",
+    "status": "in_progress",
+    "requirements": [
+        {
+            "id": "WHK-1",
+            "text": "An authenticated workspace owner or admin can create, update, disable, delete, and rotate a webhook for selected events.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WHK-2",
+            "text": "Creation and every delivery attempt require HTTPS and fresh public-address validation without redirects.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WHK-3",
+            "text": "Each persisted consented analytics event creates a delivery record and queued job.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "WHK-4",
+            "text": "The immutable envelope includes schema version, event UUID/name/time, workspace ID, and minimal resource data.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WHK-5",
+            "text": "Deliveries retain revision, attempts, state, response code, bounded response excerpt/failure detail, and completion time.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "WHK-6",
+            "text": "Delivery allows three total attempts with 60-second and 300-second retries, strict timeouts, and 2xx-only success.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WHK-7",
+            "text": "Webhook mutation cancels pending deliveries while preserving history; secrets are encrypted and shown only on create/rotate.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WHK-8",
+            "text": "Workspace owners and admins can manually redeliver eligible attempts and inspect endpoint health.",
+            "priority": "P2",
+            "status": "blocked_external"
+        },
+        {
+            "id": "WHK-9",
+            "text": "Manual redelivery creates immutable lineage from a failed/cancelled delivery and uses the current endpoint revision and secret.",
+            "priority": "P1",
+            "status": "blocked_external"
+        },
+        {
+            "id": "WHK-10",
+            "text": "A successful retry clears stale failure detail and response excerpt while preserving the delivery attempt count and terminal history record.",
+            "priority": "P0",
+            "status": "verified"
+        }
+    ],
+    "routes": [
+        "/account-settings/webhooks",
+        "/account-settings/webhooks/{webhook}/deliveries",
+        "/account-settings/webhooks/{webhook}/deliveries/{delivery}/redeliver"
+    ],
+    "dependencies": ["analytics", "workspaces"],
+    "externalPrerequisites": [
+        "Running queue worker",
+        "Public HTTPS recipient endpoint for live delivery proof"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "WHK-AC-1",
+            "text": "Every attempt re-resolves and pins an allowed public destination while retaining TLS hostname validation."
+        },
+        {
+            "id": "WHK-AC-2",
+            "text": "Exact serialized bytes and signature remain stable across automatic retries."
+        },
+        {
+            "id": "WHK-AC-3",
+            "text": "Payloads contain immutable event workspace identity and no raw visitor, destination, access-code, hash, or secret data."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/account-settings/webhooks",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:17:54Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/settings-webhooks-desktop.png",
+            "observedBehaviors": [
+                "The webhook list exposes endpoint state, event subscription, delivery volume, overflow actions, and creation.",
+                "Webhook and API-key settings form a distinct Developer navigation group."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Consented direct-link events enqueue deliveries; retries clear stale failure data; response excerpts stay within the configured byte limit on UTF-8 boundaries; projections label the matching latest attempt.",
+            "reference": "tests/Feature/Webhooks/WebhookDeliveryTest.php (including split-boundary UTF-8 byte-bound regression); tests/Feature/Analytics/AnalyticsTrackingTest.php; php artisan test (168 tests, 10,347 assertions)",
+            "verifiedAt": "2026-10-21T14:57:29Z"
+        },
+        {
+            "type": "browser",
+            "description": "The canonical /account-settings/webhooks page rendered without horizontal overflow at 390px; History showed the seeded failed delivery's event, failed state, three attempts, HTTP 503, failure detail, and bounded response excerpt. The fixture was local; no live delivery was sent.",
+            "reference": "Disposable review app http://localhost:8013/account-settings/webhooks (synthetic failed-delivery fixture)",
+            "verifiedAt": "2026-10-26T16:18:22Z"
+        },
+        {
+            "type": "test",
+            "description": "The final isolated Laravel suite passed 475 tests and 16,100 assertions with one conditional skip, including webhook delivery, retry, redelivery, and event-consent coverage.",
+            "reference": "docker compose exec -T -w /var/www -e APP_ENV=testing -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= app php -d memory_limit=512M vendor/bin/phpunit",
+            "verifiedAt": "2026-10-26T16:41:06Z"
+        },
+        {
+            "type": "review",
+            "description": "Fresh PRD-alignment review passed: owner/admin management wording and canonical history evidence match the implementation; live delivery remains blocked on a public HTTPS receiver, with the feature retained in progress for other unresolved requirements.",
+            "reference": "PRDAlignment-2 final review; PRD.md and product/features/webhooks.json",
+            "verifiedAt": "2026-10-26T16:33:15Z"
+        }
+    ]
+}

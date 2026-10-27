@@ -41,9 +41,15 @@ class Webhook extends Model
             'overlay.view',
             'link_page.view',
             'link_page.clicked',
+            'link_page.lead_submitted',
             'bio_page.view',
             'bio_page.clicked',
         ];
+    }
+
+    public function workspace(): BelongsTo
+    {
+        return $this->belongsTo(Workspace::class);
     }
 
     public function user(): BelongsTo
@@ -54,6 +60,16 @@ class Webhook extends Model
     public function deliveries(): HasMany
     {
         return $this->hasMany(WebhookDelivery::class);
+    }
+
+    public function cancelPendingDeliveries(): void
+    {
+        $this->deliveries()
+            ->where('state', 'pending')
+            ->update([
+                'state' => 'cancelled',
+                'completed_at' => now(),
+            ]);
     }
 
     /**

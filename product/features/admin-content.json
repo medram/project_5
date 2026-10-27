@@ -1,0 +1,130 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "admin-content",
+    "area": "Administration",
+    "name": "Cross-workspace content operations",
+    "status": "planned",
+    "requirements": [
+        {
+            "id": "ACNT-1",
+            "text": "Authorized administrators can list cross-workspace links, bio pages, folders, domains, overlays, link pages, and pixels.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "ACNT-2",
+            "text": "Administration content views show owner/workspace metadata, state, counts, and timestamps but never private destinations or secrets.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "ACNT-3",
+            "text": "Administration content access never grants silent impersonation or tenant membership.",
+            "priority": "P0",
+            "status": "planned"
+        }
+    ],
+    "routes": [
+        "/admin/links",
+        "/admin/biolinks",
+        "/admin/folders",
+        "/admin/custom-domains",
+        "/admin/link-overlays",
+        "/admin/link-pages",
+        "/admin/pixels"
+    ],
+    "dependencies": [
+        "admin-users-roles",
+        "short-links",
+        "folders",
+        "bio-pages",
+        "custom-domains",
+        "overlays",
+        "link-pages",
+        "tracking-pixels"
+    ],
+    "externalPrerequisites": [],
+    "acceptanceCriteria": [
+        {
+            "id": "ACNT-AC-1",
+            "text": "Cross-owner metadata pages require admin.content.view_metadata."
+        },
+        {
+            "id": "ACNT-AC-2",
+            "text": "Destination URLs, webhook URLs/secrets, lead values, visitor hashes, and detailed visitor dimensions never appear."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/admin/links",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:19Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/links-desktop.png",
+            "observedBehaviors": [
+                "Short links are shown in a cross-owner administration table with metadata and actions."
+            ]
+        },
+        {
+            "route": "/admin/biolinks",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:21Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/biolinks-desktop.png",
+            "observedBehaviors": [
+                "Bio pages appear in an administration table with owner and status metadata."
+            ]
+        },
+        {
+            "route": "/admin/folders",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:23Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/folders-desktop.png",
+            "observedBehaviors": [
+                "Folders are displayed as metadata cards with owner and count information."
+            ]
+        },
+        {
+            "route": "/admin/custom-domains",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:25Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/custom-domains-desktop.png",
+            "observedBehaviors": [
+                "The administration custom-domain screen shows an empty-state action."
+            ]
+        },
+        {
+            "route": "/admin/link-overlays",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:27Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/overlays-desktop.png",
+            "observedBehaviors": [
+                "CTA overlays appear in a cross-owner administration table."
+            ]
+        },
+        {
+            "route": "/admin/link-pages",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:29Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/link-pages-desktop.png",
+            "observedBehaviors": [
+                "Link pages are shown in a cross-owner administration table with status metadata."
+            ]
+        },
+        {
+            "route": "/admin/pixels",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:39Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/pixels-desktop.png",
+            "observedBehaviors": [
+                "Tracking pixels appear in a cross-owner administration table with provider metadata."
+            ]
+        }
+    ],
+    "implementationEvidence": []
+}

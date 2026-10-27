@@ -1,5 +1,20 @@
-import { Head } from '@inertiajs/react';
-import { Download, Link2, MousePointerClick, QrCode } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import {
+    Activity,
+    BarChart3,
+    Download,
+    ExternalLink,
+    Link2,
+    Pencil,
+    Plus,
+    QrCode as QrCodeIcon,
+    Trash2,
+} from 'lucide-react';
+import { type ReactNode, useState } from 'react';
+import { toast } from 'sonner';
+import { PageHeader } from '@/components/page-header';
+import { QrCodeFormDialog } from '@/components/qr-codes/qr-code-form-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -9,106 +24,382 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import {
     Empty,
     EmptyDescription,
     EmptyHeader,
     EmptyMedia,
     EmptyTitle,
 } from '@/components/ui/empty';
-import { qrCode } from '@/routes/links';
-import { index } from '@/routes/qr-codes';
-import type { QrCodeIndexProps, QrCodeLink } from '@/types/qr-codes';
+import {
+    campaignInsights,
+    destroy,
+    download,
+    exportMethod,
+    index,
+    insights,
+    preview,
+    publicMethod,
+} from '@/routes/qr-codes';
+import type { QrCodeCampaign, QrCodeIndexProps } from '@/types/qr-codes';
 
-function QrCodeCard({ link }: { link: QrCodeLink }) {
-    const svgUrl = qrCode(link.id).url;
+function campaignState(campaign: QrCodeCampaign): string {
+    const now = Date.now();
+    if (!campaign.is_active) return 'Paused';
+    if (
+        campaign.available_from &&
+        new Date(campaign.available_from).getTime() > now
+    ) {
+        return 'Scheduled';
+    }
+    if (campaign.expires_at && new Date(campaign.expires_at).getTime() <= now) {
+        return 'Expired';
+    }
+    if (
+        campaign.max_scans !== null &&
+        campaign.scan_count >= campaign.max_scans
+    ) {
+        return 'Limit reached';
+    }
+    return 'Active';
+}
+
+function DeleteQrCampaignDialog({
+    campaign,
+    children,
+}: {
+    campaign: QrCodeCampaign;
+    children: ReactNode;
+}) {
+    const [open, setOpen] = useState(false);
+
+    function remove() {
+        router.delete(destroy(campaign.id).url, {
+            preserveScroll: true,
+            onSuccess: () => setOpen(false),
+        });
+    }
 
     return (
-        <Card className="overflow-hidden">
-            <CardHeader>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0 space-y-1">
-                        <CardTitle>{link.title || 'Untitled route'}</CardTitle>
-                        <CardDescription className="truncate">
-                            /{link.slug}
-                        </CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm font-medium tabular-nums text-muted-foreground">
-                        <MousePointerClick aria-hidden="true" />
-                        {link.clicks_count}{' '}
-                        {link.clicks_count === 1 ? 'click' : 'clicks'}
-                    </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Delete this QR campaign?</DialogTitle>
+                    <DialogDescription>
+                        This permanently removes the QR code and its scan
+                        history. The linked short link, if any, remains
+                        unchanged.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpen(false)}>
+                        Cancel
+                    </Button>
+                    <Button variant="destructive" onClick={remove}>
+                        Delete campaign
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function QrCampaignCard({
+    campaign,
+    availableLinks,
+}: {
+    campaign: QrCodeCampaign;
+    availableLinks: QrCodeIndexProps['availableLinks'];
+}) {
+    const state = campaignState(campaign);
+    const target = campaign.link
+        ? `/${campaign.link.slug}`
+        : campaign.destination_url || 'Unavailable target';
+    const publicUrl = publicMethod(campaign.code).url;
+    const formats = [
+        ['svg', 'SVG'],
+        ['png', 'PNG'],
+        ['jpg', 'JPEG'],
+        ['webp', 'WebP'],
+    ] as const;
+
+    async function copyQrUrl() {
+        try {
+            await navigator.clipboard.writeText(
+                new URL(publicUrl, window.location.origin).toString(),
+            );
+            toast.success('QR URL copied');
+        } catch {
+            toast.error('Could not copy the QR URL');
+        }
+    }
+
+    return (
+        <Card id={`qr-campaign-${campaign.id}`} className="overflow-hidden">
+            <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 space-y-1">
+                    <CardTitle className="[overflow-wrap:anywhere] break-words">
+                        {campaign.title ||
+                            campaign.link?.title ||
+                            'Untitled QR campaign'}
+                    </CardTitle>
+                    <CardDescription className="break-all">
+                        /q/{campaign.code}
+                    </CardDescription>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <Badge
+                        variant={state === 'Active' ? 'default' : 'secondary'}
+                    >
+                        {state}
+                    </Badge>
+                    <Badge variant="outline">
+                        {campaign.source === 'linked'
+                            ? 'Linked short link'
+                            : 'Campaign'}
+                    </Badge>
                 </div>
             </CardHeader>
-            <CardContent className="grid gap-6 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-center">
-                <div className="flex aspect-square w-full max-w-40 items-center justify-center rounded-lg border bg-white p-3 shadow-sm">
+            <CardContent className="grid gap-5 sm:grid-cols-[10rem_minmax(0,1fr)]">
+                <div className="flex aspect-square w-full max-w-40 items-center justify-center rounded-lg border bg-white p-2">
                     <img
-                        src={svgUrl}
-                        alt={`QR code for /${link.slug}`}
+                        src={preview(campaign.id).url}
+                        alt={[
+                            `QR code for ${campaign.title || campaign.link?.slug || 'campaign'}`,
+                            campaign.has_logo && campaign.logo_alt
+                                ? `Includes logo: ${campaign.logo_alt}`
+                                : null,
+                        ]
+                            .filter(Boolean)
+                            .join('. ')}
                         className="size-full"
                     />
                 </div>
-                <div className="flex min-w-0 flex-col gap-4">
-                    <p className="truncate text-sm text-muted-foreground">
-                        {link.destination_url}
-                    </p>
-                    <Button variant="outline" className="w-fit" asChild>
-                        <a href={svgUrl} download={`${link.slug}.svg`}>
-                            <Download data-icon="inline-start" />
-                            Download SVG
-                        </a>
-                    </Button>
+                <div className="min-w-0 space-y-4">
+                    <div className="space-y-1 text-sm">
+                        <p className="font-medium">Target</p>
+                        <p className="break-all text-muted-foreground">
+                            {target}
+                        </p>
+                    </div>
+                    {campaign.share_title && (
+                        <div className="space-y-1 text-sm">
+                            <p className="font-medium">Sharing title</p>
+                            <p className="break-words text-muted-foreground">
+                                {campaign.share_title}
+                            </p>
+                        </div>
+                    )}
+                    {campaign.share_description && (
+                        <p className="line-clamp-2 text-sm text-muted-foreground">
+                            {campaign.share_description}
+                        </p>
+                    )}
+                    <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                            <Activity aria-hidden="true" className="size-4" />
+                            {campaign.scan_count}{' '}
+                            {campaign.scan_count === 1 ? 'scan' : 'scans'}
+                        </span>
+                        {campaign.max_scans !== null && (
+                            <span>Limit {campaign.max_scans}</span>
+                        )}
+                        {campaign.has_access_code && (
+                            <span>Access code protected</span>
+                        )}
+                        {campaign.has_logo && <span>Logo included</span>}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {formats.map(([format, label]) => (
+                            <Button
+                                key={format}
+                                variant="outline"
+                                size="sm"
+                                asChild
+                            >
+                                <a
+                                    href={
+                                        download({
+                                            qrCode: campaign.id,
+                                            format,
+                                        }).url
+                                    }
+                                    download={`qr-${campaign.code}.${format}`}
+                                >
+                                    <Download data-icon="inline-start" />
+                                    {label}
+                                </a>
+                            </Button>
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2 border-t pt-3">
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link href={campaignInsights(campaign.id).url}>
+                                <BarChart3 data-icon="inline-start" />
+                                Insights
+                            </Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={copyQrUrl}>
+                            <Link2 data-icon="inline-start" />
+                            Copy QR URL
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild>
+                            <a
+                                href={publicUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                <ExternalLink data-icon="inline-start" />
+                                Open
+                            </a>
+                        </Button>
+                        <QrCodeFormDialog
+                            campaign={campaign}
+                            availableLinks={availableLinks}
+                        >
+                            <Button variant="ghost" size="sm">
+                                <Pencil data-icon="inline-start" />
+                                Edit
+                            </Button>
+                        </QrCodeFormDialog>
+                        {campaign.source === 'campaign' && (
+                            <DeleteQrCampaignDialog campaign={campaign}>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-destructive hover:text-destructive"
+                                >
+                                    <Trash2 data-icon="inline-start" />
+                                    Delete
+                                </Button>
+                            </DeleteQrCampaignDialog>
+                        )}
+                    </div>
                 </div>
             </CardContent>
         </Card>
     );
 }
 
-export default function QrCodes({ links }: QrCodeIndexProps) {
+export default function QrCodes({
+    campaigns,
+    availableLinks,
+}: QrCodeIndexProps) {
+    const totalScans = campaigns.reduce(
+        (sum, campaign) => sum + campaign.scan_count,
+        0,
+    );
+    const directCampaigns = campaigns.filter(
+        (campaign) =>
+            campaign.source === 'campaign' && campaign.destination_url !== null,
+    ).length;
+
     return (
         <>
-            <Head title="QR codes" />
+            <Head title="QR campaigns" />
+            <section className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+                <PageHeader
+                    title="QR campaigns"
+                    eyebrow="Shareable routes"
+                    icon={QrCodeIcon}
+                    description="Manage short-link QR codes and direct-destination campaigns. QR scans stay separate from short-link clicks."
+                    actions={
+                        <>
+                            <Button variant="outline" asChild>
+                                <a href={exportMethod().url}>
+                                    <Download data-icon="inline-start" />
+                                    Export CSV
+                                </a>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <Link href={insights().url}>
+                                    <BarChart3 data-icon="inline-start" />
+                                    Scan insights
+                                </Link>
+                            </Button>
+                            <QrCodeFormDialog availableLinks={availableLinks}>
+                                <Button>
+                                    <Plus data-icon="inline-start" />
+                                    Create QR campaign
+                                </Button>
+                            </QrCodeFormDialog>
+                        </>
+                    }
+                />
 
-            <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <section className="flex max-w-2xl flex-col gap-2">
-                    <div className="flex items-center gap-2 text-linkpilot-creator">
-                        <QrCode aria-hidden="true" />
-                        <span className="text-sm font-medium">
-                            Shareable routes
-                        </span>
-                    </div>
-                    <h1 className="text-3xl font-semibold tracking-tight">
-                        QR codes
-                    </h1>
-                    <p className="text-sm leading-6 text-muted-foreground">
-                        Download a locally generated SVG for every short link
-                        you own.
-                    </p>
-                </section>
+                <div className="grid gap-4 sm:grid-cols-3">
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardDescription>QR codes</CardDescription>
+                            <CardTitle className="text-2xl tabular-nums">
+                                {campaigns.length}
+                            </CardTitle>
+                        </CardHeader>
+                    </Card>
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardDescription>
+                                Total recorded scans
+                            </CardDescription>
+                            <CardTitle className="text-2xl tabular-nums">
+                                {totalScans}
+                            </CardTitle>
+                        </CardHeader>
+                    </Card>
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardDescription>Direct campaigns</CardDescription>
+                            <CardTitle className="text-2xl tabular-nums">
+                                {directCampaigns}
+                            </CardTitle>
+                        </CardHeader>
+                    </Card>
+                </div>
 
-                {links.length === 0 ? (
+                {campaigns.length === 0 ? (
                     <Empty className="bg-muted/30">
                         <EmptyHeader>
                             <EmptyMedia variant="icon">
                                 <Link2 aria-hidden="true" />
                             </EmptyMedia>
-                            <EmptyTitle>No QR codes yet</EmptyTitle>
+                            <EmptyTitle>No QR campaigns yet</EmptyTitle>
                             <EmptyDescription>
-                                Create a short link first. Its QR code will be
-                                ready here immediately.
+                                Create a QR campaign for a direct URL, or create
+                                a short link to get a linked QR code
+                                automatically.
                             </EmptyDescription>
                         </EmptyHeader>
+                        <QrCodeFormDialog availableLinks={availableLinks}>
+                            <Button>
+                                <Plus data-icon="inline-start" />
+                                Create QR campaign
+                            </Button>
+                        </QrCodeFormDialog>
                     </Empty>
                 ) : (
                     <section
-                        aria-label="QR codes"
+                        aria-label="QR campaigns"
                         className="grid gap-4 xl:grid-cols-2"
                     >
-                        {links.map((link) => (
-                            <QrCodeCard key={link.id} link={link} />
+                        {campaigns.map((campaign) => (
+                            <QrCampaignCard
+                                key={campaign.id}
+                                campaign={campaign}
+                                availableLinks={availableLinks}
+                            />
                         ))}
                     </section>
                 )}
-            </main>
+            </section>
         </>
     );
 }
@@ -116,7 +407,7 @@ export default function QrCodes({ links }: QrCodeIndexProps) {
 QrCodes.layout = {
     breadcrumbs: [
         {
-            title: 'QR codes',
+            title: 'QR campaigns',
             href: index(),
         },
     ],

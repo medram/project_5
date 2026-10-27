@@ -79,12 +79,28 @@ class LinkAccessUnlocks
 
     private function limiterKey(Request $request, Link $link): string
     {
+        // The security throttle keys on stable server-observed identity only:
+        // the link and the normalized client IP. Mutable request headers such
+        // as User-Agent must never participate, or each guess could mint a
+        // fresh limiter key and bypass the five-failures-per-five-minutes
+        // boundary.
         $visitor = hash_hmac(
             'sha256',
-            "{$request->ip()}\n{$request->userAgent()}",
+            $this->normalizedClientIp($request),
             (string) config('app.key'),
         );
 
         return "link-access:{$link->id}:{$visitor}";
+    }
+
+    private function normalizedClientIp(Request $request): string
+    {
+        $ip = trim((string) $request->ip());
+
+        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            return strtolower($ip);
+        }
+
+        return (string) inet_ntop((string) inet_pton($ip));
     }
 }

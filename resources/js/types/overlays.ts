@@ -1,10 +1,4 @@
-export type OverlayPixel = {
-    id: number;
-    name: string;
-    provider: 'meta_pixel' | 'google_analytics';
-    providerId: string;
-    isActive: boolean;
-};
+import type { PublicTrackingPixelsByTrigger } from '@/types/link-pages';
 
 export type LinkOverlayOption = {
     id: number;
@@ -18,13 +12,15 @@ export type LinkOverlay = {
     body: string | null;
     ctaLabel: string;
     isActive: boolean;
+    startsAt: string | null;
+    expiresAt: string | null;
+    displayDelaySeconds: number;
     linksCount: number;
-    trackingPixelIds: number[];
 };
 
 export type OverlaysPageProps = {
     overlays: LinkOverlay[];
-    availablePixels: OverlayPixel[];
+    canManageIntegrations: boolean;
 };
 
 export type OverlayPublicProps = {
@@ -35,10 +31,9 @@ export type OverlayPublicProps = {
         body: string | null;
         ctaLabel: string;
     };
-    pixels: {
-        provider: 'meta_pixel' | 'google_analytics';
-        identifier: string;
-    }[];
+    pixels: PublicTrackingPixelsByTrigger;
     trackingConsent: 'granted' | 'denied' | null;
     privacyUrl: string | null;
+    canGrantConsent: boolean;
+    remainingDelaySeconds: number;
 };

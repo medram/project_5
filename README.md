@@ -7,7 +7,7 @@ LinkPilot is a Laravel and React publishing console for owned short links and pu
 - Create, edit, pause, delete, and inspect owned short links.
 - Group owned short links in private folders.
 - Schedule link availability and require an access code before a public redirect.
-- Download locally generated SVG QR codes for owned short links.
+- Create direct-URL or owned-link QR campaigns, control delivery, and download SVG, PNG, JPEG, or WebP.
 - Follow an active short URL and record one privacy-minimal click event.
 - Create multiple bio pages, order named outbound buttons, and publish only active buttons at `/bio/{handle}`.
 - Publish branded link pages with managed destination items at `/pages/{slug}`.
@@ -16,16 +16,31 @@ LinkPilot is a Laravel and React publishing console for owned short links and pu
 - Attach fixed Meta Pixel or GA4 integrations to published pages after consent.
 - Review consent-gated account analytics and per-link insights.
 - Register signed webhook endpoints for consented events with retry handling.
-- Review local account plan limits and subscription usage at `/billing`; this is internal entitlement state, not payment collection.
+- Review local account plan limits and subscription usage at `/account-settings/billing`; this is internal entitlement state, not payment collection.
 - Administer account status, administrator access, and local entitlements at `/admin`.
 
-## QR codes
+## QR campaigns
 
-The authenticated QR dashboard serves each owned link through
-`GET /links/{link}/qr-code.svg`. LinkPilot generates SVG bytes locally with
-Endroid QR Code; it does not send the destination or QR image through an
-external image service. Each QR code encodes the absolute public short-link
-URL, so normal availability and access-code controls still apply after a scan.
+The authenticated QR dashboard at `/dashboard/qr-codes` manages persistent campaigns.
+Campaigns target either an HTTP(S) URL or a link in the active workspace. Active,
+schedule, access-code, and maximum-scan controls run before a scan is recorded.
+Share metadata, allowlisted visual styles, and private logos are campaign
+configuration. Each existing and newly created short link also has one derived
+QR at `GET /dashboard/links/{link}/qr-code.svg`; that legacy asset encodes the
+link’s canonical public URL. Persisted campaign downloads encode `/q/{code}` so
+QR controls and scan analytics cannot be bypassed. Linked campaigns record one
+QR scan and defer final link checks and click recording to the short-link route.
+Historical link clicks are never backfilled as QR scans.
+
+New campaigns include a live style preview. It encodes a non-live preview URL;
+the scan-ready campaign URL is created only after saving.
+
+SVG, PNG, JPEG, and WebP assets are generated locally. The PHP image requires GD
+with PNG, JPEG, and WebP support; Composer declares `ext-gd`. Uploaded logos stay
+on Laravel’s private local disk at `storage/app/private/qr-logos/` and are never
+accepted as public storage paths. Production deployments must configure a durable
+private disk or mount for that path and verify persistence across restarts; the
+development Compose bind mount is not a production durability guarantee.
 
 ## Account plans and local billing
 
@@ -53,25 +68,59 @@ stored in this repository.
 
 ## Environment configuration
 
-| Variable | Purpose |
-| --- | --- |
-| `LINKPILOT_DEFAULT_HOSTS` | Comma-separated hostnames the app answers on for plain short links, beyond `APP_URL`. |
-| `PUBLIC_PRIVACY_URL` | Optional privacy-policy link shown next to the public-page consent banner. |
-| `ANALYTICS_HASH_KEY`, `ANALYTICS_HASH_KEY_VERSION` | Secret and version label used to hash visitor identifiers; rotate the key and bump the version together. |
-| `ANALYTICS_RETENTION_DAYS` | Retention window for consent-gated analytics events before `linkpilot:prune-analytics` removes them. |
-| `WEBHOOK_RETRY_DELAYS` | Comma-separated retry delays in seconds for failed webhook deliveries (`60,300` by default). |
-| `WEBHOOK_CONNECT_TIMEOUT`, `WEBHOOK_TIMEOUT` | Connection and total timeouts for a delivery attempt. |
-| `WEBHOOK_MAX_ATTEMPTS` | Attempts per delivery before it is marked failed. |
-| `WEBHOOK_EXCERPT_BYTES` | Response bytes retained as a non-sensitive delivery excerpt. |
+| Variable                                                                                       | Purpose                                                                                                                            |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `LINKPILOT_DEFAULT_HOSTS`                                                                      | Comma-separated hostname aliases the app answers on, beyond the canonical host in `APP_URL`.                                       |
+| `LINKPILOT_COUNTRY_HEADER`                                                                     | Optional country-code header set by the trusted country proxy.                                                                     |
+| `LINKPILOT_COUNTRY_PROXY_CIDRS`                                                                | Comma-separated proxy CIDRs matched against the socket peer address (`REMOTE_ADDR`).                                               |
+| `PUBLIC_PRIVACY_URL`                                                                           | Privacy-policy link for public consent; required before production lead capture (lead consent is separate from analytics consent). |
+| `LINKPILOT_MEDIA_DISK`                                                                         | Laravel disk for workspace media; configure durable private storage for production (no direct public disk URLs).                   |
+| `CONTENT_MEDIA_RETENTION_DAYS`                                                                 | Active-media lifetime before daily pruning (365 days by default).                                                                  |
+| `CLAMSCAN_PATH`                                                                                | ClamAV executable used to scan PDFs; upload fails closed if scanning is unavailable or unsuccessful.                               |
+| `ANALYTICS_HASH_KEY`, `ANALYTICS_HASH_KEY_VERSION`                                             | Secret and version label used to hash visitor identifiers; rotate the key and bump the version together.                           |
+| `ANALYTICS_GEOIP_DATABASE`                                                                     | Absolute path to an operator-provided local MaxMind `.mmdb`; unavailable files disable country lookup.                             |
+| `ANALYTICS_RETENTION_DAYS`                                                                     | Retention window for consent-gated analytics events before `linkpilot:prune-analytics` removes them.                               |
+| `WEBHOOK_RETRY_DELAYS`                                                                         | Comma-separated retry delays in seconds for failed webhook deliveries (`60,300` by default).                                       |
+| `WEBHOOK_CONNECT_TIMEOUT`, `WEBHOOK_TIMEOUT`                                                   | Connection and total timeouts for a delivery attempt.                                                                              |
+| `WEBHOOK_MAX_ATTEMPTS`                                                                         | Attempts per delivery before it is marked failed.                                                                                  |
+| `WEBHOOK_EXCERPT_BYTES`                                                                        | Response bytes retained as a non-sensitive delivery excerpt.                                                                       |
+| `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | Standard Laravel mail transport; local default writes mail to the log.                                                             |
+
+Country targeting stays disabled when either country setting is blank. Configure
+it only when a trusted proxy overwrites the selected header and connects directly
+from the listed CIDRs. LinkPilot checks the socket peer address; forwarded client
+address headers never grant trust. An untrusted or invalid country is treated as
+unknown and uses the link's default target.
+
+`ANALYTICS_GEOIP_DATABASE` points to a local MaxMind GeoLite2 Country `.mmdb`
+file. Obtain and update the database under its applicable license, mount it
+read-only into the application and worker, and do not commit the database or
+license credentials. LinkPilot performs no remote GeoIP lookup. An empty,
+unreadable, or corrupt file leaves country results unavailable.
+
+`APP_URL` is the canonical origin used in password-reset links. Normal web
+routes answer only on that host and `LINKPILOT_DEFAULT_HOSTS`; a claimed custom
+domain is limited to its domain challenge and public short-link routes.
 
 Custom domains are verified with a DNS TXT record (`_linkpilot-verify.<host>`)
 or an HTTPS challenge document served at
-`/.well-known/linkpilot-domain/<token>`, then a TLS check;
-`linkpilot:verify-custom-domains` and `linkpilot:prune-analytics` are scheduled
-daily, and both can be run manually. Tracking pixels are limited to fixed Meta
-Pixel and GA4 integrations — arbitrary third-party scripts are not accepted.
-Workspace collaboration (shared workspaces, memberships, invitations) is
-deliberately deferred; every resource is owned by a single account today.
+`/.well-known/linkpilot-domain/<token>`, then a TLS check. The scheduler runs
+`linkpilot:verify-custom-domains`, `linkpilot:prune-analytics`,
+`linkpilot:prune-content-media`, and `linkpilot:prune-link-page-leads` daily.
+Run Laravel's scheduler every minute in production (for example, cron
+`schedule:run`) so these maintenance jobs execute. Each can also be run manually.
+
+Content media uses `LINKPILOT_MEDIA_DISK` and must remain on durable private
+storage; eligible published blocks are delivered through LinkPilot routes.
+`CONTENT_MEDIA_RETENTION_DAYS` defaults to 365 days, after which active media is
+permanently pruned. PDF uploads fail closed unless the executable configured by
+`CLAMSCAN_PATH` completes a clean ClamAV scan. Production lead capture requires
+`PUBLIC_PRIVACY_URL`; lead-collection consent is distinct from analytics
+tracking consent, and accepted lead values are permanently purged after 30 days.
+Tracking pixels are limited to fixed Meta Pixel and GA4 integrations — arbitrary
+third-party scripts are not accepted. Resources are scoped to the active
+workspace. Workspace membership and invitations control access; the workspace
+owner and administrators retain their existing management authority.
 
 ## Administration
 
@@ -115,6 +164,50 @@ before every attempt, so deliveries never reach an internal host. Failed
 deliveries retry with the delays in `WEBHOOK_RETRY_DELAYS` before the delivery
 is marked failed; the retry schedule and timeouts live under `services.linkpilot.webhooks`.
 
+## Versioned API
+
+The bearer-token API is rooted at `/api/v1`. Create and revoke credentials in
+`/account-settings/api-keys`; every token is permanently bound to the workspace
+selected when it was created.
+
+The raw token appears only in the creation response. Store it in a secret
+manager; subsequent key listings expose metadata only. Revoke and replace a
+lost token.
+
+| Ability                               | Access                           |
+| ------------------------------------- | -------------------------------- |
+| `links:read`, `links:write`           | Read or manage short links       |
+| `bio-pages:read`, `bio-pages:write`   | Read or manage bio pages         |
+| `link-pages:read`, `link-pages:write` | Read or manage link pages        |
+| `analytics:read`                      | Download workspace analytics CSV |
+| `webhooks:read`, `webhooks:write`     | Read or manage webhook endpoints |
+| `events:write`                        | Ingest declared custom events    |
+
+Send tokens as `Authorization: Bearer <token>`. Collection endpoints use
+`per_page` (default 50, maximum 100) and opaque `cursor` values. On POST create
+requests, an optional `Idempotency-Key` replays the original response for an
+identical request; using the same key for a different request returns `409`.
+Keys are scoped to the token and workspace and expire after 24 hours.
+
+Custom events must be declared and active in the token's workspace. Ingestion
+accepts a resource reference, not an arbitrary event payload, and stores no
+visitor hash, IP address, user agent, country, or UTM dimensions. Analytics CSV
+exports also omit visitor hashes. Webhook secrets are returned only by the
+creation response; subsequent reads omit them.
+
+Scramble generates the API reference at `/docs/api` and OpenAPI JSON at
+`/docs/api.json` in local and testing environments. The default token rate limit
+is 60 requests per minute, configurable with `API_RATE_LIMIT_PER_MINUTE`.
+
+## Notifications and optional email
+
+In-app notifications are stored in the database and work without email.
+Category email is sent only when the recipient enables that category and the
+Laravel mailer is configured. The local default, `MAIL_MAILER=log`, writes
+messages to the application log rather than sending externally. Configure the
+standard `MAIL_*` transport variables and verify deliverability before relying
+on email notifications.
+
 ## Requirements
 
 - Docker Engine with Docker Compose v2.
@@ -153,7 +246,7 @@ Local email verification uses the log mailer. After registering, open the verifi
 ## Verification commands
 
 ```bash
-docker compose run --rm app php artisan test
+docker compose run --rm -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= app php artisan test
 docker compose run --rm app npm run build
 ```
 

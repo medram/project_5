@@ -8,7 +8,7 @@ LinkPilot is a Laravel + React publishing console for teams that create, govern,
 
 **Primary user:** a marketer, creator, or operations teammate who needs a branded destination, controlled delivery, understandable performance data, and reliable collaboration without handling raw analytics infrastructure.
 
-**Core promise:** create a link once, decide where and when it can be used, distribute it through a short URL, QR code, bio page, or link page, then see attributable privacy-minimal outcomes in the account that owns it today and the workspace that will own it after the deferred collaboration slice.
+**Core promise:** create a link once, decide where and when it can be used, distribute it through a short URL, QR code, bio page, or link page, then see attributable privacy-minimal outcomes inside the active workspace that owns the resource.
 
 ## 2. Research basis and confidence
 
@@ -18,100 +18,113 @@ This document treats that result as an **observed feature inventory**, not proof
 
 ## 3. Delivery status
 
-| Status | Meaning |
-|---|---|
-| Delivered | Present in LinkPilot and covered by current verification. |
-| In active platform expansion | Designed and scheduled in the current implementation plan; do not describe as shipped until verified. |
-| Deferred by user | Intentionally not implemented until the user explicitly resumes the slice; its detailed requirements remain catalogued. |
-| Catalogued | A future requirement, intentionally retained here with scope and trigger. |
-| External prerequisite | Requires credentials, policy, or infrastructure that the repository does not contain. |
+`product/progress.json` is the current status authority. This document states the product contract; feature files under `product/features/` own requirement-level state and evidence.
 
-### 3.1 Delivered foundation
+| Status           | Meaning                                                                                                                     |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Verified         | Implemented and backed by current automated, browser, migration, and reviewer evidence.                                     |
+| In progress      | Implementation or required verification is active; it must not be described as shipped.                                     |
+| Planned          | Approved for the current full-parity program but not yet implemented and verified.                                          |
+| Catalogued       | Retained future scope outside the current verified surface.                                                                 |
+| Blocked external | Local implementation and proof are complete, but a named credential or operator-controlled service prevents the live check. |
+
+### 3.1 Existing foundation — verification in progress
 
 - Owned short-link CRUD with validated HTTP(S) destinations and custom slugs.
 - Private folders and per-link folder assignment.
 - Link activation, UTC availability windows, access-code protection, and public 404 behavior before availability.
 - Locally generated SVG QR codes for owned short links.
 - Basic published link-in-bio pages with ordered active outbound buttons.
-- Per-link 14-day click count series and total clicks.
+- Workspace and per-link insights expose selectable 7/30/90-day UTC click and consented-event series.
 
-### 3.2 Delivered owner-scoped expansion
+### 3.2 Existing workspace-scoped expansion — verification in progress
 
-- User-owned custom domains with DNS TXT verification and host-aware public routing.
-- CTA-overlay interstitials, safe tracking pixels, public link pages, and richer event analytics.
-- Account plans, local subscriptions, usage limits, signed webhooks with retry handling, and platform administration.
+- Workspace-owned custom domains with DNS TXT verification and host-aware public routing.
+- CTA-overlay interstitials, safe tracking pixels, public link pages, and richer workspace-scoped analytics.
+- Workspace plans and subscriptions, usage limits, signed webhooks with retry handling, and platform administration.
 
-Every requirement marked `Delivered` in section 7 was exercised by the automated
-suite (148 tests, 1072 assertions) and by browser smoke scenarios against the
-running Compose stack; webhook delivery, retry exhaustion, and cancellation were
-additionally observed against the live queue worker. The design is
-`docs/superpowers/specs/2026-10-19-linkpilot-user-scoped-expansion-design.md`.
+The prior owner-scoped release passed its historical checks, but those counts are
+not current delivery evidence. Current checks, dates, blockers, and reviewer
+results live in [`product/progress.json`](product/progress.json). Existing
+behavior remains `in_progress` until the corresponding full-parity gate passes.
 
-### 3.3 Collaboration deferred by user
+### 3.3 Full-parity program in progress
 
-Workspaces, memberships, invitations, active-workspace scoping, and every migration or UI required for collaboration are deferred until the user explicitly resumes them. The detailed future collaboration contract remains in `docs/superpowers/specs/2026-10-19-linkpilot-platform-expansion-design.md`. Until then, active modules remain strictly scoped to the existing authenticated `user_id`; they must not add workspace tables, role fields, membership joins, or invitations.
-
-Rows below that describe workspace ownership preserve the later collaboration contract. Their current owner-scoped equivalents are delivered as described above.
+Workspaces, memberships, invitations, active-workspace scoping, advanced
+campaign resources, Stripe billing, notifications, API keys, and the expanded
+administration console are approved current scope. Their feature states are
+tracked in [`product/progress.json`](product/progress.json); no feature is
+verified until its recorded automated, migration, browser, and independent-review
+gates pass. Delivery proceeds through the numbered implementation phases mapped
+in §10.
 
 ## 4. Product principles
 
-1. **Ownership is explicit.** In the active slice, every content and integration object belongs to one user account. The catalogued collaboration slice migrates this boundary to a workspace while retaining creator attribution for audit.
+1. **Ownership is explicit.** Every content and integration object belongs to one active workspace; existing `user_id` values remain creator/audit attribution through the ownership migration.
 2. **A link is safe by default.** Unsafe outbound schemes, self-redirect loops, inactive custom hosts, and unsafe webhook endpoints are rejected.
 3. **Public access checks precede side effects.** Inactive, future, expired, or locked links do not redirect or count a click until access succeeds.
 4. **Analytics minimizes visitor data.** No raw IP addresses, precise locations, browser fingerprints, access codes, or secrets are stored in analytics events.
 5. **Enriched tracking is consent-gated.** Before a visitor grants tracking consent on a LinkPilot-rendered public surface, LinkPilot emits no analytics event or third-party pixel; direct redirects retain only their aggregate click counter.
 6. **No arbitrary customer JavaScript.** Tracking pixels are fixed Meta Pixel or Google Analytics renderers driven by validated identifiers. Google Tag Manager and custom snippets are excluded.
-7. **No fake payments.** Payment capture requires merchant credentials and compliance policy. Until then, plans and usage are real internal entitlement state, not a pretend checkout.
+7. **No fake payments.** Laravel Cashier with Stripe is the only payment path. Missing Stripe credentials disable checkout truthfully; query parameters or local state never manufacture payment success.
 8. **Keep the UI native.** New React surfaces use the installed base shadcn/Radix primitives and existing Inertia patterns. Use Lucide icons, visible labels, keyboard focus, and responsive layouts.
 9. **Reference parity is functional, not visual cloning.** LinkPilot uses its own names, copy, routes, and design.
 
 ## 5. Personas and jobs
 
-| Persona | Main job | Success signal |
-|---|---|---|
-| Creator | Publish a controlled destination quickly | A link/QR/bio/link page reaches the right visitor at the right time. |
-| Marketer | Run and measure a campaign | Links are branded, scheduled, tracked, and explain performance by source/device. |
-| Account owner | Govern their links and integrations | Domains, pixels, usage, and webhooks stay inside their account. |
-| Platform administrator | Operate the SaaS safely | Users and account-level entitlements can be inspected, suspended, and managed without self-escalation. |
-| Developer/automation consumer | Receive trusted operational signals | Signed webhooks have stable event names, payloads, and delivery history. |
+| Persona                       | Main job                                 | Success signal                                                                           |
+| ----------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Creator                       | Publish a controlled destination quickly | A link/QR/bio/link page reaches the right visitor at the right time.                     |
+| Marketer                      | Run and measure a campaign               | Links are branded, scheduled, tracked, and explain performance by source/device.         |
+| Workspace owner               | Govern workspace links and integrations  | Domains, pixels, usage, members, billing, and webhooks stay inside the active workspace. |
+| Developer/automation consumer | Receive trusted operational signals      | Signed webhooks have stable event names, payloads, and delivery history.                 |
 
 ## 6. Information architecture
 
 ### 6.1 Authenticated account navigation
 
-| Section | Route family | Purpose |
-|---|---|---|
-| Short links | `/links` | Create, organize, control, and inspect short links. |
-| QR codes | `/dashboard/qr-codes` | Display/download owned link QR codes. |
-| Folders | `/dashboard/folders` | Organize owned links. |
-| Bio pages | `/bio-pages` | Publish creator-style multi-link profiles. |
-| Link pages | `/link-pages` | Build branded campaign/landing link collections. |
-| Analytics | `/analytics` | Aggregate owned traffic and events. |
-| Custom domains | `/custom-domains` | Verify and manage branded hosts. |
-| CTA overlays | `/overlays` | Configure branded pre-destination interstitials. |
-| Tracking pixels | `/tracking-pixels` | Create provider-specific tracking configurations. |
-| Workspaces | `/workspaces` | Deferred by user; no route is implemented. |
-| Billing and usage | `/billing` | View plans, limits, local subscription state, and usage. |
-| Webhooks | `/webhooks` | Manage signed outbound subscriptions and delivery logs. |
-| Administration | `/admin` | Platform-only users, status, and plan controls. |
+This is the target authenticated information architecture. A destination enters visible navigation only after its workflow is implemented and reviewed; later-phase routes remain catalogued but are not shown as placeholders.
+
+| Section           | Route family                   | Purpose                                                                                                |
+| ----------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Short links       | `/dashboard/links`             | Create, organize, control, and inspect short links.                                                    |
+| QR codes          | `/dashboard/qr-codes`          | Manage direct and link-backed QR campaigns, controls, previews, downloads, exports, and scan insights. |
+| Folders           | `/dashboard/folders`           | Organize owned links.                                                                                  |
+| Bio pages         | `/dashboard/biolinks`          | Publish creator-style multi-link profiles.                                                             |
+| Link pages        | `/dashboard/link-pages`        | Build branded campaign/landing link collections.                                                       |
+| Analytics         | `/dashboard/insights`          | Aggregate owned traffic and events.                                                                    |
+| Event analytics   | `/dashboard/insights/events`   | Inspect consented, immutable events without visitor hashes.                                            |
+| Custom domains    | `/dashboard/custom-domains`    | Verify and manage branded hosts.                                                                       |
+| CTA overlays      | `/dashboard/link-overlays`     | Configure branded pre-destination interstitials.                                                       |
+| Tracking pixels   | `/dashboard/pixels`            | Create provider-specific tracking configurations.                                                      |
+| Profile           | `/account-settings/general`    | Manage account profile settings.                                                                       |
+| Security          | `/account-settings/security`   | Manage authentication and sessions.                                                                    |
+| Appearance        | `/account-settings/appearance` | Configure account appearance preferences.                                                              |
+| Workspaces        | `/account-settings/workspaces` | Create, switch, invite, and govern workspace membership.                                               |
+| Billing and usage | `/account-settings/billing`    | View the active workspace plan, usage, and billing actions.                                            |
+| Webhooks          | `/account-settings/webhooks`   | Manage workspace-bound signed subscriptions and delivery logs.                                         |
+| API keys          | `/account-settings/api-keys`   | Create and manage workspace-bound keys under developer settings.                                       |
+| Notifications     | `/notifications`               | Use the top-bar entry and notification center to review and manage account notifications.              |
+| Administration    | `/admin`                       | Platform-only user, status, plan, and notification-broadcast controls.                                 |
 
 ### 6.2 Public destinations
 
-| Surface | Route family | Behavior |
-|---|---|---|
-| Short link | `/{slug}` | Validate access/availability, optionally show CTA overlay, then redirect. |
-| Unlock a short link | `/{slug}/unlock` | Validate the correct code into the server session. |
-| Continue an overlay | `/{slug}/continue` | Re-check access, record completion, and redirect. |
-| Bio page | `/bio/{handle}` | Render published active bio content. |
-| Bio outbound button | `/bio/{handle}/links/{bioLink}` | Record click event then redirect. |
-| Link page | `/pages/{slug}` | Render published link-page items and eligible pixels. |
-| Link-page button | `/pages/{slug}/items/{item}` | Record click event then redirect. |
+| Surface             | Route family                    | Behavior                                                                                                         |
+| ------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Short link          | `/{slug}`                       | Validate access/availability, optionally show CTA overlay, then redirect.                                        |
+| Unlock a short link | `/{slug}/unlock`                | Validate the correct code into the server session.                                                               |
+| Continue an overlay | `/{slug}/continue`              | Re-check access, record completion, and redirect.                                                                |
+| Bio page            | `/bio/{handle}`                 | Render published active bio content.                                                                             |
+| Bio outbound button | `/bio/{handle}/links/{bioLink}` | Record click event then redirect.                                                                                |
+| Link page           | `/pages/{slug}`                 | Render published link-page items and eligible pixels.                                                            |
+| Link-page button    | `/pages/{slug}/items/{item}`    | Record click event then redirect.                                                                                |
+| Link-page media     | `/content-media/{publicId}`     | Deliver images inline and scanned PDFs as attachments only while attached to eligible blocks on published pages. |
 
 A verified custom domain resolves only a link explicitly assigned to that host. The default application host resolves only default-host links.
 
 ## 7. Functional requirements
 
-### 7.1 Identity, accounts, and security — Delivered / catalogued depth
+### 7.1 Identity, accounts, and security — In progress / planned depth
 
 #### Current foundation
 
@@ -120,208 +133,250 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 
 #### Future account requirements
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| ID-1 | Profile name/email updates preserve verification semantics. | P0 | Delivered foundation |
-| ID-2 | Password, passkey, and two-factor management use current Fortify security flows. | P0 | Delivered foundation |
-| ID-3 | A suspended account cannot access authenticated LinkPilot resources. | P1 | Delivered |
-| ID-4 | Account notifications and notification preferences are configurable. | P3 | Catalogued |
-| ID-5 | Account deletion follows retention and billing policy. | P3 | Catalogued |
+| ID     | Requirement                                                                                                                          | Priority | Status                                                        |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------ | -------: | ------------------------------------------------------------- |
+| ID-1   | Profile name/email updates preserve verification semantics.                                                                          |       P0 | In progress — existing implementation                         |
+| ID-2   | Password, passkey, and two-factor management use current Fortify security flows.                                                     |       P0 | In progress — existing implementation                         |
+| ID-3   | A suspended account cannot access authenticated LinkPilot resources.                                                                 |       P1 | In progress — existing implementation                         |
+| ID-4   | Account notifications and notification preferences are configurable.                                                                 |       P3 | Verified — preference-save tests and independent user review. |
+| ID-5   | Account deletion follows retention and billing policy.                                                                               |       P3 | Planned                                                       |
+| AUTH-1 | Allowed-host middleware protects authenticated and reset-password routes, and reset links always use the configured application URL. |       P0 | Verified — Phase 2 test and browser evidence                  |
 
-### 7.2 Short links — Delivered foundation; campaign depth catalogued
+### 7.2 Short links — Phase 5 campaign delivery
 
 #### Required behaviors
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| LNK-1 | An account owner can create a HTTP(S) short link with destination URL, title, active flag, and a unique normalized slug. | P0 | Delivered |
-| LNK-2 | Generated slugs retry on collision; custom slugs reject reserved application paths. | P0 | Delivered |
-| LNK-3 | A link can be placed in one folder. | P0 | Delivered |
-| LNK-4 | A link can be scheduled with optional UTC start and expiry timestamps. | P0 | Delivered |
-| LNK-5 | A link can require an access code stored only as a Laravel hash; P1 makes unlocks link-specific, versioned, eight hours long, and rate-limited to five failed attempts per five minutes per link/visitor cache key. | P1 | Hardening in active platform expansion |
-| LNK-6 | Unavailable links return 404 without creating a click or event record. | P0 | Delivered |
-| LNK-7 | A link can select one active custom domain owned by its account. | P1 | Delivered |
-| LNK-8 | A link can select one active CTA overlay owned by its account. | P1 | Delivered |
-| LNK-9 | A final short-link delivery writes a rich event only after explicit tracking consent; the compatible aggregate click counter remains independent. | P1 | Delivered |
-| LNK-10 | Link list supports filters, search, tags, export, preview, UTM builder, and link-type variants. | P2 | Catalogued |
-| LNK-11 | Link edits retain audit history and optional approval workflow. | P3 | Catalogued |
+| ID     | Requirement                                                                                                                                                                                                                                                                                                                                                                                        | Priority | Status                                    |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------: | ----------------------------------------- |
+| LNK-1  | An active-workspace member can create an HTTP(S) short link with a destination URL, title, active flag, and unique normalized slug.                                                                                                                                                                                                                                                                |       P0 | In progress — Phase 5 final gates pending |
+| LNK-2  | Generated slugs retry on collision; custom slugs reject reserved application paths.                                                                                                                                                                                                                                                                                                                |       P0 | In progress — Phase 5 final gates pending |
+| LNK-3  | A link can be placed in one folder in the active workspace.                                                                                                                                                                                                                                                                                                                                        |       P0 | In progress — Phase 5 final gates pending |
+| LNK-4  | A link can be scheduled with optional UTC start and expiry timestamps.                                                                                                                                                                                                                                                                                                                             |       P0 | In progress — Phase 5 final gates pending |
+| LNK-5  | A link can require a Laravel-hashed access code; unlocks are link-specific, versioned, eight hours long, and rate-limited to five failed attempts per five minutes per link/visitor cache key.                                                                                                                                                                                                     |       P1 | In progress — Phase 5 final gates pending |
+| LNK-6  | Unavailable links return 404 without creating a click or event record.                                                                                                                                                                                                                                                                                                                             |       P0 | In progress — Phase 5 final gates pending |
+| LNK-7  | A link can select one active custom domain in the active workspace.                                                                                                                                                                                                                                                                                                                                |       P1 | In progress — Phase 5 final gates pending |
+| LNK-8  | A link can select one active CTA overlay in the active workspace.                                                                                                                                                                                                                                                                                                                                  |       P1 | In progress — Phase 5 final gates pending |
+| LNK-9  | A final short-link delivery writes a rich event only after explicit tracking consent; the aggregate click counter remains independent.                                                                                                                                                                                                                                                             |       P1 | In progress — Phase 5 final gates pending |
+| LNK-10 | Link lists support search, filters, tags, safe previews, a UTM/custom-parameter builder, delivery variants, CSV import/export, and capped bulk actions. Mobile cards replace unavailable tables without a misleading view selector; long active-filter values retain full accessible names, no-result text stays within the list card, and long destination URLs truncate inside short-link cards. |       P2 | In progress — Phase 5 final gates pending |
+| LNK-11 | Link edits retain immutable delivery snapshots; pending snapshots enter optional owner/admin review without changing the currently published delivery until approval.                                                                                                                                                                                                                              |       P3 | In progress — Phase 5 final gates pending |
+| LNK-12 | Short-link, bio-link, and link-page item destinations reject LinkPilot default aliases and every claimed custom-domain host.                                                                                                                                                                                                                                                                       |       P0 | In progress — Phase 5 final gates pending |
+| LNK-13 | Published links support guarded direct, splash, local published-page, and LinkPilot-controlled CTA-overlay delivery plus ordered country/device/platform rules.                                                                                                                                                                                                                                    |       P1 | In progress — Phase 5 final gates pending |
+| LNK-14 | Bulk link actions and CSV import/export are active-workspace scoped; import returns bounded per-row outcomes and export excludes access-code secrets and hashes.                                                                                                                                                                                                                                   |       P2 | In progress — Phase 5 final gates pending |
 
 #### Acceptance criteria
 
-- Only the owning account can see or modify its link.
-- Other accounts receive 403 for link management and insights.
-- Direct links preserve one 302 redirect after all controls pass.
-- Overlay links record final completion only after the visitor chooses to continue.
-- Changing or clearing an access code invalidates every prior unlock; an unlocked session never applies to another link.
+- Active-workspace members can view and manage that workspace’s links; cross-workspace resources and references are not exposed or accepted.
+- Availability, schedule, access-code, approval, active/archive, target, and maximum-click guards pass before aggregate-click effects. The click counter and click row commit atomically; a consented rich event is attempted only after successful commit and cannot suppress the redirect. The final permitted click succeeds; later requests create no additional click or event.
+- Successful direct and published-page deliveries each record one aggregate click and attempt one `link.clicked` event after commit; that rich event is emitted only with tracking consent. Splash and overlay views do not record final clicks; overlays retain their consented view event, and Continue records exactly one click. A published-page delivery records its final click before redirecting to that local page.
+- The non-executing short-link preview and final delivery replace every existing occurrence of a configured key, preserve unrelated repeated query values and the fragment, and apply non-empty UTM values before non-empty custom values. The last non-empty value for a key wins, including a later custom value over UTM; an empty later duplicate custom row never erases an earlier non-empty value.
+- Country rules use only an allowlisted country header received from a configured trusted socket peer. First matching ordered rules win; unavailable country data falls through safely.
+- Import validates rows independently, enforces file-size and row-count limits, references only current-workspace resources, and respects plan/quota limits. It returns bounded row-index/status/error outcomes without echoing sensitive input. Export is deterministic and excludes access-code plaintext and hashes. Bulk actions are capped and cannot address foreign-workspace links.
+- Pending link revisions appear in the review queue without changing the live delivery until an authorized owner or admin approves the snapshot.
+- At narrow widths, short-link cards constrain long destination URLs to the card and render an ellipsis while preserving the full destination as link text.
+- No remote destination is embedded in a frame. Every intermediate delivery surface remains LinkPilot-controlled.
 
-### 7.3 Folders — Delivered foundation
+### 7.3 Folders — Phase 5 rollups
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| FOL-1 | Create, rename, list, and delete private folders. | P0 | Delivered |
-| FOL-2 | Deleting a folder preserves its links and clears `folder_id`. | P0 | Delivered |
-| FOL-3 | Folder lists show link count and click/event rollups. | P2 | Catalogued |
+| ID    | Requirement                                                                                                                                                                                                                                                                          | Priority | Status                                    |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------: | ----------------------------------------- |
+| FOL-1 | Create, rename, search, sort, paginate, list, and delete private folders in the active workspace. Mobile cards replace unavailable tables without a misleading view selector; long active-filter values retain full accessible names, and no-result text stays within the list card. |       P0 | In progress — Phase 5 final gates pending |
+| FOL-2 | Deleting one or more folders preserves their links and clears the affected `folder_id` values.                                                                                                                                                                                       |       P0 | In progress — Phase 5 final gates pending |
+| FOL-3 | Folder cards and rows show link counts and workspace-safe click and analytics-event rollups.                                                                                                                                                                                         |       P2 | In progress — Phase 5 final gates pending |
+| FOL-4 | Folder queries, mutations, counts, sorting, and rollups are scoped to the active workspace.                                                                                                                                                                                          |       P1 | In progress — Phase 5 final gates pending |
 
-### 7.4 QR codes — Delivered foundation; expansion catalogued
+### 7.4 QR codes — In progress; remaining role-specific browser checks and durable private logo storage verification pending
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| QR-1 | An owner can retrieve a locally generated SVG QR code for each owned short link. | P0 | Delivered |
-| QR-2 | QR data uses the link's canonical public URL and obeys link controls. | P0 | Delivered; custom-domain URL in active expansion |
-| QR-3 | A workspace can create direct-destination QR records with title, styling, and scan analytics. | P2 | Catalogued |
-| QR-4 | QR lists support export and QR-specific insights. | P2 | Catalogued |
+| ID   | Requirement                                                                                                                                                                     | Priority | Status                                                                                                                                              |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------: | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| QR-1 | Every owned short link has one derived SVG QR that encodes its canonical public URL; existing links are backfilled without fabricating historical QR scans.                     |       P0 | In progress — migration and focused behavior tests pass; overall gates remain (see [feature progress](product/progress.json)).                      |
+| QR-2 | Legacy link QR delivery obeys the final short-link controls; persisted campaign downloads encode `/q/{code}` and cannot bypass QR controls or scan analytics.                   |       P0 | In progress — focused delivery and guard tests pass; overall gates remain (see [feature progress](product/progress.json)).                          |
+| QR-3 | Workspaces create QR campaigns for direct HTTP(S) targets or same-workspace links with active, schedule, access-code, and maximum-scan controls.                                |       P1 | In progress — focused behavior tests pass; overall gates remain (see [feature progress](product/progress.json)).                                    |
+| QR-4 | QR lists provide workspace-scoped CSV export and insights derived only from QR scan records.                                                                                    |       P2 | In progress — focused export/analytics tests pass; overall gates remain (see [feature progress](product/progress.json)).                            |
+| QR-5 | Campaigns support sharing metadata, allowlisted visual styling with a live creation preview, and private workspace-owned logo uploads with validated image formats and cleanup. |       P1 | In progress — focused upload/style/preview tests pass; production storage and overall gates remain (see [feature progress](product/progress.json)). |
+| QR-6 | Campaign downloads provide SVG, PNG, JPEG, and WebP through an allowlisted format route with correct MIME types and deterministic filenames.                                    |       P2 | In progress — all four generated formats decode to `/q/{code}`; overall gates remain (see [feature progress](product/progress.json)).               |
 
-### 7.5 Link in bio — Delivered foundation; rich editor catalogued
+### 7.5 Link in bio — Locally verified; production media storage remains external
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| BIO-1 | Users create published/unpublished bio pages with normalized handles. | P0 | Delivered |
-| BIO-2 | Users create, reorder, activate, and delete outbound buttons. | P0 | Delivered |
-| BIO-3 | Public pages render only published pages and active items in order. | P0 | Delivered |
-| BIO-4 | Page views and button clicks record privacy-minimal events. | P1 | Delivered |
-| BIO-5 | Content blocks include image, text, social profiles, and media embeds (YouTube, SoundCloud, Vimeo, Spotify, Twitch, TikTok). | P2 | Catalogued |
-| BIO-6 | Appearance controls include theme, typography, color, background, and responsive preview. | P2 | Catalogued |
-| BIO-7 | Per-block scheduling, pinning, disable rules, and bio-specific insights are available. | P2 | Catalogued |
+| ID    | Requirement                                                                                                                   | Priority | Status                                                                                               |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------- | -------: | ---------------------------------------------------------------------------------------------------- |
+| BIO-1 | Users create published/unpublished bio pages with normalized handles.                                                         |       P0 | Verified — Phase 6 bio management and public-page tests.                                             |
+| BIO-2 | Users create, reorder, activate, and delete outbound buttons.                                                                 |       P0 | Verified — Phase 6 bio management tests and keyboard-order browser check.                            |
+| BIO-3 | Public pages render only published pages and active items in order.                                                           |       P0 | Verified — public bio projection and eligibility tests.                                              |
+| BIO-4 | Page views and button clicks record privacy-minimal events.                                                                   |       P1 | Verified — consented analytics tests.                                                                |
+| BIO-5 | Content blocks include image, text, social profiles, and media embeds (YouTube, SoundCloud, Vimeo, Spotify, Twitch, TikTok).  |       P2 | Verified locally — content/media tests; durable private production storage remains an operator gate. |
+| BIO-6 | Appearance controls include theme, typography, color, background, and responsive preview.                                     |       P2 | Verified — editor/public-preview checks and 390px browser smoke.                                     |
+| BIO-7 | Per-block scheduling, pinning, disable rules, and bio-specific insights are available.                                        |       P2 | Verified — UTC eligibility and bio-insights tests.                                                   |
+| BIO-8 | Third-party media blocks use canonical provider IDs, sandboxed renderers, and click-to-load consent before provider requests. |       P1 | Verified — canonical-provider and click-to-load consent checks.                                      |
+| BIO-9 | The editor Content, Appearance, and Insights tabs share one public render model and keyboard-accessible block ordering.       |       P1 | Verified — editor-tab and keyboard-order browser checks.                                             |
 
-### 7.6 Link pages — Delivered
+**Route contracts:** The editor uses `/dashboard/biolinks/{bioPage}`. Public buttons retain the legacy `/bio/{handle}/links/{bioLink}` path; new social-profile block actions use `/bio/{handle}/blocks/{bioBlock}`. Public bio images use `/bio/{handle}/blocks/{bioBlock}/image`.
+
+### 7.6 Link pages — Locally verified; production media/privacy gates remain
 
 **Purpose:** An account-owned branded public page for a campaign or curated destination list, distinct from creator-centric bio pages.
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| PAG-1 | An account owner can create/update/delete a link page with name, a slug unique in the link-page route namespace, title, description, and publish state. | P1 | Delivered |
-| PAG-2 | A page has ordered active outbound items with validated HTTP(S) destinations. | P1 | Delivered |
-| PAG-3 | `/pages/{slug}` returns 404 when unpublished or unknown. | P1 | Delivered |
-| PAG-4 | Page view and item click events are recorded only after explicit tracking consent and never store raw IP data. | P1 | Delivered |
-| PAG-5 | A page attaches zero to five reusable, active account-owned pixels. | P1 | Delivered |
-| PAG-6 | Template selection is eligible when a product owner defines supported templates, preview semantics, and migration behavior. | P3 | Catalogued |
-| PAG-7 | Custom CSS is excluded until there is an isolation/CSP security design. | P3 | Catalogued / security prerequisite |
-| PAG-8 | Forms and lead capture are eligible after field schema, consent, retention, and access rules are approved. | P3 | Catalogued / privacy prerequisite |
-| PAG-9 | File delivery is eligible after storage, file-type/size, malware scanning, and retention policy are approved. | P3 | Catalogued / operational prerequisite |
-| PAG-10 | A/B experiments are eligible after assignment, reporting, and consent rules are approved. | P3 | Catalogued / analytics prerequisite |
+| ID     | Requirement                                                                                                                                                            | Priority | Status                                                                                                                              |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------------- |
+| PAG-1  | An account owner can create/update/delete a link page with name, a slug unique in the link-page route namespace, title, description, and publish state.                |       P1 | Verified — link-page management tests.                                                                                              |
+| PAG-2  | A page has ordered active outbound items with validated HTTP(S) destinations.                                                                                          |       P1 | Verified — destination-guard tests.                                                                                                 |
+| PAG-3  | `/pages/{slug}` returns 404 when unpublished or unknown.                                                                                                               |       P1 | Verified — public link-page tests.                                                                                                  |
+| PAG-4  | Page view and item click events are recorded only after explicit tracking consent and never store raw IP data.                                                         |       P1 | Verified — consent and analytics tests.                                                                                             |
+| PAG-5  | A page attaches zero to five reusable, active account-owned pixels.                                                                                                    |       P1 | Verified — pixel attachment and trigger tests.                                                                                      |
+| PAG-6  | Users can select approved templates, preview them responsively, and change templates without losing page content.                                                      |       P3 | Verified — template migration and preservation tests.                                                                               |
+| PAG-7  | Custom CSS is excluded until there is an isolation/CSP security design.                                                                                                |       P3 | Catalogued / security prerequisite                                                                                                  |
+| PAG-8  | Forms support approved field types, explicit consent, protected workspace response access, and configured retention.                                                   |       P3 | Verified locally — consent/access/retention tests; production lead capture requires `PUBLIC_PRIVACY_URL`.                           |
+| PAG-9  | Workspace-owned images and PDFs are delivered only from unexpired, eligible blocks on published pages; PDFs require a clean malware scan and attachment-only delivery. |       P3 | In progress — fail-closed behavior passes; successful ClamAV PDF delivery and durable private production storage remain unverified. |
+| PAG-10 | Pages can run deterministic A/B variants with stable assignment and consent-aware reporting.                                                                           |       P3 | Verified — weighted assignment, migration, and consent-aware reporting tests.                                                       |
+| PAG-11 | Link pages use validated button, text, image, form, and file blocks with standard, profile, and campaign templates.                                                    |       P1 | Verified locally — block/template tests; production file delivery remains subject to the media gates in PAG-9.                      |
+| PAG-12 | Lead values are encrypted, owner/admin-only, consent-backed, exportable, and permanently purged after 30 days.                                                         |       P1 | Verified locally — access, consent, encryption, export, and retention tests; production lead capture requires `PUBLIC_PRIVACY_URL`. |
+| PAG-13 | Weighted variants use one control and an opaque 30-day functional assignment cookie.                                                                                   |       P2 | Verified — variant assignment, cookie, and reporting tests.                                                                         |
 
-### 7.7 CTA overlays — Delivered
+**Route contracts:** Public pages use `/pages/{slug}`. Existing buttons retain `/pages/{slug}/items/{linkPageItem}`. Lead-form blocks submit via `POST /pages/{slug}/blocks/{linkPageBlock}/leads`; eligible public media is served through `/content-media/{publicId}`. The editor and authorized lead-management routes are `/dashboard/link-pages/{linkPage}` and `/dashboard/link-pages/{linkPage}/leads`.
+
+### 7.7 CTA overlays — Verified locally
 
 **Product decision:** Implement as a branded LinkPilot-controlled interstitial. Do not inject content over a remote destination.
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| OVR-1 | An account owner can create/edit/delete an overlay with name, heading, body, CTA label, and active state. | P1 | Delivered |
-| OVR-2 | A link selects at most one overlay owned by its account. | P1 | Delivered |
-| OVR-3 | An eligible link visit renders the overlay before final delivery. | P1 | Delivered |
-| OVR-4 | Continue revalidates link availability/access, records completion, and redirects. | P1 | Delivered |
-| OVR-5 | Attached safe provider pixels run on the interstitial only after visitor consent. | P1 | Delivered |
-| OVR-6 | Timed interstitial variants, visual experiments, and targeting are eligible only on LinkPilot-controlled overlay pages. Remote-page injection is not a planned capability. | P3 | Catalogued |
+| ID    | Requirement                                                                                                                        | Priority | Status                                               |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------- | -------: | ---------------------------------------------------- |
+| OVR-1 | An account owner can create/edit/delete an overlay with name, heading, body, CTA label, and active state.                          |       P1 | Verified — overlay management tests.                 |
+| OVR-2 | A link selects at most one overlay owned by its account.                                                                           |       P1 | Verified — ownership and selection tests.            |
+| OVR-3 | An eligible link visit renders the overlay before final delivery.                                                                  |       P1 | Verified — overlay-delivery tests.                   |
+| OVR-4 | Continue revalidates link availability/access, records completion, and redirects.                                                  |       P1 | Verified — continuation revalidation tests.          |
+| OVR-5 | Attached safe provider pixels run on the interstitial only after visitor consent.                                                  |       P1 | Verified — consent-gated pixel tests.                |
+| OVR-6 | A LinkPilot-controlled interstitial can use optional start, expiry, and display-delay controls; remote-page injection is excluded. |       P2 | Verified — UTC schedule, delay, and delivery checks. |
 
-### 7.8 Custom domains — Delivered
+### 7.8 Custom domains — In progress
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| DOM-1 | An account owner can enter a normalized hostname for their account. | P1 | Delivered |
-| DOM-2 | IP literals, localhost, configured default hosts, malformed hosts, and duplicate claims are rejected. | P1 | Delivered |
-| DOM-3 | LinkPilot generates a unique token and requires exact DNS TXT proof at `_linkpilot-verify.<domain>`. | P1 | Delivered |
-| DOM-4 | A domain progresses through `pending_dns`, `pending_tls`, `active`, or `failed`; only an `active` domain with current TXT proof, application routing, and a valid HTTPS certificate may be assigned or used in canonical URLs. | P1 | Delivered |
-| DOM-5 | Requests for custom-domain links must match the active domain; the default host must not reveal an assigned link. Failed revalidation pauses delivery rather than silently falling back. | P1 | Delivered |
-| DOM-6 | Daily revalidation checks DNS and a no-redirect LinkPilot HTTPS challenge; token rotation returns the domain to pending DNS. Domain deletion must explicitly warn that assigned links return to default-host delivery. | P1 | Delivered |
-| DOM-7 | Automated certificate issuance, CNAME/provider APIs, wildcard hosts, and advanced apex guidance are available. | P2 | Catalogued / external infrastructure |
+| ID    | Requirement                                                                                                                                                                                                                    | Priority | Status                                   |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------: | ---------------------------------------- |
+| DOM-1 | An account owner can enter a normalized hostname for their account.                                                                                                                                                            |       P1 | In progress — existing implementation    |
+| DOM-2 | IP literals, localhost, configured default hosts, malformed hosts, and duplicate claims are rejected.                                                                                                                          |       P1 | Verified — Phase 2 test evidence         |
+| DOM-3 | LinkPilot generates a unique token and requires exact DNS TXT proof at `_linkpilot-verify.<domain>`.                                                                                                                           |       P1 | In progress — existing implementation    |
+| DOM-4 | A domain progresses through `pending_dns`, `pending_tls`, `active`, or `failed`; only an `active` domain with current TXT proof, application routing, and a valid HTTPS certificate may be assigned or used in canonical URLs. |       P1 | In progress — existing implementation    |
+| DOM-5 | Requests for custom-domain links must match the active domain; the default host must not reveal an assigned link. Failed revalidation pauses delivery rather than silently falling back.                                       |       P1 | In progress — existing implementation    |
+| DOM-6 | Daily revalidation checks DNS and a no-redirect LinkPilot HTTPS challenge; token rotation returns the domain to pending DNS. Domain deletion must explicitly warn that assigned links return to default-host delivery.         |       P1 | Verified — Phase 2 test evidence         |
+| DOM-7 | Automated certificate issuance, CNAME/registrar APIs, wildcard hosts, and advanced apex guidance remain catalogued external infrastructure.                                                                                    |       P2 | Catalogued / external infrastructure     |
+| DOM-8 | Verification probes update state with a token-and-prior-status compare-and-swap so token rotation cannot be overwritten.                                                                                                       |       P0 | Verified — Phase 2 test evidence         |
+| DOM-9 | Pending custom hosts may serve only the verification challenge; public link delivery requires an active-domain resolution.                                                                                                     |       P0 | Verified — Phase 2 test/browser evidence |
 
 **Operational prerequisite:** DNS and reverse-proxy/application host routing must direct the host to LinkPilot. The HTTPS challenge at `/.well-known/linkpilot-domain/{token}` proves application delivery and TLS before activation.
 
-### 7.9 Tracking pixels — Delivered
+### 7.9 Tracking pixels — Verified locally
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| PIX-1 | An account owner can create an active provider pixel in their account. | P1 | Delivered |
-| PIX-2 | Supported P1 providers are Meta Pixel and Google Analytics with validated IDs. | P1 | Delivered |
-| PIX-3 | Pixels attach to LinkPilot-rendered link pages and CTA overlays. | P1 | Delivered |
-| PIX-4 | Public React emits fixed provider-specific script shapes only after explicit visitor consent; arbitrary snippets and Google Tag Manager are rejected. | P1 | Delivered |
-| PIX-5 | Pixel attachment to bio pages, event-specific triggering, server-side conversion APIs, and consent-mode integrations are eligible after provider and privacy review. | P2 | Catalogued |
+| ID    | Requirement                                                                                                                                           | Priority | Status                                                |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------: | ----------------------------------------------------- |
+| PIX-1 | An account owner can create an active provider pixel in their account.                                                                                |       P1 | Verified — tracking-pixel management tests.           |
+| PIX-2 | Supported P1 providers are Meta Pixel and Google Analytics with validated IDs.                                                                        |       P1 | Verified — provider and identifier validation tests.  |
+| PIX-3 | Pixels attach to LinkPilot-rendered link pages and CTA overlays.                                                                                      |       P1 | Verified — owner-scoped attachment tests.             |
+| PIX-4 | Public React emits fixed provider-specific script shapes only after explicit visitor consent; arbitrary snippets and Google Tag Manager are rejected. |       P1 | Verified — consent and fixed-renderer tests.          |
+| PIX-5 | Pixels can attach to bio pages, link pages, and CTA overlays and fire only for documented, consented surface events.                                  |       P2 | Verified — owned-surface and consent browser checks.  |
+| PIX-6 | Pixel attachments use allowlisted page-view, button-click, or lead-submit triggers on owned LinkPilot surfaces only.                                  |       P1 | Verified — trigger allowlist and accepted-lead tests. |
+| PIX-7 | Meta renders each validated pixel ID once and uses account-specific `trackSingle` PageView calls.                                                     |       P0 | Verified — deduplicated per-ID Meta browser check.    |
 
-### 7.10 Analytics and events — Delivered
+### 7.10 Analytics and events — Local workflows verified; GeoIP blocked_external
 
 #### Event taxonomy
 
-| Event | Source | When it occurs |
-|---|---|---|
-| `link.clicked` | Direct/overlay short link | Final outbound redirect is issued after consent. |
-| `overlay.view` | CTA overlay | Eligible overlay is rendered after consent. |
-| `link_page.view` | Link page | Published page is rendered after consent. |
-| `link_page.clicked` | Link-page item | Visitor selects an active item after consent. |
-| `bio_page.view` | Bio page | Published bio page is rendered after consent. |
-| `bio_page.clicked` | Bio button | Visitor selects an active item after consent. |
+| Event               | Source                    | When it occurs                                   |
+| ------------------- | ------------------------- | ------------------------------------------------ |
+| `link.clicked`      | Direct/overlay short link | Final outbound redirect is issued after consent. |
+| `overlay.view`      | CTA overlay               | Eligible overlay is rendered after consent.      |
+| `link_page.view`    | Link page                 | Published page is rendered after consent.        |
+| `link_page.clicked` | Link-page item            | Visitor selects an active item after consent.    |
+| `bio_page.view`     | Bio page                  | Published bio page is rendered after consent.    |
+| `bio_page.clicked`  | Bio button                | Visitor selects an active item after consent.    |
 
 #### Requirements
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| ANL-1 | Each consented analytics event has an immutable UUID, exact content references, UTC occurrence time, coarse referrer/browser/platform, HMAC visitor hash, and hash-key version. | P1 | Delivered |
-| ANL-2 | Never persist raw IP address, full user agent, access code, secret, password hash, or destination URL in analytics. | P1 | Delivered |
-| ANL-3 | Account and link views support fixed UTC 7, 30, and 90 day windows. Historical short-link totals and daily series continue to use the existing `clicks` table; no historical event backfill occurs. | P1 | Delivered |
-| ANL-4 | Views show total short-link clicks, consented unique visitor count, zero-filled daily short-link clicks, event totals, and top referrers/browsers/platforms. | P1 | Delivered |
-| ANL-5 | Analytics respects the owning account and selected-resource authorization; telemetry failure never blocks public delivery. | P1 | Delivered |
-| ANL-6 | Public rendered surfaces request a 180-day granted/denied tracking cookie before rich events or pixels. Production requires `ANALYTICS_HASH_KEY`, a key version, and 90-day event retention with daily pruning. | P1 | Delivered |
-| ANL-7 | Geographic rollups, live traffic, CSV export, custom events, attribution models, and consent-mode integrations are available. | P2/P3 | Catalogued / policy prerequisite |
+| ID    | Requirement                                                                                                                                                                                                                                                                                                     | Priority | Status                                                                                                        |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------: | ------------------------------------------------------------------------------------------------------------- |
+| ANL-1 | Each consented analytics event has an immutable UUID, exact content references, UTC occurrence time, coarse referrer/browser/platform, HMAC visitor hash, and hash-key version.                                                                                                                                 |       P1 | Verified — Phase 2 full-suite evidence                                                                        |
+| ANL-2 | Never persist raw IP address, full user agent, access code, secret, password hash, or destination URL in analytics.                                                                                                                                                                                             |       P1 | Verified — Phase 2 full-suite evidence                                                                        |
+| ANL-3 | Account and link views support fixed UTC 7, 30, and 90 day windows. Historical short-link totals and daily series continue to use the existing `clicks` table; no historical event backfill occurs.                                                                                                             |       P1 | Verified — Phase 2 test/browser evidence                                                                      |
+| ANL-4 | Views show total short-link clicks, consented unique visitor count, zero-filled daily short-link clicks and events, event totals, and top referrers/browsers/platforms for explicit 7/30/90-day UTC windows.                                                                                                    |       P1 | Verified — Phase 2 test/browser evidence                                                                      |
+| ANL-5 | Analytics respects the owning account and selected-resource authorization; telemetry failure never blocks public delivery.                                                                                                                                                                                      |       P1 | Verified — Phase 2 test/browser evidence                                                                      |
+| ANL-6 | Public rendered surfaces request a 180-day granted/denied tracking choice before rich events or pixels. Show “Allow” only when the server confirms the privacy URL, analytics hash key, and key version are configured; keep “Decline” available. Production requires 90-day event retention and daily pruning. |       P1 | Verified — Phase 4 full-suite and prop-contract evidence                                                      |
+| ANL-7 | Analytics provides local GeoIP country rollups, live polling, CSV export, and explicitly declared custom events.                                                                                                                                                                                                |       P2 | Blocked external — local workflows are verified; country rollups require a configured local MaxMind database. |
+| ANL-8 | Insights and exports share workspace, resource, event, client, country, and UTM filters while omitting visitor hashes.                                                                                                                                                                                          |       P1 | Verified — shared filters, export tests, and responsive chart review.                                         |
+| ANL-9 | Country is resolved only from a configured local MaxMind database; absent data remains explicitly unavailable.                                                                                                                                                                                                  |       P1 | Blocked external — no local MaxMind database is available; missing-database behavior is verified.             |
 
-### 7.11 Workspaces and invitations — Deferred by user
+### 7.11 Workspaces and invitations — In progress
 
 #### Roles
 
-| Role | Content | Active integration association | Integration records | Members | Billing | P1 workspace deletion |
-|---|---|---|---|---|---|---|
-| Owner | Manage | Select | Manage | Grant/change admin or member; remove non-owner | Manage | Unavailable |
-| Admin | Manage | Select | Manage | Invite/change/remove members only | View | Unavailable |
-| Member | Manage | Select | View | View | View | Unavailable |
+| Role   | Content | Active integration association | Integration records                  | Members                                        | Billing | P1 workspace deletion |
+| ------ | ------- | ------------------------------ | ------------------------------------ | ---------------------------------------------- | ------- | --------------------- |
+| Owner  | Manage  | Select                         | Manage                               | Grant/change admin or member; remove non-owner | Manage  | Unavailable           |
+| Admin  | Manage  | Select                         | Manage                               | Invite/change/remove members only              | View    | Unavailable           |
+| Member | Manage  | Select                         | View with sensitive details redacted | View                                           | View    | Unavailable           |
 
-“Select” means a member can attach an already-active workspace domain, overlay, or pixel to content, but cannot create, edit, activate, deactivate, or delete the integration itself. There is no separate integration-administrator role.
+“Select” means a member can attach an already-active workspace domain, overlay, or pixel to content, but cannot create, edit, activate, deactivate, or delete the integration itself. Member-facing listings redact webhook endpoint URLs, delivery details, and custom-domain verification material. There is no separate integration-administrator role.
 
 #### Requirements
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| WKS-1 | Every user receives a personal workspace and active-workspace pointer. | P1 | Deferred by user |
-| WKS-2 | Existing links, folders, and bio pages are backfilled to the owner's personal workspace without losing `user_id` creator data. | P1 | Deferred by user |
-| WKS-3 | Users can create and switch among valid member workspaces; an invalid pointer falls back to the personal workspace, then a remaining membership, and persists that repair. | P1 | Deferred by user |
-| WKS-4 | Owners can invite `admin` or `member`; admins can invite only `member`; neither role can invite `owner`. | P1 | Deferred by user |
-| WKS-5 | Invitations use the configured Laravel mailer and a one-time copyable acceptance URL, expire after seven days, and can be listed, resent, revoked, or replaced for the same pending email. | P1 | Deferred by user |
-| WKS-6 | Invitation acceptance requires an authenticated non-suspended user whose normalized email matches the invitation, consumes the token atomically, and creates exactly one membership. Existing members cannot be reinvited. | P1 | Deferred by user |
-| WKS-7 | Owners can change/remove admins or members except themselves; admins can change/remove only members. The final/only owner is immutable in P1. | P1 | Deferred by user |
-| WKS-8 | A non-member cannot forge an active workspace or access its resources. P1 has no workspace deletion or ownership transfer. | P1 | Deferred by user |
-| WKS-9 | Ownership transfer, guest/viewer roles, SSO/SCIM, workspace archival/deletion, and audit-log exports are available. | P3 | Catalogued |
+| ID     | Requirement                                                                                                                                                                                                                | Priority | Status                                           |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------: | ------------------------------------------------ |
+| WKS-1  | Every user receives a personal workspace and active-workspace pointer.                                                                                                                                                     |       P1 | In progress — Phase 3 verification gates pending |
+| WKS-2  | Existing links, folders, and bio pages are backfilled to the owner's personal workspace without losing `user_id` creator data.                                                                                             |       P1 | In progress — Phase 3 verification gates pending |
+| WKS-3  | Users can create and switch among valid member workspaces; an invalid pointer falls back to the personal workspace, then a remaining membership, and persists that repair.                                                 |       P1 | In progress — Phase 3 verification gates pending |
+| WKS-4  | Owners can invite `admin` or `member`; admins can invite only `member`; neither role can invite `owner`.                                                                                                                   |       P1 | In progress — Phase 3 verification gates pending |
+| WKS-5  | Invitations use the configured Laravel mailer and a one-time copyable acceptance URL, expire after seven days, and can be listed, resent, revoked, or replaced for the same pending email.                                 |       P1 | In progress — Phase 3 verification gates pending |
+| WKS-6  | Invitation acceptance requires an authenticated non-suspended user whose normalized email matches the invitation, consumes the token atomically, and creates exactly one membership. Existing members cannot be reinvited. |       P1 | In progress — Phase 3 verification gates pending |
+| WKS-7  | Owners can change/remove admins or members except themselves; admins can change/remove only members.                                                                                                                       |       P1 | In progress — Phase 3 verification gates pending |
+| WKS-8  | A non-member cannot forge an active workspace or access its resources.                                                                                                                                                     |       P1 | In progress — Phase 3 verification gates pending |
+| WKS-9  | Guest/viewer roles, SSO/SCIM, workspace deletion, and audit-log exports remain future-depth capabilities.                                                                                                                  |       P3 | Catalogued                                       |
+| WKS-10 | Ownership transfer requires password confirmation, an existing member target, an atomic owner/role swap, and an audit record.                                                                                              |       P1 | In progress — Phase 3 verification gates pending |
+| WKS-11 | Member-capacity checks include unexpired invitations and lock the workspace while reserving capacity.                                                                                                                      |       P1 | In progress — Phase 3 verification gates pending |
 
-### 7.12 Plans, billing, and usage — Delivered / external payment prerequisite
+### 7.12 Plans, billing, and usage — Workspace local billing in progress; Stripe planned
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| BIL-1 | Plans define active limits for links, domains, pixels, webhooks, and link pages. | P1 | Delivered |
-| BIL-2 | Every user has one `active` local subscription state and a default free entitlement. | P1 | Delivered |
-| BIL-3 | The billing page shows plan, per-resource usage, limits, and overage-safe creation behavior. | P1 | Delivered |
-| BIL-4 | Metered creation rejects before exceeding the current plan's non-null limit. Existing data remains usable after a downgrade. | P1 | Delivered |
-| BIL-5 | Platform administrators can assign a plan to an account; a user can select only free for their own account. | P1 | Delivered |
-| BIL-6 | Credit-card checkout, payment-method changes, cancellation/renewal, invoices, tax, and provider webhooks work through Stripe/PayPal. | P3 | External prerequisite |
-| BIL-7 | Usage invoices, proration, coupons, annual billing, and dunning are available. | P3 | Catalogued / external prerequisite |
+| ID    | Requirement                                                                                                                                                                         | Priority | Status                                                     |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------: | ---------------------------------------------------------- |
+| BIL-1 | Workspace plans define active limits for links, domains, pixels, webhooks, link pages, and members.                                                                                 |       P1 | In progress — local workspace entitlement and usage checks |
+| BIL-2 | Every workspace has one active local subscription state and a default Free entitlement; existing owner plans are backfilled to workspace subscriptions.                             |       P1 | In progress — Phase 3 ownership cutover                    |
+| BIL-3 | The billing page shows the active workspace plan, per-resource usage, limits, and overage-safe creation behavior.                                                                   |       P1 | In progress — workspace billing UI and quota behavior      |
+| BIL-4 | Metered creation rejects before exceeding the current plan's non-null limit. Existing data remains usable after a downgrade.                                                        |       P1 | In progress — workspace usage enforcement                  |
+| BIL-5 | Platform administrators assign overrides to a user's personal workspace; workspace owners may select only Free for their current workspace.                                         |       P1 | In progress — current local control plane                  |
+| BIL-6 | Checkout, payment methods, cancellation/resume, invoices, and provider webhooks use Laravel Cashier with Stripe and never infer success from return query parameters.               |       P1 | Planned — Cashier/Stripe is not implemented                |
+| BIL-7 | Usage invoices, proration, coupons, annual billing, and dunning use Stripe-supported flows.                                                                                         |       P3 | Planned — external provider prerequisites                  |
+| BIL-8 | Effective workspace plans resolve an unexpired admin override, active/trialing Cashier subscription, then Free.                                                                     |       P1 | Planned — Stripe billing phase                             |
+| BIL-9 | The approved Phase 8 catalog fixes monthly/yearly prices and limits for links, folders, QR codes, bio pages, domains, pixels, members, webhooks, link pages, API keys, and storage. |       P1 | Planned — target values are specified below                |
 
-| Plan | Price | Links | Domains | Pixels | Members | Webhooks | Link pages |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| `free` | USD 0.00 | 25 | 0 | 0 | 1 | 0 | 1 |
-| `pro` | USD 29.00 | 500 | 3 | 10 | 5 | 5 | 25 |
-| `business` | USD 99.00 | unlimited | unlimited | unlimited | unlimited | unlimited | unlimited |
+**Current local workspace entitlement limits (not the full approved target catalog):**
 
-`null` means unlimited. Links, domains (including pending), pixels, webhooks, and link pages count whether active or inactive. The account plan update and creation check lock the user row. Downgrades never delete, disable, or unpublish existing records: they block new creation of the over-limit resource until deletion or plan upgrade returns the account to compliance. Member capacity and invitation reservation are part of the deferred workspace slice.
+| Plan       | Monthly price | Annual price   |     Links | Folders                     | QR codes                    |   Domains |    Pixels |   Members |  Webhooks | Link pages | Bio pages                   | API keys                    | Storage                     |
+| ---------- | ------------: | -------------- | --------: | --------------------------- | --------------------------- | --------: | --------: | --------: | --------: | ---------: | --------------------------- | --------------------------- | --------------------------- |
+| `free`     |      USD 0.00 | Not configured |        25 | Not metered in this release | Not metered in this release |         0 |         0 |         1 |         0 |          1 | Not metered in this release | Not metered in this release | Not metered in this release |
+| `pro`      |     USD 29.00 | Not configured |       500 | Not metered in this release | Not metered in this release |         3 |        10 |         5 |         5 |         25 | Not metered in this release | Not metered in this release | Not metered in this release |
+| `business` |     USD 99.00 | Not configured | unlimited | Not metered in this release | Not metered in this release | unlimited | unlimited | unlimited | unlimited |  unlimited | Not metered in this release | Not metered in this release | Not metered in this release |
 
-**External prerequisite for BIL-6:** merchant account, products/prices, API keys, webhook secret, tax/invoice policy, and a payment-data compliance owner.
+The local table above is a starting-state snapshot, not the target catalog. Phase 8 must implement this approved catalog:
 
-### 7.13 Webhooks — Delivered
+| Plan     | Monthly / yearly |     Links |   Folders |        QR |       Bio |   Domains |    Pixels |   Members |  Webhooks | Link pages |  API keys |   Storage |
+| -------- | ---------------: | --------: | --------: | --------: | --------: | --------: | --------: | --------: | --------: | ---------: | --------: | --------: |
+| Free     |          $0 / $0 |        25 |         5 |         5 |         1 |         0 |         0 |         1 |         0 |          1 |         0 |    100 MB |
+| Pro      |       $29 / $290 |       500 |       100 |       250 |        10 |         3 |        10 |         5 |         5 |         25 |         5 |     10 GB |
+| Business |       $99 / $990 | unlimited | unlimited | unlimited | unlimited | unlimited | unlimited | unlimited | unlimited |  unlimited | unlimited | unlimited |
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| WHK-1 | An authenticated account owner can create, update, disable, delete, and rotate a webhook endpoint for selected event names. | P1 | Delivered |
-| WHK-2 | Creation and every delivery attempt require HTTPS and fresh public-address validation; private, loopback, link-local, reserved, unresolved, and redirected targets are rejected. | P1 | Delivered |
-| WHK-3 | Each persisted consented analytics event creates a delivery record and queued job. | P1 | Delivered |
-| WHK-4 | The immutable P1 envelope includes `schema_version: 1`, UUID `event_id`, event name, UTC occurrence time, owner account ID, and a minimal relevant resource-data object. The exact serialized bytes are signed and reused across retries. | P1 | Delivered |
-| WHK-5 | Delivery records include webhook revision, attempted count, `pending`/`delivered`/`failed`/`cancelled` state, response code, bounded response excerpt/failure detail, and completion time. | P1 | Delivered |
-| WHK-6 | A delivery has three total attempts: initial, then 60-second and 300-second retries; only 2xx succeeds. The client has a 3-second connect and 10-second total timeout and does not follow redirects. | P1 | Delivered |
-| WHK-7 | Updating, disabling, deleting, or rotating a webhook cancels its pending deliveries while preserving history. A generated 32-byte secret is encrypted and revealed only on create/rotate. | P1 | Delivered |
-| WHK-8 | Manual redelivery, endpoint health reporting, IP allow lists, and inbound webhook handling are available. | P2 | Catalogued |
+`null` means unlimited in the current local model. Downgrades never delete, disable, or unpublish existing records: they block new over-limit creation until usage or plan changes restore compliance. Current limits are enforced by the workspace usage service while locking the workspace. Member capacity includes current members plus unexpired pending invitations.
+
+**External prerequisite for BIL-6:** Stripe account, products/prices, API keys, webhook secret, tax/invoice policy, and a payment-data compliance owner.
+
+### 7.13 Webhooks — In progress; live delivery blocked_external
+
+| ID     | Requirement                                                                                                                                                                                                                                          | Priority | Status                                                                                       |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------: | -------------------------------------------------------------------------------------------- |
+| WHK-1  | An authenticated workspace owner or admin can create, update, disable, delete, and rotate a webhook endpoint for selected event names.                                                                                                               |       P1 | In progress — workspace-scoped implementation exists                                         |
+| WHK-2  | Creation and every delivery attempt require HTTPS and fresh public-address validation; private, loopback, link-local, reserved, unresolved, and redirected targets are rejected.                                                                     |       P1 | In progress — existing implementation                                                        |
+| WHK-3  | Each persisted consented analytics event creates a delivery record and queued job.                                                                                                                                                                   |       P1 | Verified — Phase 2 test/browser evidence                                                     |
+| WHK-4  | The immutable envelope includes `schema_version: 1`, UUID `event_id`, event name, UTC occurrence time, immutable event `workspace_id`, and a minimal relevant resource-data object. The exact serialized bytes are signed and reused across retries. |       P1 | In progress                                                                                  |
+| WHK-5  | Delivery records include webhook revision, attempted count, `pending`/`delivered`/`failed`/`cancelled` state, response code, bounded response excerpt/failure detail, and completion time.                                                           |       P1 | Verified — current-route history browser check and full-suite delivery coverage.             |
+| WHK-6  | A delivery has three total attempts: initial, then 60-second and 300-second retries; only 2xx succeeds. The client has a 3-second connect and 10-second total timeout and does not follow redirects.                                                 |       P1 | In progress — existing implementation                                                        |
+| WHK-7  | Updating, disabling, deleting, or rotating a webhook cancels its pending deliveries while preserving history. A generated 32-byte secret is encrypted and revealed only on create/rotate.                                                            |       P1 | In progress — existing implementation                                                        |
+| WHK-8  | Workspace owners and admins can manually redeliver eligible attempts and inspect endpoint health.                                                                                                                                                    |       P2 | Blocked external — local controls and tests pass; live health needs a public HTTPS receiver. |
+| WHK-9  | Manual redelivery creates immutable lineage from a failed/cancelled delivery and uses the current endpoint revision and secret.                                                                                                                      |       P1 | Blocked external — local redelivery coverage passes; live HTTPS delivery remains unverified. |
+| WHK-10 | A successful retry clears stale failure detail and response excerpt while preserving the delivery attempt count and terminal history record.                                                                                                         |       P0 | Verified — successful-retry regression and current-route history browser check.              |
 
 Every attempt resolves the URL again, rejects every unsafe answer, and forces the connection to a validated address while retaining TLS hostname validation. Payloads never include raw visitor data, destination URLs, access codes, hashes, or secrets.
 
@@ -331,56 +386,88 @@ The exact transmitted JSON preserves this key order and uses unescaped Unicode/s
 
 ```json
 {
-  "schema_version": 1,
-  "event_id": "uuid",
-  "event": "link.clicked",
-  "occurred_at": "2026-10-19T12:00:00Z",
-  "workspace_id": 123,
-  "data": {
-    "link": {"id": 456, "slug": "launch"}
-  }
+    "schema_version": 1,
+    "event_id": "uuid",
+    "event": "link.clicked",
+    "occurred_at": "2026-10-19T12:00:00Z",
+    "workspace_id": 123,
+    "data": {
+        "link": { "id": 456, "slug": "launch" }
+    }
 }
 ```
 
 `data` adds only the relevant page, item, bio page, bio link, or overlay identifier. `X-LinkPilot-Event` repeats `event`; `X-LinkPilot-Signature` is `sha256=` plus HMAC-SHA-256 over the exact body bytes using the webhook secret. The same UUID, exact body, and signature are reused for every retry.
 
-### 7.14 API keys — Catalogued
+### 7.14 API keys — Verified locally
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| API-1 | Workspace owners can create, name, scope, expire, revoke, and view last use of API keys. | P2 | Catalogued |
-| API-2 | API keys are shown once, stored as hashes, and never returned in subsequent payloads. | P2 | Catalogued |
-| API-3 | A versioned API exposes links, pages, analytics, and webhooks with rate limits and audit logs. | P2 | Catalogued |
+| ID    | Requirement                                                                                                         | Priority | Status                                                      |
+| ----- | ------------------------------------------------------------------------------------------------------------------- | -------: | ----------------------------------------------------------- |
+| API-1 | Workspace owners and admins can create, name, scope, expire, revoke, and view last use of workspace-bound API keys. |       P2 | Verified — lifecycle tests and user review.                 |
+| API-2 | API keys are shown once, stored as hashes, and never returned in subsequent payloads.                               |       P2 | Verified — lifecycle tests and user review.                 |
+| API-3 | A versioned API exposes links, pages, analytics, and webhooks with rate limits and audit logs.                      |       P2 | Verified — API contract tests and generated OpenAPI review. |
+| API-4 | Sanctum keys are permanently bound to one workspace and enforce explicit abilities, expiry, and rate limits.        |       P1 | Verified — authorization and rate-limit tests.              |
+| API-5 | Create endpoints support idempotency keys, stable validation JSON, and cursor pagination where applicable.          |       P2 | Verified — API contract tests.                              |
+| API-6 | API audit logs retain actor, workspace, route, method, status, and time without bodies, destinations, or secrets.   |       P1 | Verified — API audit contract tests.                        |
 
-### 7.15 Platform administration — Delivered / catalogued depth
+### 7.15 Platform administration — In progress / permission control plane planned
 
-| ID | Requirement | Priority | Status |
-|---|---|---:|---|
-| ADM-1 | Platform access requires explicit `users.is_admin`; no self-service path grants it. | P1 | Delivered |
-| ADM-2 | An admin dashboard lists user/workspace metadata, account status, plans/subscriptions, and aggregate counts without granting non-member access to content destinations or visitor dimensions. | P1 | Delivered |
-| ADM-3 | A platform admin can suspend/unsuspend another account and grant/revoke another admin. Suspending clears database sessions and remember tokens but does not disable public workspace content. | P1 | Delivered |
-| ADM-4 | An admin cannot self-suspend or self-demote. | P1 | Delivered |
-| ADM-5 | `php artisan linkpilot:grant-admin {email}` is an operations-only provisioning route. | P1 | Delivered |
-| ADM-6 | Role/permission matrix editor, global insight dashboards, localization, site, system, SEO, email, auth, GDPR, and analytics settings exist. | P3 | Catalogued |
+| ID    | Requirement                                                                                                                                                                                               | Priority | Status                                                             |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------: | ------------------------------------------------------------------ |
+| ADM-1 | Platform access requires explicit administration permission; no self-service path grants it.                                                                                                              |       P1 | In progress — `is_admin` starting state, Phase 9 migration planned |
+| ADM-2 | An admin dashboard lists user/workspace metadata, account status, plans/subscriptions, and aggregate counts without granting non-member access to content destinations or visitor dimensions.             |       P1 | In progress — limited starting state                               |
+| ADM-3 | A platform administrator can suspend/restore another account and manage platform roles only after a confirmation identifies the target account and action; last-super-admin protection remains mandatory. |       P1 | In progress — limited starting state; confirmations implemented    |
+| ADM-4 | An administrator cannot suspend, delete, or remove their own last `super_admin` role.                                                                                                                     |       P1 | Planned                                                            |
+| ADM-5 | `php artisan linkpilot:grant-admin {email}` provisions the immutable `super_admin` platform role through an operations-only command.                                                                      |       P1 | Planned migration                                                  |
+| ADM-6 | Role/permission management, global insights, localization, site, system, SEO, email, authentication, GDPR, and analytics settings are real audited workflows.                                             |       P3 | Planned                                                            |
+
+### 7.16 Application shells, search, and resource lists — Verified
+
+| ID      | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |                                                                        Priority | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SHELL-1 | Regular-user routes render the user shell; platform-administration routes render a distinct admin shell and deny normal users. Admin navigation groups are Overview, Monetization, Users & access, Content, and System, but a group renders only when it has at least one live destination.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |                                                                              P1 | Verified — Phase 4 evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| SHELL-2 | Link lists use URL-backed `search`, `folder`, `status`, `sort`, `direction`, `page`, and `view=table                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | cards`; folder lists use `search`, `sort`, `direction`, `page`, and `view=table | cards`. Both paginate at 20, preserve validated query state through pagination, preserve filters/sort/view across mutations, and reset `page` after mutations that can change result membership or ordering. Both expose responsive mobile cards and shared list controls and support confirmed bulk deletion of current-page selections. Bulk IDs are distinct, capped at 20, and validated against the active workspace; deleting a folder unassigns its links without deleting them. | P1  | Verified — Phase 4 evidence |
+| SHELL-3 | The user shell provides Primary and Resources navigation, workspace/role/plan-usage context, desktop search, a collapsible sidebar, breadcrumbs, a skip link to the single main landmark, and a title/action header, plus five labelled Links, Bio, QR, Insights, and Account destinations in a keyboard-operable drawer and bottom bar at widths up to 1024px. Exact active user/admin/settings destinations expose `aria-current="page"`; active parent and hash destinations expose `aria-current="location"`; selecting a mobile drawer destination closes it; mobile breadcrumbs keep the current item legible without horizontal overflow. Billing and Webhooks are reachable from authenticated settings navigation. Billing is rendered within SettingsLayout, and Manage plan, workspace switching, and sidebar Settings navigation close the mobile drawer. Unimplemented workflows are not presented as live navigation. |                                                                              P1 | Verified — Phase 4 evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| SHELL-4 | User global search returns safe names, slugs, types, and permitted hostnames for implemented resources in the active workspace: short links, folders, QR codes, bio pages, link pages, overlays, tracking pixels, custom domains, and webhooks. Custom-domain visibility matches workspace integration permissions. Never expose destination URLs, visitor dimensions, pixel identifiers, webhook endpoints/secrets, or domain-verification tokens. Platform metadata search requires `admin.search`.                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                              P1 | Verified — Phase 4 evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| SHELL-5 | Authenticated feature routes use canonical dashboard and account-settings paths without private route aliases; workspace switching uses POST and redirects to `/dashboard/links`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |                                                                              P1 | Verified — Phase 4 evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| SHELL-6 | Administrator global search filters accounts by name/email and personal-workspace plans by name/code, requires the `admin.search` ability, and returns only account metadata and plan names while excluding content, destination URLs, visitor dimensions, and integration secrets. Confirmed suspension, administrator-role, and plan mutations preserve the current sanitized search query.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |                                                                              P1 | Verified — Phase 4 evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+
+The Phase 4 shell contract is distinct from BeLink source screenshots recorded as product reference evidence. Links and folders own the specified query-state and bulk-delete contract; result-changing mutations preserve the validated filters, sorting, and view but reset `page` to avoid an empty last page. Other lists do not imply unverified semantics. Shared list primitives live under `resources/js/components/resource-list/`. Navigation exposes only implemented workflows; future routes may be catalogued but remain hidden until their workflows ship. Empty admin navigation groups are omitted, nested user routes keep their nearest parent navigation destination active, and the skip link, active-state, mobile-drawer, and compact-breadcrumb semantics apply across authenticated shells.
+
+Phase 4 is verified. Current test, browser, migration, and review evidence is recorded in `product/features/dashboard-shell.json` and `product/progress.json`; implementation screenshots are under `product/verification/phase4-*.png`. The independent code, user-UX, admin-UX, and PRD-alignment reviews all passed. Historical browser observations preceding the fixes are retained as historical evidence, not current behavior.
+
+### 7.17 Notifications — Local workflows verified; email blocked_external
+
+Account notification preferences are part of ID-4.
+
+| ID    | Requirement                                                                                                                | Priority | Status                                                                                |
+| ----- | -------------------------------------------------------------------------------------------------------------------------- | -------: | ------------------------------------------------------------------------------------- |
+| NOT-1 | Database notifications cover invitations, domain/webhook failures, usage thresholds, billing events, and admin broadcasts. |       P1 | Verified — delivery and admin-broadcast tests and admin review.                       |
+| NOT-2 | Users can filter unread/all notifications and mark one or all read from a dedicated notification center.                   |       P1 | Verified — notification-center tests and user review.                                 |
+| NOT-3 | Mail delivery occurs only for a configured mailer and an enabled per-user category preference.                             |       P1 | Blocked external — preference gating is tested; no real SMTP transport is configured. |
+
+The center is available at `/notifications`; `POST /notifications/{notification}/read` and `POST /notifications/read-all` update read state, while `PATCH /notifications/preferences` saves per-category email choices. In-app records are persisted independently of mail. Platform administrators can broadcast in-app notifications to active accounts at `/admin/notifications/broadcast`; email still follows each recipient's preference and configured mailer.
 
 ## 8. Data model reference
 
-| Entity | Ownership | Key data | Notes |
-|---|---|---|---|
-| User | Platform | admin/suspended/current workspace | Suspension revokes authenticated sessions. |
-| Workspace | User owner | name, slug | Boundary for all collaboration data; no P1 deletion. |
-| Workspace membership | Workspace + user | role | One immutable owner; unique pair. |
-| Workspace invitation | Workspace | email, non-owner role, hashed token, expiry/revocation | Raw token is sent/shown once. |
-| Link | Workspace + creator | slug, destination, controls, optional active domain/overlay | Existing creator `user_id` stays. |
-| Folder | Workspace + creator | name | Delete clears links, never deletes them. |
-| Bio page | Workspace + creator | handle, display/publish state | Public handle remains globally unique in its namespace. |
-| Link page/item | Workspace | published page and ordered destinations | Page slug is unique only in `/pages`. |
-| Overlay | Workspace | content and active state | Short-link interstitial. |
-| Custom domain | Workspace | hostname, token, lifecycle/TLS state | Assignment requires active DNS + TLS proof. |
-| Tracking pixel | Workspace | Meta/GA provider and validated ID | No raw customer JavaScript. |
-| Analytics event | Workspace | UUID/references/time/coarse dimensions | Consented, privacy-minimal, 90-day retention. |
-| Plan/subscription | Workspace | limits and local entitlement state | Downgrade preserves existing data. |
-| Webhook/delivery | Workspace | revisioned signed endpoint/events/log | Queue-backed and SSRF-hardened. |
+| Entity                  | Ownership           | Key data                                                    | Notes                                                       |
+| ----------------------- | ------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- |
+| User                    | Platform            | admin/suspended/current workspace                           | Suspension revokes authenticated sessions.                  |
+| Workspace               | User owner          | name, slug                                                  | Boundary for all collaboration data; no P1 deletion.        |
+| Workspace membership    | Workspace + user    | role                                                        | One immutable owner; unique pair.                           |
+| Workspace invitation    | Workspace           | email, non-owner role, hashed token, expiry/revocation      | Raw token is sent/shown once.                               |
+| Link                    | Workspace + creator | slug, destination, controls, optional active domain/overlay | Existing creator `user_id` stays.                           |
+| Folder                  | Workspace + creator | name                                                        | Delete clears links, never deletes them.                    |
+| Bio page                | Workspace + creator | handle, display/publish state                               | Public handle remains globally unique in its namespace.     |
+| Link page/item          | Workspace           | published page and ordered destinations                     | Page slug is unique only in `/pages`.                       |
+| Overlay                 | Workspace           | content and active state                                    | Short-link interstitial.                                    |
+| Custom domain           | Workspace           | hostname, token, lifecycle/TLS state                        | Assignment requires active DNS + TLS proof.                 |
+| Tracking pixel          | Workspace           | Meta/GA provider and validated ID                           | No raw customer JavaScript.                                 |
+| Analytics event         | Workspace           | UUID/references/time/coarse dimensions                      | Consented, privacy-minimal, 90-day retention.               |
+| Plan/subscription       | Workspace           | Cashier subscription state and explicit plan overrides      | Stripe is authoritative; downgrade preserves existing data. |
+| Webhook/delivery        | Workspace           | revisioned signed endpoint/events/log                       | Queue-backed and SSRF-hardened.                             |
+| Notification            | User                | UUID/type/recipient/data/read timestamp                     | In-app delivery is stored independently of email.           |
+| Notification preference | User                | category/email_enabled                                      | Per-user category email opt-in; disabled by default.        |
 
 ## 9. Cross-cutting security and privacy requirements
 
@@ -393,19 +480,33 @@ The exact transmitted JSON preserves this key order and uses unescaped Unicode/s
 - Validate URLs against allowed schemes. Webhooks resolve and validate every delivery attempt, pin a validated public address, retain TLS hostname validation, and never follow redirects.
 - `APP_URL` plus explicit `LINKPILOT_DEFAULT_HOSTS` are the only default public hosts; unknown hosts return 404. `nullOnDelete` optional associations preserve content. Domain deletion requires an explicit warning because it restores default-host delivery; failed domain verification pauses delivery instead.
 - Public host, published state, active state, schedule, access-code version, and access-code rate limit validation happen before redirect/click side effects.
-- All mutation paths require CSRF/session authentication or future scoped API authentication.
+- All mutation paths require CSRF/session authentication or scoped, workspace-bound API authentication.
 - Public UI uses labels, error text near controls, visible keyboard focus, and no hover-only actions.
 
 ## 10. Delivery roadmap
 
-| Slice | Outcome | Prerequisites | Exit criteria |
-|---|---|---|---|
-| P0 — Publishing foundation | Links, folders, controls, QR, basic bio | Existing Laravel/Inertia stack | Delivered and regression tested. |
-| P1A — Collaboration control plane | Workspaces, roles, invitations, admin foundation, plans/usage | Safe expand/backfill migration | Existing user data survives and collaboration is authorized. |
-| P1B — Branded delivery | Domains, link pages, overlays, pixels | P1A workspace ownership | Public host/surface behavior is security tested. |
-| P1C — Insight and automation | Rich analytics, events, webhooks | P1A/P1B event model and queue worker | Events are private, scoped, signed, retrying, and inspectable. |
-| P2 — Campaign depth | Tags, UTM/preview, direct QR, advanced bio, API keys, redelivery | P1 stable | Each module has a product owner and real workflow. |
-| P3 — Monetization/platform operations | Payment provider, invoices/tax, system config, SSO/SCIM, compliance analytics | Merchant/legal/ops prerequisites | External integrations are credentialed and tested in their real sandboxes. |
+| Slice                                 | Outcome                                                               | Prerequisites                           | Exit criteria                                                                       |
+| ------------------------------------- | --------------------------------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------- |
+| P0 — Publishing foundation            | Links, folders, controls, derived QR, basic bio                       | Existing Laravel/Inertia stack          | Existing behavior; current verification recorded in `product/progress.json`.        |
+| P1A — Collaboration control plane     | Workspaces, roles, invitations, admin foundation, plans/usage         | Safe expand/backfill migration          | Existing user data survives and collaboration is authorized.                        |
+| P1B — Branded delivery                | Domains, link pages, overlays, pixels                                 | P1A workspace ownership                 | Public host/surface behavior is security tested.                                    |
+| P1C — Insight and automation          | Rich analytics, events, webhooks                                      | P1A/P1B event model and queue worker    | Events are private, scoped, signed, retrying, and inspectable.                      |
+| P2 — Campaign depth                   | Tags, UTM/preview, direct QR, advanced bio, API keys, redelivery      | P1 stable                               | Each module has a real end-to-end workflow and evidence.                            |
+| P3 — Monetization/platform operations | Stripe billing, invoices/tax, system configuration, account lifecycle | Merchant/legal/operations prerequisites | Local contracts pass and unavailable live checks are explicitly `blocked_external`. |
+
+**Phase mapping.** P0/P1A/P1B/P1C/P2/P3 are product roadmap slices whose implementation is delivered by the numbered full-parity implementation phases below; the slice labels are not implementation-phase numbers. Phase numbers cited in requirement status notes (for example “Phase 2”, “Phase 3”, “Phase 9”, and the “Phase 4” dashboard-shell review gate in §7.16) refer to this sequence:
+
+1. Parity evidence and product ledger established under `product/`.
+2. Foundation correctness and security fixes.
+3. Workspace ownership and entitlement cutover.
+4. Regular-user and admin application shells split.
+5. Advanced short links, folders, and first-class QR campaigns.
+6. Rich bio pages, safe link pages, overlays, pixels, and media.
+7. Advanced insights, API keys, webhooks, and notifications.
+8. Stripe billing and complete account settings/deletion lifecycle.
+9. Administration control plane: roles/permissions, admin screens, platform settings.
+10. Reconciliation, clean cutover, and final three-gate verification.
+    Each numbered phase closes only after three independent gates: a user-UX review of regular-user workflows, an admin-UX review of the distinct admin shell and authorization, and a PRD-alignment review of implementation and evidence. Reviewers whose area was not directly changed still perform a regression pass. Fix every actionable in-repository finding and independently re-review it before advancing. Phase 10 repeats all three reviews across the completed SaaS.
 
 ## 11. Verification requirements
 
@@ -416,17 +517,21 @@ Every completed slice must provide all applicable evidence:
 3. The complete Laravel suite passes.
 4. `npm run build` passes after React/route additions.
 5. Migrations run against the persistent local SQLite database without data loss.
-6. A browser smoke scenario exercises the real changed public/dashboard surface at `http://localhost:8000`.
+6. Browser smoke scenarios exercise the changed surface against an explicitly disposable local app and isolated test data; they must not reuse a developer's shared running app or persistent database. Keyboard smoke checks cover the global-search shortcut/results/Escape focus restoration and mobile-drawer focus containment/restoration.
 7. Queue-backed features have a running worker and an exercised delivery path.
 8. README/operational docs explain required host/DNS/payment/worker setup and any external prerequisite.
 
-## 12. Open decisions and triggers
+## 12. External prerequisites and triggers
 
-| Decision | Why it remains open | Trigger |
-|---|---|---|
-| Payment provider | No merchant credentials, price catalog, or tax policy exists. | Product owner supplies Stripe/PayPal account and billing policy. |
-| Regional privacy policy | P1 defines an opt-in mechanic, hash rotation, and 90-day retention; legal copy and regional collection basis remain operator-owned. | Privacy owner supplies policy URL/copy and any regional constraints before enabling production tracking. |
-| DNS/certificate automation | P1 verifies current TLS and routing but does not issue certificates or manage DNS. | Hosting architecture and certificate operator are chosen. |
-| API scope | API needs stable resource semantics and abuse controls. | A real automation consumer provides use cases. |
-| Advanced bio/media embeds | Provider terms and content policy affect support. | Creator workflow prioritization and embed policy are approved. |
-| RBAC depth | Owner/admin/member covers P1 without pretending enterprise RBAC. | Customer needs guest/viewer/custom roles or audit exports. |
+| Prerequisite                      | Why it remains external                                                                                                             | Trigger                                                                                                              |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Stripe live verification          | The provider is fixed, but credentials, price IDs, webhook secret, and tax policy are operator-controlled.                          | Operator supplies Stripe test-mode configuration and policy.                                                         |
+| Regional privacy policy           | P1 defines an opt-in mechanic, hash rotation, and 90-day retention; legal copy and regional collection basis remain operator-owned. | Privacy owner supplies policy URL/copy and any regional constraints before enabling production tracking.             |
+| DNS/certificate automation        | P1 verifies current TLS and routing but does not issue certificates or manage DNS.                                                  | Hosting architecture and certificate operator are chosen.                                                            |
+| Production media storage          | Workspace media is stored on a private Laravel disk; direct public storage URLs are not used.                                       | Operator configures `LINKPILOT_MEDIA_DISK` as durable private storage and verifies access policy.                    |
+| Production malware scanning       | PDF uploads fail closed unless a real ClamAV scan succeeds.                                                                         | Operator configures and verifies `CLAMSCAN_PATH` before enabling production PDF uploads.                             |
+| Lead collection privacy URL       | Production lead capture requires a privacy URL and explicit lead-collection consent separate from analytics tracking consent.       | Operator configures `PUBLIC_PRIVACY_URL` and approves the collection notice before enabling production lead capture. |
+| RBAC depth                        | Owner/admin/member covers P1 without pretending enterprise RBAC.                                                                    | Customer needs guest/viewer/custom roles or audit exports.                                                           |
+| Local GeoIP database              | Country dimensions use only an on-disk MaxMind database; no remote resolution is performed.                                         | Operator mounts a licensed GeoLite2 Country `.mmdb` and sets `ANALYTICS_GEOIP_DATABASE` in the app and worker.       |
+| Queue worker and webhook receiver | Webhook deliveries remain queued without a worker; live delivery proof needs an operator-controlled public HTTPS receiver.          | Operator runs the queue worker and provides a public HTTPS endpoint before live delivery verification.               |
+| Notification mail transport       | In-app delivery is independent; email requires a configured Laravel transport and a recipient preference.                           | Operator configures and verifies standard `MAIL_*` transport settings before relying on email delivery.              |

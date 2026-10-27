@@ -36,15 +36,17 @@ return [
     ],
 
     'linkpilot' => [
-        'default_hosts' => array_values(array_filter(array_map(
-            'trim',
-            explode(',', (string) env('LINKPILOT_DEFAULT_HOSTS', '')),
-        ))),
         'analytics' => [
             'privacy_url' => env('PUBLIC_PRIVACY_URL'),
             'hash_key' => env('ANALYTICS_HASH_KEY'),
             'hash_key_version' => env('ANALYTICS_HASH_KEY_VERSION'),
             'retention_days' => (int) env('ANALYTICS_RETENTION_DAYS', 90),
+            'geoip_database' => env('ANALYTICS_GEOIP_DATABASE'),
+        ],
+        'media' => [
+            'disk' => env('LINKPILOT_MEDIA_DISK'),
+            'retention_days' => (int) env('CONTENT_MEDIA_RETENTION_DAYS', 365),
+            'clamav_path' => env('CLAMSCAN_PATH', 'clamscan'),
         ],
         'webhooks' => [
             'retry_delays' => array_map('intval', explode(',', (string) env('WEBHOOK_RETRY_DELAYS', '60,300'))),

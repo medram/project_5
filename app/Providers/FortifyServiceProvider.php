@@ -4,15 +4,23 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Http\Middleware\EnsureActiveAccount;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\Http\Requests\TwoFactorLoginRequest;
+use Laravel\Passkeys\Passkey;
+use Laravel\Passkeys\Contracts\PasskeyUser;
+use Laravel\Passkeys\Passkeys;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -32,6 +40,8 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->refuseSuspendedAccounts();
+        $this->allowSuspendedSessionsToLogOut();
     }
 
     /**
@@ -41,6 +51,71 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+    }
+
+    /**
+     * Reject suspended accounts in every authentication path.
+     */
+    private function refuseSuspendedAccounts(): void
+    {
+        // Password authentication (including the step that arms the two-factor
+        // challenge) refuses suspended accounts like any other invalid login.
+        Fortify::authenticateUsing(function (Request $request): ?Authenticatable {
+            $provider = Auth::guard(config('fortify.guard'))->getProvider();
+
+            $user = $provider->retrieveByCredentials([
+                Fortify::username() => $request->input(Fortify::username()),
+                'password' => $request->input('password'),
+            ]);
+
+            if (! $user || ! $provider->validateCredentials($user, ['password' => $request->input('password')])) {
+                return null;
+            }
+
+            if (config('hashing.rehash_on_login', true) && method_exists($provider, 'rehashPasswordIfRequired')) {
+                $provider->rehashPasswordIfRequired($user, ['password' => $request->input('password')]);
+            }
+
+            return EnsureActiveAccount::isSuspended($user) ? null : $user;
+        });
+
+        // Passkey login consults this authorization before creating the session.
+        Passkeys::authorizeLoginUsing(
+            fn (Request $request, PasskeyUser $user, Passkey $passkey): bool => ! EnsureActiveAccount::isSuspended($user),
+        );
+
+        // A two-factor challenge armed before suspension must not complete the
+        // login; the challenged identity is refused before any code is checked.
+        $this->app->bind(TwoFactorLoginRequest::class, fn (): TwoFactorLoginRequest => new class extends TwoFactorLoginRequest
+        {
+            public function challengedUser(): mixed
+            {
+                $user = parent::challengedUser();
+
+                abort_if(EnsureActiveAccount::isSuspended($user), 403);
+
+                return $user;
+            }
+        });
+    }
+
+    /**
+     * The active-account guard covers Fortify's authenticated management
+     * routes; logging out must stay possible for a stale suspended session.
+     */
+    private function allowSuspendedSessionsToLogOut(): void
+    {
+        $this->app->booted(function (): void {
+            foreach (Route::getRoutes() as $route) {
+                if ($route->getName() !== 'logout') {
+                    continue;
+                }
+
+                $action = $route->getAction();
+                $action['middleware'] = array_values(array_diff($action['middleware'] ?? [], ['active-account']));
+                $route->setAction($action);
+            }
+        });
     }
 
     /**

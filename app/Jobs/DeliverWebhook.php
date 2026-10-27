@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\WebhookDelivery;
+use App\Models\Workspace;
+use App\Services\Notifications\WorkspaceNotificationService;
 use App\Services\Webhooks\WebhookEndpointValidator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -66,17 +68,25 @@ class DeliverWebhook implements ShouldQueue
                 'attempt_count' => $attempt,
                 'state' => 'delivered',
                 'response_code' => $response->status(),
+                'failure_detail' => null,
+                'response_excerpt' => null,
                 'completed_at' => now(),
             ]);
 
             return;
         }
 
+        $excerptBytes = max(
+            0,
+            (int) config('services.linkpilot.webhooks.excerpt_bytes', 500),
+        );
+        $excerpt = mb_strcut($response->body(), 0, $excerptBytes, 'UTF-8');
+
         $this->recordAttempt(
             $delivery,
             $attempt,
             $response->status(),
-            mb_substr($response->body(), 0, (int) config('services.linkpilot.webhooks.excerpt_bytes', 500)),
+            $excerpt,
             'Non-2xx response',
         );
     }
@@ -97,6 +107,20 @@ class DeliverWebhook implements ShouldQueue
             $delivery->state = 'failed';
             $delivery->completed_at = now();
             $delivery->save();
+
+            $webhook = $delivery->webhook;
+            $workspace = $webhook === null ? null : Workspace::query()->find($webhook->workspace_id);
+
+            if ($webhook !== null && $workspace !== null) {
+                app(WorkspaceNotificationService::class)->notifyManagers(
+                    $workspace,
+                    'webhooks',
+                    'Webhook delivery failed',
+                    'A webhook delivery failed after the maximum retry attempts. Review endpoint health and delivery history.',
+                    'webhook',
+                    (int) $webhook->getKey(),
+                );
+            }
 
             return;
         }

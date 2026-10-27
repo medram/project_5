@@ -6,9 +6,12 @@ use App\Models\CustomDomain;
 use App\Models\Link;
 use App\Models\Plan;
 use App\Models\User;
+use App\Services\Domains\DomainVerificationService;
 use App\Services\Domains\DnsTxtLookup;
 use App\Services\Domains\HttpsDomainChallengeProbe;
 use App\Services\Domains\PublicLinkHostResolver;
+use Closure;
+use RuntimeException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -21,7 +24,7 @@ class CustomDomainTest extends TestCase
 
     public function test_hostname_rejects_unsafe_and_default_hosts(): void
     {
-        config()->set('services.linkpilot.default_hosts', ['app.linkpilot.test']);
+        config()->set('linkpilot.default_hosts', ['app.linkpilot.test']);
         $user = User::factory()->create();
 
         foreach ([
@@ -32,7 +35,7 @@ class CustomDomainTest extends TestCase
             'not a hostname',
         ] as $hostname) {
             $this->actingAs($user)
-                ->post('/custom-domains', ['hostname' => $hostname])
+                ->post('/dashboard/custom-domains', ['hostname' => $hostname])
                 ->assertSessionHasErrors('hostname');
         }
     }
@@ -42,8 +45,8 @@ class CustomDomainTest extends TestCase
         $user = $this->userWithPlan('pro');
 
         $this->actingAs($user)
-            ->post('/custom-domains', ['hostname' => 'Go.Example.Test.'])
-            ->assertRedirect('/custom-domains');
+            ->post('/dashboard/custom-domains', ['hostname' => 'Go.Example.Test.'])
+            ->assertRedirect('/dashboard/custom-domains');
 
         $domain = CustomDomain::query()->sole();
 
@@ -55,15 +58,98 @@ class CustomDomainTest extends TestCase
         $this->withoutVite();
 
         $this->actingAs($user)
-            ->get('/custom-domains')
+            ->get('/dashboard/custom-domains')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('custom-domains/index')
                 ->where('domains.0.hostname', 'go.example.test')
                 ->where('domains.0.txtHost', '_linkpilot-verify.go.example.test')
                 ->where('domains.0.txtValue', "linkpilot={$domain->verification_token}")
-                ->where('domains.0.challengeUrl', "https://go.example.test/.well-known/linkpilot-domain/{$domain->verification_token}"));
+                ->where('domains.0.challengeUrl', "https://go.example.test/.well-known/linkpilot-domain/{$domain->verification_token}")
+                ->where('canManageIntegrations', true));
     }
+    public function test_workspace_member_sees_only_active_domain_metadata_without_verification_tokens(): void
+    {
+        $owner = $this->userWithPlan('pro');
+        $workspace = $owner->currentWorkspace()->firstOrFail();
+        $member = User::factory()->create();
+        $member->workspaces()->attach($workspace, ['role' => 'member']);
+        $pending = $this->domainFor($owner, [
+            'hostname' => 'pending.example.test',
+            'verification_token' => 'pending-verification-secret',
+        ]);
+        $active = $this->domainFor($owner, [
+            'hostname' => 'active.example.test',
+            'verification_token' => 'active-verification-secret',
+            'status' => 'active',
+        ]);
+        app(\App\Services\Workspaces\WorkspaceContext::class)->activate($member, $workspace);
+
+        $this->actingAs($member)
+            ->get('/dashboard/custom-domains')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('canManageIntegrations', false)
+                ->has('domains', 1)
+                ->where('domains.0.hostname', $active->hostname)
+                ->missing('domains.0.verificationToken')
+                ->missing('domains.0.challengeUrl')
+                ->missing('domains.0.txtValue'))
+            ->assertDontSee($pending->verification_token)
+            ->assertDontSee($active->verification_token);
+    }
+
+
+    public function test_domain_management_is_workspace_scoped_and_limited_to_integration_managers(): void
+    {
+        $owner = $this->userWithPlan('pro');
+        $other = User::factory()->create();
+        $otherWorkspace = $other->personalWorkspace()->firstOrFail();
+        $owner->workspaces()->attach($otherWorkspace, ['role' => 'member']);
+        $otherWorkspace->subscription()->update([
+            'plan_id' => Plan::query()->where('code', 'pro')->sole()->id,
+        ]);
+        $domain = $this->domainFor($owner);
+
+
+        $this->actingAs($owner)
+            ->get('/dashboard/custom-domains')
+            ->assertOk()
+            ->assertSee($domain->hostname);
+
+        app(\App\Services\Workspaces\WorkspaceContext::class)->activate($owner, $otherWorkspace);
+
+        $this->actingAs($owner)
+            ->get('/dashboard/custom-domains')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('domains', [])
+                ->where('canManageIntegrations', false));
+        $this->actingAs($owner)
+            ->post("/dashboard/custom-domains/{$domain->id}/verify")
+            ->assertNotFound();
+        $this->actingAs($owner)
+            ->post("/dashboard/custom-domains/{$domain->id}/reissue")
+            ->assertNotFound();
+
+
+        $this->actingAs($owner)
+            ->delete("/dashboard/custom-domains/{$domain->id}", ['confirmation' => $domain->hostname])
+            ->assertNotFound();
+
+        $this->actingAs($owner)
+            ->post('/dashboard/custom-domains', ['hostname' => 'member.example.test'])
+            ->assertForbidden();
+
+        $otherWorkspace->members()->updateExistingPivot($owner->id, ['role' => 'admin']);
+        $this->actingAs($owner)
+            ->post('/dashboard/custom-domains', ['hostname' => 'admin.example.test'])
+            ->assertRedirect('/dashboard/custom-domains');
+
+        $created = $otherWorkspace->customDomains()->sole();
+        $this->assertSame($owner->id, $created->user_id);
+    }
+
 
     public function test_verification_advances_dns_tls_active_then_fails_a_later_recheck(): void
     {
@@ -74,8 +160,8 @@ class CustomDomainTest extends TestCase
         $dns->records = [];
 
         $this->actingAs($user)
-            ->post("/custom-domains/{$domain->id}/verify")
-            ->assertRedirect('/custom-domains');
+            ->post("/dashboard/custom-domains/{$domain->id}/verify")
+            ->assertRedirect('/dashboard/custom-domains');
 
         $this->assertSame('pending_dns', $domain->refresh()->status);
 
@@ -83,8 +169,8 @@ class CustomDomainTest extends TestCase
         $https->matches = false;
 
         $this->actingAs($user)
-            ->post("/custom-domains/{$domain->id}/verify")
-            ->assertRedirect('/custom-domains');
+            ->post("/dashboard/custom-domains/{$domain->id}/verify")
+            ->assertRedirect('/dashboard/custom-domains');
 
         $this->assertSame('pending_tls', $domain->refresh()->status);
         $this->assertSame($domain->hostname, $https->hostname);
@@ -93,8 +179,8 @@ class CustomDomainTest extends TestCase
         $https->matches = true;
 
         $this->actingAs($user)
-            ->post("/custom-domains/{$domain->id}/verify")
-            ->assertRedirect('/custom-domains');
+            ->post("/dashboard/custom-domains/{$domain->id}/verify")
+            ->assertRedirect('/dashboard/custom-domains');
 
         $domain->refresh();
 
@@ -105,8 +191,8 @@ class CustomDomainTest extends TestCase
         $https->matches = false;
 
         $this->actingAs($user)
-            ->post("/custom-domains/{$domain->id}/verify")
-            ->assertRedirect('/custom-domains');
+            ->post("/dashboard/custom-domains/{$domain->id}/verify")
+            ->assertRedirect('/dashboard/custom-domains');
 
         $domain->refresh();
 
@@ -114,6 +200,44 @@ class CustomDomainTest extends TestCase
         $this->assertNotNull($domain->failure_reason);
         $this->assertLessThanOrEqual(500, strlen($domain->failure_reason));
     }
+    public function test_in_flight_verification_never_overwrites_a_reissued_token_state(): void
+    {
+        [$dns, $https] = $this->fakeVerificationBoundaries();
+        $service = app(DomainVerificationService::class);
+        $user = User::factory()->create();
+        $scenarios = [
+            'success' => ['dnsMatches' => true, 'httpsMatches' => true, 'throws' => false],
+            'dns mismatch' => ['dnsMatches' => false, 'httpsMatches' => false, 'throws' => false],
+            'tls mismatch' => ['dnsMatches' => true, 'httpsMatches' => false, 'throws' => false],
+            'probe exception' => ['dnsMatches' => false, 'httpsMatches' => false, 'throws' => true],
+        ];
+
+        foreach ($scenarios as $name => $scenario) {
+            $domain = $this->domainFor($user, [
+                'hostname' => str_replace(' ', '-', $name).'.example.test',
+                'status' => 'active',
+                'verified_at' => now()->subMinute(),
+                'last_checked_at' => now()->subMinute(),
+            ]);
+            $oldToken = $domain->verification_token;
+            $dns->records = $scenario['dnsMatches'] ? ["linkpilot={$oldToken}"] : [];
+            $dns->exception = $scenario['throws'] ? new RuntimeException('Probe unavailable.') : null;
+            $dns->beforeLookup = function () use ($domain, $service): void {
+                $service->reissueToken($domain->fresh());
+            };
+            $https->matches = $scenario['httpsMatches'];
+
+            $service->verify($domain);
+
+            $fresh = $domain->fresh();
+            $this->assertNotSame($oldToken, $fresh->verification_token, $name);
+            $this->assertSame('pending_dns', $fresh->status, $name);
+            $this->assertNull($fresh->verified_at, $name);
+            $this->assertNull($fresh->last_checked_at, $name);
+            $this->assertNull($fresh->failure_reason, $name);
+        }
+    }
+
 
     public function test_https_probe_uses_prevalidated_public_addresses(): void
     {
@@ -151,20 +275,20 @@ class CustomDomainTest extends TestCase
         $otherLink = $this->linkFor($other, 'other-host-aware-link');
 
         $this->actingAs($other)
-            ->post("/custom-domains/{$domain->id}/verify")
-            ->assertForbidden();
+            ->post("/dashboard/custom-domains/{$domain->id}/verify")
+            ->assertNotFound();
 
         $this->actingAs($other)
-            ->patch("/links/{$otherLink->id}", $this->linkPayload($otherLink, [
+            ->patch("/dashboard/links/{$otherLink->id}", $this->linkPayload($otherLink, [
                 'custom_domain_id' => $domain->id,
             ]))
             ->assertSessionHasErrors('custom_domain_id');
 
         $this->actingAs($owner)
-            ->patch("/links/{$link->id}", $this->linkPayload($link, [
+            ->patch("/dashboard/links/{$link->id}", $this->linkPayload($link, [
                 'custom_domain_id' => $domain->id,
             ]))
-            ->assertRedirect('/links');
+            ->assertRedirect('/dashboard/links');
 
         $this->assertSame($domain->id, $link->refresh()->custom_domain_id);
 
@@ -214,20 +338,20 @@ class CustomDomainTest extends TestCase
         $link = $this->linkFor($user, 'delete-domain-link');
 
         $this->actingAs($user)
-            ->patch("/links/{$link->id}", $this->linkPayload($link, [
+            ->patch("/dashboard/links/{$link->id}", $this->linkPayload($link, [
                 'custom_domain_id' => $domain->id,
             ]))
-            ->assertRedirect('/links');
+            ->assertRedirect('/dashboard/links');
 
         $this->actingAs($user)
-            ->delete("/custom-domains/{$domain->id}", ['confirmation' => 'wrong.example.test'])
+            ->delete("/dashboard/custom-domains/{$domain->id}", ['confirmation' => 'wrong.example.test'])
             ->assertSessionHasErrors('confirmation');
 
         $this->assertSame($domain->id, $link->refresh()->custom_domain_id);
 
         $this->actingAs($user)
-            ->delete("/custom-domains/{$domain->id}", ['confirmation' => $domain->hostname])
-            ->assertRedirect('/custom-domains');
+            ->delete("/dashboard/custom-domains/{$domain->id}", ['confirmation' => $domain->hostname])
+            ->assertRedirect('/dashboard/custom-domains');
 
         $this->assertModelMissing($domain);
         $this->assertNull($link->refresh()->custom_domain_id);
@@ -246,22 +370,22 @@ class CustomDomainTest extends TestCase
         $link = $this->linkFor($user, 'custom-domain-qr');
 
         $this->actingAs($user)
-            ->patch("/links/{$link->id}", $this->linkPayload($link, [
+            ->patch("/dashboard/links/{$link->id}", $this->linkPayload($link, [
                 'custom_domain_id' => $domain->id,
             ]))
-            ->assertRedirect('/links');
+            ->assertRedirect('/dashboard/links');
 
         $this->withoutVite();
 
         $this->actingAs($user)
-            ->get('/billing')
+            ->get('/account-settings/billing')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('usage.domains.used', 3)
                 ->where('usage.domains.limit', 3));
 
         $this->actingAs($user)
-            ->post('/custom-domains', ['hostname' => 'over-plan.example.test'])
+            ->post('/dashboard/custom-domains', ['hostname' => 'over-plan.example.test'])
             ->assertSessionHasErrors('plan');
 
         $this->assertSame(
@@ -270,7 +394,7 @@ class CustomDomainTest extends TestCase
         );
 
         $this->actingAs($user)
-            ->get("/links/{$link->id}/qr-code.svg")
+            ->get("/dashboard/links/{$link->id}/qr-code.svg")
             ->assertOk()
             ->assertHeader('Content-Type', 'image/svg+xml')
             ->assertSee('<svg', false);
@@ -286,8 +410,22 @@ class CustomDomainTest extends TestCase
             /** @var list<string> */
             public array $records = [];
 
+            public ?Closure $beforeLookup = null;
+
+            public ?RuntimeException $exception = null;
+
             public function recordsFor(string $hostname): array
             {
+                if ($this->beforeLookup !== null) {
+                    $callback = $this->beforeLookup;
+                    $this->beforeLookup = null;
+                    $callback();
+                }
+
+                if ($this->exception !== null) {
+                    throw $this->exception;
+                }
+
                 return $this->records;
             }
         };
@@ -319,7 +457,10 @@ class CustomDomainTest extends TestCase
      */
     private function domainFor(User $user, array $attributes = []): CustomDomain
     {
-        return $user->customDomains()->create(array_merge([
+        $workspace = $user->currentWorkspace()->firstOrFail();
+
+        return $workspace->customDomains()->create(array_merge([
+            'user_id' => $user->id,
             'hostname' => 'go.example.test',
             'verification_token' => CustomDomain::generateVerificationToken(),
             'status' => 'pending_dns',
@@ -328,7 +469,10 @@ class CustomDomainTest extends TestCase
 
     private function linkFor(User $user, string $slug): Link
     {
-        return $user->links()->create([
+        $workspace = $user->currentWorkspace()->firstOrFail();
+
+        return $workspace->links()->create([
+            'user_id' => $user->id,
             'slug' => $slug,
             'destination_url' => "https://destination.example/{$slug}",
             'is_active' => true,
@@ -372,8 +516,7 @@ class CustomDomainTest extends TestCase
         $user = User::factory()->create();
         $plan = Plan::query()->where('code', $planCode)->sole();
 
-        $user->subscription()->update(['plan_id' => $plan->id]);
-
+        $user->personalWorkspace()->firstOrFail()->subscription()->update(['plan_id' => $plan->id]);
         return $user;
     }
 }

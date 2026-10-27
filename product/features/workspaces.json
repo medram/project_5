@@ -1,0 +1,140 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "workspaces",
+    "area": "Collaboration",
+    "name": "Workspaces, roles, and invitations",
+    "status": "in_progress",
+    "requirements": [
+        {
+            "id": "WKS-1",
+            "text": "Every user receives a personal workspace and active-workspace pointer.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WKS-2",
+            "text": "Existing owned resources are backfilled to the personal workspace without losing creator attribution.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WKS-3",
+            "text": "Users create and switch workspaces, and invalid active pointers are repaired deterministically.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WKS-4",
+            "text": "Owners may invite admin or member; admins may invite only member; neither may invite owner.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WKS-5",
+            "text": "Invitations use one-time URLs, expire after seven days, and can be listed, resent, revoked, or replaced.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WKS-6",
+            "text": "Acceptance requires an authenticated non-suspended matching-email user and atomically creates one membership.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WKS-7",
+            "text": "Owners and admins manage only the member roles permitted by the role matrix and cannot invalidate the owner invariant.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WKS-8",
+            "text": "Non-members cannot forge active workspace selection or access workspace resources.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WKS-9",
+            "text": "Guest/viewer roles, SSO/SCIM, workspace deletion, and audit-log exports remain future-depth features.",
+            "priority": "P3",
+            "status": "catalogued"
+        },
+        {
+            "id": "WKS-10",
+            "text": "Ownership transfer requires password confirmation, an existing member target, atomic role exchange, and an audit record.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "WKS-11",
+            "text": "Member-capacity checks include unexpired invitations and lock the workspace while reserving capacity.",
+            "priority": "P1",
+            "status": "in_progress"
+        }
+    ],
+    "routes": [
+        "/account-settings/workspaces",
+        "/workspaces",
+        "/workspaces/{workspace}/switch",
+        "/workspaces/{workspace}/invitations",
+        "/workspaces/{workspace}/transfer",
+        "/invitations/{token}"
+    ],
+    "dependencies": ["auth-account", "billing"],
+    "externalPrerequisites": [
+        "Configured mail transport for invitation email delivery"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "WKS-AC-1",
+            "text": "Every migrated owner and resource maps to exactly one valid personal workspace before legacy ownership is contracted."
+        },
+        {
+            "id": "WKS-AC-2",
+            "text": "Role authorization matches the owner/admin/member matrix for content, integrations, members, and billing."
+        },
+        {
+            "id": "WKS-AC-3",
+            "text": "Invitation acceptance is race-safe, email-bound, expiring, and idempotent."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/account-settings/workspaces",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:47Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/settings-workspaces-desktop.png",
+            "observedBehaviors": [
+                "Workspaces are listed with role and member information.",
+                "A create-workspace action is visible."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Workspace migration, context, role authorization, membership, invitations, transfer, capacity, audit, billing, custom-domain, and webhook coverage passed in the complete Laravel suite (218 tests, 10,891 assertions). Focused regressions passed for analytics workspace scoping (1 test/12 assertions), shared-workspace overlay consent (9/94), and active-workspace link-insight/QR isolation (8/81).",
+            "reference": "docker exec linkpilot-parity-smoke php artisan test --no-ansi; tests/Feature/Workspaces/*Test.php; tests/Feature/Billing/WorkspaceBillingTest.php; tests/Feature/Analytics/WorkspaceAnalyticsTest.php; tests/Feature/Overlays/OverlayDeliveryTest.php; tests/Feature/Links/LinkInsightsTest.php; tests/Feature/QrCodes/QrCodeTest.php",
+            "verifiedAt": "2026-10-22T10:40:27Z"
+        },
+        {
+            "type": "migration",
+            "description": "A populated disposable SQLite copy was rolled back and re-applied across the three workspace ownership migrations. Legacy-column SHA-256 row-streams matched for 18 application tables; personal subscription values matched after owner normalization. The resulting copy retained 2 users, 2 personal workspaces, 2 owner memberships, and 2 subscriptions; all nine workspace-owned tables had zero unassigned rows; SQLite integrity_check returned ok and foreign_key_check returned zero violations. The original disposable app database was not modified.",
+            "reference": "Disposable populated SQLite database copy; migrate:rollback --step=3 --path=database/migrations followed by migrate --path=database/migrations",
+            "verifiedAt": "2026-10-22T10:31:33Z"
+        },
+        {
+            "type": "browser",
+            "description": "At localhost:8101, an owner created a workspace and invited admin/member accounts; an admin accepted the owner-issued invitation. The workspace-admin view showed no Resend/Revoke controls for a pending owner-issued admin invitation while a pending member invitation retained both. The owner transfer form opened and was cancelled without submission; workspace settings at 390x844 had no horizontal overflow or browser errors.",
+            "reference": "http://localhost:8101/account-settings/workspaces; product/verification/workspace-owner-billing-mobile.png",
+            "verifiedAt": "2026-10-22T10:31:33Z"
+        },
+        {
+            "type": "browser",
+            "description": "A workspace member saw a webhook summary without endpoint URL or signing secret; direct delivery-history access returned HTTP 403. Owner and workspace-admin billing views were compared at localhost:8101; only the owner had plan-change controls.",
+            "reference": "http://localhost:8101/webhooks; GET /webhooks/2/deliveries; http://localhost:8101/billing; product/verification/workspace-admin-billing-desktop.png",
+            "verifiedAt": "2026-10-22T09:37:06Z"
+        }
+    ]
+}

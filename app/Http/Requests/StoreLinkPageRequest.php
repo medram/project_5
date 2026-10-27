@@ -46,9 +46,8 @@ class StoreLinkPageRequest extends FormRequest
             ],
             'title' => ['required', 'string', 'max:160'],
             'description' => ['nullable', 'string', 'max:500'],
+            'template' => ['sometimes', 'required', Rule::in(['standard', 'profile', 'campaign'])],
             'is_published' => ['required', 'boolean'],
-            'tracking_pixel_ids' => ['nullable', 'array', 'max:5'],
-            'tracking_pixel_ids.*' => ['integer', 'distinct'],
         ];
     }
 }

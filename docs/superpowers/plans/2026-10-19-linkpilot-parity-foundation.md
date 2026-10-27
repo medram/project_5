@@ -35,6 +35,7 @@
 ### Task 1: Owned folders
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_000400_create_folders_table.php`
 - Create: `app/Models/Folder.php`
 - Create: `database/factories/FolderFactory.php`
@@ -53,6 +54,7 @@
 - Test: `tests/Feature/Folders/FolderManagementTest.php`
 
 **Interfaces:**
+
 - Produces: `Folder` with `user(): BelongsTo`, `links(): HasMany`, and `clicks(): HasManyThrough`; `Link::folder(): BelongsTo`; named `folders.index`, `folders.store`, `folders.update`, and `folders.destroy` routes.
 - Produces: `FolderPayload` and folder index props for Task 2's owned-folder selector.
 - Consumes: current authenticated/verified dashboard convention and existing `Link` model.
@@ -91,6 +93,7 @@ git commit -m "feat: add short link folders"
 ### Task 2: Controlled short-link access
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_000600_add_delivery_controls_to_links_table.php`
 - Create: `app/Http/Controllers/LinkAccessController.php`
 - Create: `app/Http/Requests/UnlockLinkRequest.php`
@@ -108,6 +111,7 @@ git commit -m "feat: add short link folders"
 - Test: `tests/Feature/Links/PublicRedirectTest.php`
 
 **Interfaces:**
+
 - Consumes: Task 1’s `Folder` ownership and `folders` index prop.
 - Produces: `Link::isAvailableAt(CarbonInterface $at): bool`, `Link::requiresAccessCode(): bool`, and named `links.unlock` POST route.
 - Produces: link payload fields `folder_id`, `folder`, `available_from`, `expires_at`, and `has_access_code`; no password hash field is serialized.
@@ -148,6 +152,7 @@ git commit -m "feat: add controlled short link access"
 ### Task 3: Local QR distribution
 
 **Files:**
+
 - Modify: `composer.json`
 - Modify: `composer.lock`
 - Create: `app/Http/Controllers/QrCodeController.php`
@@ -160,6 +165,7 @@ git commit -m "feat: add controlled short link access"
 - Test: `tests/Feature/QrCodes/QrCodeTest.php`
 
 **Interfaces:**
+
 - Consumes: `Link` ownership, public redirect route, and standard `Gate::authorize('view', $link)` convention.
 - Produces: named `qr-codes.index` and `links.qr-code` routes; `GET /links/{link}/qr-code.svg` returns a locally generated `image/svg+xml` QR representation.
 
@@ -197,9 +203,11 @@ git commit -m "feat: add local QR code distribution"
 ### Task 4: Release verification
 
 **Files:**
+
 - Modify: `README.md` only if the manual smoke workflow needs one concise update.
 
 **Interfaces:**
+
 - Consumes: all Task 1–3 routes and UI paths.
 - Produces: release evidence, no new runtime interface.
 

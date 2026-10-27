@@ -2,25 +2,20 @@
 
 namespace App\Http\Requests;
 
-use App\Models\CustomDomain;
 use App\Models\Folder;
 use App\Models\Link;
-use App\Models\LinkOverlay;
+use App\Models\LinkTag;
+use App\Models\LinkPage;
+use App\Services\Links\FirstPartyDestinationGuard;
+use App\Services\Workspaces\WorkspaceContext;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Url;
 
 abstract class LinkRequest extends FormRequest
 {
-    private const RESERVED_SLUGS = [
-        'dashboard',
-        'login',
-        'register',
-        'logout',
-        'bio',
-    ];
-
     public function authorize(): bool
     {
         return true;
@@ -30,139 +25,183 @@ abstract class LinkRequest extends FormRequest
     {
         if (is_string($this->input('slug'))) {
             $slug = strtolower(trim($this->input('slug')));
+            $this->merge(['slug' => $slug === '' ? null : $slug]);
+        }
 
+        $routingRules = $this->input('routing_rules');
+        if (is_array($routingRules)) {
+            foreach ($routingRules as $index => $rule) {
+                if (! is_array($rule) || ! is_string($rule['match_value'] ?? null)) {
+                    continue;
+                }
+
+                $routingRules[$index]['match_value'] = ($rule['rule_type'] ?? null) === 'country'
+                    ? strtoupper(trim($rule['match_value']))
+                    : strtolower(trim($rule['match_value']));
+            }
+            $this->merge(['routing_rules' => $routingRules]);
+        }
+
+        if (! $this->has('delivery_mode')) {
+            $routeLink = $this->route('link');
             $this->merge([
-                'slug' => $slug === '' ? null : $slug,
+                'delivery_mode' => $routeLink instanceof Link
+                    ? $routeLink->delivery_mode
+                    : ($this->filled('link_overlay_id') ? 'overlay' : 'direct'),
             ]);
         }
     }
 
-    /**
-     * @return array<string, array<int, mixed>>
-     */
-    protected function linkRules(
-        ?Link $ignoredLink = null,
-        bool $slugRequired = false,
-    ): array {
+    /** @return array<string, array<int, mixed>> */
+    protected function linkRules(?Link $ignoredLink = null, bool $slugRequired = false): array
+    {
+        $workspace = app(WorkspaceContext::class)->currentFor($this->user());
         $uniqueSlug = Rule::unique(Link::class, 'slug');
-
         if ($ignoredLink !== null) {
             $uniqueSlug->ignore($ignoredLink);
         }
 
         return [
+            'delivery_mode' => ['required', 'in:direct,splash,link_page,overlay'],
             'destination_url' => [
-                'required',
+                'required_unless:delivery_mode,link_page',
+                'nullable',
                 'string',
                 'max:2048',
                 (new Url)->protocols(['http', 'https']),
                 function (string $attribute, mixed $value, Closure $fail): void {
-                    if (is_string($value) && $this->isApplicationOrigin($value)) {
+                    if (is_string($value) && app(FirstPartyDestinationGuard::class)->rejects($value)) {
                         $fail('The destination URL must not target this application.');
                     }
                 },
             ],
             'title' => ['nullable', 'string', 'max:160'],
             'slug' => [
-                $slugRequired ? 'required' : 'nullable',
-                'string',
-                'max:32',
+                $slugRequired ? 'required' : 'nullable', 'string', 'max:32',
                 'regex:/\A[a-z0-9-]{4,32}\z/',
-                Rule::notIn(self::RESERVED_SLUGS),
-                $uniqueSlug,
+                Rule::notIn((array) config('linkpilot.reserved_slugs', [])), $uniqueSlug,
             ],
             'is_active' => ['required', 'boolean'],
-            'folder_id' => [
-                'nullable',
+            'tag_ids' => ['sometimes', 'array', 'max:10'],
+            'tag_ids.*' => [
+                'required',
                 'integer',
-                Rule::exists(Folder::class, 'id')
-                    ->where('user_id', $this->user()->id),
+                'distinct',
+                Rule::exists(LinkTag::class, 'id')->where('workspace_id', $workspace->id),
             ],
-            'custom_domain_id' => [
-                'nullable',
-                'integer',
-                function (string $attribute, mixed $value, Closure $fail): void {
-                    if ($value === null || $value === '') {
-                        return;
-                    }
-
-                    $domain = CustomDomain::query()->find($value);
-
-                    if ($domain === null || $domain->user_id !== $this->user()->id) {
-                        $fail('The selected custom domain is unavailable.');
-
-                        return;
-                    }
-
-                    $link = $this->route('link');
-
-                    if ($link instanceof Link && $link->custom_domain_id === $domain->id) {
-                        return;
-                    }
-
-                    if ($domain->status !== 'active') {
-                        $fail('Only an active custom domain can be assigned to a link.');
-                    }
-                },
-            ],
+            'folder_id' => ['nullable', 'integer', Rule::exists(Folder::class, 'id')->where('workspace_id', $workspace->getKey())],
+            'custom_domain_id' => ['nullable', 'integer', function (string $attribute, mixed $value, Closure $fail) use ($workspace): void {
+                if ($value === null || $value === '') {
+                    return;
+                }
+                Gate::authorize('selectIntegrations', $workspace);
+                $domain = $workspace->customDomains()->find($value);
+                $link = $this->route('link');
+                if ($domain === null || ($domain->status !== 'active' && ! ($link instanceof Link && $link->custom_domain_id === $domain->id))) {
+                    $fail('Only an active custom domain in this workspace can be assigned to a link.');
+                }
+            }],
             'access_code' => ['nullable', 'string', 'max:255'],
             'clear_access_code' => ['nullable', 'boolean'],
-            'link_overlay_id' => [
-                'nullable',
-                'integer',
+            'link_overlay_id' => ['nullable', 'integer', function (string $attribute, mixed $value, Closure $fail) use ($workspace): void {
+                if ($value === null || $value === '') {
+                    if ($this->input('delivery_mode') === 'overlay') {
+                        $fail('Choose an active overlay for overlay delivery.');
+                    }
+
+                    return;
+                }
+                if ($this->input('delivery_mode') !== 'overlay') {
+                    $fail('An overlay can only be assigned to overlay delivery.');
+
+                    return;
+                }
+                Gate::authorize('selectIntegrations', $workspace);
+                $overlay = $workspace->linkOverlays()->find($value);
+                $link = $this->route('link');
+                if ($overlay === null || (! $overlay->is_active && ! ($link instanceof Link && $link->link_overlay_id === $overlay->id))) {
+                    $fail('Only an active overlay in this workspace can be assigned to a link.');
+                }
+            }],
+            'link_page_id' => ['nullable', 'integer', function (string $attribute, mixed $value, Closure $fail) use ($workspace): void {
+                if ($value === null || $value === '') {
+                    if ($this->input('delivery_mode') === 'link_page') {
+                        $fail('Choose a published link page in this workspace.');
+                    }
+
+                    return;
+                }
+
+                if ($this->input('delivery_mode') !== 'link_page') {
+                    $fail('A link page can only be assigned to link-page delivery.');
+
+                    return;
+                }
+                Gate::authorize('selectIntegrations', $workspace);
+                $page = $workspace->linkPages()->find($value);
+                if ($page === null || ! $page->is_published) {
+                    $fail('Choose a published link page in this workspace for link-page delivery.');
+                }
+            }],
+            'max_clicks' => ['nullable', 'integer', 'min:1', 'max:1000000000'],
+            'approval_required' => ['sometimes', 'boolean', function (string $attribute, mixed $value, Closure $fail) use ($workspace): void {
+                $link = $this->route('link');
+                if ($link instanceof Link && (bool) $value === (bool) $link->approval_required) {
+                    return;
+                }
+                if (! (bool) $value && ! ($link instanceof Link && $link->approval_required)) {
+                    return;
+                }
+
+                Gate::authorize('manageLinkApprovals', $workspace);
+            }],
+
+            'utm_parameters' => ['nullable', 'array:utm_source,utm_medium,utm_campaign,utm_term,utm_content'],
+            'utm_parameters.*' => ['nullable', 'string', 'max:512'],
+            'custom_parameters' => ['nullable', 'array', 'max:10', function (string $attribute, mixed $value, Closure $fail): void {
+                if (! is_array($value)) {
+                    return;
+                }
+
+                foreach (array_keys($value) as $key) {
+                    if (! is_string($key) || preg_match('/\\A[a-zA-Z][a-zA-Z0-9_.-]{0,63}\\z/', $key) !== 1) {
+                        $fail('Custom parameter names must use letters, digits, dots, underscores, or hyphens.');
+
+                        return;
+                    }
+                }
+            }],
+            'custom_parameters.*' => ['nullable', 'string', 'max:512'],
+            'routing_rules' => ['sometimes', 'array', 'max:25'],
+            'routing_rules.*' => ['required', 'array:rule_type,match_value,target_url'],
+            'routing_rules.*.rule_type' => ['required', 'in:country,device,platform'],
+            'routing_rules.*.match_value' => ['required', 'string', 'max:16', function (string $attribute, mixed $value, Closure $fail): void {
+                $index = explode('.', $attribute)[1] ?? null;
+                $type = is_string($index) ? data_get($this->input('routing_rules'), $index.'.rule_type') : null;
+                $valid = match ($type) {
+                    'country' => is_string($value) && preg_match('/\\A[A-Z]{2}\\z/', $value) === 1 && ! in_array($value, ['XX', 'T1'], true),
+                    'device' => in_array($value, ['mobile', 'tablet', 'desktop'], true),
+                    'platform' => in_array($value, ['android', 'ios', 'chromeos', 'windows', 'macos', 'linux'], true),
+                    default => false,
+                };
+
+                if (! $valid) {
+                    $fail('Choose a supported country, device, or platform match value.');
+                }
+            }],
+            'routing_rules.*.target_url' => [
+                'required',
+                'string',
+                'max:2048',
+                (new Url)->protocols(['http', 'https']),
                 function (string $attribute, mixed $value, Closure $fail): void {
-                    if ($value === null || $value === '') {
-                        return;
-                    }
-
-                    $overlay = LinkOverlay::query()->find($value);
-
-                    if ($overlay === null || $overlay->user_id !== $this->user()->id) {
-                        $fail('The selected overlay is unavailable.');
-
-                        return;
-                    }
-
-                    $link = $this->route('link');
-
-                    if ($link instanceof Link && $link->link_overlay_id === $overlay->id) {
-                        return;
-                    }
-
-                    if (! $overlay->is_active) {
-                        $fail('Only an active overlay can be assigned to a link.');
+                    if (is_string($value) && app(FirstPartyDestinationGuard::class)->rejects($value)) {
+                        $fail('A routing target must not target this application.');
                     }
                 },
             ],
             'available_from' => ['nullable', 'date'],
             'expires_at' => ['nullable', 'date', 'after:available_from'],
         ];
-    }
-
-    private function isApplicationOrigin(string $url): bool
-    {
-        $destinationOrigin = $this->originFor($url);
-        $applicationOrigin = $this->originFor((string) config('app.url'));
-
-        return $destinationOrigin !== null && $destinationOrigin === $applicationOrigin;
-    }
-
-    private function originFor(string $url): ?string
-    {
-        $parts = parse_url($url);
-
-        if (! is_array($parts) || ! isset($parts['scheme'], $parts['host'])) {
-            return null;
-        }
-
-        $scheme = strtolower($parts['scheme']);
-        $host = strtolower($parts['host']);
-        $port = $parts['port'] ?? match ($scheme) {
-            'http' => 80,
-            'https' => 443,
-            default => null,
-        };
-
-        return $port === null ? null : "{$scheme}://{$host}:{$port}";
     }
 }

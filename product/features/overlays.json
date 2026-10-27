@@ -1,0 +1,90 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "overlays",
+    "area": "Publishing",
+    "name": "CTA overlays",
+    "status": "verified",
+    "requirements": [
+        {
+            "id": "OVR-1",
+            "text": "An account owner can create, edit, and delete an overlay with content and active state.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "OVR-2",
+            "text": "A link selects at most one overlay owned by its account.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "OVR-3",
+            "text": "An eligible link visit renders the overlay before final delivery.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "OVR-4",
+            "text": "Continue revalidates link availability/access, records completion, and redirects.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "OVR-5",
+            "text": "Attached safe provider pixels run on the interstitial only after visitor consent.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "OVR-6",
+            "text": "A LinkPilot-controlled interstitial can use optional start, expiry, and display-delay controls; remote-page injection is excluded.",
+            "priority": "P2",
+            "status": "verified"
+        }
+    ],
+    "routes": ["/dashboard/link-overlays", "/{slug}/continue"],
+    "dependencies": [
+        "short-links",
+        "tracking-pixels",
+        "analytics",
+        "workspaces"
+    ],
+    "externalPrerequisites": [],
+    "acceptanceCriteria": [
+        {
+            "id": "OVR-AC-1",
+            "text": "Continue re-runs link controls before recording completion or redirecting."
+        },
+        {
+            "id": "OVR-AC-2",
+            "text": "Overlay content is always LinkPilot-controlled and cannot inject into a destination page."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/dashboard/link-overlays",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:34Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/overlays-desktop.png",
+            "observedBehaviors": [
+                "CTA overlays are shown as rows with status and row actions.",
+                "A create action appears in the resource toolbar."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "OverlayDeliveryTest and OverlaySchedulingTest passed; the full isolated Laravel suite passed 428 tests and 15,151 assertions with only the ClamAV-dependent PDF-delivery case skipped.",
+            "reference": "tests/Feature/Overlays/OverlayDeliveryTest.php; tests/Feature/Overlays/OverlaySchedulingTest.php; php artisan test",
+            "verifiedAt": "2026-10-24T06:00:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Owner browser verified a scheduled five-second overlay deadline and continue flow at desktop and 390px. At 390x844, create/edit dialogs stayed within the viewport with internal scrolling; keyboard traversal revealed the edit Save action inside the dialog, and the manager had no horizontal overflow.",
+            "reference": "http://localhost:8108/dashboard/link-overlays",
+            "verifiedAt": "2026-10-24T06:01:23Z"
+        }
+    ]
+}

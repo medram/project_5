@@ -38,11 +38,11 @@ The existing owner-only resource policies stay the access boundary. New resource
 
 Create `plans` and one `user_subscriptions` record per user. Subscription state is a genuine internal entitlement but never payment collection. The exact initial catalog is:
 
-| Code | Monthly minor units | Links | Domains | Pixels | Webhooks | Link pages |
-|---|---:|---:|---:|---:|---:|---:|
-| `free` | 0 | 25 | 0 | 0 | 0 | 1 |
-| `pro` | 2900 | 500 | 3 | 10 | 5 | 25 |
-| `business` | 9900 | unlimited | unlimited | unlimited | unlimited | unlimited |
+| Code       | Monthly minor units |     Links |   Domains |    Pixels |  Webhooks | Link pages |
+| ---------- | ------------------: | --------: | --------: | --------: | --------: | ---------: |
+| `free`     |                   0 |        25 |         0 |         0 |         0 |          1 |
+| `pro`      |                2900 |       500 |         3 |        10 |         5 |         25 |
+| `business` |                9900 | unlimited | unlimited | unlimited | unlimited |  unlimited |
 
 `null` is unlimited. Every existing and newly registered user receives a single `active`/`manual` free subscription. A user may self-select only free. A platform administrator may assign any active plan to another user in one transaction. All existing links, pending/active domains, pixels, webhooks, and link pages count toward their owner’s usage. A downgrade preserves all records and public behavior; only later creation of an over-limit metric fails. Creation and plan assignment lock the user row before checking use.
 
@@ -99,14 +99,14 @@ The exact JSON uses unescaped Unicode/slashes and this key order:
 
 ```json
 {
-  "schema_version": 1,
-  "event_id": "uuid",
-  "event": "link.clicked",
-  "occurred_at": "2026-10-19T12:00:00Z",
-  "account_id": 123,
-  "data": {
-    "link": {"id": 456, "slug": "launch"}
-  }
+    "schema_version": 1,
+    "event_id": "uuid",
+    "event": "link.clicked",
+    "occurred_at": "2026-10-19T12:00:00Z",
+    "account_id": 123,
+    "data": {
+        "link": { "id": 456, "slug": "launch" }
+    }
 }
 ```
 

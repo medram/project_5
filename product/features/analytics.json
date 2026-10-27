@@ -1,0 +1,164 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "analytics",
+    "area": "Insights",
+    "name": "Analytics and events",
+    "status": "blocked_external",
+    "requirements": [
+        {
+            "id": "ANL-1",
+            "text": "Each consented analytics event has an immutable UUID, exact content references, UTC occurrence time, coarse referrer/browser/platform, HMAC visitor hash, and hash-key version.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "ANL-2",
+            "text": "Analytics never persists raw IP address, full user agent, access code, secret, password hash, or destination URL.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "ANL-3",
+            "text": "Account and link views support fixed UTC 7, 30, and 90 day windows without historical event backfill.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "ANL-4",
+            "text": "Views show total clicks, consented unique visitors, zero-filled daily clicks, event totals, and top referrers/browsers/platforms.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "ANL-5",
+            "text": "Analytics respects owner/resource authorization and telemetry failure never blocks public delivery.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "ANL-6",
+            "text": "Public rendered surfaces request a 180-day granted/denied tracking choice before rich events or pixels. Show Allow only when the server confirms the privacy URL, analytics hash key, and key version are configured; keep Decline available. Production prunes events after 90 days.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "ANL-7",
+            "text": "Analytics provides local GeoIP country rollups, live polling, CSV export, and explicitly declared custom events.",
+            "priority": "P2",
+            "status": "blocked_external"
+        },
+        {
+            "id": "ANL-8",
+            "text": "Insights and exports share workspace, resource, event, client, country, and UTM filters while omitting visitor hashes.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "ANL-9",
+            "text": "Country is resolved only from a configured local MaxMind database; absent data remains explicitly unavailable.",
+            "priority": "P1",
+            "status": "blocked_external"
+        }
+    ],
+    "routes": [
+        "/dashboard/insights",
+        "/dashboard/insights/events",
+        "/dashboard/insights/export",
+        "/dashboard/insights/custom-events",
+        "/dashboard/insights/custom-events/{definition}/disable"
+    ],
+    "dependencies": ["workspaces"],
+    "externalPrerequisites": [
+        "ANALYTICS_HASH_KEY and key version in production",
+        "PUBLIC_PRIVACY_URL in production to enable the granted-consent path",
+        "Local MaxMind database for country dimensions"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "ANL-AC-1",
+            "text": "Each selected window returns zero-filled UTC dates and authorization-scoped totals."
+        },
+        {
+            "id": "ANL-AC-2",
+            "text": "Direct-delivery telemetry failures do not prevent a successful outbound redirect."
+        },
+        {
+            "id": "ANL-AC-3",
+            "text": "Live polling pauses while the browser tab is hidden and never claims websocket delivery."
+        },
+        {
+            "id": "ANL-AC-4",
+            "text": "Public consent pages receive an explicit server-provided grant capability; hide Allow and retain Decline when the privacy URL, hash key, or key version is missing."
+        },
+        {
+            "id": "ANL-AC-5",
+            "text": "The overview, event table, and CSV export use the same validated filters and omit visitor hashes."
+        },
+        {
+            "id": "ANL-AC-6",
+            "text": "Country results come only from the configured local MaxMind database; missing, unreadable, or corrupt data yields no country."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/dashboard/insights",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:24Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/insights-desktop.png",
+            "observedBehaviors": [
+                "The overview uses summary metrics, a time-series chart, and a circular breakdown.",
+                "Date and engagement/event controls are visible above the report."
+            ]
+        },
+        {
+            "route": "/dashboard/insights/events",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:27Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/insights-events-desktop.png",
+            "observedBehaviors": [
+                "Events are presented in a dense table.",
+                "Rows expose event, resource, time, and coarse client-dimension columns."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "The complete isolated Laravel suite passed (271 tests, 11,961 assertions); TrackingConsentTest passed 7 tests (48 assertions), including an explicit false grant capability when the privacy URL exists but hashing keys are incomplete. TypeScript requires the server capability on all three public surfaces.",
+            "reference": "docker exec -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= linkpilot-parity-smoke php artisan test; docker exec -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= linkpilot-parity-smoke php artisan test tests/Feature/Analytics/TrackingConsentTest.php; npm run types:check",
+            "verifiedAt": "2026-10-22T15:43:16Z"
+        },
+        {
+            "type": "browser",
+            "description": "On the canonical /dashboard/insights?days=7 route, the page preserved the selected 7-day window in the URL; ArrowRight moved focus and selection from Engagements to Tracked events and updated the tabpanel's aria-labelledby to the selected tab.",
+            "reference": "Disposable review app http://localhost:8101/dashboard/insights?days=7",
+            "verifiedAt": "2026-10-22T15:49:10Z"
+        },
+        {
+            "type": "test",
+            "description": "The final isolated Laravel suite passed 475 tests and 16,100 assertions with one conditional ClamAV-dependent skip; it includes analytics, API, webhook, notification, catalog, and demo-seeder coverage.",
+            "reference": "docker compose exec -T -w /var/www -e APP_ENV=testing -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= app php -d memory_limit=512M vendor/bin/phpunit",
+            "verifiedAt": "2026-10-26T16:41:06Z"
+        },
+        {
+            "type": "browser",
+            "description": "Fresh independent regular-user review after the responsive sizing fix: at 390x844 the shadcn ChartContainer/Recharts plot fit without clipping or page-level horizontal overflow; evidence ev_e4d79e65d87f60de22305ed2df8404805c7f311929d5a3cc610a3e20f3c119f1.",
+            "reference": "RegularUserUX-2 review; disposable app http://localhost:8013/dashboard/insights?days=7",
+            "verifiedAt": "2026-10-26T16:21:50Z"
+        },
+        {
+            "type": "review",
+            "description": "Fresh PRD-alignment review passed: custom-event routes and ANL-7 P2 match code/catalog; progress state and external MaxMind blocker are evidence-backed.",
+            "reference": "PRDAlignment-2 final review; PRD.md and product/features/analytics.json",
+            "verifiedAt": "2026-10-26T16:33:15Z"
+        },
+        {
+            "type": "review",
+            "description": "Non-security implementation review passed for the integer-backed analytics-window contract and responsive shadcn chart sizing; no actionable findings.",
+            "reference": "Phase7CodeReview; AnalyticsWindow, AnalyticsFilterRequest, analytics-dashboard.tsx",
+            "verifiedAt": "2026-10-26T16:31:18Z"
+        }
+    ]
+}

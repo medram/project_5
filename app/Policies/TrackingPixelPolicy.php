@@ -9,16 +9,16 @@ class TrackingPixelPolicy
 {
     public function view(User $user, TrackingPixel $trackingPixel): bool
     {
-        return $user->is($trackingPixel->user);
+        return $trackingPixel->workspace !== null && $user->can('view', $trackingPixel->workspace);
     }
 
     public function update(User $user, TrackingPixel $trackingPixel): bool
     {
-        return $user->is($trackingPixel->user);
+        return $trackingPixel->workspace !== null && $user->can('manageIntegrations', $trackingPixel->workspace);
     }
 
     public function delete(User $user, TrackingPixel $trackingPixel): bool
     {
-        return $user->is($trackingPixel->user);
+        return $trackingPixel->workspace !== null && $user->can('manageIntegrations', $trackingPixel->workspace);
     }
 }

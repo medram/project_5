@@ -5,13 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\LinkPage;
 use App\Models\LinkPageItem;
 use App\Services\Analytics\AnalyticsTracker;
+use App\Services\LinkPages\LinkPageVariantAssignment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Throwable;
 
 class PublicLinkPageItemController extends Controller
 {
-    public function __construct(private readonly AnalyticsTracker $analytics) {}
+    public function __construct(
+        private readonly AnalyticsTracker $analytics,
+        private readonly LinkPageVariantAssignment $variants,
+    ) {}
 
     public function __invoke(
         Request $request,
@@ -23,9 +27,12 @@ class PublicLinkPageItemController extends Controller
             ->where('is_published', true)
             ->with('user:id')
             ->firstOrFail();
+        $variant = $this->variants->assigned($request, $linkPage);
 
         abort_unless(
-            $linkPageItem->link_page_id === $linkPage->id && $linkPageItem->is_active,
+            $linkPageItem->link_page_id === $linkPage->id
+                && $linkPageItem->link_page_variant_id === $variant->id
+                && $linkPageItem->is_active,
             404,
         );
 
@@ -33,6 +40,7 @@ class PublicLinkPageItemController extends Controller
             $this->analytics->record($request, 'link_page.clicked', $linkPage->user, [
                 'linkPage' => $linkPage,
                 'linkPageItem' => $linkPageItem,
+                'linkPageVariant' => $variant,
             ]);
         } catch (Throwable $exception) {
             report($exception);

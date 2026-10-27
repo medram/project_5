@@ -44,6 +44,19 @@ abstract class BioPageRequest extends FormRequest
             'display_name' => ['required', 'string', 'max:80'],
             'bio' => ['nullable', 'string', 'max:280'],
             'is_published' => ['required', 'boolean'],
+            'appearance' => ['sometimes', 'array:theme,typography,color,background'],
+            'appearance.theme' => ['sometimes', Rule::in(['light', 'dark', 'soft'])],
+            'appearance.typography' => ['sometimes', Rule::in(['sans', 'serif'])],
+            'appearance.color' => ['sometimes', Rule::in(['blue', 'violet', 'green', 'amber', 'rose'])],
+            'appearance.background' => ['sometimes', Rule::in(['plain', 'sand', 'lavender', 'midnight'])],
+            'embed_url' => ['prohibited'],
+            'image_url' => ['prohibited'],
+            'content_media_id' => ['prohibited'],
+            'media_id' => ['prohibited'],
+            'disk' => ['prohibited'],
+            'path' => ['prohibited'],
+            '*.embed_url' => ['prohibited'],
+            '*.image_url' => ['prohibited'],
         ];
     }
 }

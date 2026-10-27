@@ -20,6 +20,18 @@ class TrackingConsent
         return $this->choice($request) === self::GRANTED;
     }
 
+    /**
+     * Whether the privacy prerequisites for granting tracking consent are
+     * configured: a public privacy notice URL plus the analytics hashing key
+     * and its version.
+     */
+    public function canGrant(): bool
+    {
+        return filled(config('services.linkpilot.analytics.privacy_url'))
+            && filled(config('services.linkpilot.analytics.hash_key'))
+            && filled(config('services.linkpilot.analytics.hash_key_version'));
+    }
+
     public function choice(Request $request): ?string
     {
         $choice = $request->cookie(self::COOKIE_NAME);

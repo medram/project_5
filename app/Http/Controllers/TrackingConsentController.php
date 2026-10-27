@@ -11,8 +11,23 @@ class TrackingConsentController extends Controller
 {
     public function __invoke(Request $request, TrackingConsent $consent): RedirectResponse
     {
+        // A grant recorded while privacy prerequisites are missing would
+        // retroactively authorize tracking once configuration is completed, so
+        // production refuses it until the configuration is complete. Denials
+        // are always accepted.
+        $grantsBlocked = config('app.env') === 'production' && ! $consent->canGrant();
+
         $validated = $request->validate([
-            'consent' => ['required', 'string', Rule::in([TrackingConsent::GRANTED, TrackingConsent::DENIED])],
+            'consent' => [
+                'required',
+                'string',
+                Rule::in([TrackingConsent::GRANTED, TrackingConsent::DENIED]),
+                function (string $attribute, mixed $value, \Closure $fail) use ($grantsBlocked): void {
+                    if ($value === TrackingConsent::GRANTED && $grantsBlocked) {
+                        $fail('Analytics consent cannot be granted until the privacy configuration is complete.');
+                    }
+                },
+            ],
             'return_path' => ['nullable', 'string', 'max:2048', function (string $attribute, mixed $value, \Closure $fail): void {
                 if (! is_string($value) || ! $this->isRelativePath($value)) {
                     $fail('The return path is invalid.');

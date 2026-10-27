@@ -1,0 +1,216 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://linkpilot.local/product/schema/feature.schema.json",
+    "title": "LinkPilot feature record",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schemaVersion",
+        "id",
+        "area",
+        "name",
+        "status",
+        "requirements",
+        "routes",
+        "dependencies",
+        "externalPrerequisites",
+        "acceptanceCriteria",
+        "referenceEvidence",
+        "implementationEvidence"
+    ],
+    "properties": {
+        "schemaVersion": {
+            "const": "1.0.0"
+        },
+        "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "area": {
+            "type": "string",
+            "minLength": 1
+        },
+        "name": {
+            "type": "string",
+            "minLength": 1
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "catalogued",
+                "planned",
+                "in_progress",
+                "blocked_external",
+                "verified"
+            ]
+        },
+        "requirements": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "text", "priority", "status"],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "pattern": "^[A-Z][A-Z0-9]*-[0-9]+$"
+                    },
+                    "text": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "priority": {
+                        "enum": ["P0", "P1", "P2", "P3"]
+                    },
+                    "status": {
+                        "enum": [
+                            "catalogued",
+                            "planned",
+                            "in_progress",
+                            "blocked_external",
+                            "verified"
+                        ]
+                    }
+                }
+            }
+        },
+        "routes": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "pattern": "^/"
+            }
+        },
+        "dependencies": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+                "type": "string",
+                "enum": [
+                    "auth-account",
+                    "dashboard-shell",
+                    "short-links",
+                    "folders",
+                    "qr-codes",
+                    "bio-pages",
+                    "analytics",
+                    "custom-domains",
+                    "overlays",
+                    "tracking-pixels",
+                    "link-pages",
+                    "workspaces",
+                    "billing",
+                    "api-keys",
+                    "webhooks",
+                    "notifications",
+                    "admin-insights",
+                    "admin-plans-subscriptions",
+                    "admin-users-roles",
+                    "admin-content",
+                    "admin-settings",
+                    "admin-files-pages-localization-logs"
+                ]
+            }
+        },
+        "externalPrerequisites": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minLength": 1
+            }
+        },
+        "acceptanceCriteria": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "text"],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "text": {
+                        "type": "string",
+                        "minLength": 1
+                    }
+                }
+            }
+        },
+        "referenceEvidence": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "route",
+                    "role",
+                    "viewport",
+                    "capturedAt",
+                    "screenshotPath",
+                    "observedBehaviors"
+                ],
+                "properties": {
+                    "route": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "role": {
+                        "enum": ["guest", "user", "admin"]
+                    },
+                    "viewport": {
+                        "type": "string",
+                        "pattern": "^[0-9]+x[0-9]+$"
+                    },
+                    "capturedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "screenshotPath": {
+                        "type": "string",
+                        "pattern": "^product/reference/belink/screenshots/.+\\.png$"
+                    },
+                    "observedBehaviors": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "string",
+                            "minLength": 1
+                        }
+                    }
+                }
+            }
+        },
+        "implementationEvidence": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type", "description", "reference", "verifiedAt"],
+                "properties": {
+                    "type": {
+                        "enum": [
+                            "test",
+                            "command",
+                            "browser",
+                            "migration",
+                            "review"
+                        ]
+                    },
+                    "description": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "reference": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "verifiedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -234,6 +234,61 @@
 .bio-page-links {
     min-width: 0;
 }
+.bio-theme-light .bio-page-identity {
+    background: #ffffff;
+    color: #111827;
+    border: 1px solid #dce5f0;
+}
+.bio-theme-light .bio-page-identity::after {
+    background: var(--bio-accent, #2563eb);
+}
+.bio-theme-dark .bio-page-identity {
+    background: #172033;
+}
+.bio-theme-soft .bio-page-identity {
+    background: #f8fafc;
+    color: #111827;
+}
+.bio-theme-soft .bio-page-identity::after {
+    background: #2563eb;
+}
+.bio-type-serif .bio-page-bio {
+    font-family: Georgia, ui-serif, serif;
+}
+.bio-type-sans .bio-page-bio {
+    font-family: var(--font-sans);
+}
+.bio-color-blue {
+    --bio-accent: #2563eb;
+}
+.bio-color-violet {
+    --bio-accent: #7c3aed;
+}
+.bio-color-green {
+    --bio-accent: #15803d;
+}
+.bio-color-amber {
+    --bio-accent: #b45309;
+}
+.bio-color-rose {
+    --bio-accent: #be185d;
+}
+.bio-page-presentation .bio-page-identity::after {
+    background: var(--bio-accent, #2563eb);
+}
+.bio-background-sand {
+    background: #f5f2e9;
+}
+.bio-background-lavender {
+    background: #f3efff;
+}
+.bio-background-midnight {
+    background: #111827;
+    color: #f8fafc;
+}
+.bio-background-midnight .bio-page-identity {
+    background: #1f2937;
+}
 
 @media (min-width: 40rem) {
     .bio-page-shell,

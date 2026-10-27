@@ -1,0 +1,114 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "custom-domains",
+    "area": "Integrations",
+    "name": "Custom domains",
+    "status": "in_progress",
+    "requirements": [
+        {
+            "id": "DOM-1",
+            "text": "An account owner can enter a normalized hostname for their account.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "DOM-2",
+            "text": "IP literals, localhost, configured default hosts, malformed hosts, and duplicate claims are rejected.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "DOM-3",
+            "text": "LinkPilot generates a unique token and requires exact DNS TXT proof at _linkpilot-verify.<domain>.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "DOM-4",
+            "text": "Only an active domain with current TXT proof, application routing, and valid HTTPS may be assigned or used canonically.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "DOM-5",
+            "text": "Custom-domain requests resolve only links assigned to that active host, and failed revalidation pauses delivery.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "DOM-6",
+            "text": "Daily revalidation checks DNS and a no-redirect HTTPS challenge; token rotation returns the domain to pending DNS.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "DOM-7",
+            "text": "Automated certificate issuance, registrar/provider APIs, wildcard hosts, and advanced apex guidance remain future infrastructure.",
+            "priority": "P2",
+            "status": "catalogued"
+        },
+        {
+            "id": "DOM-8",
+            "text": "Verification probes update state with a token-and-prior-status compare-and-swap so token rotation cannot be overwritten.",
+            "priority": "P0",
+            "status": "verified"
+        },
+        {
+            "id": "DOM-9",
+            "text": "Pending custom hosts may serve only the verification challenge; public link delivery requires an active-domain resolution.",
+            "priority": "P0",
+            "status": "verified"
+        }
+    ],
+    "routes": [
+        "/dashboard/custom-domains",
+        "/.well-known/linkpilot-domain/{token}"
+    ],
+    "dependencies": ["short-links", "workspaces"],
+    "externalPrerequisites": [
+        "Customer-controlled DNS TXT record",
+        "Reverse-proxy/application host routing",
+        "Valid TLS certificate for each activated hostname"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "DOM-AC-1",
+            "text": "Unknown, pending, failed, and active custom hosts cannot expose authenticated or unrelated public application routes."
+        },
+        {
+            "id": "DOM-AC-2",
+            "text": "Concurrent token rotation wins over every stale probe outcome."
+        },
+        {
+            "id": "DOM-AC-3",
+            "text": "Domain setup remains manual; LinkPilot does not claim certificate or registrar automation."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/dashboard/custom-domains",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:32Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/custom-domains-desktop.png",
+            "observedBehaviors": [
+                "The custom-domain screen shows an empty state.",
+                "A primary action offers creation of a custom domain."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Hostname rejection, active/pending host routing, no-redirect verification, token rotation, and compare-and-swap protection on success, DNS failure, TLS failure, and exceptions pass focused coverage.",
+            "reference": "tests/Feature/Domains/CustomDomainTest.php; tests/Feature/Security/HostBoundaryTest.php; php artisan test (168 tests, 10,347 assertions)",
+            "verifiedAt": "2026-10-21T14:57:29Z"
+        },
+        {
+            "type": "browser",
+            "description": "An unclaimed host returned 404 and a zero-domain quota account received an inline plan-limit error without losing dialog state.",
+            "reference": "http://unknown.localhost:8000/login; http://localhost:8000/custom-domains",
+            "verifiedAt": "2026-10-21T09:44:31Z"
+        }
+    ]
+}

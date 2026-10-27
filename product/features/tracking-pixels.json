@@ -1,0 +1,119 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "tracking-pixels",
+    "area": "Integrations",
+    "name": "Tracking pixels",
+    "status": "verified",
+    "requirements": [
+        {
+            "id": "PIX-1",
+            "text": "An account owner can create an active provider pixel in their account.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PIX-2",
+            "text": "Supported providers are Meta Pixel and Google Analytics with validated IDs.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PIX-3",
+            "text": "Pixels attach to LinkPilot-rendered link pages and CTA overlays.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PIX-4",
+            "text": "Public React emits fixed provider-specific script shapes only after consent; arbitrary snippets and Google Tag Manager are rejected.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PIX-5",
+            "text": "Pixels can attach to bio pages, link pages, and CTA overlays and fire only for documented, consented surface events.",
+            "priority": "P2",
+            "status": "verified"
+        },
+        {
+            "id": "PIX-6",
+            "text": "Pixel attachments use allowlisted page-view, button-click, or lead-submit triggers on owned LinkPilot surfaces only.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PIX-7",
+            "text": "Meta renders each validated pixel ID once and uses account-specific trackSingle PageView calls.",
+            "priority": "P0",
+            "status": "verified"
+        }
+    ],
+    "routes": ["/dashboard/pixels"],
+    "dependencies": [
+        "analytics",
+        "bio-pages",
+        "link-pages",
+        "overlays",
+        "workspaces"
+    ],
+    "externalPrerequisites": [],
+    "acceptanceCriteria": [
+        {
+            "id": "PIX-AC-1",
+            "text": "No provider request or script runs before granted visitor consent."
+        },
+        {
+            "id": "PIX-AC-2",
+            "text": "A trigger fires only for its attached owned resource and configured event."
+        },
+        {
+            "id": "PIX-AC-3",
+            "text": "Arbitrary script, markup, Tag Manager, and remote injection fields do not exist."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/dashboard/pixels",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:36Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/pixels-desktop.png",
+            "observedBehaviors": [
+                "The tracking-pixel screen presents a resource table and create action.",
+                "Provider and status columns are visible."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Fixed-provider validation, consent-gated tracking, and public-page projection deduplication pass behavior coverage.",
+            "reference": "tests/Feature/LinkPages/LinkPageTest.php (including duplicate Meta ID projection); tests/Feature/Overlays/OverlayDeliveryTest.php; tests/Feature/Analytics/AnalyticsTrackingTest.php; php artisan test (168 tests, 10,347 assertions)",
+            "verifiedAt": "2026-10-21T14:57:29Z"
+        },
+        {
+            "type": "browser",
+            "description": "A consented public page with a repeated Meta identifier and one distinct Meta identifier queued one init and one account-specific trackSingle PageView per distinct ID; no global track call was emitted.",
+            "reference": "http://localhost:8000/pages/demo-page",
+            "verifiedAt": "2026-10-21T14:44:19Z"
+        },
+        {
+            "type": "browser",
+            "description": "A zero-pixel quota account retained the create dialog and rendered its form-level plan limit.",
+            "reference": "http://localhost:8000/tracking-pixels",
+            "verifiedAt": "2026-10-21T09:44:31Z"
+        },
+        {
+            "type": "test",
+            "description": "TrackingPixelTriggersTest and AnalyticsTrackingTest passed in focused coverage; the full isolated Laravel suite passed 428 tests and 15,151 assertions, with one ClamAV-dependent PDF-delivery case skipped.",
+            "reference": "tests/Feature/Analytics/TrackingPixelTriggersTest.php; tests/Feature/Analytics/AnalyticsTrackingTest.php; php artisan test",
+            "verifiedAt": "2026-10-24T06:00:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Before tracking consent, Meta/GA4 scripts and requests were absent. After consent, page-view and click events dispatched, while lead-submit fired only after accepted response; vendor requests were intercepted before delivery and disposable test pixels/rules/leads were removed.",
+            "reference": "http://localhost:8108/pages/phase6-rich-page-smoke; http://localhost:8108/dashboard/pixels",
+            "verifiedAt": "2026-10-24T05:40:47Z"
+        }
+    ]
+}

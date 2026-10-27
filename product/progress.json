@@ -1,0 +1,282 @@
+{
+    "schemaVersion": "1.0.0",
+    "features": [
+        {
+            "id": "auth-account",
+            "state": "in_progress",
+            "lastVerifiedAt": "2026-10-21T14:57:29Z",
+            "checks": [
+                "AUTH-1 host/reset boundaries: full suite and canonical password-reset tests; unknown-host browser 404"
+            ],
+            "blockers": []
+        },
+        {
+            "id": "dashboard-shell",
+            "state": "verified",
+            "lastVerifiedAt": "2026-10-23T12:22:37Z",
+            "checks": [
+                "Final isolated Laravel suite passed: 278 tests, 12,216 assertions; canonical routing/access, migrations, list-state/bulk validation, admin query-preservation, analytics, billing, webhooks, and workspace coverage included.",
+                "Frontend typecheck passed; Vite+ check passed for 24 previously changed UI files; Pint check passed for TrackingConsentTest; production build passed.",
+                "Admin confirmation/dialog change passed TypeScript, Vite+ check for both changed TSX files, and production build.",
+                "Disposable browser review: user shell had no overflow at 375, 390, 768, 1024, 1025, or 1440px; exactly five 56px mobile destinations through 1024px. Admin shell had no overflow at 390/1440; grouped navigation resolved to live account, plan, and short-link anchors. Confirmation round trips covered suspend/restore, grant/revoke, and Pro assignment; ordinary-user /admin returned 403. Latest browser smoke confirmed the Short links parent active on nested insights, omitted the empty System group, and labelled mobile account cards at 390px. Earlier user/admin safe-search, list query state, and bulk-delete cancellation remain verified.",
+                "Focused LinkManagementTest and FolderManagementTest passed (38 tests, 362 assertions), including regression cases that delete the only last-page result and return to page 1 while preserving validated filters/sort/view.",
+                "Final frontend verification passed: npm run types:check; targeted Vite+ check for all 10 changed frontend files; production build in the isolated PHP/Node app container; Pint --test for the changed controller and feature test.",
+                "Historical browser smoke at 390x844 and 1440x1000: one main landmark, no mobile overflow, keyboard skip link focuses #main-content, compact current breadcrumb, active desktop Short links and mobile Links destinations; Account/Webhooks settings links were active; admin drawer closed on Accounts selection and omitted System. The initial parent/hash aria-current values are historical pre-fix observations; post-fix semantics are verified in the following record.",
+                "Billing layout browser proof at 1440x1000 measured an 856px plan grid with three 275px cards and a 40px right gutter; 390x844 showed a single 326px column without overflow. The final card remained above fixed mobile navigation after max scroll with 72px bottom clearance; /account-settings/general retained its 576px content cap. Screenshots: product/verification/phase4-billing-settings-desktop.png and product/verification/phase4-billing-plans-mobile.png.",
+                "Fresh frontend verification passed: npm run types:check; Vite+ formatting/lint for SettingsLayout and Billing page; isolated production build.",
+                "Final PRD evidence/status review passed: all six SHELL requirements match current implementation and evidence; final Phase 4 gate approved as verified.",
+                "Final post-fix browser smoke at 390x844 and 1440x1000 verified Billing aria-current=page, Account aria-current=location on mobile billing, Short links and Links parent state as location, admin Account controls as page and Accounts hash as location, one main landmark, and no overflow. Manage plan, workspace switch, and sidebar Settings closed the mobile drawer. Confirmed suspension/restore, administrator grant/revoke, and Pro/Free plan mutations retained the admin q filter; the disposable account was removed. Screenshot: product/verification/phase4-billing-settings-mobile.png.",
+                "Browser 390x844 SHELL-4 rerun: WorkspaceSearchTest passed 7 tests and 129 assertions; direct QR campaign search returned a safe result anchored to /dashboard/qr-codes#qr-campaign-7. Escape restored focus to the global-search trigger; all 16 mobile drawer Tab stops stayed inside and Escape restored focus to the sidebar trigger."
+            ],
+            "blockers": []
+        },
+        {
+            "id": "short-links",
+            "state": "in_progress",
+            "lastVerifiedAt": "2026-10-23T12:22:37Z",
+            "checks": [
+                "Phase 5A focused suites: 84 tests and 834 assertions passed, including routing, delivery guards/side-effect ordering, CSV, revisions, folder scope, and legacy migration/backfill/rollback.",
+                "Migration proof: legacy clicks backfill into click_count, approval and overlay mode defaults are explicit, existing links/folders/overlays/clicks survive, and destructive campaign rollback is refused.",
+                "Browser: created a tagged link with ordered device/platform rules, merged query parameters and fragment, tested archive/bulk transitions, revision approval, CSV import/export, and link-page redirects/insights.",
+                "Browser: responsive link form scrolls inside the modal at 390px; global-search shortcut/results/Escape focus return and mobile drawer focus containment/restoration pass.",
+                "Scoped link-page relationship regression passes: same-workspace page metadata appears in the link list, while a foreign-workspace target remains unavailable.",
+                "Isolated route smoke: first matching device rule wins over a later platform rule; link-page short-link redirects to the published local page.",
+                "The complete Laravel suite passed 365 tests and 14,014 assertions after the direct QR search regression fix, with isolated array cache/session settings.",
+                "Browser: at 390px, revision history showed the complete delivery snapshot and preserved list state in the page and shell breadcrumbs; a 500-character rejection note wrapped without horizontal overflow, and the desktop screenshot captured the full note.",
+                "Phase 5A follow-up suites passed 73 tests and 10,775 assertions, covering per-IP access-code throttle expiry, pending-link filters, revision labels/staleness, overlay invalidation, query replacement, and delivery controls.",
+                "Targeted Vite+ check and TypeScript type check passed for changed Phase 5A forms and folder page; the isolated PHP/Node container production Vite build passed with only the optional Fontaine optimization warning.",
+                "Browser at 390x844 verified Live with Pending changes, unbroken title wrapping, retained direct/page/overlay drafts, selected-target-only form submission, and query preview collision replacement. Captures: phase5a-link-review-state-mobile.png, phase5a-unbroken-revision-title-mobile.png, phase5a-query-preview-mobile.png.",
+                "ProductCatalogTest passed 3 tests and 10,447 assertions after final short-link, folder, mobile, and QR evidence updates.",
+                "Browser at 390x844: duplicate non-empty UTM/custom keys collapse to one last-wins value (utm_source=custom_last) in the non-executing preview; the saved link's 302 Location matched exactly while the old configured value was replaced and repeated unrelated values plus #section were preserved. Capture: phase5a-query-collision-preview-mobile.webp.",
+                "Browser at 390x844: a later empty custom-parameter duplicate preserves the earlier non-empty value; the preview exactly matches the saved redirect Location and keeps unrelated repeated values and #part. Captures: phase5a-empty-duplicate-preview-mobile.png, phase5a-empty-duplicate-rows-mobile.png; GET /phase5a-empty-duplicate-evidence returns the matching 302 Location.",
+                "Browser at 390x844: a 100-character search chip truncates with its full aria-label; no-results copy stays inside the card; a long short-link destination truncates with ellipsis inside the card (308px link ends at x=349 before card edge x=374), with no page overflow. At 1440x1000 the links table remains visible and page width is 1440px."
+            ],
+            "blockers": []
+        },
+        {
+            "id": "folders",
+            "state": "in_progress",
+            "lastVerifiedAt": "2026-10-23T10:58:56Z",
+            "checks": [
+                "Folder management tests cover workspace-safe list/mutations/deletion and link/click/event rollups, including mismatched foreign-workspace link/event rows.",
+                "Browser: the desktop folder screenshot shows a rollup of 3 links, 2 clicks, and 0 consented events.",
+                "Browser at 390x844: folder card showed 1 link, 14 clicks, and 3 events; document scroll width was 375px, so the page had no horizontal overflow. Capture: product/verification/phase5-folders-mobile.png.",
+                "Browser at 390x844: folder view=table URL shows the card layout with no view selector; long search filter and no-results text stay contained, and the filter retains its complete accessible name. Capture: product/verification/phase5a-responsive-folder-search-mobile.png."
+            ],
+            "blockers": []
+        },
+        {
+            "id": "qr-codes",
+            "state": "in_progress",
+            "lastVerifiedAt": "2026-10-23T12:23:54Z",
+            "checks": [
+                "QrCodeTest passed: 37 tests and 360 assertions, including scoped linked-target insights, scan-time access-code version revalidation, invalid-target CSV row isolation, route guards, schedule/access/max-scan controls, workspace isolation, preview, exports, analytics, all four image formats, and logo lifecycle.",
+                "ProductCatalogTest passed: 3 tests and 10,447 assertions after the final PRD and feature-catalog alignment.",
+                "Full Laravel suite passed after the QR search fix: 365 tests and 14,014 assertions.",
+                "Persistent disposable SQLite migration smoke preserved seeded link fields and click history, backfilled one linked QR, and created zero historical QR scans.",
+                "OpenCV QRCodeDetector decoded generated SVG, PNG, JPEG, and WebP files to the same /q/{code} campaign route; generated assets and browser-only temporary files were removed.",
+                "Repository-wide npm run check, npm run types:check, targeted Vite+ check on the QR form/list, Pint --test on changed PHP sources/tests, and the production Vite build passed; only the optional Fontaine fallback warning remains.",
+                "Owner browser at 390x844: created and edited a scheduled protected direct QR campaign with sharing metadata and a private logo; scheduled delivery and the third post-limit scan returned 404, an invalid code kept scans at 0, and valid unlocks reached exactly 2 scans. The disposable campaign was deleted after verification.",
+                "Platform-admin browser smoke: /admin loaded; own QR list showed 0 campaigns; owner campaign 5 insights returned 404.",
+                "Owner browser: campaign insights reported 2 scans; CSV and SVG/PNG/JPEG/WebP downloads returned 200 with expected MIME types and attachment filenames. SVG embedded the logo; each raster response decoded at 328x328.",
+                "WorkspaceSearchTest passed 7 tests and 129 assertions, including direct QR title/code discovery, correct campaign-card anchor, workspace isolation, and exclusion of destination, access-code, and logo-path values.",
+                "Platform-admin browser smoke created and deleted its own QR campaign. The regular owner received 404 for the foreign preview, PNG download, insights, and PATCH; admin readback showed the campaign unchanged. Forged POST /workspaces/1/switch returned 403 and left Demo Owner's workspace active.",
+                "Workspace member and invitation flows remain deferred at the user's request; no collaboration or role changes were added. Existing QR member-list and cross-workspace isolation behavior is covered by QrCodeTest.",
+                "Fresh independent reviews after the direct QR search fix: regular-user UX, admin/authorization, and PRD-alignment reviewers found no actionable findings. UX reviewed campaign flows, responsive navigation, keyboard/focus, and direct search; authorization covered workspace isolation and safe search metadata; PRD alignment confirmed the production-storage blocker remains explicit.",
+                "Resolved the QA click-counter caveat: phase5-query-collision has 4 Click rows and click_count=4; phase5a-empty-duplicate-evidence has 2 rows and click_count=2. Both URLs had documented GET/302 delivery checks, which correctly increment Click counters through LinkDeliveryService::complete()."
+            ],
+            "blockers": [
+                "Production must configure and verify durable private storage for uploaded QR logos at storage/app/private/qr-logos; no production storage mount was exercised."
+            ]
+        },
+        {
+            "id": "bio-pages",
+            "state": "blocked_external",
+            "lastVerifiedAt": "2026-10-24T06:01:23Z",
+            "checks": [
+                "Full Laravel suite: 428 passed, 15,151 assertions; 1 ClamAV-dependent PDF-delivery case skipped. Bio management, content, projection, insights, and media-validation tests passed.",
+                "Owner browser at 1440x1000 and 390x844 checked Content/Appearance/Insights, click-to-load embeds, keyboard block ordering, and a 390px document width.",
+                "At 390x844, first-party Bio-link validation retained submitted values, rendered a role=alert, marked the URL aria-invalid, and cleared the error after correction.",
+                "ContentMedia records workspace/uploader ownership, opaque public ID/path, MIME/size/SHA-256, visibility/scan state, expiry, and soft-delete metadata needed by later AOPS-1; no Phase 9 admin-files UI was added."
+            ],
+            "blockers": [
+                "LINKPILOT_MEDIA_DISK is unset; durable private production storage for bio media is not configured or verified."
+            ]
+        },
+        {
+            "id": "analytics",
+            "state": "blocked_external",
+            "lastVerifiedAt": "2026-10-26T16:41:06Z",
+            "checks": [
+                "Final isolated Laravel suite passed 475 tests and 16,100 assertions with one conditional ClamAV-dependent skip. ProductCatalogTest passed all three schema, PRD-mapping, and reference-manifest cases after evidence/status reconciliation; Phase6MigrationTest passed all three migration-preservation probes.",
+                "Independent regular-user review passed after the shadcn chart sizing fix: at 390x844 the chart plot was 252px, its rightmost tick stayed inside the card, and the page had no horizontal overflow; evidence ev_e4d79e65d87f60de22305ed2df8404805c7f311929d5a3cc610a3e20f3c119f1.",
+                "Shared-filter/export coverage and the responsive insights surface are verified. The fresh PRD alignment review passed; positive country lookup remains blocked_external until a local MaxMind database is available."
+            ],
+            "blockers": [
+                "ANALYTICS_GEOIP_DATABASE is unset and no local MaxMind database is available; missing/corrupt-database behavior is tested, but positive country resolution cannot be verified."
+            ]
+        },
+        {
+            "id": "custom-domains",
+            "state": "in_progress",
+            "lastVerifiedAt": "2026-10-21T14:57:29Z",
+            "checks": [
+                "DOM-2/DOM-6/DOM-8/DOM-9: full suite, host and compare-and-swap boundaries, unknown-host 404",
+                "Mobile create dialog renders the plan quota error without closing"
+            ],
+            "blockers": []
+        },
+        {
+            "id": "overlays",
+            "state": "verified",
+            "lastVerifiedAt": "2026-10-24T06:01:23Z",
+            "checks": [
+                "OverlayDeliveryTest and OverlaySchedulingTest passed; full Laravel suite passed 428 tests and 15,151 assertions with one ClamAV-dependent PDF-delivery case skipped.",
+                "Owner browser verified the five-second overlay deadline at desktop and 390px; mobile create/edit dialogs were viewport-bounded and internally scrollable, and keyboard traversal reached the Save action without horizontal overflow."
+            ],
+            "blockers": []
+        },
+        {
+            "id": "tracking-pixels",
+            "state": "verified",
+            "lastVerifiedAt": "2026-10-24T06:01:23Z",
+            "checks": [
+                "TrackingPixelTriggersTest and AnalyticsTrackingTest focused behavior coverage passed; full Laravel suite passed 428 tests and 15,151 assertions with one ClamAV-dependent PDF-delivery case skipped.",
+                "Owner browser observed no Meta/GA4 scripts or requests before consent; consented page-view/click dispatch and accepted-lead-only trigger behavior passed with vendor requests intercepted."
+            ],
+            "blockers": []
+        },
+        {
+            "id": "link-pages",
+            "state": "blocked_external",
+            "lastVerifiedAt": "2026-10-24T06:01:23Z",
+            "checks": [
+                "Full Laravel suite passed 428 tests and 15,151 assertions; one successful PDF-delivery case was skipped because ClamAV is unavailable. LinkPageBlocksTest, LinkPageLeadTest, LinkPageVariantsTest, LinkPageMediaDeliveryTest, and Phase6MigrationTest passed.",
+                "Phase 6 migration probes preserved legacy records and passed SQLite integrity_check and foreign_key_check.",
+                "Owner browser reviewed templates, forms, variants, PDF fail-closed behavior, and 390px layout; no horizontal overflow.",
+                "Workspace admin accessed page leads at 390px and 1440px; nonmember platform admin received 404 for lead listing and private editor-image preview.",
+                "LINKPILOT_MEDIA_DISK, PUBLIC_PRIVACY_URL, and CLAMSCAN_PATH are unset; clamscan is unavailable."
+            ],
+            "blockers": [
+                "LINKPILOT_MEDIA_DISK is unset; durable private production storage is not configured or verified.",
+                "ClamAV executable is unavailable; successful clean-PDF upload and delivery remain unverified and uploads fail closed.",
+                "PUBLIC_PRIVACY_URL is unset; production lead capture remains disabled until the privacy disclosure is configured."
+            ]
+        },
+        {
+            "id": "workspaces",
+            "state": "in_progress",
+            "lastVerifiedAt": "2026-10-22T10:40:27Z",
+            "checks": [
+                "A populated disposable SQLite copy was rolled back and re-applied across the three workspace migrations. Legacy-column SHA-256 row-streams matched for 18 application tables; personal subscription values matched after owner normalization; 2 users, 2 personal workspaces, 2 owner memberships, and 2 subscriptions remained; all nine workspace-owned tables had zero unassigned rows; integrity_check=ok and foreign_key_check=0.",
+                "Full Laravel suite passed 218 tests and 10,891 assertions, including analytics workspace scoping, shared-workspace overlay consent, active-workspace link-insight/QR isolation, invitation limits, and product-catalog validation. Independent code review found no actionable Phase 3 defects; security review found no verified vulnerabilities (both static).",
+                "At localhost:8101, an owner-issued admin invitation was accepted; the workspace-admin view showed no Resend/Revoke actions for a pending admin invitation while a pending member invitation retained both actions.",
+                "Workspace settings at 390x844 had no horizontal overflow or browser errors. Owner-mobile and workspace-admin desktop billing screenshots are in product/verification/.",
+                "Frontend typecheck and Vite production build passed; member webhook metadata omitted endpoint URL and signing secret, and GET /webhooks/2/deliveries returned 403."
+            ],
+            "blockers": [
+                "Invitation SMTP delivery was not exercised; browser acceptance used one-time links.",
+                "Migration proof used an isolated populated SQLite copy; a production database snapshot was not available and production migration safety remains unverified."
+            ]
+        },
+        {
+            "id": "billing",
+            "state": "in_progress",
+            "lastVerifiedAt": "2026-10-22T10:40:27Z",
+            "checks": [
+                "WorkspaceBillingTest, WorkspaceUsageTest, ProductCatalogTest, and the complete Laravel suite passed (218 tests, 10,891 assertions).",
+                "At localhost:8101, owner billing showed active workspace Pro usage and a Free-only change action; workspace-admin billing showed no plan controls and stated only owners can change plans.",
+                "Owner billing screenshot at 390x844 and workspace-admin billing screenshot at 1440x1000 are recorded in product/verification/; payment collection was unavailable in this local environment."
+            ],
+            "blockers": [
+                "Cashier/Stripe billing is not implemented; live checkout, payment methods, invoices, and provider webhooks remain planned.",
+                "The Phase 8 target catalog is approved in PRD §7.12; the local entitlement schema still needs annual prices and expanded resource-limit columns."
+            ]
+        },
+        {
+            "id": "api-keys",
+            "state": "verified",
+            "lastVerifiedAt": "2026-10-26T16:41:06Z",
+            "checks": [
+                "Final isolated Laravel suite passed 475 tests and 16,100 assertions with one conditional skip; VersionedApiTest passed all seven cases after correcting Scramble's analytics days schema.",
+                "Independent regular-user review passed the API-key account surface; lifecycle/API tests cover one-time token presentation, workspace scope, ability, expiry, and revoke behavior.",
+                "Generated /docs/api.json declares analytics days as an integer enum [7, 30, 90]; VersionedApiTest asserts the generated schema. Fresh PRD alignment re-review passed and approved the evidence-backed verified state; no external prerequisite remains."
+            ],
+            "blockers": []
+        },
+        {
+            "id": "webhooks",
+            "state": "in_progress",
+            "lastVerifiedAt": "2026-10-26T16:41:06Z",
+            "checks": [
+                "Final isolated Laravel suite passed 475 tests and 16,100 assertions with one conditional skip, including webhook retry, manual-redelivery lineage, and stale-failure cleanup coverage.",
+                "At 390px on canonical /account-settings/webhooks, History displayed a synthetic failed delivery, three attempts, HTTP 503, failure detail, and bounded response excerpt; document width was 390px. No redelivery was triggered.",
+                "Independent admin-role review passed: normal users and workspace admins receive 403 at /admin. Fresh PRD alignment re-review confirmed the HTTPS receiver blocker and retained in_progress while WHK-1/2/4/6/7 remain in_progress."
+            ],
+            "blockers": [
+                "No publicly routable HTTPS receiver is available for live queued delivery and successful manual-redelivery proof."
+            ]
+        },
+        {
+            "id": "notifications",
+            "state": "blocked_external",
+            "lastVerifiedAt": "2026-10-26T16:41:06Z",
+            "checks": [
+                "Final isolated Laravel suite passed 475 tests and 16,100 assertions with one conditional ClamAV-dependent skip; notification preference gating, database delivery, read-state, and admin-broadcast coverage pass.",
+                "Independent regular-user review saved a notification category preference and observed the success toast; admin broadcast UI was reviewed at desktop/mobile widths and ordinary-user /admin returned 403.",
+                "No email was sent; the disposable environment uses MAIL_MAILER=log. Fresh PRD alignment review passed; ID-4 is verified and the feature remains blocked_external only for real SMTP."
+            ],
+            "blockers": [
+                "A real SMTP transport is not configured; live email delivery remains unverified."
+            ]
+        },
+        {
+            "id": "admin-insights",
+            "state": "in_progress",
+            "lastVerifiedAt": null,
+            "checks": [],
+            "blockers": []
+        },
+        {
+            "id": "admin-plans-subscriptions",
+            "state": "in_progress",
+            "lastVerifiedAt": null,
+            "checks": [],
+            "blockers": []
+        },
+        {
+            "id": "admin-users-roles",
+            "state": "in_progress",
+            "lastVerifiedAt": "2026-10-22T17:41:53Z",
+            "checks": [
+                "Platform-admin UX review exercised /admin on desktop/mobile; a normal user received 403; the reviewer’s accidental Demo Owner suspension was restored, followed by a successful user login.",
+                "Disposable review app: admin action dialogs identified each target and action; cancel left account state unchanged; confirmed suspension/restoration and administrator grant/revoke round trips, and assigned Pro to a synthetic personal workspace. Ordinary-user /admin remained 403.",
+                "Mobile account-list browser evidence at 390x844: labelled stacked cards, no horizontal overflow; private tenant content and visitor data absent (product/verification/phase4-admin-shell-mobile.png)."
+            ],
+            "blockers": [
+                "P1: Immutable platform roles, safe provisioning, and last-super-admin protections remain outstanding; the current interface is a limited is_admin starting state."
+            ]
+        },
+        {
+            "id": "admin-content",
+            "state": "planned",
+            "lastVerifiedAt": null,
+            "checks": [],
+            "blockers": []
+        },
+        {
+            "id": "admin-settings",
+            "state": "planned",
+            "lastVerifiedAt": null,
+            "checks": [],
+            "blockers": []
+        },
+        {
+            "id": "admin-files-pages-localization-logs",
+            "state": "planned",
+            "lastVerifiedAt": null,
+            "checks": [],
+            "blockers": []
+        }
+    ]
+}

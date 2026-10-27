@@ -1,0 +1,127 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "auth-account",
+    "area": "Account",
+    "name": "Authentication, account, and security",
+    "status": "in_progress",
+    "requirements": [
+        {
+            "id": "ID-1",
+            "text": "Profile name/email updates preserve verification semantics.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "ID-2",
+            "text": "Password, passkey, and two-factor management use current Fortify security flows.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "ID-3",
+            "text": "A suspended account cannot access authenticated LinkPilot resources.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "ID-5",
+            "text": "Account deletion follows retention and billing policy.",
+            "priority": "P3",
+            "status": "planned"
+        },
+        {
+            "id": "AUTH-1",
+            "text": "Allowed-host middleware protects authenticated and reset-password routes, and reset links always use the configured application URL.",
+            "priority": "P0",
+            "status": "verified"
+        },
+        {
+            "id": "AUTH-2",
+            "text": "General account settings support avatar, locale, country, timezone, and a safely configured Google sign-in connection.",
+            "priority": "P2",
+            "status": "planned"
+        },
+        {
+            "id": "AUTH-3",
+            "text": "Account deletion, restoration, and purge follow the approved 30-day lifecycle with ownership and subscription safeguards.",
+            "priority": "P1",
+            "status": "planned"
+        }
+    ],
+    "routes": [
+        "/login",
+        "/register",
+        "/forgot-password",
+        "/reset-password/{token}",
+        "/account-settings/general",
+        "/account-settings/security"
+    ],
+    "dependencies": [],
+    "externalPrerequisites": [
+        "Configured APP_URL and allowed hostnames",
+        "Google OAuth client credentials for optional Google sign-in"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "AUTH-AC-1",
+            "text": "Unknown or claimed custom hosts cannot serve authentication, password-reset, account, dashboard, or admin pages."
+        },
+        {
+            "id": "AUTH-AC-2",
+            "text": "Changing an email preserves verification semantics, and security controls remain backed by Fortify."
+        },
+        {
+            "id": "AUTH-AC-3",
+            "text": "Deletion cannot strand paid subscriptions or multi-member workspaces and remains restorable for 30 days."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/login",
+            "role": "guest",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:20:32Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/login-desktop.png",
+            "observedBehaviors": [
+                "A focused login card separates primary credential entry from recovery, registration, and optional social sign-in.",
+                "Demo-role shortcuts are visually separate from the production authentication controls."
+            ]
+        },
+        {
+            "route": "/account-settings/general",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:42Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/settings-general-desktop.png",
+            "observedBehaviors": [
+                "General settings group profile image, basic account details, social sign-in, and locale controls.",
+                "Account-settings navigation is separate from the resource sidebar."
+            ]
+        },
+        {
+            "route": "/account-settings/security",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:44Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/settings-security-desktop.png",
+            "observedBehaviors": [
+                "Security settings group password, two-factor authentication, and session controls.",
+                "Actions are presented in distinct labelled sections."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Allowed default/custom host boundaries and canonical password-reset URLs pass focused feature coverage and the full application suite.",
+            "reference": "tests/Feature/Security/HostBoundaryTest.php; tests/Feature/Auth/PasswordResetTest.php; php artisan test (168 tests, 10,347 assertions)",
+            "verifiedAt": "2026-10-21T14:57:29Z"
+        },
+        {
+            "type": "browser",
+            "description": "An authentication route requested through an unknown host returned LinkPilot's 404 boundary.",
+            "reference": "http://unknown.localhost:8000/login",
+            "verifiedAt": "2026-10-21T09:44:31Z"
+        }
+    ]
+}

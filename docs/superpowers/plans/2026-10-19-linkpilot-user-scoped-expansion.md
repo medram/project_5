@@ -35,6 +35,7 @@
 ### Task 1: Commit the user-scoped scope correction and executable design
 
 **Files:**
+
 - Modify: `PRD.md`
 - Modify: `docs/superpowers/specs/2026-10-19-linkpilot-platform-expansion-design.md`
 - Modify: `docs/superpowers/plans/2026-10-19-linkpilot-platform-expansion.md`
@@ -42,6 +43,7 @@
 - Create: `docs/superpowers/plans/2026-10-19-linkpilot-user-scoped-expansion.md`
 
 **Interfaces:**
+
 - Consumes: the user’s explicit deferral of workspace implementation and REA evidence `ev_3166f9b5f54416181d58a8a0ccf45470f64f0c7dc8c7f4032009525692347a0d`.
 - Produces: an authoritative current owner-scoped contract and a retained future collaboration contract.
 
@@ -59,6 +61,7 @@ git commit -m "docs: defer workspace collaboration slice"
 ### Task 2: Add user-scoped entitlement, usage enforcement, and billing
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_000700_create_account_entitlements_tables.php`
 - Create: `database/migrations/2026_10_19_000800_backfill_free_user_subscriptions.php`
 - Create: `app/Models/Plan.php`
@@ -78,6 +81,7 @@ git commit -m "docs: defer workspace collaboration slice"
 - Modify: `README.md`
 
 **Interfaces:**
+
 - Produces: `AccountUsage::for(User $user): array`, `EnforcesPlanLimits::create(User $user, string $metric, Closure $create): mixed`, `CreatesFreeSubscription::for(User $user): UserSubscription`, and `/billing` props `{ subscription, plans, usage }`.
 - Later tasks call `EnforcesPlanLimits::create()` for domains, pixels, link pages, and webhooks.
 
@@ -117,6 +121,7 @@ git commit -m "feat: add account billing usage controls"
 ### Task 3: Add administrator controls and safe provisioning
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_000900_add_administration_flags_to_users_table.php`
 - Create: `app/Http/Middleware/EnsureActiveAccount.php`
 - Create: `app/Http/Middleware/EnsureAdministrator.php`
@@ -134,6 +139,7 @@ git commit -m "feat: add account billing usage controls"
 - Modify: `resources/js/components/app-sidebar.tsx`
 
 **Interfaces:**
+
 - Consumes: user subscriptions and plan assignment boundary from Task 2.
 - Produces: `active-account` and `administrator` middleware aliases, metadata-only `/admin`, account plan assignment through the Task 2 entitlement boundary, and `linkpilot:grant-admin {email}`.
 
@@ -167,6 +173,7 @@ Expected: PASS.
 ### Task 4: Add verified user-owned custom domains and host-aware delivery
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_001000_create_custom_domains_table.php`
 - Create: `app/Models/CustomDomain.php`
 - Create: `app/Policies/CustomDomainPolicy.php`
@@ -195,6 +202,7 @@ Expected: PASS.
 - Modify: `resources/js/components/app-sidebar.tsx`
 
 **Interfaces:**
+
 - Consumes: `EnforcesPlanLimits::create($user, 'domains', ...)` and owner policies.
 - Produces: `DomainVerificationService::verify(CustomDomain): CustomDomain`, active host-aware public resolution, the no-auth challenge endpoint, and canonical QR URLs.
 
@@ -228,6 +236,7 @@ Expected: PASS. Local manual smoke may show only pending setup unless public DNS
 ### Task 5: Add consent-gated analytics, account insights, bio tracking, and access-code hardening
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_001100_add_access_code_version_to_links_table.php`
 - Create: `database/migrations/2026_10_19_001200_create_analytics_events_table.php`
 - Create: `app/Models/AnalyticsEvent.php`
@@ -257,6 +266,7 @@ Expected: PASS. Local manual smoke may show only pending setup unless public DNS
 - Modify: `resources/js/components/app-sidebar.tsx`
 
 **Interfaces:**
+
 - Produces: `TrackingConsent::allows(Request): bool`, `AnalyticsTracker::record(Request, string, User, array): ?AnalyticsEvent`, account/link analytics props, link-specific unlock state, and public tracked bio redirect.
 - Task 8 consumes persisted analytics events.
 
@@ -290,6 +300,7 @@ Expected: PASS.
 ### Task 6: Add managed pixels and publishable link pages
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_001300_create_tracking_pixels_and_link_pages_tables.php`
 - Create: `app/Models/TrackingPixel.php`
 - Create: `app/Models/LinkPage.php`
@@ -319,6 +330,7 @@ Expected: PASS.
 - Modify: `resources/js/components/app-sidebar.tsx`
 
 **Interfaces:**
+
 - Consumes: account entitlement service plus Task 5 consent/tracker.
 - Produces: fixed public pixel props, user-owned page/pixel CRUD, `/pages/{slug}`, and item-click redirect events. Task 7 reuses the pixel component/pivot constraints.
 
@@ -352,6 +364,7 @@ Expected: PASS.
 ### Task 7: Add CTA overlay interstitial delivery
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_001400_create_link_overlays_table.php`
 - Create: `app/Models/LinkOverlay.php`
 - Create: `app/Policies/LinkOverlayPolicy.php`
@@ -370,6 +383,7 @@ Expected: PASS.
 - Modify: `resources/js/components/app-sidebar.tsx`
 
 **Interfaces:**
+
 - Consumes: same-user domains/pixels, consent/tracker, link availability/access controls, and fixed pixel renderer.
 - Produces: one optional owned `Link::linkOverlay()`, `/overlays` management, public overlay render, and `POST /{slug}/continue` delivery.
 
@@ -403,6 +417,7 @@ Expected: PASS.
 ### Task 8: Add signed webhook delivery and a running queue worker
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_001500_create_webhooks_and_deliveries_tables.php`
 - Create: `app/Models/Webhook.php`
 - Create: `app/Models/WebhookDelivery.php`
@@ -428,6 +443,7 @@ Expected: PASS.
 - Modify: `README.md`
 
 **Interfaces:**
+
 - Consumes: consented `AnalyticsEvent` records and account plan limits.
 - Produces: exact `WebhookPayload::fromEvent(AnalyticsEvent): string`, `WebhookDispatcher::dispatch(AnalyticsEvent): void`, a delivery-ID queue job, and Compose worker service.
 
@@ -462,12 +478,14 @@ Expected: PASS; Compose config includes app and queue services.
 ### Task 9: Run release verification, document operations, and provision manual accounts
 
 **Files:**
+
 - Modify: `README.md`
 - Modify: `.env.example`
 - Modify: `PRD.md` only for observed verified status updates.
 - Modify: `docs/superpowers/specs/2026-10-19-linkpilot-user-scoped-expansion-design.md` only for observed verified contract changes.
 
 **Interfaces:**
+
 - Consumes: all current owner-scoped modules and the running Compose service.
 - Produces: documented local operations, active manual user/admin accounts, and end-to-end evidence.
 

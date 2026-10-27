@@ -8,13 +8,15 @@ use Illuminate\Http\Request;
 
 class PublicLinkHostResolver
 {
+    public function __construct(private readonly HostNormalizer $hosts) {}
+
     public function resolveLink(Request $request, string $slug): Link
     {
         $host = $this->requestHost($request);
 
         abort_unless($host !== null, 404);
 
-        if ($this->isDefaultHost($host['hostname'])) {
+        if ($this->hosts->isDefaultHost($host['hostname'])) {
             return Link::query()
                 ->where('slug', $slug)
                 ->whereNull('custom_domain_id')
@@ -52,7 +54,7 @@ class PublicLinkHostResolver
         if (
             $host === null
             || $host['port'] !== null
-            || $this->isDefaultHost($host['hostname'])
+            || $this->hosts->isDefaultHost($host['hostname'])
         ) {
             return null;
         }
@@ -60,78 +62,16 @@ class PublicLinkHostResolver
         return $host['hostname'];
     }
 
+    public function isDefaultHost(string $hostname): bool
+    {
+        return $this->hosts->isDefaultHost($hostname);
+    }
+
     /**
      * @return array{hostname: string, port: int|null}|null
      */
     private function requestHost(Request $request): ?array
     {
-        $hostHeader = trim((string) $request->headers->get('Host', ''));
-
-        if (
-            preg_match(
-                '/\A(?<hostname>[a-zA-Z0-9.-]+)(?::(?<port>[0-9]{1,5}))?\z/',
-                $hostHeader,
-                $matches,
-            ) !== 1
-        ) {
-            return null;
-        }
-
-        $hostname = CustomDomain::normalizeHostname($matches['hostname']);
-        $port = isset($matches['port']) && $matches['port'] !== ''
-            ? (int) $matches['port']
-            : null;
-
-        if ($hostname === null || ($port !== null && ($port < 1 || $port > 65535))) {
-            return null;
-        }
-
-        return [
-            'hostname' => $hostname,
-            'port' => $port,
-        ];
-    }
-
-    public function isDefaultHost(string $hostname): bool
-    {
-        return in_array($hostname, $this->defaultHosts(), true);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function defaultHosts(): array
-    {
-        $hosts = [];
-        $appHost = parse_url((string) config('app.url'), PHP_URL_HOST);
-
-        if (is_string($appHost)) {
-            $normalized = CustomDomain::normalizeHostname($appHost);
-
-            if ($normalized !== null) {
-                $hosts[] = $normalized;
-            }
-        }
-
-        foreach ((array) config('services.linkpilot.default_hosts', []) as $configuredHost) {
-            if (! is_string($configuredHost)) {
-                continue;
-            }
-
-            $parts = parse_url(
-                str_contains($configuredHost, '://')
-                    ? $configuredHost
-                    : "https://{$configuredHost}",
-            );
-            $hostname = is_array($parts) && isset($parts['host']) && is_string($parts['host'])
-                ? CustomDomain::normalizeHostname($parts['host'])
-                : null;
-
-            if ($hostname !== null) {
-                $hosts[] = $hostname;
-            }
-        }
-
-        return array_values(array_unique($hosts));
+        return $this->hosts->parseAuthority((string) $request->headers->get('Host', ''));
     }
 }

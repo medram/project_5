@@ -1,0 +1,146 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "qr-codes",
+    "area": "Resources",
+    "name": "QR campaigns",
+    "status": "in_progress",
+    "requirements": [
+        {
+            "id": "QR-1",
+            "text": "Every owned short link has one derived SVG QR that encodes its canonical public URL; existing links are backfilled without fabricating historical QR scans.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "QR-2",
+            "text": "Legacy link QR delivery obeys final short-link controls; persisted campaign downloads encode /q/{code} and cannot bypass QR controls or scan analytics.",
+            "priority": "P0",
+            "status": "in_progress"
+        },
+        {
+            "id": "QR-3",
+            "text": "Workspaces create QR campaigns for direct HTTP(S) targets or same-workspace links with active, schedule, access-code, and maximum-scan controls.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "QR-4",
+            "text": "QR lists provide workspace-scoped CSV export and insights derived only from QR scan records.",
+            "priority": "P2",
+            "status": "in_progress"
+        },
+        {
+            "id": "QR-5",
+            "text": "Campaigns support sharing metadata, allowlisted visual styling with a live creation preview, and private workspace-owned logo uploads with validated image formats and cleanup.",
+            "priority": "P1",
+            "status": "in_progress"
+        },
+        {
+            "id": "QR-6",
+            "text": "Campaign downloads provide SVG, PNG, JPEG, and WebP through an allowlisted format route with correct MIME types and deterministic filenames.",
+            "priority": "P2",
+            "status": "in_progress"
+        }
+    ],
+    "routes": [
+        "/dashboard/links/{link}/qr-code.svg",
+        "/dashboard/qr-codes",
+        "/dashboard/qr-codes/{qrCode}",
+        "/dashboard/qr-codes/export",
+        "/dashboard/qr-codes/insights",
+        "/dashboard/qr-codes/{qrCode}/insights",
+        "/dashboard/qr-codes/{qrCode}/preview.svg",
+        "/dashboard/qr-codes/draft-preview.svg",
+        "/dashboard/qr-codes/{qrCode}/download/{format}",
+        "/q/{code}",
+        "/q/{code}/unlock"
+    ],
+    "dependencies": ["short-links", "analytics", "workspaces"],
+    "externalPrerequisites": [
+        "Production deployments must configure and verify durable private storage for uploaded QR logos under storage/app/private/qr-logos; the local disk is not a production durability guarantee."
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "QR-AC-1",
+            "text": "Scans increment only after the locked campaign row confirms the current required access-code version, target integrity, active and schedule state, and maximum-scan allowance."
+        },
+        {
+            "id": "QR-AC-2",
+            "text": "A linked QR defers final controls to its owned link without double-counting."
+        },
+        {
+            "id": "QR-AC-3",
+            "text": "Logo and link references cannot cross workspace boundaries."
+        },
+        {
+            "id": "QR-AC-4",
+            "text": "Workspace QR CSV export remains available when an individual stored target is invalid; only that row's target_url is blank."
+        },
+        {
+            "id": "QR-AC-5",
+            "text": "Campaign insights include the scoped linked short-link slug and title when a campaign targets a workspace link."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/dashboard/qr-codes",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:15Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/qr-list-desktop.png",
+            "observedBehaviors": [
+                "QR campaigns appear as rows with thumbnail previews and row actions.",
+                "A create action and list toolbar are visible."
+            ]
+        },
+        {
+            "route": "/dashboard/qr-codes",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:07:50Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/new-qr-dialog-desktop.png",
+            "observedBehaviors": [
+                "A QR creation dialog pairs destination/title inputs with a QR preview.",
+                "Tracking, retargeting, password, and schedule affordances appear in the dialog footer."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "QrCodeTest passed with 37 tests and 360 assertions, including scoped link insights, locked access-code version revalidation, invalid-target CSV row isolation, controls, previews, analytics, formats, and logo lifecycle; ProductCatalogTest passed with 3 tests and 10,447 assertions; the full Laravel suite passed with 365 tests and 13,994 assertions.",
+            "reference": "QrCodeTest, ProductCatalogTest, and php artisan test.",
+            "verifiedAt": "2026-10-23T11:36:53Z"
+        },
+        {
+            "type": "migration",
+            "description": "A disposable persistent SQLite database was migrated, rolled back to pre-QR schema, seeded with a link and historical click, then migrated again; link fields and click survived, one linked QR was backfilled, and no QR scans were fabricated.",
+            "reference": "Isolated migration/backfill smoke run; temporary database removed after assertions.",
+            "verifiedAt": "2026-10-22T23:16:47Z"
+        },
+        {
+            "type": "command",
+            "description": "npm run types:check, targeted QR UI formatting/lint, Pint --test for changed PHP files, and the production Vite build passed; the build emitted the optional fontaine font-fallback optimization warning.",
+            "reference": "npm run types:check; npx vp check --fix on the changed QR form/list; Pint --test on changed QR controllers/service/tests; isolated npm run build.",
+            "verifiedAt": "2026-10-22T23:52:28Z"
+        },
+        {
+            "type": "command",
+            "description": "OpenCV QRCodeDetector decoded generated SVG, PNG, JPEG, and WebP files to the same /q/{code} campaign URL; owned temporary QR render artifacts and the disposable browser session/database files were removed afterward.",
+            "reference": "QrCodeRenderer output decoded with OpenCV 4 QRCodeDetector; expected payload suffix /q/aqhowfsbcwkt; temporary files absent after cleanup.",
+            "verifiedAt": "2026-10-22T23:52:28Z"
+        },
+        {
+            "type": "browser",
+            "description": "A workspace owner created a direct campaign with sharing metadata, an access code, max scans=2, and a custom #123456 foreground. The live draft preview used the selected style; the public route showed an unlock gate without counting a scan, and insights remained at 0. The owner exported campaign CSV and downloaded the campaign SVG.",
+            "reference": "product/verification/phase5b-qr-insights-desktop.png; product/verification/phase5b-protected-qr-mobile.png; /dashboard/qr-codes/export (qr-campaigns.csv); /dashboard/qr-codes/5/download/svg; /q/hfapxmk5750b",
+            "verifiedAt": "2026-10-23T11:10:57Z"
+        },
+        {
+            "type": "browser",
+            "description": "The platform-admin account opened /admin; its personal-workspace QR list showed 0 campaigns, and the owner-owned campaign 5 insights route returned 404.",
+            "reference": "isolated browser at http://localhost:8107/admin; /dashboard/qr-codes; /dashboard/qr-codes/5/insights",
+            "verifiedAt": "2026-10-23T11:10:57Z"
+        }
+    ]
+}

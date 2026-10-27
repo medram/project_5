@@ -9,10 +9,12 @@ use App\Models\Link;
 use App\Models\LinkPage;
 use App\Models\LinkPageItem;
 use App\Models\Plan;
+use App\Models\TrackingPixelRule;
 use App\Models\User;
 use App\Models\Webhook;
 use App\Services\Analytics\AnalyticsTracker;
 use App\Services\Analytics\TrackingConsent;
+use App\Services\Billing\WorkspaceUsage;
 use Illuminate\Database\Seeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -58,11 +60,10 @@ class DemoAccountSeeder extends Seeder
             'email_verified_at' => $user->email_verified_at ?? now(),
         ])->save();
 
-        $user->subscription()->update([
-            'plan_id' => Plan::query()->where('code', $plan)->sole()->id,
-            'status' => 'active',
-            'source' => 'manual',
-        ]);
+        app(WorkspaceUsage::class)->assignPlan(
+            $user->personalWorkspace()->firstOrFail(),
+            Plan::query()->where('code', $plan)->sole(),
+        );
 
         $this->command?->info(
             ($existing === null ? 'Created' : 'Updated')." [{$email}] on the {$plan} plan."
@@ -73,9 +74,14 @@ class DemoAccountSeeder extends Seeder
 
     private function seedDemoContent(User $user): void
     {
-        $folder = Folder::factory()->for($user)->create(['name' => 'Launch campaign']);
+        $workspace = $user->personalWorkspace()->firstOrFail();
+        $folder = Folder::factory()->for($user)->create([
+            'workspace_id' => $workspace->id,
+            'name' => 'Launch campaign',
+        ]);
 
-        $overlay = $user->linkOverlays()->create([
+        $overlay = $workspace->linkOverlays()->create([
+            'user_id' => $user->id,
             'name' => 'Launch offer',
             'heading' => 'Before you go',
             'body' => 'Check out the launch bundle first.',
@@ -83,7 +89,8 @@ class DemoAccountSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        $link = $user->links()->create([
+        $link = $workspace->links()->create([
+            'user_id' => $user->id,
             'folder_id' => $folder->id,
             'link_overlay_id' => $overlay->id,
             'destination_url' => 'https://example.com/launch',
@@ -92,7 +99,8 @@ class DemoAccountSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        $user->links()->create([
+        $workspace->links()->create([
+            'user_id' => $user->id,
             'destination_url' => 'https://example.com/legacy',
             'title' => 'Retired campaign',
             'slug' => 'demo-retired',
@@ -100,13 +108,15 @@ class DemoAccountSeeder extends Seeder
             'expires_at' => now()->subDay(),
         ]);
 
-        $user->customDomains()->create([
+        $workspace->customDomains()->create([
+            'user_id' => $user->id,
             'hostname' => 'links.demo-linkpilot.test',
             'verification_token' => CustomDomain::generateVerificationToken(),
             'status' => 'pending_dns',
         ]);
 
-        $pixel = $user->trackingPixels()->create([
+        $pixel = $workspace->trackingPixels()->create([
+            'user_id' => $user->id,
             'name' => 'Demo Meta pixel',
             'provider' => 'meta_pixel',
             'provider_id' => '123456789012345',
@@ -114,6 +124,7 @@ class DemoAccountSeeder extends Seeder
         ]);
 
         $bioPage = BioPage::factory()->for($user)->create([
+            'workspace_id' => $workspace->id,
             'handle' => 'demo-bio',
             'display_name' => 'Demo Creator',
             'bio' => 'Manual-testing bio page.',
@@ -135,7 +146,7 @@ class DemoAccountSeeder extends Seeder
             ],
         ]);
 
-        $linkPage = LinkPage::query()->create([
+        $linkPage = $workspace->linkPages()->create([
             'user_id' => $user->id,
             'name' => 'Demo destinations',
             'slug' => 'demo-page',
@@ -144,7 +155,12 @@ class DemoAccountSeeder extends Seeder
             'is_published' => true,
         ]);
 
-        $linkPage->trackingPixels()->sync([$pixel->id]);
+        $pixel->rules()->create([
+            'workspace_id' => $workspace->id,
+            'target_type' => TrackingPixelRule::TARGET_LINK_PAGE,
+            'target_id' => $linkPage->id,
+            'trigger' => TrackingPixelRule::TRIGGER_PAGE_VIEW,
+        ]);
 
         $item = $linkPage->items()->create([
             'title' => 'Landing page',
@@ -153,16 +169,17 @@ class DemoAccountSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        $webhook = new Webhook([
+        $webhook = $workspace->webhooks()->make([
             'name' => 'Demo hook',
             'url' => 'https://example.com/hook',
             'events' => ['link.clicked', 'bio_page.clicked'],
             'revision' => 1,
             'is_active' => true,
         ]);
-        $webhook->user_id = $user->id;
-        $webhook->secret = Webhook::generateSecret();
-        $webhook->save();
+        $webhook->forceFill([
+            'user_id' => $user->id,
+            'secret' => Webhook::generateSecret(),
+        ])->save();
 
         $this->seedActivity($user, $link, $linkPage, $item, $bioPage);
     }

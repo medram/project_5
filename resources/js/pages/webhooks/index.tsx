@@ -9,6 +9,7 @@ import {
     Webhook as WebhookIcon,
 } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,7 +49,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { destroy, rotate, store, update } from '@/routes/webhooks';
-import { index as deliveriesIndex } from '@/routes/webhooks/deliveries';
+import {
+    index as deliveriesIndex,
+    redeliver,
+} from '@/routes/webhooks/deliveries';
 import type {
     Webhook,
     WebhookDelivery,
@@ -145,7 +149,7 @@ function WebhookFormFields({
                     ))}
                 </div>
                 <FieldDescription>
-                    Only consented analytics events for this account are
+                    Only consented analytics events for this workspace are
                     delivered.
                 </FieldDescription>
                 {errors.events && <FieldError>{errors.events}</FieldError>}
@@ -257,7 +261,7 @@ function EditWebhookDialog({
     const [open, setOpen] = useState(false);
     const form = useForm<WebhookFormData>({
         name: webhook.name,
-        url: webhook.url,
+        url: webhook.url ?? '',
         events: webhook.events,
         is_active: webhook.isActive,
     });
@@ -432,6 +436,7 @@ function DeleteWebhookDialog({ webhook }: { webhook: Webhook }) {
 function DeliveryHistoryDialog({ webhook }: { webhook: Webhook }) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [redeliveringId, setRedeliveringId] = useState<number | null>(null);
     const [deliveries, setDeliveries] = useState<WebhookDelivery[] | null>(
         null,
     );
@@ -453,6 +458,24 @@ function DeliveryHistoryDialog({ webhook }: { webhook: Webhook }) {
             .finally(() => setLoading(false));
     }
 
+    function queueRedelivery(delivery: WebhookDelivery) {
+        setRedeliveringId(delivery.id);
+        router.post(
+            redeliver({
+                webhook: webhook.id,
+                delivery: delivery.id,
+            }).url,
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    setRedeliveringId(null);
+                    load(true);
+                },
+            },
+        );
+    }
+
     return (
         <Dialog open={open} onOpenChange={load}>
             <DialogTrigger asChild>
@@ -465,8 +488,8 @@ function DeliveryHistoryDialog({ webhook }: { webhook: Webhook }) {
                 <DialogHeader>
                     <DialogTitle>{webhook.name} deliveries</DialogTitle>
                     <DialogDescription>
-                        Delivery attempts for this endpoint. Response bodies are
-                        never stored.
+                        Delivery history for this endpoint. A bounded excerpt
+                        from the latest failed response may be retained.
                     </DialogDescription>
                 </DialogHeader>
                 {loading ? (
@@ -477,37 +500,87 @@ function DeliveryHistoryDialog({ webhook }: { webhook: Webhook }) {
                     </p>
                 ) : (
                     <ul className="grid max-h-96 gap-2 overflow-y-auto">
-                        {deliveries.map((delivery) => (
-                            <li
-                                key={delivery.id}
-                                className="rounded-lg border p-3 text-sm"
-                            >
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <span className="font-mono">
-                                        {delivery.eventName}
-                                    </span>
-                                    <Badge
-                                        variant={
-                                            delivery.state === 'delivered'
-                                                ? 'default'
-                                                : 'secondary'
-                                        }
-                                    >
-                                        {delivery.state}
-                                    </Badge>
-                                </div>
-                                <p className="mt-1 text-muted-foreground">
-                                    {delivery.attemptCount} attempt
-                                    {delivery.attemptCount === 1 ? '' : 's'}
-                                    {delivery.responseCode
-                                        ? ` · HTTP ${delivery.responseCode}`
-                                        : ''}
-                                    {delivery.failureDetail
-                                        ? ` · ${delivery.failureDetail}`
-                                        : ''}
-                                </p>
-                            </li>
-                        ))}
+                        {deliveries.map((delivery) => {
+                            const canRedeliver =
+                                webhook.isActive &&
+                                (delivery.state === 'failed' ||
+                                    delivery.state === 'cancelled');
+
+                            return (
+                                <li
+                                    key={delivery.id}
+                                    className="rounded-lg border p-3 text-sm"
+                                >
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <span className="font-mono">
+                                            {delivery.eventName}
+                                        </span>
+                                        <Badge
+                                            variant={
+                                                delivery.state === 'delivered'
+                                                    ? 'default'
+                                                    : 'secondary'
+                                            }
+                                        >
+                                            {delivery.state}
+                                        </Badge>
+                                    </div>
+                                    <p className="mt-1 text-muted-foreground">
+                                        {delivery.attemptCount} attempt
+                                        {delivery.attemptCount === 1 ? '' : 's'}
+                                        {delivery.responseCode
+                                            ? ` · HTTP ${delivery.responseCode}`
+                                            : ''}
+                                        {delivery.failureDetail
+                                            ? ` · ${delivery.failureDetail}`
+                                            : ''}
+                                    </p>
+                                    {delivery.responseExcerpt ? (
+                                        <div className="mt-3">
+                                            <p className="mb-1 font-medium">
+                                                Latest response excerpt
+                                            </p>
+                                            <pre className="max-h-32 overflow-auto rounded-md bg-muted p-2 text-xs break-words whitespace-pre-wrap">
+                                                {delivery.responseExcerpt}
+                                            </pre>
+                                        </div>
+                                    ) : null}
+                                    {delivery.sourceDeliveryId !== null ||
+                                    canRedeliver ? (
+                                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                                            {delivery.sourceDeliveryId !==
+                                            null ? (
+                                                <span className="text-xs text-muted-foreground">
+                                                    Redelivery of #
+                                                    {delivery.sourceDeliveryId}
+                                                </span>
+                                            ) : null}
+                                            {canRedeliver ? (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    disabled={
+                                                        redeliveringId !== null
+                                                    }
+                                                    onClick={() =>
+                                                        queueRedelivery(
+                                                            delivery,
+                                                        )
+                                                    }
+                                                >
+                                                    {redeliveringId ===
+                                                    delivery.id ? (
+                                                        <Spinner data-icon="inline-start" />
+                                                    ) : null}
+                                                    Redeliver
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
+                                </li>
+                            );
+                        })}
                     </ul>
                 )}
             </DialogContent>
@@ -558,6 +631,7 @@ function OneTimeSecret({ secret }: { secret: string }) {
 export default function WebhooksIndex({
     webhooks,
     supportedEvents,
+    canManageIntegrations,
     oneTimeSecret,
 }: WebhooksPageProps) {
     return (
@@ -565,35 +639,28 @@ export default function WebhooksIndex({
             <Head title="Webhooks" />
 
             <div className="flex flex-col gap-6 p-4 sm:p-6">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <WebhookIcon
-                                className="size-4"
-                                aria-hidden="true"
-                            />
-                            <span className="text-sm font-medium">
-                                Signed event delivery
-                            </span>
-                        </div>
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            Webhooks
-                        </h1>
-                        <p className="max-w-2xl text-sm text-muted-foreground">
-                            Receive consented analytics events for this account.
-                            Failed deliveries retry on a fixed schedule before
-                            they are marked failed.
-                        </p>
-                    </div>
-                    <CreateWebhookDialog supportedEvents={supportedEvents}>
-                        <Button>
-                            <Plus data-icon="inline-start" />
-                            Add webhook
-                        </Button>
-                    </CreateWebhookDialog>
-                </header>
+                <PageHeader
+                    title="Webhooks"
+                    eyebrow="Signed event delivery"
+                    icon={WebhookIcon}
+                    description="Receive consented analytics events for this workspace. Failed deliveries retry automatically; owners and admins can redeliver eligible attempts."
+                    actions={
+                        canManageIntegrations ? (
+                            <CreateWebhookDialog
+                                supportedEvents={supportedEvents}
+                            >
+                                <Button>
+                                    <Plus data-icon="inline-start" />
+                                    Add webhook
+                                </Button>
+                            </CreateWebhookDialog>
+                        ) : undefined
+                    }
+                />
 
-                {oneTimeSecret && <OneTimeSecret secret={oneTimeSecret} />}
+                {canManageIntegrations && oneTimeSecret && (
+                    <OneTimeSecret secret={oneTimeSecret} />
+                )}
 
                 {webhooks.length === 0 ? (
                     <Empty className="border">
@@ -608,20 +675,26 @@ export default function WebhooksIndex({
                             </EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
-                            <CreateWebhookDialog
-                                supportedEvents={supportedEvents}
-                            >
-                                <Button>
-                                    <Plus data-icon="inline-start" />
-                                    Add your first webhook
-                                </Button>
-                            </CreateWebhookDialog>
+                            {canManageIntegrations && (
+                                <CreateWebhookDialog
+                                    supportedEvents={supportedEvents}
+                                >
+                                    <Button>
+                                        <Plus data-icon="inline-start" />
+                                        Add your first webhook
+                                    </Button>
+                                </CreateWebhookDialog>
+                            )}
                         </EmptyContent>
                     </Empty>
                 ) : (
                     <div className="grid gap-4 lg:grid-cols-2">
                         {webhooks.map((webhook) => (
-                            <Card key={webhook.id}>
+                            <Card
+                                id={`webhook-${webhook.id}`}
+                                key={webhook.id}
+                                className="scroll-mt-20"
+                            >
                                 <CardHeader>
                                     <div className="flex flex-wrap items-start justify-between gap-3">
                                         <div className="space-y-1">
@@ -629,7 +702,8 @@ export default function WebhooksIndex({
                                                 {webhook.name}
                                             </CardTitle>
                                             <CardDescription className="break-all">
-                                                {webhook.url}
+                                                {webhook.url ??
+                                                    'Endpoint details are visible to workspace owners and admins.'}
                                             </CardDescription>
                                         </div>
                                         <Badge
@@ -669,16 +743,64 @@ export default function WebhooksIndex({
                                               ).toLocaleDateString()}`
                                             : ''}
                                     </p>
+                                    {canManageIntegrations && webhook.health ? (
+                                        <div className="space-y-2 rounded-lg border bg-muted/20 p-3 text-sm">
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <p className="font-medium">
+                                                    Current revision health
+                                                </p>
+                                                <Badge
+                                                    variant={
+                                                        webhook.health
+                                                            .latestState ===
+                                                        'failed'
+                                                            ? 'destructive'
+                                                            : webhook.health
+                                                                    .latestState ===
+                                                                'delivered'
+                                                              ? 'default'
+                                                              : 'secondary'
+                                                    }
+                                                >
+                                                    {webhook.health
+                                                        .latestState ??
+                                                        'No attempts'}
+                                                </Badge>
+                                            </div>
+                                            <p className="text-muted-foreground">
+                                                {
+                                                    webhook.health.counts
+                                                        .delivered
+                                                }{' '}
+                                                delivered ·{' '}
+                                                {webhook.health.counts.failed}{' '}
+                                                failed ·{' '}
+                                                {webhook.health.counts.pending}{' '}
+                                                pending ·{' '}
+                                                {
+                                                    webhook.health.counts
+                                                        .cancelled
+                                                }{' '}
+                                                cancelled
+                                            </p>
+                                        </div>
+                                    ) : null}
                                 </CardContent>
-                                <CardFooter className="flex flex-wrap gap-2">
-                                    <DeliveryHistoryDialog webhook={webhook} />
-                                    <EditWebhookDialog
-                                        webhook={webhook}
-                                        supportedEvents={supportedEvents}
-                                    />
-                                    <RotateSecretDialog webhook={webhook} />
-                                    <DeleteWebhookDialog webhook={webhook} />
-                                </CardFooter>
+                                {canManageIntegrations && (
+                                    <CardFooter className="flex flex-wrap gap-2">
+                                        <DeliveryHistoryDialog
+                                            webhook={webhook}
+                                        />
+                                        <EditWebhookDialog
+                                            webhook={webhook}
+                                            supportedEvents={supportedEvents}
+                                        />
+                                        <RotateSecretDialog webhook={webhook} />
+                                        <DeleteWebhookDialog
+                                            webhook={webhook}
+                                        />
+                                    </CardFooter>
+                                )}
                             </Card>
                         ))}
                     </div>

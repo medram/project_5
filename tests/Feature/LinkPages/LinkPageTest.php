@@ -9,6 +9,7 @@ use App\Models\TrackingPixel;
 use App\Models\User;
 use App\Services\Analytics\TrackingConsent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -23,8 +24,8 @@ class LinkPageTest extends TestCase
         $this->makePro($owner);
 
         $this->actingAs($owner)
-            ->post('/tracking-pixels', $this->pixelPayload())
-            ->assertRedirect('/tracking-pixels');
+            ->post('/dashboard/pixels', $this->pixelPayload())
+            ->assertRedirect('/dashboard/pixels');
 
         $pixel = TrackingPixel::query()->sole();
 
@@ -38,17 +39,17 @@ class LinkPageTest extends TestCase
         ]);
 
         $this->actingAs($otherUser)
-            ->patch("/tracking-pixels/{$pixel->id}", $this->pixelPayload())
-            ->assertForbidden();
+            ->patch("/dashboard/pixels/{$pixel->id}", $this->pixelPayload())
+            ->assertNotFound();
 
         $this->actingAs($owner)
-            ->patch("/tracking-pixels/{$pixel->id}", $this->pixelPayload([
+            ->patch("/dashboard/pixels/{$pixel->id}", $this->pixelPayload([
                 'name' => 'Launch analytics',
                 'provider' => 'google_analytics',
                 'provider_id' => 'G-AB12CD34',
                 'is_active' => false,
             ]))
-            ->assertRedirect('/tracking-pixels');
+            ->assertRedirect('/dashboard/pixels');
 
         $this->assertDatabaseHas('tracking_pixels', [
             'id' => $pixel->id,
@@ -59,12 +60,12 @@ class LinkPageTest extends TestCase
         ]);
 
         $this->actingAs($otherUser)
-            ->delete("/tracking-pixels/{$pixel->id}")
-            ->assertForbidden();
+            ->delete("/dashboard/pixels/{$pixel->id}")
+            ->assertNotFound();
 
         $this->actingAs($owner)
-            ->delete("/tracking-pixels/{$pixel->id}")
-            ->assertRedirect('/tracking-pixels');
+            ->delete("/dashboard/pixels/{$pixel->id}")
+            ->assertRedirect('/dashboard/pixels');
 
         $this->assertDatabaseMissing('tracking_pixels', ['id' => $pixel->id]);
     }
@@ -75,21 +76,21 @@ class LinkPageTest extends TestCase
         $this->makePro($owner);
 
         $this->actingAs($owner)
-            ->post('/tracking-pixels', $this->pixelPayload([
+            ->post('/dashboard/pixels', $this->pixelPayload([
                 'provider' => 'google_tag_manager',
                 'provider_id' => 'GTM-AB12CD34',
             ]))
             ->assertSessionHasErrors('provider');
 
         $this->actingAs($owner)
-            ->post('/tracking-pixels', $this->pixelPayload([
+            ->post('/dashboard/pixels', $this->pixelPayload([
                 'provider' => 'meta_pixel',
                 'provider_id' => 'not-a-meta-id',
             ]))
             ->assertSessionHasErrors('provider_id');
 
         $this->actingAs($owner)
-            ->post('/tracking-pixels', $this->pixelPayload([
+            ->post('/dashboard/pixels', $this->pixelPayload([
                 'provider' => 'google_analytics',
                 'provider_id' => 'GTM-AB12CD34',
             ]))
@@ -103,21 +104,21 @@ class LinkPageTest extends TestCase
         $owner = User::factory()->create();
 
         $this->actingAs($owner)
-            ->post('/tracking-pixels', $this->pixelPayload())
+            ->post('/dashboard/pixels', $this->pixelPayload())
             ->assertSessionHasErrors('plan');
 
         $this->actingAs($owner)
-            ->post('/link-pages', $this->pagePayload())
-            ->assertRedirect('/link-pages/1');
+            ->post('/dashboard/link-pages', $this->pagePayload())
+            ->assertRedirect('/dashboard/link-pages/1');
 
         $this->actingAs($owner)
-            ->post('/link-pages', $this->pagePayload(['slug' => 'second-campaign']))
+            ->post('/dashboard/link-pages', $this->pagePayload(['slug' => 'second-campaign']))
             ->assertSessionHasErrors('plan');
 
         $this->withoutVite();
 
         $this->actingAs($owner)
-            ->get('/billing')
+            ->get('/account-settings/billing')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('usage.pixels.used', 0)
@@ -146,18 +147,21 @@ class LinkPageTest extends TestCase
         $this->assertSame(1, $second->position);
 
         $this->actingAs($owner)
-            ->patch("/link-pages/{$page->id}/items/{$second->id}", $this->itemPayload([
+            ->patch("/dashboard/link-pages/{$page->id}/items/{$second->id}", $this->itemPayload([
                 'title' => 'Updated destination',
                 'destination_url' => 'https://example.com/updated',
                 'is_active' => false,
             ]))
-            ->assertRedirect("/link-pages/{$page->id}");
+            ->assertRedirect("/dashboard/link-pages/{$page->id}");
 
         $this->actingAs($owner)
-            ->patch("/link-pages/{$page->id}/items/reorder", [
-                'item_ids' => [$second->id, $first->id],
+            ->patch("/dashboard/link-pages/{$page->id}/items/reorder", [
+                'items' => [
+                    ['type' => 'link', 'id' => $second->id],
+                    ['type' => 'link', 'id' => $first->id],
+                ],
             ])
-            ->assertRedirect("/link-pages/{$page->id}");
+            ->assertRedirect("/dashboard/link-pages/{$page->id}");
 
         $this->assertDatabaseHas('link_page_items', [
             'id' => $second->id,
@@ -171,12 +175,12 @@ class LinkPageTest extends TestCase
         ]);
 
         $this->actingAs($otherUser)
-            ->get("/link-pages/{$page->id}")
-            ->assertForbidden();
+            ->get("/dashboard/link-pages/{$page->id}")
+            ->assertNotFound();
 
         $this->actingAs($otherUser)
-            ->patch("/link-pages/{$page->id}", $this->pagePayload())
-            ->assertForbidden();
+            ->patch("/dashboard/link-pages/{$page->id}", $this->pagePayload())
+            ->assertNotFound();
 
         $foreignPage = $this->createLinkPage($otherUser, $this->pagePayload([
             'slug' => 'other-campaign',
@@ -184,63 +188,70 @@ class LinkPageTest extends TestCase
         $foreignItem = $this->createItem($otherUser, $foreignPage);
 
         $this->actingAs($owner)
-            ->patch("/link-pages/{$page->id}/items/{$foreignItem->id}", $this->itemPayload())
+            ->patch("/dashboard/link-pages/{$page->id}/items/{$foreignItem->id}", $this->itemPayload())
             ->assertNotFound();
     }
 
-    public function test_link_pages_only_attach_up_to_five_active_pixels_owned_by_the_same_user(): void
+    public function test_link_page_items_reject_non_http_and_first_party_destinations(): void
+    {
+        config()->set('linkpilot.default_hosts', ['alias.linkpilot.test']);
+        $owner = User::factory()->create();
+        $page = $this->createLinkPage($owner, $this->pagePayload());
+        $claimedHostUrls = [];
+
+        foreach (['pending_dns', 'active', 'failed'] as $index => $status) {
+            $domain = $owner->currentWorkspace->customDomains()->create([
+                'user_id' => $owner->id,
+                'hostname' => "page-customer-{$index}.test",
+                'verification_token' => Str::lower(Str::random(40)),
+                'status' => $status,
+            ]);
+            $claimedHostUrls[] = "https://{$domain->hostname}/path";
+        }
+
+        foreach (array_merge([
+            'ftp://unrelated.example/path',
+            'https://alias.linkpilot.test/path',
+        ], $claimedHostUrls) as $destination) {
+            $this
+                ->actingAs($owner)
+                ->post("/dashboard/link-pages/{$page->id}/items", $this->itemPayload([
+                    'destination_url' => $destination,
+                ]))
+                ->assertSessionHasErrors('destination_url');
+        }
+
+        $this
+            ->actingAs($owner)
+            ->post("/dashboard/link-pages/{$page->id}/items", $this->itemPayload([
+                'destination_url' => 'https://unrelated.example/page',
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect("/dashboard/link-pages/{$page->id}");
+    }
+
+    public function test_link_page_trigger_rules_allow_five_active_pixels_and_reject_a_sixth(): void
     {
         $owner = User::factory()->create();
         $this->makePro($owner);
-
+        $page = $this->createLinkPage($owner, $this->pagePayload(['slug' => 'pixel-capacity']));
         $pixels = collect(range(1, 6))->map(fn (int $index): TrackingPixel => $this->createPixel(
             $owner,
-            $this->pixelPayload([
-                'name' => "Pixel {$index}",
-                'provider_id' => "12345678901234{$index}",
-            ]),
+            $this->pixelPayload(['name' => "Pixel {$index}", 'provider_id' => "12345678901234{$index}"]),
         ));
 
-        $this->actingAs($owner)
-            ->post('/link-pages', $this->pagePayload([
-                'slug' => 'too-many-pixels',
-                'tracking_pixel_ids' => $pixels->pluck('id')->all(),
-            ]))
-            ->assertSessionHasErrors('tracking_pixel_ids');
+        foreach ($pixels->take(5) as $pixel) {
+            $this->actingAs($owner)->post("/dashboard/pixels/{$pixel->id}/rules", [
+                'target_type' => 'link_page', 'target_id' => $page->id, 'trigger' => 'page_view',
+            ])->assertRedirect('/dashboard/pixels');
+        }
 
-        $inactivePixel = $this->createPixel($owner, $this->pixelPayload([
-            'name' => 'Inactive pixel',
-            'provider_id' => '987654321098765',
-            'is_active' => false,
-        ]));
+        $sixth = $pixels->last();
+        $this->actingAs($owner)->post("/dashboard/pixels/{$sixth->id}/rules", [
+            'target_type' => 'link_page', 'target_id' => $page->id, 'trigger' => 'page_view',
+        ])->assertSessionHasErrors();
 
-        $this->actingAs($owner)
-            ->post('/link-pages', $this->pagePayload([
-                'slug' => 'inactive-pixel',
-                'tracking_pixel_ids' => [$inactivePixel->id],
-            ]))
-            ->assertSessionHasErrors('tracking_pixel_ids');
-
-        $otherUser = User::factory()->create();
-        $this->makePro($otherUser);
-        $foreignPixel = $this->createPixel($otherUser, $this->pixelPayload([
-            'name' => 'Foreign pixel',
-            'provider_id' => '456789012345678',
-        ]));
-
-        $this->actingAs($owner)
-            ->post('/link-pages', $this->pagePayload([
-                'slug' => 'foreign-pixel',
-                'tracking_pixel_ids' => [$foreignPixel->id],
-            ]))
-            ->assertSessionHasErrors('tracking_pixel_ids');
-
-        $page = $this->createLinkPage($owner, $this->pagePayload([
-            'slug' => 'five-pixels',
-            'tracking_pixel_ids' => $pixels->take(5)->pluck('id')->all(),
-        ]));
-
-        $this->assertCount(5, $page->trackingPixels()->get());
+        $this->assertDatabaseCount('tracking_pixel_rules', 5);
     }
 
     public function test_public_link_pages_hide_pixels_until_consent_then_emit_safe_props_and_view_event(): void
@@ -253,9 +264,12 @@ class LinkPageTest extends TestCase
             'provider' => 'google_analytics',
             'provider_id' => 'G-AB12CD34',
         ]));
-        $page = $this->createLinkPage($owner, $this->pagePayload([
-            'tracking_pixel_ids' => [$metaPixel->id, $analyticsPixel->id],
-        ]));
+        $page = $this->createLinkPage($owner, $this->pagePayload());
+        foreach ([$metaPixel, $analyticsPixel] as $assigned) {
+            $this->actingAs($owner)->post("/dashboard/pixels/{$assigned->id}/rules", [
+                'target_type' => 'link_page', 'target_id' => $page->id, 'trigger' => 'page_view',
+            ])->assertRedirect();
+        }
         $item = $this->createItem($owner, $page);
         $this->createItem($owner, $page, $this->itemPayload([
             'title' => 'Hidden item',
@@ -274,7 +288,7 @@ class LinkPageTest extends TestCase
                 ->has('items', 1)
                 ->where('items.0.title', 'Start here')
                 ->where('items.0.url', "/pages/launch-campaign/items/{$item->id}")
-                ->has('pixels', 0)
+                ->where('pixels', ['page_view' => [], 'button_click' => [], 'lead_submit' => []])
                 ->where('trackingConsent', null),
             )
             ->assertDontSee($metaPixel->provider_id)
@@ -286,12 +300,14 @@ class LinkPageTest extends TestCase
             ->get('/pages/launch-campaign')
             ->assertOk()
             ->assertInertia(fn (Assert $response) => $response
-                ->has('pixels', 2)
-                ->where('pixels.0.provider', 'meta_pixel')
-                ->where('pixels.0.identifier', '123456789012345')
-                ->where('pixels.1.provider', 'google_analytics')
-                ->where('pixels.1.identifier', 'G-AB12CD34')
-                ->where('trackingConsent', 'granted'),
+                ->where('pixels', [
+                    'page_view' => [
+                        ['provider' => 'meta_pixel', 'identifier' => '123456789012345'],
+                        ['provider' => 'google_analytics', 'identifier' => 'G-AB12CD34'],
+                    ],
+                    'button_click' => [],
+                    'lead_submit' => [],
+                ])
             );
 
         $this->assertDatabaseHas('analytics_events', [
@@ -299,6 +315,61 @@ class LinkPageTest extends TestCase
             'event_name' => 'link_page.view',
             'link_page_id' => $page->id,
         ]);
+    }
+
+    public function test_public_link_page_props_show_the_public_title_but_omit_the_private_name(): void
+    {
+        $owner = User::factory()->create();
+        $page = $this->createLinkPage($owner, $this->pagePayload([
+            'name' => 'Internal ops board',
+            'title' => 'Public campaign title',
+        ]));
+
+        $this->withoutVite();
+
+        $this->get('/pages/launch-campaign')
+            ->assertOk()
+            ->assertInertia(fn (Assert $response) => $response
+                ->component('link-pages/public', false)
+                ->where('title', 'Public campaign title')
+                // The root `name` slot is the shared app name on every Inertia
+                // page; the page-level internal name must not override it.
+                ->where('name', config('app.name')),
+            )
+            ->assertDontSee('Internal ops board');
+
+        // The private management surface keeps showing the internal name.
+        $this->assertSame('Internal ops board', $page->fresh()->name);
+    }
+
+    public function test_public_link_page_projects_each_meta_pixel_identifier_only_once(): void
+    {
+        $owner = User::factory()->create();
+        $this->makePro($owner);
+        $pixel = $this->createPixel($owner);
+        $duplicate = $this->createPixel($owner, $this->pixelPayload([
+            'name' => 'Duplicate Meta ID',
+            'provider_id' => $pixel->provider_id,
+        ]));
+        $page = $this->createLinkPage($owner, $this->pagePayload(['slug' => 'duplicate-meta']));
+        foreach ([$pixel, $duplicate] as $assigned) {
+            $this->actingAs($owner)->post("/dashboard/pixels/{$assigned->id}/rules", [
+                'target_type' => 'link_page', 'target_id' => $page->id, 'trigger' => 'page_view',
+            ])->assertRedirect();
+        }
+
+        $this->withoutVite();
+
+        $this->withCookie(TrackingConsent::COOKIE_NAME, TrackingConsent::GRANTED)
+            ->get("/pages/{$page->slug}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $response) => $response
+                ->where('pixels', [
+                    'page_view' => [['provider' => 'meta_pixel', 'identifier' => $pixel->provider_id]],
+                    'button_click' => [],
+                    'lead_submit' => [],
+                ])
+            );
     }
 
     public function test_public_link_page_item_redirects_and_records_only_consented_exact_references(): void
@@ -363,7 +434,6 @@ class LinkPageTest extends TestCase
             'title' => 'Launch campaign',
             'description' => 'A focused set of launch destinations.',
             'is_published' => true,
-            'tracking_pixel_ids' => [],
         ], $overrides);
     }
 
@@ -385,8 +455,8 @@ class LinkPageTest extends TestCase
     private function createPixel(User $user, array $attributes = []): TrackingPixel
     {
         $this->actingAs($user)
-            ->post('/tracking-pixels', $attributes ?: $this->pixelPayload())
-            ->assertRedirect('/tracking-pixels');
+            ->post('/dashboard/pixels', $attributes ?: $this->pixelPayload())
+            ->assertRedirect('/dashboard/pixels');
 
         return TrackingPixel::query()->latest('id')->firstOrFail();
     }
@@ -397,7 +467,7 @@ class LinkPageTest extends TestCase
     private function createLinkPage(User $user, array $attributes = []): LinkPage
     {
         $this->actingAs($user)
-            ->post('/link-pages', $attributes ?: $this->pagePayload())
+            ->post('/dashboard/link-pages', $attributes ?: $this->pagePayload())
             ->assertRedirect();
 
         return LinkPage::query()->latest('id')->firstOrFail();
@@ -409,8 +479,8 @@ class LinkPageTest extends TestCase
     private function createItem(User $user, LinkPage $page, array $attributes = []): LinkPageItem
     {
         $this->actingAs($user)
-            ->post("/link-pages/{$page->id}/items", $attributes ?: $this->itemPayload())
-            ->assertRedirect("/link-pages/{$page->id}");
+            ->post("/dashboard/link-pages/{$page->id}/items", $attributes ?: $this->itemPayload())
+            ->assertRedirect("/dashboard/link-pages/{$page->id}");
 
         return LinkPageItem::query()
             ->where('link_page_id', $page->id)
@@ -420,7 +490,7 @@ class LinkPageTest extends TestCase
 
     private function makePro(User $user): void
     {
-        $user->subscription()->update([
+        $user->currentWorkspace()->firstOrFail()->subscription()->update([
             'plan_id' => Plan::query()->where('code', 'pro')->sole()->id,
         ]);
     }

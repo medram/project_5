@@ -1,0 +1,109 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "notifications",
+    "area": "Account",
+    "name": "Notification center and preferences",
+    "status": "blocked_external",
+    "requirements": [
+        {
+            "id": "ID-4",
+            "text": "Account notifications and notification preferences are configurable.",
+            "priority": "P3",
+            "status": "verified"
+        },
+        {
+            "id": "NOT-1",
+            "text": "Database notifications cover invitations, domain/webhook failures, usage thresholds, billing events, and admin broadcasts.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "NOT-2",
+            "text": "Users can filter unread/all notifications and mark one or all read from a dedicated notification center.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "NOT-3",
+            "text": "Mail delivery occurs only for a configured mailer and an enabled per-user category preference.",
+            "priority": "P1",
+            "status": "blocked_external"
+        }
+    ],
+    "routes": [
+        "/notifications",
+        "/notifications/preferences",
+        "/notifications/{notification}/read",
+        "/notifications/read-all",
+        "/admin/notifications/broadcast"
+    ],
+    "dependencies": ["auth-account", "workspaces", "admin-users-roles"],
+    "externalPrerequisites": [
+        "Configured mail transport for optional email notifications"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "NOT-AC-1",
+            "text": "Database delivery remains available independently of mail configuration."
+        },
+        {
+            "id": "NOT-AC-2",
+            "text": "Notification links resolve only to objects the recipient remains authorized to view."
+        },
+        {
+            "id": "NOT-AC-3",
+            "text": "Unread counts refresh during Inertia navigation or bounded polling."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/dashboard",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:10:55Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/notification-menu-desktop.png",
+            "observedBehaviors": [
+                "A right-aligned notification popover lists recent notification cards.",
+                "Unread/all filtering and a route to the full notification view are visible."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "The final isolated Laravel suite passed 475 tests and 16,100 assertions with one conditional ClamAV-dependent skip, including notification preferences, delivery, read state, and administration coverage.",
+            "reference": "docker compose exec -T -w /var/www -e APP_ENV=testing -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= app php -d memory_limit=512M vendor/bin/phpunit",
+            "verifiedAt": "2026-10-26T16:41:06Z"
+        },
+        {
+            "type": "browser",
+            "description": "The user notification center exposed unread/all filters and mark-read actions on mobile. The admin broadcast surface rendered at desktop and mobile widths; a regular user received 403 at /admin. Mail was not sent because the app uses MAIL_MAILER=log.",
+            "reference": "Disposable review app http://localhost:8013/notifications and /admin",
+            "verifiedAt": "2026-10-26T15:41:21Z"
+        },
+        {
+            "type": "review",
+            "description": "Independent regular-user review saved a changed Platform announcements preference and observed the success toast in the live notification region; the setting persisted.",
+            "reference": "RegularUserUX-2 review; /notifications on disposable app http://localhost:8013",
+            "verifiedAt": "2026-10-26T16:21:50Z"
+        },
+        {
+            "type": "review",
+            "description": "Independent admin UX/role review found no findings. The platform admin announcement form worked as a role-gated UI; ordinary users and workspace admins received 403 at /admin. No external mail was sent.",
+            "reference": "AdminRoleUX review; /admin/notifications/broadcast on disposable app http://localhost:8013",
+            "verifiedAt": "2026-10-26T16:06:14Z"
+        },
+        {
+            "type": "review",
+            "description": "Fresh PRD-alignment re-review passed ID-4, NOT-1/2, NOT-3, feature/progress states, and the SMTP blocker; final blocked_external status is evidence-backed.",
+            "reference": "PRDAlignment-2 final review; PRD.md, product/features/notifications.json, product/progress.json",
+            "verifiedAt": "2026-10-26T16:33:15Z"
+        },
+        {
+            "type": "review",
+            "description": "Non-security implementation review approved preference persistence and success-toast feedback; no actionable findings.",
+            "reference": "Phase7CodeReview; NotificationCenterController.php and NotificationCenterTest.php",
+            "verifiedAt": "2026-10-26T16:31:18Z"
+        }
+    ]
+}

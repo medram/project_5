@@ -1,0 +1,259 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "dashboard-shell",
+    "area": "Experience",
+    "name": "User and admin application shells",
+    "status": "verified",
+    "requirements": [
+        {
+            "id": "SHELL-1",
+            "text": "Regular-user routes render the user shell; platform-administration routes render a distinct admin shell and deny normal users. Admin navigation groups are Overview, Monetization, Users & access, Content, and System, but a group renders only when it has at least one live destination.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "SHELL-2",
+            "text": "Link lists expose URL-backed `search`, `folder`, `status`, `sort`, `direction`, `page`, and `view=table|cards`; folder lists expose `search`, `sort`, `direction`, `page`, and `view=table|cards`. Both paginate at 20, preserve validated query state through pagination, preserve filters/sorting/view across mutations, and reset `page` after mutations that can change result membership or ordering. Both expose responsive mobile cards and shared list controls and support confirmed bulk deletion of current-page selections. Bulk IDs are distinct, capped at 20, and validated against the active workspace; deleting a folder unassigns its links without deleting them.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "SHELL-3",
+            "text": "The user shell provides Primary and Resources navigation, workspace/role/plan-usage context, desktop search, collapsible sidebar, breadcrumbs and a title/action header, plus the five labelled Links, Bio, QR, Insights, and Account destinations in a keyboard-operable drawer and bottom bar at widths up to 1024px. Billing and Webhooks are reachable from authenticated settings navigation; Billing renders within SettingsLayout. Manage plan, workspace switching, and sidebar Settings navigation close the mobile drawer. Unimplemented workflows are not presented as live navigation.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "SHELL-4",
+            "text": "User global search returns safe names, slugs, types, and permitted hostnames for implemented resources in the active workspace: short links, folders, QR codes, bio pages, link pages, overlays, tracking pixels, custom domains, and webhooks. Custom-domain visibility matches workspace integration permissions. Never expose destination URLs, visitor dimensions, pixel identifiers, webhook endpoints/secrets, or domain-verification tokens. Platform metadata search requires `admin.search`.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "SHELL-5",
+            "text": "Authenticated feature routes use canonical dashboard and account-settings paths without private route aliases; workspace switching uses POST and redirects to `/dashboard/links`.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "SHELL-6",
+            "text": "Administrator global search filters accounts by name/email and personal-workspace plans by name/code, requires the `admin.search` ability, and returns only account metadata and plan names while excluding content, destination URLs, visitor dimensions, and integration secrets.",
+            "priority": "P1",
+            "status": "verified"
+        }
+    ],
+    "routes": [
+        "/dashboard",
+        "/search",
+        "/dashboard/links",
+        "/dashboard/links/{link}",
+        "/dashboard/links/{link}/insights",
+        "/dashboard/links/{link}/qr-code.svg",
+        "/dashboard/folders",
+        "/dashboard/folders/{folder}",
+        "/dashboard/qr-codes",
+        "/dashboard/biolinks",
+        "/dashboard/biolinks/{bioPage}",
+        "/dashboard/biolinks/{bioPage}/links",
+        "/dashboard/biolinks/{bioPage}/links/reorder",
+        "/dashboard/biolinks/{bioPage}/links/{bioLink}",
+        "/dashboard/insights",
+        "/dashboard/insights/events",
+        "/dashboard/insights/export",
+        "/dashboard/link-pages",
+        "/dashboard/link-pages/{linkPage}",
+        "/dashboard/link-pages/{linkPage}/items",
+        "/dashboard/link-pages/{linkPage}/items/reorder",
+        "/dashboard/link-pages/{linkPage}/items/{linkPageItem}",
+        "/dashboard/link-overlays",
+        "/dashboard/link-overlays/{linkOverlay}",
+        "/dashboard/pixels",
+        "/dashboard/pixels/{trackingPixel}",
+        "/dashboard/custom-domains",
+        "/dashboard/custom-domains/{customDomain}",
+        "/dashboard/custom-domains/{customDomain}/verify",
+        "/dashboard/custom-domains/{customDomain}/reissue",
+        "/account-settings/general",
+        "/account-settings/security",
+        "/account-settings/password",
+        "/account-settings/appearance",
+        "/account-settings/workspaces",
+        "/account-settings/billing",
+        "/account-settings/billing/plan",
+        "/account-settings/webhooks",
+        "/account-settings/webhooks/{webhook}",
+        "/account-settings/webhooks/{webhook}/rotate",
+        "/account-settings/webhooks/{webhook}/deliveries",
+        "/account-settings/api-keys",
+        "/notifications",
+        "/notifications/{notification}/read",
+        "/notifications/read-all",
+        "/workspaces",
+        "/workspaces/{workspace}/switch",
+        "/workspaces/{workspace}/invitations",
+        "/workspaces/{workspace}/invitations/{invitation}/resend",
+        "/workspaces/{workspace}/invitations/{invitation}",
+        "/workspaces/{workspace}/members/{member}",
+        "/workspaces/{workspace}/transfer",
+        "/invitations/{token}",
+        "/invitations/{token}/accept",
+        "/admin",
+        "/admin/users/{user}/suspension",
+        "/admin/users/{user}/administrator",
+        "/admin/users/{user}/plan"
+    ],
+    "dependencies": ["auth-account", "workspaces", "billing"],
+    "externalPrerequisites": [],
+    "acceptanceCriteria": [
+        {
+            "id": "SHELL-AC-1",
+            "text": "Admin pages cannot render the regular-user workspace shell, and regular users cannot enter the admin shell."
+        },
+        {
+            "id": "SHELL-AC-2",
+            "text": "At widths <=1024px, the user shell has exactly five primary destinations (Links, Bio, QR, Insights, Account), workspace/role context, a keyboard-operable drawer, no horizontal overflow, and visible touch targets of at least 44px."
+        },
+        {
+            "id": "SHELL-AC-3",
+            "text": "Link and folder lists preserve validated filters, sorting, and view across reload, history, and pagination; result-changing mutations preserve those fields but reset `page` so the user returns to the first page. Both page sizes are 20."
+        },
+        {
+            "id": "SHELL-AC-4",
+            "text": "Workspace switching uses POST `/workspaces/{workspace}/switch` and redirects to `/dashboard/links`."
+        },
+        {
+            "id": "SHELL-AC-5",
+            "text": "User global search is limited to the active workspace and permitted resource metadata; custom-domain visibility respects integration permissions. Platform metadata search requires `admin.search`. Neither role's search exposes destination URLs, visitor dimensions, pixel identifiers, webhook endpoints/secrets, or domain-verification tokens."
+        },
+        {
+            "id": "SHELL-AC-6",
+            "text": "Search opens by Ctrl/Cmd+K, moves among results by keyboard, closes with Escape, and restores focus; the mobile drawer traps keyboard focus and restores focus to its trigger when closed."
+        },
+        {
+            "id": "SHELL-AC-7",
+            "text": "Search uses literal LIKE matching; canonical authenticated paths work and removed private route aliases return 404."
+        },
+        {
+            "id": "SHELL-AC-8",
+            "text": "Desktop user navigation groups implemented destinations under Primary and Resources, exposes workspace/role/plan-usage context, and provides search, a collapsible sidebar, breadcrumbs, and a page title/action row. Admin navigation renders only specified groups with live destinations; empty groups are omitted."
+        },
+        {
+            "id": "SHELL-AC-9",
+            "text": "Link and folder bulk deletion requires explicit confirmation, affects only distinct selected records on the current page (at most 20), rejects empty, duplicate, over-limit, and cross-workspace IDs, preserves validated filters/sort/view, and resets the page after deletion. Deleting a folder leaves its links in the workspace and clears their folder assignment."
+        },
+        {
+            "id": "SHELL-AC-10",
+            "text": "Authenticated page shells expose one main landmark and a keyboard-visible skip link targeting it. Exact active user, admin, and settings destinations expose aria-current=\"page\"; active parent and hash destinations expose aria-current=\"location\". Selecting a mobile drawer destination closes the drawer; mobile breadcrumbs expose a legible current item without horizontal overflow."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/dashboard",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:00Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/links-list-desktop.png",
+            "observedBehaviors": [
+                "Short links are shown in a dense resource list with per-row actions and metrics.",
+                "The desktop shell includes a left resource navigation and top search."
+            ]
+        },
+        {
+            "route": "/dashboard",
+            "role": "user",
+            "viewport": "390x844",
+            "capturedAt": "2026-10-20T17:11:06Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/mobile-bottom-nav.png",
+            "observedBehaviors": [
+                "The resource list is presented without desktop sidebar navigation.",
+                "A fixed bottom navigation exposes five labelled destinations."
+            ]
+        },
+        {
+            "route": "/admin/settings",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:02Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/settings-index-desktop.png",
+            "observedBehaviors": [
+                "The settings index presents categories in a secondary navigation.",
+                "The screenshot is BeLink source-reference evidence; LinkPilot's current administration entry point is `/admin`. The separate planned LinkPilot settings route is specified by `product/features/admin-settings.json` and has no live behavior yet.",
+                "The administration sidebar remains distinct from user resource navigation."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "The full isolated Laravel suite passed (271 tests, 11,961 assertions), covering canonical routes, workspace boundaries, migration chronology, list state and bulk-delete validation, permission-aware safe search, analytics attribution, and partial consent configuration.",
+            "reference": "docker exec -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= linkpilot-parity-smoke php artisan test",
+            "verifiedAt": "2026-10-22T15:43:16Z"
+        },
+        {
+            "type": "command",
+            "description": "TypeScript check, Vite+ formatting/lint checks for 24 changed frontend files, Laravel Pint check for the consent test, and production build passed.",
+            "reference": "npm run types:check; Vite+ check (24 changed frontend files); vendor/bin/pint --test tests/Feature/Analytics/TrackingConsentTest.php; npm run build",
+            "verifiedAt": "2026-10-22T15:43:16Z"
+        },
+        {
+            "type": "test",
+            "description": "Focused link and folder management suites passed: 38 tests, 362 assertions. Deleting the only result on the last page redirects without a stale page number; update and bulk mutations preserve other validated list state.",
+            "reference": "docker exec -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= linkpilot-parity-smoke php artisan test tests/Feature/Links/LinkManagementTest.php tests/Feature/Folders/FolderManagementTest.php",
+            "verifiedAt": "2026-10-22T17:41:53Z"
+        },
+        {
+            "type": "browser",
+            "description": "Initial Phase 4 browser review: user shell had no horizontal overflow at 375, 390, 768, 1024, 1025, or 1440px; widths through 1024 showed exactly five 56px primary targets. On /dashboard/links/23/insights the Short links parent was then aria-current=page; the final semantic correction is verified below. Admin navigation omitted the empty System group and had no overflow at 390 or 1440px; account records rendered as labelled mobile cards. Its grouped navigation links target the live Account controls, Plan assignments, Accounts, and Short-link totals anchors; the browser verified plan/content hashes and scroll positions. Confirmation dialogs named the target and action for suspend/restore, administrator grant/revoke, and personal-workspace plan changes; cancel was exercised, and confirmed status, role, and plan transitions updated the test account. An ordinary user received 403 from /admin. User search, list query state, and bulk-delete cancellation remain covered by the earlier recorded browser pass.",
+            "reference": "Disposable review app http://localhost:8101; product/verification/phase4-user-shell-desktop.png, product/verification/phase4-user-shell-mobile.png, product/verification/phase4-admin-shell-desktop.png, product/verification/phase4-admin-shell-mobile.png; routes /dashboard/links, /search, and /admin.",
+            "verifiedAt": "2026-10-22T17:41:53Z"
+        },
+        {
+            "type": "browser",
+            "description": "Earlier browser smoke at 390x844, before the final aria-current correction: /dashboard/links/23/insights rendered one main landmark, a single legible current breadcrumb, no horizontal overflow, and the active Links item; the nested Short links parent and admin Accounts hash destination then reported aria-current=page. The final verification below checks parent/hash state as location. The keyboard-visible skip link focused #main-content. At /account-settings/webhooks, Account and Webhooks were active in their respective navigation, the Webhooks link was available in Settings, and the page retained one main landmark with no overflow. Selecting an admin Accounts destination closed the mobile drawer; no System group rendered.",
+            "reference": "Disposable review app http://localhost:8101; product/verification/phase4-user-shell-mobile.png; routes /dashboard/links/23/insights, /account-settings/webhooks, and /admin#accounts.",
+            "verifiedAt": "2026-10-22T18:05:08Z"
+        },
+        {
+            "type": "browser",
+            "description": "Final post-fix browser smoke at 390x844 and 1440x1000: /account-settings/billing shows Billing aria-current=page and mobile Account aria-current=location, one main landmark, and no overflow. The nested /dashboard/links/23/insights route marks desktop Short links and mobile Links aria-current=location. /admin marks Account controls page and the Accounts hash destination location. On mobile, Manage plan, switching the current workspace, and sidebar Settings navigation close the drawer. Confirmed suspension/restore, administrator grant/revoke, and Pro assignment/restore each preserved the filtered q through redirects; the disposable account was removed.",
+            "reference": "Disposable review app http://localhost:8101; product/verification/phase4-billing-settings-mobile.png; routes /account-settings/billing, /dashboard/links/23/insights, /admin, and /admin#accounts.",
+            "verifiedAt": "2026-10-22T18:33:56Z"
+        },
+        {
+            "type": "test",
+            "description": "Final isolated Laravel suite passed (278 tests, 12,216 assertions), including regression coverage for the suspension, administrator-role, and plan mutation redirects preserving sanitized q.",
+            "reference": "docker exec -w /var/www -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: -e DB_URL= linkpilot-parity-smoke php artisan test",
+            "verifiedAt": "2026-10-22T18:33:56Z"
+        },
+        {
+            "type": "command",
+            "description": "TypeScript check, targeted Vite+ check for all 10 changed frontend files, Pint check for the changed controller and feature test, and production build passed.",
+            "reference": "npm run types:check; ./node_modules/.bin/vp check resources/js/app.tsx resources/js/layouts/settings/layout.tsx resources/js/components/app-sidebar.tsx resources/js/components/workspaces/workspace-switcher.tsx resources/js/components/user-menu-content.tsx resources/js/components/nav-user.tsx resources/js/components/nav-main.tsx resources/js/components/mobile-primary-nav.tsx resources/js/components/admin/admin-sidebar.tsx resources/js/pages/admin/index.tsx; docker exec -w /var/www linkpilot-parity-smoke vendor/bin/pint --test app/Http/Controllers/Admin/AdminUserController.php tests/Feature/Admin/AdministrationTest.php; docker exec -w /var/www linkpilot-parity-smoke npm run build",
+            "verifiedAt": "2026-10-22T18:33:56Z"
+        },
+        {
+            "type": "browser",
+            "description": "Final billing layout review at 1440x1000 measured an 856px plans grid with three 275px cards and a 40px right gutter; at 390x844, plan cards stack in a 326px column without horizontal overflow. At maximum mobile scroll, the final card remains above the fixed navigation with 72px bottom clearance. Non-billing Settings content retains its 576px cap.",
+            "reference": "Disposable review app http://localhost:8101; product/verification/phase4-billing-settings-desktop.png and product/verification/phase4-billing-plans-mobile.png; /account-settings/billing and /account-settings/general.",
+            "verifiedAt": "2026-10-22T18:48:30Z"
+        },
+        {
+            "type": "command",
+            "description": "TypeScript check, targeted Vite+ format/lint for SettingsLayout and the Billing page, and the isolated production build passed.",
+            "reference": "docker exec -w /var/www linkpilot-parity-smoke npm run types:check; docker exec -w /var/www linkpilot-parity-smoke ./node_modules/.bin/vp check resources/js/layouts/settings/layout.tsx resources/js/pages/billing/index.tsx; docker exec -w /var/www linkpilot-parity-smoke npm run build",
+            "verifiedAt": "2026-10-22T18:48:30Z"
+        },
+        {
+            "type": "review",
+            "description": "Independent final code and user-UX reviews of the Billing layout passed with no actionable findings; the unaffected independent admin-UX review also passed.",
+            "reference": "BillingLayoutCodeReview; BillingLayoutUXReview; Phase4AdminUXFinal.",
+            "verifiedAt": "2026-10-22T18:48:30Z"
+        },
+        {
+            "type": "review",
+            "description": "Final PRD-alignment review confirmed all six SHELL requirements and the current implementation, migration, automated, browser, and independent-review evidence; Phase 4 may be marked verified.",
+            "reference": "Phase4PRDFinalStatus; PRD.md §3 and §7.16; product/features/dashboard-shell.json; product/progress.json.",
+            "verifiedAt": "2026-10-22T18:53:36Z"
+        }
+    ]
+}

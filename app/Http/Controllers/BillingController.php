@@ -4,19 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SelectFreePlanRequest;
 use App\Models\Plan;
-use App\Services\Billing\AccountUsage;
+use App\Services\Billing\WorkspaceUsage;
+use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class BillingController extends Controller
 {
-    public function __construct(private readonly AccountUsage $usage) {}
+    public function __construct(private readonly WorkspaceUsage $usage) {}
 
-    public function index(Request $request): Response
+    public function index(Request $request, WorkspaceContext $context): Response
     {
-        $subscription = $this->usage->subscriptionFor($request->user());
+        $workspace = $context->currentFor($request->user());
+        Gate::authorize('viewBilling', $workspace);
+        $subscription = $this->usage->subscriptionFor($workspace)->load('plan');
 
         return Inertia::render('billing/index', [
             'subscription' => [
@@ -31,20 +35,17 @@ class BillingController extends Controller
                 ->map(fn (Plan $plan): array => $this->planData($plan))
                 ->values()
                 ->all(),
-            'usage' => $this->usage->for($request->user()),
+            'canManageBilling' => Gate::allows('manageBilling', $workspace),
+            'usage' => $this->usage->for($workspace),
         ]);
     }
 
-    public function selectFree(SelectFreePlanRequest $request): RedirectResponse
+    public function selectFree(SelectFreePlanRequest $request, WorkspaceContext $context): RedirectResponse
     {
+        $workspace = $context->currentFor($request->user());
+        Gate::authorize('manageBilling', $workspace);
         $freePlan = Plan::query()->where('code', $request->validated('plan'))->sole();
-        $subscription = $this->usage->subscriptionFor($request->user());
-
-        $subscription->update([
-            'plan_id' => $freePlan->id,
-            'status' => 'active',
-            'source' => 'manual',
-        ]);
+        $this->usage->assignPlan($workspace, $freePlan);
 
         return to_route('billing.index');
     }

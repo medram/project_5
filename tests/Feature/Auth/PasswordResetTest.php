@@ -38,6 +38,40 @@ class PasswordResetTest extends TestCase
         Notification::assertSentTo($user, ResetPassword::class);
     }
 
+    public function test_reset_password_notification_uses_the_canonical_application_url(): void
+    {
+        Notification::fake();
+        config([
+            'app.url' => 'https://app.linkpilot.test',
+            'linkpilot.default_hosts' => ['alias.linkpilot.test'],
+        ]);
+        $user = User::factory()->create();
+
+        $url = app('url');
+        $url->forceRootUrl('https://alias.linkpilot.test');
+
+        try {
+            $this->post('/forgot-password', ['email' => $user->email]);
+        } finally {
+            $url->forceRootUrl((string) config('app.url'));
+        }
+
+        Notification::assertSentTo(
+            $user,
+            ResetPassword::class,
+            function (ResetPassword $notification) use ($user): bool {
+                $expected = 'https://app.linkpilot.test/reset-password/'
+                    .$notification->token
+                    .'?email='
+                    .rawurlencode($user->email);
+
+                $this->assertSame($expected, $notification->toMail($user)->actionUrl);
+
+                return true;
+            },
+        );
+    }
+
     public function test_reset_password_screen_can_be_rendered()
     {
         Notification::fake();

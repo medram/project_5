@@ -1,0 +1,177 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "link-pages",
+    "area": "Publishing",
+    "name": "Link pages and campaigns",
+    "status": "blocked_external",
+    "requirements": [
+        {
+            "id": "PAG-1",
+            "text": "An account owner can create, update, and delete a link page with unique slug, content, and publish state.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PAG-2",
+            "text": "A page has ordered active outbound items with validated HTTP(S) destinations.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PAG-3",
+            "text": "/pages/{slug} returns 404 when unpublished or unknown.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PAG-4",
+            "text": "Page-view and item-click events require consent and never store raw IP data.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PAG-5",
+            "text": "A page attaches zero to five reusable active account-owned pixels.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PAG-6",
+            "text": "Template selection uses defined supported templates, preview semantics, and migration behavior.",
+            "priority": "P3",
+            "status": "verified"
+        },
+        {
+            "id": "PAG-7",
+            "text": "Custom CSS remains excluded unless a safe isolation and CSP design is approved.",
+            "priority": "P3",
+            "status": "catalogued"
+        },
+        {
+            "id": "PAG-8",
+            "text": "Forms and lead capture require approved field schema, consent, retention, and access rules.",
+            "priority": "P3",
+            "status": "verified"
+        },
+        {
+            "id": "PAG-9",
+            "text": "Workspace-owned images and PDFs are delivered only from unexpired, eligible blocks on published pages; PDFs require a clean malware scan and attachment-only delivery.",
+            "priority": "P3",
+            "status": "in_progress"
+        },
+        {
+            "id": "PAG-10",
+            "text": "A/B experiments require deterministic assignment, reporting, and consent rules.",
+            "priority": "P3",
+            "status": "verified"
+        },
+        {
+            "id": "PAG-11",
+            "text": "Link pages use validated button, text, image, form, and file blocks with standard, profile, and campaign templates.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PAG-12",
+            "text": "Lead values are encrypted, owner/admin-only, consent-backed, exportable, and permanently purged after 30 days.",
+            "priority": "P1",
+            "status": "verified"
+        },
+        {
+            "id": "PAG-13",
+            "text": "Weighted variants use one control and an opaque 30-day functional assignment cookie.",
+            "priority": "P2",
+            "status": "verified"
+        }
+    ],
+    "routes": [
+        "/dashboard/link-pages",
+        "/dashboard/link-pages/{linkPage}",
+        "/dashboard/link-pages/{linkPage}/leads",
+        "/dashboard/link-pages/{linkPage}/leads/export",
+        "/pages/{slug}",
+        "/pages/{slug}/items/{linkPageItem}",
+        "/pages/{slug}/blocks/{linkPageBlock}/leads",
+        "/dashboard/link-pages/{linkPage}/blocks/{linkPageBlock}/image",
+        "/content-media/{publicId}"
+    ],
+    "dependencies": ["analytics", "tracking-pixels", "workspaces"],
+    "externalPrerequisites": [
+        "Configured durable private media storage through LINKPILOT_MEDIA_DISK",
+        "Real ClamAV executable configured through CLAMSCAN_PATH for PDF scanning",
+        "Published privacy-policy URL configured through PUBLIC_PRIVACY_URL before production lead capture"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "PAG-AC-1",
+            "text": "Unpublished pages and unavailable blocks do not render or redirect."
+        },
+        {
+            "id": "PAG-AC-2",
+            "text": "Every outbound URL passes the first-party destination guard."
+        },
+        {
+            "id": "PAG-AC-3",
+            "text": "Lead submission requires explicit consent and values expire after 30 days."
+        },
+        {
+            "id": "PAG-AC-4",
+            "text": "Media URLs return 404 unless attached to an unexpired, active, in-window block on a published page; deactivation, schedule expiry, deletion, page unpublishing, or media expiry revokes delivery immediately. PDFs require a clean scan and are attachment-only."
+        },
+        {
+            "id": "PAG-AC-5",
+            "text": "Uploads cannot select a client-supplied media ID, disk, or path; media is workspace-owned, and foreign or unpublished assets return 404."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/dashboard/link-pages",
+            "role": "user",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:06:39Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/link-pages-desktop.png",
+            "observedBehaviors": [
+                "Link pages are listed as resource rows with status and action controls.",
+                "A create action and list toolbar are visible."
+            ]
+        }
+    ],
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Link-page item destinations accept only HTTP(S) and reject default aliases plus claimed custom hosts in pending_dns, active, and failed states.",
+            "reference": "tests/Feature/LinkPages/LinkPageTest.php; tests/Feature/Links/LinkManagementTest.php; php artisan test (168 tests, 10,347 assertions)",
+            "verifiedAt": "2026-10-21T14:57:29Z"
+        },
+        {
+            "type": "browser",
+            "description": "A zero-page quota account retained the create dialog and rendered its form-level plan limit.",
+            "reference": "http://localhost:8000/link-pages",
+            "verifiedAt": "2026-10-21T09:44:31Z"
+        },
+        {
+            "type": "test",
+            "description": "Task 6 focused media/block tests passed 11 tests and 176 assertions; the full Laravel suite passed 407 tests and 14,519 assertions. One real-ClamAV PDF delivery test was skipped. Coverage includes guarded inline images, unreadable-stream 404, media lifecycle revocation, foreign-media isolation, client-ID rejection, and fail-closed scanner behavior.",
+            "reference": "tests/Feature/Content/LinkPageMediaDeliveryTest.php; tests/Feature/LinkPages/LinkPageBlocksTest.php; tests/Feature/Content/ContentMediaStorageTest.php; php artisan test",
+            "verifiedAt": "2026-10-24T03:25:06Z"
+        },
+        {
+            "type": "browser",
+            "description": "At 390x844, a PNG rejected by the media service displayed its security-check error and aria-invalid state. The PDF upload surface was present; without real ClamAV, PDF upload failed closed. The public image delivered inline and the page had no horizontal overflow.",
+            "reference": "http://localhost:8108/dashboard/link-pages/1; http://localhost:8108/pages/phase6-rich-page-smoke",
+            "verifiedAt": "2026-10-24T03:25:06Z"
+        },
+        {
+            "type": "test",
+            "description": "The isolated Laravel suite passed 428 tests and 15,151 assertions; one successful PDF-delivery test was skipped because ClamAV is unavailable. Phase 6 migration probes preserved representative legacy content/events and passed SQLite integrity and foreign-key checks.",
+            "reference": "tests/Feature/LinkPages/LinkPageBlocksTest.php; tests/Feature/LinkPages/LinkPageLeadTest.php; tests/Feature/LinkPages/LinkPageVariantsTest.php; tests/Feature/Content/LinkPageMediaDeliveryTest.php; tests/Feature/Content/Phase6MigrationTest.php; php artisan test",
+            "verifiedAt": "2026-10-24T06:00:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "At 390px, the editor showed templates, mixed blocks, lead forms, and variants without horizontal overflow; PDF upload failed closed without ClamAV. Workspace admins opened leads at 390px and 1440px; a nonmember platform admin received 404 for leads and private image preview.",
+            "reference": "http://localhost:8108/dashboard/link-pages/1; /dashboard/link-pages/1/leads; /dashboard/link-pages/1/blocks/3/image",
+            "verifiedAt": "2026-10-24T05:40:47Z"
+        }
+    ]
+}

@@ -9,16 +9,16 @@ class CustomDomainPolicy
 {
     public function view(User $user, CustomDomain $customDomain): bool
     {
-        return $user->is($customDomain->user);
+        return app(WorkspacePolicy::class)->manageIntegrations($user, $customDomain->workspace);
     }
 
     public function update(User $user, CustomDomain $customDomain): bool
     {
-        return $user->is($customDomain->user);
+        return app(WorkspacePolicy::class)->manageIntegrations($user, $customDomain->workspace);
     }
 
     public function delete(User $user, CustomDomain $customDomain): bool
     {
-        return $user->is($customDomain->user);
+        return $this->update($user, $customDomain);
     }
 }

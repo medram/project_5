@@ -4,26 +4,33 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreLinkPageRequest;
 use App\Models\LinkPage;
-use App\Models\TrackingPixel;
-use App\Models\User;
+use App\Models\Workspace;
 use App\Services\Billing\EnforcesPlanLimits;
+use App\Services\Content\ContentMediaStorage;
+use App\Services\LinkPages\LinkPagePresentation;
+use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class LinkPageController extends Controller
 {
-    public function __construct(private readonly EnforcesPlanLimits $planLimits) {}
+    public function __construct(
+        private readonly EnforcesPlanLimits $planLimits,
+        private readonly WorkspaceContext $workspaces,
+        private readonly LinkPagePresentation $presentation,
+        private readonly ContentMediaStorage $media,
+    ) {}
 
     public function index(Request $request): Response
     {
+        $workspace = $this->workspaces->currentFor($request->user());
+
         return Inertia::render('link-pages/index', [
-            'linkPages' => $request->user()->linkPages()
-                ->with(['trackingPixels:id'])
+            'linkPages' => $workspace->linkPages()
                 ->withCount('items')
                 ->latest()
                 ->get()
@@ -35,15 +42,22 @@ class LinkPageController extends Controller
 
     public function store(StoreLinkPageRequest $request): RedirectResponse
     {
-        $attributes = $this->pageAttributes($request);
-        $pixelIds = $this->pixelIds($request);
-
+        $workspace = $this->workspaces->currentFor($request->user());
+        $attributes = $request->validated();
         $linkPage = $this->planLimits->create(
-            $request->user(),
+            $workspace,
             'link_pages',
-            function (User $user) use ($attributes, $pixelIds): LinkPage {
-                $linkPage = $user->linkPages()->create($attributes);
-                $this->syncTrackingPixels($linkPage, $user, $pixelIds);
+            function (Workspace $workspace) use ($attributes, $request): LinkPage {
+                $linkPage = $workspace->linkPages()->create([
+                    ...$attributes,
+                    'user_id' => $request->user()->id,
+                ]);
+                $linkPage->variants()->create([
+                    'name' => 'Control',
+                    'weight' => 100,
+                    'is_control' => true,
+                    'is_active' => true,
+                ]);
 
                 return $linkPage;
             },
@@ -52,131 +66,73 @@ class LinkPageController extends Controller
         return to_route('link-pages.show', $linkPage);
     }
 
-    public function show(LinkPage $linkPage): Response
+    public function show(Request $request, LinkPage $linkPage): Response
     {
+        $this->ensureInCurrentWorkspace($request, $linkPage);
         Gate::authorize('view', $linkPage);
+        $controlVariant = $linkPage->controlVariant()->where('is_active', true)->firstOrFail();
+        $requestedVariantId = filter_var($request->query('variant'), FILTER_VALIDATE_INT);
+        $selectedVariant = is_int($requestedVariantId) && $requestedVariantId > 0
+            ? $linkPage->variants()->whereKey($requestedVariantId)->first()
+            : null;
+        $selectedVariant ??= $controlVariant;
+        $variants = $linkPage->variants()->orderByDesc('is_control')->orderBy('id')->get();
+        $items = $this->presentation->make($linkPage, editor: true, variant: $selectedVariant);
 
-        $linkPage->load([
-            'trackingPixels' => fn ($query) => $query->orderBy('tracking_pixels.name'),
-        ]);
+        $canViewLeads = $request->user()->can('viewLeads', $linkPage);
 
         return Inertia::render('link-pages/edit', [
             'linkPage' => $this->pageData($linkPage),
-            'items' => $linkPage->items()
-                ->get()
-                ->map(fn ($item): array => [
-                    'id' => $item->id,
-                    'title' => $item->title,
-                    'destinationUrl' => $item->destination_url,
-                    'position' => $item->position,
-                    'isActive' => $item->is_active,
-                ])
-                ->values()
-                ->all(),
-            'availablePixels' => $linkPage->user->trackingPixels()
-                ->orderBy('name')
-                ->get()
-                ->map(fn (TrackingPixel $pixel): array => $this->pixelData($pixel))
-                ->values()
-                ->all(),
+            'variants' => $variants->map(fn ($variant): array => [
+                'id' => $variant->id,
+                'name' => $variant->name,
+                'weight' => $variant->weight,
+                'isControl' => $variant->is_control,
+                'isActive' => $variant->is_active,
+            ])->values()->all(),
+            'selectedVariantId' => $selectedVariant->id,
+            'insightsUrl' => route('link-pages.insights', $linkPage),
+            'items' => $items,
+            'previewItems' => array_values(array_filter(
+                $items,
+                fn (array $item): bool => ($item['isPreviewVisible'] ?? false) === true,
+            )),
+            'canViewLeads' => $canViewLeads,
+            'leadsUrl' => $canViewLeads ? route('link-pages.leads.index', $linkPage) : null,
+            'privacyUrl' => config('services.linkpilot.analytics.privacy_url'),
         ]);
     }
 
-    public function update(
-        StoreLinkPageRequest $request,
-        LinkPage $linkPage,
-    ): RedirectResponse {
+    public function update(StoreLinkPageRequest $request, LinkPage $linkPage): RedirectResponse
+    {
+        $this->ensureInCurrentWorkspace($request, $linkPage);
         Gate::authorize('update', $linkPage);
+        $linkPage->update($request->validated());
 
-        $attributes = $this->pageAttributes($request);
-        $pixelIds = $this->pixelIds($request);
-
-        DB::transaction(function () use ($attributes, $linkPage, $pixelIds, $request): void {
-            $linkPage->update($attributes);
-            $this->syncTrackingPixels($linkPage, $request->user(), $pixelIds);
-        });
-
-        return to_route('link-pages.show', $linkPage);
+        return to_route('link-pages.show', [
+            'linkPage' => $linkPage,
+            'variant' => $request->query('variant'),
+        ]);
     }
 
-    public function destroy(LinkPage $linkPage): RedirectResponse
+    public function destroy(Request $request, LinkPage $linkPage): RedirectResponse
     {
+        $this->ensureInCurrentWorkspace($request, $linkPage);
         Gate::authorize('delete', $linkPage);
-
-        $linkPage->delete();
+        DB::transaction(function () use ($linkPage): void {
+            foreach ($linkPage->blocks()->with('contentMedia')->get() as $block) {
+                if ($block->contentMedia) {
+                    $this->media->delete($block->contentMedia);
+                }
+            }
+            $linkPage->delete();
+        });
 
         return to_route('link-pages.index');
     }
 
-    /**
-     * @return array{name: string, slug: string, title: string, description: string|null, is_published: bool}
-     */
-    private function pageAttributes(StoreLinkPageRequest $request): array
-    {
-        $attributes = $request->validated();
-        unset($attributes['tracking_pixel_ids']);
 
-        return $attributes;
-    }
-
-    /**
-     * @return array<int, int>
-     */
-    private function pixelIds(StoreLinkPageRequest $request): array
-    {
-        $pixelIds = $request->validated('tracking_pixel_ids', []);
-
-        return is_array($pixelIds) ? array_map('intval', $pixelIds) : [];
-    }
-
-    /**
-     * @param  array<int, int>  $pixelIds
-     */
-    private function syncTrackingPixels(LinkPage $linkPage, User $user, array $pixelIds): void
-    {
-        if (count($pixelIds) > 5 || count($pixelIds) !== count(array_unique($pixelIds))) {
-            throw ValidationException::withMessages([
-                'tracking_pixel_ids' => 'A link page can use up to five distinct active pixels.',
-            ]);
-        }
-
-        $availablePixelIds = $user->trackingPixels()
-            ->where('is_active', true)
-            ->whereKey($pixelIds)
-            ->pluck('id')
-            ->map(fn (mixed $id): int => (int) $id)
-            ->all();
-        $providedPixelIds = $pixelIds;
-
-        sort($availablePixelIds);
-        sort($providedPixelIds);
-
-        if ($availablePixelIds !== $providedPixelIds) {
-            throw ValidationException::withMessages([
-                'tracking_pixel_ids' => 'Select only active pixels owned by this account.',
-            ]);
-        }
-
-        $linkPage->trackingPixels()->sync($pixelIds);
-    }
-
-    /**
-     * @return array{id: int, name: string, provider: string, providerId: string, isActive: bool}
-     */
-    private function pixelData(TrackingPixel $pixel): array
-    {
-        return [
-            'id' => $pixel->id,
-            'name' => $pixel->name,
-            'provider' => $pixel->provider,
-            'providerId' => $pixel->provider_id,
-            'isActive' => $pixel->is_active,
-        ];
-    }
-
-    /**
-     * @return array{id: int, name: string, slug: string, title: string, description: string|null, isPublished: bool, itemsCount: int, trackingPixelIds: array<int, int>, publicUrl: string}
-     */
+    /** @return array<string, mixed> */
     private function pageData(LinkPage $linkPage): array
     {
         return [
@@ -185,14 +141,16 @@ class LinkPageController extends Controller
             'slug' => $linkPage->slug,
             'title' => $linkPage->title,
             'description' => $linkPage->description,
+            'template' => $linkPage->template,
             'isPublished' => $linkPage->is_published,
             'itemsCount' => $linkPage->items_count ?? 0,
-            'trackingPixelIds' => $linkPage->trackingPixels
-                ->pluck('id')
-                ->map(fn (mixed $id): int => (int) $id)
-                ->values()
-                ->all(),
             'publicUrl' => url("/pages/{$linkPage->slug}"),
         ];
+    }
+
+    private function ensureInCurrentWorkspace(Request $request, LinkPage $linkPage): void
+    {
+        $workspace = $this->workspaces->currentFor($request->user());
+        abort_unless((int) $linkPage->workspace_id === (int) $workspace->id, 404);
     }
 }

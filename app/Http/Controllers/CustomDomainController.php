@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCustomDomainRequest;
 use App\Models\CustomDomain;
+use App\Models\Workspace;
 use App\Services\Billing\EnforcesPlanLimits;
+use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -14,40 +16,62 @@ use Inertia\Response;
 
 class CustomDomainController extends Controller
 {
-    public function __construct(private readonly EnforcesPlanLimits $planLimits) {}
+    public function __construct(
+        private readonly EnforcesPlanLimits $planLimits,
+        private readonly WorkspaceContext $workspaceContext,
+    ) {}
 
     public function index(Request $request): Response
     {
-        $domains = $request->user()->customDomains()
+        $workspace = $this->workspaceContext->currentFor($request->user());
+
+        $canManageIntegrations = Gate::allows('manageIntegrations', $workspace);
+        $domains = $workspace->customDomains()
+            ->when(! $canManageIntegrations, fn ($query) => $query->where('status', 'active'))
             ->withCount('links')
             ->latest()
             ->get()
-            ->map(fn (CustomDomain $domain): array => [
-                'id' => $domain->id,
-                'hostname' => $domain->hostname,
-                'status' => $domain->status,
-                'verificationToken' => $domain->verification_token,
-                'txtHost' => "_linkpilot-verify.{$domain->hostname}",
-                'txtValue' => "linkpilot={$domain->verification_token}",
-                'challengeUrl' => "https://{$domain->hostname}/.well-known/linkpilot-domain/{$domain->verification_token}",
-                'verifiedAt' => $domain->verified_at?->toISOString(),
-                'lastCheckedAt' => $domain->last_checked_at?->toISOString(),
-                'failureReason' => $domain->failure_reason,
-                'linksCount' => $domain->links_count,
-            ])
+            ->map(function (CustomDomain $domain) use ($canManageIntegrations): array {
+                $data = [
+                    'id' => $domain->id,
+                    'hostname' => $domain->hostname,
+                    'status' => $domain->status,
+                    'verifiedAt' => $domain->verified_at?->toISOString(),
+                    'lastCheckedAt' => $domain->last_checked_at?->toISOString(),
+                    'linksCount' => $domain->links_count,
+                ];
+
+                if (! $canManageIntegrations) {
+                    return $data;
+                }
+
+                return [
+                    ...$data,
+                    'verificationToken' => $domain->verification_token,
+                    'txtHost' => "_linkpilot-verify.{$domain->hostname}",
+                    'txtValue' => "linkpilot={$domain->verification_token}",
+                    'challengeUrl' => "https://{$domain->hostname}/.well-known/linkpilot-domain/{$domain->verification_token}",
+                    'failureReason' => $domain->failure_reason,
+                ];
+            })
             ->all();
 
         return Inertia::render('custom-domains/index', [
             'domains' => $domains,
+            'canManageIntegrations' => $canManageIntegrations,
         ]);
     }
 
     public function store(StoreCustomDomainRequest $request): RedirectResponse
     {
+        $workspace = $this->workspaceContext->currentFor($request->user());
+        Gate::authorize('manageIntegrations', $workspace);
+
         $this->planLimits->create(
-            $request->user(),
+            $workspace,
             'domains',
-            fn ($user): CustomDomain => $user->customDomains()->create([
+            fn (Workspace $workspace): CustomDomain => $workspace->customDomains()->create([
+                'user_id' => $request->user()->id,
                 'hostname' => $request->validated('hostname'),
                 'verification_token' => CustomDomain::generateVerificationToken(),
                 'status' => 'pending_dns',
@@ -59,6 +83,8 @@ class CustomDomainController extends Controller
 
     public function destroy(Request $request, CustomDomain $customDomain): RedirectResponse
     {
+        $workspace = $this->workspaceContext->currentFor($request->user());
+        abort_unless((int) $customDomain->workspace_id === (int) $workspace->getKey(), 404);
         Gate::authorize('delete', $customDomain);
 
         $request->validate([

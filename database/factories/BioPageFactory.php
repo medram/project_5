@@ -4,11 +4,10 @@ namespace Database\Factories;
 
 use App\Models\BioPage;
 use App\Models\User;
+use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<BioPage>
- */
+/** @extends Factory<BioPage> */
 class BioPageFactory extends Factory
 {
     public function definition(): array
@@ -20,5 +19,12 @@ class BioPageFactory extends Factory
             'bio' => fake()->optional()->sentence(),
             'is_published' => false,
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterMaking(function (BioPage $page): void {
+            $page->workspace_id ??= app(WorkspaceContext::class)->currentFor($page->user)->id;
+        });
     }
 }

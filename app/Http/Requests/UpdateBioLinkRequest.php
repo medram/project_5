@@ -9,6 +9,12 @@ class UpdateBioLinkRequest extends BioLinkRequest
      */
     public function rules(): array
     {
-        return $this->bioLinkRules();
+        $rules = $this->bioLinkRules();
+
+        foreach (['title', 'destination_url', 'is_active'] as $field) {
+            array_unshift($rules[$field], 'sometimes');
+        }
+
+        return $rules;
     }
 }

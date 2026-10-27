@@ -1,0 +1,106 @@
+{
+    "schemaVersion": "1.0.0",
+    "id": "admin-files-pages-localization-logs",
+    "area": "Administration",
+    "name": "Files, custom pages, localization, and system logs",
+    "status": "planned",
+    "requirements": [
+        {
+            "id": "AOPS-1",
+            "text": "Media files retain workspace/uploader ownership, opaque storage names, MIME/size/hash metadata, visibility, scan state, and soft deletion.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "AOPS-2",
+            "text": "Safe custom pages use reserved-aware slugs, sanitized rich text, draft/published state, navigation placement, and SEO metadata.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "AOPS-3",
+            "text": "Database locales and JSON translations support fallback English, direction, publication, and import/export without executable language files.",
+            "priority": "P1",
+            "status": "planned"
+        },
+        {
+            "id": "AOPS-4",
+            "text": "System logs contain application-owned queue, scheduler, and mail lifecycle records with filters, retention, and CSV export.",
+            "priority": "P1",
+            "status": "planned"
+        }
+    ],
+    "routes": [
+        "/admin/files",
+        "/admin/custom-pages",
+        "/admin/localizations",
+        "/admin/logs",
+        "/content/{slug}"
+    ],
+    "dependencies": ["admin-users-roles", "admin-settings"],
+    "externalPrerequisites": [
+        "Configured storage disk",
+        "ClamAV for production non-image upload scanning"
+    ],
+    "acceptanceCriteria": [
+        {
+            "id": "AOPS-AC-1",
+            "text": "Uploads reject executable, HTML, SVG, archive, and macro-capable types; accepted images are re-encoded to remove metadata."
+        },
+        {
+            "id": "AOPS-AC-2",
+            "text": "Custom-page rich text is sanitized and cannot collide with reserved application routes."
+        },
+        {
+            "id": "AOPS-AC-3",
+            "text": "Locale changes alter actual translated user/admin/public strings and fall back to English."
+        },
+        {
+            "id": "AOPS-AC-4",
+            "text": "Admin logs never expose raw Laravel logs, request bodies, environment values, or secrets."
+        }
+    ],
+    "referenceEvidence": [
+        {
+            "route": "/admin/files",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:35Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/files-desktop.png",
+            "observedBehaviors": [
+                "Uploaded files appear in a metadata table with owner, size, and time columns."
+            ]
+        },
+        {
+            "route": "/admin/custom-pages",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:33Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/custom-pages-desktop.png",
+            "observedBehaviors": [
+                "Custom pages are managed from a table with publication metadata and actions."
+            ]
+        },
+        {
+            "route": "/admin/localizations",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:37Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/localizations-desktop.png",
+            "observedBehaviors": [
+                "Locales are listed with language, direction, publication, and action columns."
+            ]
+        },
+        {
+            "route": "/admin/logs",
+            "role": "admin",
+            "viewport": "1440x1000",
+            "capturedAt": "2026-10-20T17:09:40Z",
+            "screenshotPath": "product/reference/belink/screenshots/admin/logs-desktop.png",
+            "observedBehaviors": [
+                "Operational log records are presented in a filterable table with level and timestamp metadata."
+            ]
+        }
+    ],
+    "implementationEvidence": []
+}

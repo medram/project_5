@@ -10,6 +10,9 @@ import {
     Trash2,
 } from 'lucide-react';
 import { type FormEvent } from 'react';
+import { LinkPageBlockForm } from '@/components/link-pages/block-form';
+import { LinkPageVariantManager } from '@/components/link-pages/variant-manager';
+import { LinkPagePresentation } from '@/components/link-pages/presentation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,41 +43,82 @@ import {
 } from '@/routes/link-pages/items';
 import type {
     LinkPage,
+    LinkPageEditorItem,
     LinkPageEditorProps,
     LinkPageItem,
-    TrackingPixel,
+    LinkPageTemplate,
+    LinkPageVariant,
 } from '@/types/link-pages';
-
 type LinkPageFormData = {
     name: string;
     slug: string;
     title: string;
     description: string;
     is_published: boolean;
-    tracking_pixel_ids: number[];
+    template: LinkPageTemplate;
 };
 
 type LinkPageItemFormData = {
     title: string;
     destination_url: string;
     is_active: boolean;
+    link_page_variant_id: number;
 };
 
-function providerLabel(pixel: TrackingPixel): string {
-    return pixel.provider === 'meta_pixel' ? 'Meta Pixel' : 'Google Analytics';
+function VariantSelectField({
+    id,
+    variants,
+    value,
+    disabled,
+    error,
+    onChange,
+}: {
+    id: string;
+    variants: LinkPageVariant[];
+    value: number;
+    disabled: boolean;
+    error?: string;
+    onChange: (variantId: number) => void;
+}) {
+    return (
+        <Field data-invalid={Boolean(error)}>
+            <FieldLabel htmlFor={id}>Variant</FieldLabel>
+            <select
+                id={id}
+                className="h-11 rounded-md border bg-background px-3"
+                value={value}
+                disabled={disabled}
+                aria-invalid={Boolean(error)}
+                onChange={(event) =>
+                    onChange(Number(event.currentTarget.value))
+                }
+            >
+                {variants.map((variant) => (
+                    <option key={variant.id} value={variant.id}>
+                        {variant.name} · {variant.weight}%
+                        {!variant.isActive ? ' · inactive' : ''}
+                    </option>
+                ))}
+            </select>
+            {error && <FieldError>{error}</FieldError>}
+        </Field>
+    );
 }
 
 function ItemForm({
     page,
     item,
+    variants,
 }: {
     page: LinkPage;
     item: LinkPageItem;
+    variants: LinkPageVariant[];
 }) {
     const form = useForm<LinkPageItemFormData>({
         title: item.title,
         destination_url: item.destinationUrl,
         is_active: item.isActive,
+        link_page_variant_id: item.linkPageVariantId,
     });
 
     function submit(event: FormEvent<HTMLFormElement>) {
@@ -97,7 +141,9 @@ function ItemForm({
                         />
                         Destination {item.position + 1}
                     </CardTitle>
-                    <Badge variant={form.data.is_active ? 'default' : 'secondary'}>
+                    <Badge
+                        variant={form.data.is_active ? 'default' : 'secondary'}
+                    >
                         {form.data.is_active ? 'Active' : 'Hidden'}
                     </Badge>
                 </div>
@@ -123,7 +169,9 @@ function ItemForm({
                                 <FieldError>{form.errors.title}</FieldError>
                             )}
                         </Field>
-                        <Field data-invalid={Boolean(form.errors.destination_url)}>
+                        <Field
+                            data-invalid={Boolean(form.errors.destination_url)}
+                        >
                             <FieldLabel htmlFor={`item-url-${item.id}`}>
                                 Destination URL
                             </FieldLabel>
@@ -149,15 +197,22 @@ function ItemForm({
                                 </FieldError>
                             )}
                         </Field>
-                        <Field orientation="horizontal">
+                        <VariantSelectField
+                            id={`item-variant-${item.id}`}
+                            variants={variants}
+                            value={form.data.link_page_variant_id}
+                            disabled={form.processing}
+                            error={form.errors.link_page_variant_id}
+                            onChange={(variantId) =>
+                                form.setData('link_page_variant_id', variantId)
+                            }
+                        />
+                        <Field className="flex-row items-center">
                             <Checkbox
                                 id={`item-active-${item.id}`}
                                 checked={form.data.is_active}
                                 onCheckedChange={(checked) =>
-                                    form.setData(
-                                        'is_active',
-                                        checked === true,
-                                    )
+                                    form.setData('is_active', checked === true)
                                 }
                                 disabled={form.processing}
                             />
@@ -185,7 +240,9 @@ function ItemForm({
                         Remove
                     </Button>
                     <Button type="submit" size="sm" disabled={form.processing}>
-                        {form.processing && <Spinner data-icon="inline-start" />}
+                        {form.processing && (
+                            <Spinner data-icon="inline-start" />
+                        )}
                         Save destination
                     </Button>
                 </CardFooter>
@@ -194,11 +251,20 @@ function ItemForm({
     );
 }
 
-function AddItemForm({ page }: { page: LinkPage }) {
+function AddItemForm({
+    page,
+    variants,
+    selectedVariantId,
+}: {
+    page: LinkPage;
+    variants: LinkPageVariant[];
+    selectedVariantId: number;
+}) {
     const form = useForm<LinkPageItemFormData>({
         title: '',
         destination_url: '',
         is_active: true,
+        link_page_variant_id: selectedVariantId,
     });
 
     function submit(event: FormEvent<HTMLFormElement>) {
@@ -222,7 +288,9 @@ function AddItemForm({ page }: { page: LinkPage }) {
                 <CardContent>
                     <FieldGroup>
                         <Field data-invalid={Boolean(form.errors.title)}>
-                            <FieldLabel htmlFor="new-item-title">Label</FieldLabel>
+                            <FieldLabel htmlFor="new-item-title">
+                                Label
+                            </FieldLabel>
                             <Input
                                 id="new-item-title"
                                 value={form.data.title}
@@ -238,7 +306,9 @@ function AddItemForm({ page }: { page: LinkPage }) {
                                 <FieldError>{form.errors.title}</FieldError>
                             )}
                         </Field>
-                        <Field data-invalid={Boolean(form.errors.destination_url)}>
+                        <Field
+                            data-invalid={Boolean(form.errors.destination_url)}
+                        >
                             <FieldLabel htmlFor="new-item-url">
                                 Destination URL
                             </FieldLabel>
@@ -265,11 +335,23 @@ function AddItemForm({ page }: { page: LinkPage }) {
                                 </FieldError>
                             )}
                         </Field>
+                        <VariantSelectField
+                            id="new-item-variant"
+                            variants={variants}
+                            value={form.data.link_page_variant_id}
+                            disabled={form.processing}
+                            error={form.errors.link_page_variant_id}
+                            onChange={(variantId) =>
+                                form.setData('link_page_variant_id', variantId)
+                            }
+                        />
                     </FieldGroup>
                 </CardContent>
                 <CardFooter>
                     <Button type="submit" size="sm" disabled={form.processing}>
-                        {form.processing && <Spinner data-icon="inline-start" />}
+                        {form.processing && (
+                            <Spinner data-icon="inline-start" />
+                        )}
                         <Plus data-icon="inline-start" />
                         Add destination
                     </Button>
@@ -281,57 +363,69 @@ function AddItemForm({ page }: { page: LinkPage }) {
 
 export default function LinkPageEditor({
     linkPage,
+    variants,
+    selectedVariantId,
+    insightsUrl,
     items,
-    availablePixels,
+    previewItems,
+    canViewLeads,
+    leadsUrl,
+    privacyUrl,
 }: LinkPageEditorProps) {
+    const selectedVariant = variants.find(
+        (variant) => variant.id === selectedVariantId,
+    );
+
     const form = useForm<LinkPageFormData>({
         name: linkPage.name,
         slug: linkPage.slug,
         title: linkPage.title,
         description: linkPage.description ?? '',
+        template: linkPage.template,
         is_published: linkPage.isPublished,
-        tracking_pixel_ids: linkPage.trackingPixelIds.filter((pixelId) =>
-            availablePixels.some(
-                (pixel) => pixel.id === pixelId && pixel.isActive,
-            ),
-        ),
     });
 
-    function submit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        form.patch(update(linkPage).url, { preserveScroll: true });
-    }
-
-    function togglePixel(pixel: TrackingPixel) {
-        if (!pixel.isActive) {
-            return;
-        }
-
-        form.setData(
-            'tracking_pixel_ids',
-            form.data.tracking_pixel_ids.includes(pixel.id)
-                ? form.data.tracking_pixel_ids.filter((id) => id !== pixel.id)
-                : [...form.data.tracking_pixel_ids, pixel.id],
+    function save() {
+        const url = update(linkPage).url;
+        form.patch(
+            selectedVariant?.isControl
+                ? url
+                : `${url}?variant=${selectedVariantId}`,
+            { preserveScroll: true },
         );
     }
 
-    function moveItem(item: LinkPageItem, direction: -1 | 1) {
-        const currentIndex = items.findIndex((candidate) => candidate.id === item.id);
+    function submit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        save();
+    }
+
+    function moveItem(item: LinkPageEditorItem, direction: -1 | 1) {
+        const currentIndex = items.findIndex(
+            (candidate) =>
+                candidate.id === item.id && candidate.type === item.type,
+        );
         const nextIndex = currentIndex + direction;
 
         if (nextIndex < 0 || nextIndex >= items.length) {
             return;
         }
 
-        const itemIds = items.map((candidate) => candidate.id);
-        [itemIds[currentIndex], itemIds[nextIndex]] = [
-            itemIds[nextIndex],
-            itemIds[currentIndex],
+        const order = items.map((candidate) => ({
+            type: candidate.type === 'link' ? 'link' : 'block',
+            id: candidate.id,
+        }));
+        [order[currentIndex], order[nextIndex]] = [
+            order[nextIndex],
+            order[currentIndex],
         ];
 
         router.patch(
             reorder(linkPage).url,
-            { item_ids: itemIds },
+            {
+                variant_id: selectedVariantId,
+                items: order,
+            },
             { preserveScroll: true },
         );
     }
@@ -343,7 +437,12 @@ export default function LinkPageEditor({
             <div className="flex flex-col gap-6 p-4 sm:p-6">
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
-                        <Button asChild size="sm" variant="ghost" className="-ml-3">
+                        <Button
+                            asChild
+                            size="sm"
+                            variant="ghost"
+                            className="-ml-3"
+                        >
                             <Link href={index().url}>
                                 <ArrowLeft data-icon="inline-start" />
                                 Link pages
@@ -364,22 +463,32 @@ export default function LinkPageEditor({
                             </Badge>
                         </div>
                         <p className="max-w-2xl text-sm text-muted-foreground">
-                            Control the public page, its destinations, and safe
-                            consent-gated tracking integrations.
+                            Manage the public page, its template, and ordered
+                            content. Tracking integrations remain consent-gated.
                         </p>
                     </div>
-                    {linkPage.isPublished && (
+                    <div className="flex flex-wrap gap-2">
                         <Button asChild variant="outline">
-                            <a
-                                href={linkPage.publicUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                <ExternalLink data-icon="inline-start" />
-                                Open public page
-                            </a>
+                            <Link href={insightsUrl}>Variant insights</Link>
                         </Button>
-                    )}
+                        {canViewLeads && leadsUrl && (
+                            <Button asChild variant="outline">
+                                <Link href={leadsUrl}>Lead responses</Link>
+                            </Button>
+                        )}
+                        {linkPage.isPublished && (
+                            <Button asChild variant="outline">
+                                <a
+                                    href={linkPage.publicUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    <ExternalLink data-icon="inline-start" />
+                                    Open public page
+                                </a>
+                            </Button>
+                        )}
+                    </div>
                 </header>
 
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.7fr)]">
@@ -388,13 +497,18 @@ export default function LinkPageEditor({
                             <CardHeader>
                                 <CardTitle>Page details</CardTitle>
                                 <CardDescription>
-                                    Published pages are available at /pages/{linkPage.slug}.
+                                    Published pages are available at /pages/
+                                    {linkPage.slug}.
                                 </CardDescription>
                             </CardHeader>
                             <form onSubmit={submit}>
                                 <CardContent>
                                     <FieldGroup>
-                                        <Field data-invalid={Boolean(form.errors.name)}>
+                                        <Field
+                                            data-invalid={Boolean(
+                                                form.errors.name,
+                                            )}
+                                        >
                                             <FieldLabel htmlFor="page-name">
                                                 Internal name
                                             </FieldLabel>
@@ -419,7 +533,11 @@ export default function LinkPageEditor({
                                                 </FieldError>
                                             )}
                                         </Field>
-                                        <Field data-invalid={Boolean(form.errors.slug)}>
+                                        <Field
+                                            data-invalid={Boolean(
+                                                form.errors.slug,
+                                            )}
+                                        >
                                             <FieldLabel htmlFor="page-slug">
                                                 Public slug
                                             </FieldLabel>
@@ -444,7 +562,11 @@ export default function LinkPageEditor({
                                                 </FieldError>
                                             )}
                                         </Field>
-                                        <Field data-invalid={Boolean(form.errors.title)}>
+                                        <Field
+                                            data-invalid={Boolean(
+                                                form.errors.title,
+                                            )}
+                                        >
                                             <FieldLabel htmlFor="page-title">
                                                 Public title
                                             </FieldLabel>
@@ -469,7 +591,11 @@ export default function LinkPageEditor({
                                                 </FieldError>
                                             )}
                                         </Field>
-                                        <Field data-invalid={Boolean(form.errors.description)}>
+                                        <Field
+                                            data-invalid={Boolean(
+                                                form.errors.description,
+                                            )}
+                                        >
                                             <FieldLabel htmlFor="page-description">
                                                 Description
                                             </FieldLabel>
@@ -494,7 +620,51 @@ export default function LinkPageEditor({
                                                 </FieldError>
                                             )}
                                         </Field>
-                                        <Field orientation="horizontal">
+                                        <Field
+                                            data-invalid={Boolean(
+                                                form.errors.template,
+                                            )}
+                                        >
+                                            <FieldLabel htmlFor="page-template">
+                                                Template
+                                            </FieldLabel>
+                                            <select
+                                                id="page-template"
+                                                className="h-11 rounded-md border bg-background px-3"
+                                                value={form.data.template}
+                                                disabled={form.processing}
+                                                aria-invalid={Boolean(
+                                                    form.errors.template,
+                                                )}
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'template',
+                                                        event.target
+                                                            .value as LinkPageTemplate,
+                                                    )
+                                                }
+                                            >
+                                                <option value="standard">
+                                                    Standard
+                                                </option>
+                                                <option value="profile">
+                                                    Profile
+                                                </option>
+                                                <option value="campaign">
+                                                    Campaign
+                                                </option>
+                                            </select>
+                                            <FieldDescription>
+                                                Change the page layout without
+                                                changing its content.
+                                            </FieldDescription>
+                                            {form.errors.template && (
+                                                <FieldError>
+                                                    {form.errors.template}
+                                                </FieldError>
+                                            )}
+                                        </Field>
+                                        <Field className="flex-row items-center">
                                             <Checkbox
                                                 id="page-published"
                                                 checked={form.data.is_published}
@@ -511,14 +681,18 @@ export default function LinkPageEditor({
                                                     Publish page
                                                 </FieldLabel>
                                                 <FieldDescription>
-                                                    Unpublished pages return not found to visitors.
+                                                    Unpublished pages return not
+                                                    found to visitors.
                                                 </FieldDescription>
                                             </div>
                                         </Field>
                                     </FieldGroup>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button type="submit" disabled={form.processing}>
+                                    <Button
+                                        type="submit"
+                                        disabled={form.processing}
+                                    >
                                         {form.processing && (
                                             <Spinner data-icon="inline-start" />
                                         )}
@@ -529,120 +703,134 @@ export default function LinkPageEditor({
                             </form>
                         </Card>
 
+                        <LinkPageVariantManager
+                            page={linkPage}
+                            variants={variants}
+                            selectedVariantId={selectedVariantId}
+                        />
+
                         <Card>
                             <CardHeader>
-                                <CardTitle>Destinations</CardTitle>
+                                <CardTitle>Page content</CardTitle>
                                 <CardDescription>
-                                    Visitors see active destinations in this order.
+                                    Reorder destinations and content blocks
+                                    together.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 {items.length === 0 ? (
                                     <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                                        Add the first destination to make this
-                                        campaign useful to visitors.
+                                        Add a destination or content block to
+                                        build this page.
                                     </p>
                                 ) : (
-                                    items.map((item, itemIndex) => (
-                                        <div key={item.id} className="space-y-2">
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    type="button"
-                                                    size="icon"
-                                                    variant="outline"
-                                                    aria-label={`Move ${item.title} up`}
-                                                    onClick={() => moveItem(item, -1)}
-                                                    disabled={itemIndex === 0}
-                                                >
-                                                    <ArrowUp />
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    size="icon"
-                                                    variant="outline"
-                                                    aria-label={`Move ${item.title} down`}
-                                                    onClick={() => moveItem(item, 1)}
-                                                    disabled={itemIndex === items.length - 1}
-                                                >
-                                                    <ArrowDown />
-                                                </Button>
+                                    items.map((item, itemIndex) => {
+                                        const label =
+                                            item.type === 'link'
+                                                ? item.title
+                                                : item.type === 'text'
+                                                  ? 'Text block'
+                                                  : 'Image block';
+
+                                        return (
+                                            <div
+                                                key={`${item.type}-${item.id}`}
+                                                className="space-y-2"
+                                            >
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="outline"
+                                                        aria-label={`Move ${label} up`}
+                                                        onClick={() =>
+                                                            moveItem(item, -1)
+                                                        }
+                                                        disabled={
+                                                            itemIndex === 0
+                                                        }
+                                                    >
+                                                        <ArrowUp />
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="outline"
+                                                        aria-label={`Move ${label} down`}
+                                                        onClick={() =>
+                                                            moveItem(item, 1)
+                                                        }
+                                                        disabled={
+                                                            itemIndex ===
+                                                            items.length - 1
+                                                        }
+                                                    >
+                                                        <ArrowDown />
+                                                    </Button>
+                                                </div>
+                                                {item.type === 'link' ? (
+                                                    <ItemForm
+                                                        page={linkPage}
+                                                        item={item}
+                                                        variants={variants}
+                                                    />
+                                                ) : (
+                                                    <LinkPageBlockForm
+                                                        key={`${item.type}-${item.id}`}
+                                                        page={linkPage}
+                                                        block={item}
+                                                        variants={variants}
+                                                        selectedVariantId={
+                                                            selectedVariantId
+                                                        }
+                                                    />
+                                                )}
                                             </div>
-                                            <ItemForm page={linkPage} item={item} />
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </CardContent>
                         </Card>
-                        <AddItemForm page={linkPage} />
+                        <AddItemForm
+                            key={`new-item-${selectedVariantId}`}
+                            page={linkPage}
+                            variants={variants}
+                            selectedVariantId={selectedVariantId}
+                        />
+                        <LinkPageBlockForm
+                            key={`new-block-${selectedVariantId}`}
+                            page={linkPage}
+                            variants={variants}
+                            selectedVariantId={selectedVariantId}
+                        />
                     </div>
 
-                    <Card className="h-fit">
-                        <CardHeader>
-                            <CardTitle>Tracking pixels</CardTitle>
-                            <CardDescription>
-                                Attach up to five active account-owned pixels.
-                                LinkPilot sends them only after visitor consent.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            {availablePixels.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">
-                                    Create a pixel first to attach it here.
-                                </p>
-                            ) : (
-                                availablePixels.map((pixel) => {
-                                    const attached = form.data.tracking_pixel_ids.includes(
-                                        pixel.id,
-                                    );
-
-                                    return (
-                                        <label
-                                            key={pixel.id}
-                                            className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
-                                        >
-                                            <Checkbox
-                                                checked={attached}
-                                                onCheckedChange={() => togglePixel(pixel)}
-                                                disabled={
-                                                    !pixel.isActive ||
-                                                    (form.data.tracking_pixel_ids.length >= 5 &&
-                                                        !attached) ||
-                                                    form.processing
-                                                }
-                                            />
-                                            <span className="grid gap-1">
-                                                <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
-                                                    {pixel.name}
-                                                    {!pixel.isActive && (
-                                                        <Badge variant="secondary">
-                                                            Inactive
-                                                        </Badge>
-                                                    )}
-                                                </span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {providerLabel(pixel)} · {pixel.providerId}
-                                                </span>
-                                            </span>
-                                        </label>
-                                    );
-                                })
-                            )}
-                            {form.errors.tracking_pixel_ids && (
-                                <FieldError>
-                                    {form.errors.tracking_pixel_ids}
-                                </FieldError>
-                            )}
-                        </CardContent>
-                        <CardFooter>
-                            <Button onClick={submit} disabled={form.processing}>
-                                {form.processing && (
-                                    <Spinner data-icon="inline-start" />
-                                )}
-                                <Save data-icon="inline-start" />
-                                Save pixel selection
-                            </Button>
-                        </CardFooter>
-                    </Card>
+                    <div className="space-y-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Page preview</CardTitle>
+                                <CardDescription>
+                                    Active content uses the selected template.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="mx-auto max-w-sm rounded-[2rem] border bg-muted p-3">
+                                    <div className="max-h-[40rem] overflow-y-auto rounded-[1.5rem] bg-background p-4">
+                                        <LinkPagePresentation
+                                            template={form.data.template}
+                                            title={form.data.title}
+                                            description={
+                                                form.data.description || null
+                                            }
+                                            items={previewItems}
+                                            privacyUrl={privacyUrl}
+                                            preview
+                                        />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
         </>

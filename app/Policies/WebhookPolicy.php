@@ -9,16 +9,17 @@ class WebhookPolicy
 {
     public function view(User $user, Webhook $webhook): bool
     {
-        return $user->is($webhook->user);
+        return app(WorkspacePolicy::class)->manageIntegrations($user, $webhook->workspace);
     }
+
 
     public function update(User $user, Webhook $webhook): bool
     {
-        return $user->is($webhook->user);
+        return app(WorkspacePolicy::class)->manageIntegrations($user, $webhook->workspace);
     }
 
     public function delete(User $user, Webhook $webhook): bool
     {
-        return $user->is($webhook->user);
+        return $this->update($user, $webhook);
     }
 }

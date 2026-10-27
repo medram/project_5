@@ -40,11 +40,13 @@
 ### Task 1: Commit the durable requirements and expansion design
 
 **Files:**
+
 - Create: `PRD.md`
 - Create: `docs/superpowers/specs/2026-10-19-linkpilot-platform-expansion-design.md`
 - Create: `docs/superpowers/plans/2026-10-19-linkpilot-platform-expansion.md`
 
 **Interfaces:**
+
 - Consumes: REA evidence `ev_3166f9b5f54416181d58a8a0ccf45470f64f0c7dc8c7f4032009525692347a0d` and existing LinkPilot P0 behavior.
 - Produces: authoritative P1 ownership, privacy, lifecycle, plan, domain, and webhook contracts for all later tasks.
 
@@ -62,6 +64,7 @@ git commit -m "docs: add LinkPilot SaaS product requirements"
 ### Task 2: Add workspace ownership, personal-workspace backfill, and active-resource scoping
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_000700_create_workspaces_and_entitlements_tables.php`
 - Create: `database/migrations/2026_10_19_000800_add_workspace_context_to_existing_resources.php`
 - Create: `database/migrations/2026_10_19_000900_backfill_personal_workspaces.php`
@@ -89,6 +92,7 @@ git commit -m "docs: add LinkPilot SaaS product requirements"
 - Modify: `database/factories/BioPageFactory.php`
 
 **Interfaces:**
+
 - Consumes: existing owner-only models/controllers and P0 data tables.
 - Produces: `WorkspaceContext::currentFor(User $user): Workspace`, `WorkspaceContext::activate(User $user, Workspace $workspace): Workspace`, `User::belongsToWorkspace(Workspace $workspace): bool`, and `WorkspacePolicy` abilities `manageContent`, `manageIntegrations`, `manageMembers`, and `manageBilling`.
 - Produces: active-workspace Inertia shared prop used by Tasks 4–10.
@@ -134,6 +138,7 @@ git commit -m "feat: scope publishing resources to workspaces"
 ### Task 3: Enforce plan usage and add the billing/usage surface
 
 **Files:**
+
 - Create: `app/Services/Billing/WorkspaceUsage.php`
 - Create: `app/Services/Billing/EnforcesPlanLimits.php`
 - Create: `app/Http/Controllers/BillingController.php`
@@ -147,6 +152,7 @@ git commit -m "feat: scope publishing resources to workspaces"
 - Modify: `README.md`
 
 **Interfaces:**
+
 - Consumes: `WorkspaceContext`, `Plan`, `WorkspaceSubscription`, and workspace-owned relation counts from Task 2.
 - Produces: `WorkspaceUsage::for(Workspace $workspace): array`, `EnforcesPlanLimits::assertCanCreate(Workspace $workspace, string $metric): void`, and `/billing` page props `{ subscription, plans, usage }`.
 - Later tasks call `assertCanCreate` for domains, pixels, pages, webhooks, links, and pending invitations.
@@ -187,6 +193,7 @@ git commit -m "feat: add workspace billing usage controls"
 ### Task 4: Add workspace switching, members, and invitation lifecycle UI
 
 **Files:**
+
 - Create: `app/Models/WorkspaceInvitation.php`
 - Create: `app/Http/Controllers/WorkspaceController.php`
 - Create: `app/Http/Controllers/WorkspaceMemberController.php`
@@ -207,6 +214,7 @@ git commit -m "feat: add workspace billing usage controls"
 - Modify: `app/Http/Middleware/HandleInertiaRequests.php`
 
 **Interfaces:**
+
 - Consumes: Task 2 `WorkspaceContext`/policies and Task 3 `EnforcesPlanLimits` member metric.
 - Produces: authenticated workspace create/switch/member/invitation routes and unauthenticated invitation-accept endpoint guarded by authenticated matching-email behavior.
 
@@ -246,6 +254,7 @@ git commit -m "feat: add workspace members and invitations"
 ### Task 5: Add platform administrator controls and safe provisioning
 
 **Files:**
+
 - Create: `app/Http/Middleware/EnsureActiveAccount.php`
 - Create: `app/Http/Middleware/EnsureAdministrator.php`
 - Create: `app/Http/Controllers/Admin/AdminDashboardController.php`
@@ -260,6 +269,7 @@ git commit -m "feat: add workspace members and invitations"
 - Modify: `resources/js/components/app-sidebar.tsx`
 
 **Interfaces:**
+
 - Consumes: workspace/plan relations from Tasks 2–4.
 - Produces: middleware aliases `active-account` and `administrator`, `/admin` metadata dashboard, safe account mutations, and `linkpilot:grant-admin {email}`.
 
@@ -299,6 +309,7 @@ git commit -m "feat: add LinkPilot administrator controls"
 ### Task 6: Add verified custom domains and host-aware short-link delivery
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_001000_create_custom_domains_table.php`
 - Create: `app/Models/CustomDomain.php`
 - Create: `app/Services/Domains/DnsTxtLookup.php`
@@ -326,6 +337,7 @@ git commit -m "feat: add LinkPilot administrator controls"
 - Modify: `README.md`
 
 **Interfaces:**
+
 - Consumes: workspace policy `manageIntegrations` and Task 3 `domains` limit.
 - Produces: `DomainVerificationService::verify(CustomDomain $domain): CustomDomain`, `CustomDomain::isActive(): bool`, a no-auth `/.well-known/linkpilot-domain/{token}` challenge route, and active host-aware `PublicLinkController` lookup.
 
@@ -365,6 +377,7 @@ git commit -m "feat: add verified custom domains"
 ### Task 7: Add consent-gated analytics events, public bio tracking, and richer insights
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_001100_create_analytics_events_table.php`
 - Create: `app/Models/AnalyticsEvent.php`
 - Create: `app/Services/Analytics/AnalyticsTracker.php`
@@ -391,6 +404,7 @@ git commit -m "feat: add verified custom domains"
 - Modify: `README.md`
 
 **Interfaces:**
+
 - Consumes: active workspace context and public content resources.
 - Produces: `TrackingConsent::allows(Request $request): bool`, `AnalyticsTracker::record(Request $request, string $event, Workspace $workspace, array $references): ?AnalyticsEvent`, and range-aware workspace/link insight props.
 - Task 10 consumes persisted analytics events as webhook event sources.
@@ -431,6 +445,7 @@ git commit -m "feat: add consent-gated analytics events"
 ### Task 8: Add managed tracking pixels and publishable link pages
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_001200_create_tracking_pixels_and_link_pages_tables.php`
 - Create: `app/Models/TrackingPixel.php`
 - Create: `app/Models/LinkPage.php`
@@ -457,6 +472,7 @@ git commit -m "feat: add consent-gated analytics events"
 - Modify: `resources/js/components/app-sidebar.tsx`
 
 **Interfaces:**
+
 - Consumes: `EnforcesPlanLimits` (`pixels`, `link_pages`), `WorkspacePolicy::manageIntegrations`, `AnalyticsTracker`, and `TrackingConsent`.
 - Produces: reusable `PublicTrackingPixels` props/component and public `/pages/{slug}` plus item redirect behavior. Task 9 reuses the pixel relation/component for overlays.
 
@@ -501,6 +517,7 @@ git commit -m "feat: add tracking pixels and link pages"
 ### Task 9: Add CTA overlays to controlled short-link delivery
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_001300_create_link_overlays_table.php`
 - Create: `app/Models/LinkOverlay.php`
 - Create: `app/Http/Controllers/LinkOverlayController.php`
@@ -522,6 +539,7 @@ git commit -m "feat: add tracking pixels and link pages"
 - Modify: `resources/js/components/app-sidebar.tsx`
 
 **Interfaces:**
+
 - Consumes: active workspace domains/pixels/context, `AnalyticsTracker`, `TrackingConsent`, and existing `Link::isAvailableAt` / access-code behavior.
 - Produces: optional `Link::linkOverlay()`, `/overlays` dashboard management, `POST /{slug}/continue`, and a LinkPilot-controlled public interstitial.
 
@@ -561,6 +579,7 @@ git commit -m "feat: add short link CTA overlays"
 ### Task 10: Add signed webhook delivery history and queue worker
 
 **Files:**
+
 - Create: `database/migrations/2026_10_19_001400_create_webhooks_and_deliveries_tables.php`
 - Create: `app/Models/Webhook.php`
 - Create: `app/Models/WebhookDelivery.php`
@@ -582,6 +601,7 @@ git commit -m "feat: add short link CTA overlays"
 - Modify: `README.md`
 
 **Interfaces:**
+
 - Consumes: consented `AnalyticsEvent` records and `WorkspacePolicy::manageIntegrations`/`EnforcesPlanLimits` (`webhooks`).
 - Produces: `WebhookPayload::fromEvent(AnalyticsEvent $event): string`, `WebhookDispatcher::dispatch(AnalyticsEvent $event): void`, and an encrypted queue job that operates by delivery ID.
 
@@ -622,12 +642,14 @@ git commit -m "feat: add signed webhook deliveries"
 ### Task 11: Run release verification, update operational docs, and prepare manual accounts
 
 **Files:**
+
 - Modify: `README.md`
 - Modify: `.env.example`
 - Modify: `PRD.md` only if an observed verified behavior changes a status statement.
 - Modify: `docs/superpowers/specs/2026-10-19-linkpilot-platform-expansion-design.md` only if an observed verified behavior changes a design decision.
 
 **Interfaces:**
+
 - Consumes: all prior slices and the running Compose service.
 - Produces: documented host/DNS/consent/analytics/worker/payment prerequisites, seeded manual user/admin credentials, and end-to-end proof.
 
