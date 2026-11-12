@@ -6,8 +6,9 @@ import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
 import { defineConfig, lazyPlugins } from 'vite-plus';
+import { loadEnv } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
     plugins: lazyPlugins(() => [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
@@ -29,6 +30,7 @@ export default defineConfig({
         }),
     ]),
     server: {
+        ...browserServerConfig(mode),
         watch: {
             ignored: [
                 '**/.agents/**',
@@ -74,4 +76,31 @@ export default defineConfig({
             stylesheet: 'resources/css/app.css',
         },
     },
-});
+}));
+
+function browserServerConfig(mode: string) {
+    const env = loadEnv(mode, process.cwd(), '');
+    const hmrHost = env.VITE_HMR_HOST || 'localhost';
+    const hmrPort = Number(env.VITE_HMR_PORT || 5173);
+    const appUrl = new URL(env.APP_URL || 'http://localhost:8000');
+    const appPort = appUrl.port ? `:${appUrl.port}` : '';
+    const allowedOrigins = [
+        appUrl.origin,
+        ...(env.LINKPILOT_DEFAULT_HOSTS || '')
+            .split(',')
+            .map((host) => host.trim())
+            .filter(Boolean)
+            .map((host) => `${appUrl.protocol}//${host}${appPort}`),
+    ];
+
+    return {
+        origin: `http://${hmrHost}:${hmrPort}`,
+        cors: {
+            origin: allowedOrigins,
+        },
+        hmr: {
+            host: hmrHost,
+            clientPort: hmrPort,
+        },
+    };
+}

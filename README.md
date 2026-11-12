@@ -51,7 +51,7 @@ Every account receives a local free subscription after migration or registration
 Seed the local accounts used for manual testing:
 
 ```bash
-docker compose run --rm app php artisan db:seed --force
+docker compose -f compose.yaml -f compose.dev.yaml run --rm app php artisan db:seed --force
 ```
 
 - `user@linkpilot.test` — owner on the `pro` plan with one of every module's
@@ -207,41 +207,81 @@ Laravel mailer is configured. The local default, `MAIL_MAILER=log`, writes
 messages to the application log rather than sending externally. Configure the
 standard `MAIL_*` transport variables and verify deliverability before relying
 on email notifications.
+The development Compose overlay overrides these values only inside its
+containers and sends mail to Mailpit; it does not change the host `.env`.
 
-## Requirements
+## Docker development runtime
 
-- Docker Engine with Docker Compose v2.
+Docker Engine with Docker Compose v2 is required. The default local database
+is SQLite at `database/database.sqlite`. Development uses `compose.dev.yaml`
+as an overlay so the app, queue worker, Vite server, scheduler, and Mailpit run
+together:
 
-The default local database is SQLite at `database/database.sqlite`. The app is served at [http://localhost:8000](http://localhost:8000).
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml up -d app queue vite scheduler mailpit
+```
 
-## First run
+The host `.env` is persistent and operator-owned. Copy the template only when
+the file does not exist, then keep its generated `APP_KEY`; no container
+startup command creates or replaces that key.
+
+For localhost-only use, keep `APP_URL=http://localhost:8000`,
+`VITE_HMR_HOST=localhost`, and `VITE_HMR_PORT=5173`. For LAN access, use the
+development machine's browser-reachable address and list localhost as an
+accepted alias, for example:
+
+```dotenv
+APP_URL=http://192.168.100.19:8000
+LINKPILOT_DEFAULT_HOSTS=localhost,127.0.0.1
+VITE_HMR_HOST=192.168.100.19
+VITE_HMR_PORT=5173
+```
+
+`APP_URL` remains the canonical origin used in generated links.
+`LINKPILOT_DEFAULT_HOSTS` accepts additional browser hostnames, and
+`VITE_HMR_HOST` must be reachable by every browser that opens the app. Vite
+still binds inside Docker to `0.0.0.0`; generated asset and HMR URLs use the
+browser-reachable host instead.
+
+### First run
 
 ```bash
 cp .env.example .env
 touch database/database.sqlite
-docker compose build app
-docker compose run --rm app composer install
-docker compose run --rm app npm install
-docker compose run --rm app php artisan key:generate
-docker compose run --rm app php artisan migrate
-docker compose run --rm app npm run build
-docker compose up --build
+docker compose -f compose.yaml -f compose.dev.yaml build app
+docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps app composer install
+docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps app npm install
+docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps app php artisan key:generate
+docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps app php artisan migrate --force
+docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps app php artisan db:seed --force
+docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps app php artisan linkpilot:grant-admin admin@linkpilot.test
+docker compose -f compose.yaml -f compose.dev.yaml up -d app queue vite scheduler mailpit
 ```
 
-Keep the final command running while using the application, and run the queue
-worker alongside it so queued webhook deliveries are attempted:
+Run `cp` and `key:generate` only for a new local environment. Existing
+operators should start at the build/install or migration step without
+overwriting `.env`. `DemoAccountSeeder` converges `user@linkpilot.test` and
+`admin@linkpilot.test`; their shared local-only password is supplied in the
+run handoff and is never stored in tracked configuration. Seeding does not
+grant administrator access, so the explicit grant command is required.
+
+After pulling schema changes, rerun:
 
 ```bash
-docker compose up app queue
+docker compose -f compose.yaml -f compose.dev.yaml run --rm app php artisan migrate --force
 ```
 
-In another terminal, rerun migrations after pulling schema changes:
+Open LinkPilot at [http://localhost:8000](http://localhost:8000), or at the
+configured LAN `APP_URL`. Mailpit is available at
+[http://localhost:8025](http://localhost:8025) (and the same port on the LAN
+host). The development overlay sends SMTP to `mailpit:1025`; production
+`MAIL_*` values remain owned by the deployment environment.
+
+Stop only this development stack with:
 
 ```bash
-docker compose run --rm app php artisan migrate
+docker compose -f compose.yaml -f compose.dev.yaml down
 ```
-
-Local email verification uses the log mailer. After registering, open the verification URL written to `storage/logs/laravel.log`.
 
 ## Verification commands
 

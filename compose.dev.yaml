@@ -1,0 +1,49 @@
+x-project-runtime: &project-runtime
+    image: linkpilot-dev
+    working_dir: /var/www
+    user: '${LOCAL_UID:-1000}:${LOCAL_GID:-1000}'
+    volumes:
+        - .:/var/www
+
+x-development-mail: &development-mail
+    MAIL_MAILER: smtp
+    MAIL_SCHEME: 'null'
+    MAIL_HOST: mailpit
+    MAIL_PORT: 1025
+    MAIL_USERNAME: 'null'
+    MAIL_PASSWORD: 'null'
+
+services:
+    app:
+        image: linkpilot-dev
+        command: php artisan serve --host=0.0.0.0 --port=8000 --no-reload
+        environment: *development-mail
+        depends_on:
+            - mailpit
+
+    queue:
+        image: linkpilot-dev
+        environment: *development-mail
+        depends_on:
+            - mailpit
+
+    vite:
+        <<: *project-runtime
+        ports:
+            - '5173:5173'
+        environment:
+            VITE_HMR_HOST: '${VITE_HMR_HOST:-localhost}'
+            VITE_HMR_PORT: '${VITE_HMR_PORT:-5173}'
+        command: npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
+
+    scheduler:
+        <<: *project-runtime
+        environment: *development-mail
+        depends_on:
+            - mailpit
+        command: php artisan schedule:work
+
+    mailpit:
+        image: axllent/mailpit:v1.33.1
+        ports:
+            - '8025:8025'
