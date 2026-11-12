@@ -1,6 +1,6 @@
 {
     "schemaVersion": "1.0.0",
-    "capturedAt": "2026-11-12T15:40:00Z",
+    "capturedAt": "2026-11-12T15:55:00Z",
     "sourceBaseUrl": "http://localhost:8000",
     "browser": {
         "engine": "managed Chromium",
@@ -589,6 +589,50 @@
             "sha256": "3a53bfadf3480f3b6c459efdfb03526502aba8b626ee1175b3d4cde7fb415a96",
             "bytes": 36,
             "privacyNote": "Seeded .test accounts only; no raw hashes, IPs, destinations, tenant drill-down, or low-cardinality buckets under five events."
+        },
+        {
+            "path": "product/verification/parity/admin-plans-desktop.png",
+            "role": "admin",
+            "route": "/admin/plans",
+            "state": "plan catalog metadata, locked values, and Stripe mapping forms",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "ad191373ce6bdd7b3f5758b4fb31eb7e0994e5b9660224472e8e338b818b9d3a",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no payment data, customer identifiers, Stripe secrets, or tenant destinations."
+        },
+        {
+            "path": "product/verification/parity/admin-subscriptions-desktop.png",
+            "role": "admin",
+            "route": "/admin/subscriptions",
+            "state": "workspace entitlements, provider state, and active overrides",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "e73a0bd6b79e43b5534b0fc4e7f799fcaf5dfe06d46d023aa94038b43b9287d3",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no payment data, customer identifiers, Stripe secrets, or tenant destinations."
+        },
+        {
+            "path": "product/verification/parity/admin-plans-mobile.png",
+            "role": "admin",
+            "route": "/admin/plans",
+            "state": "stacked plan catalog forms",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "9a3ca5f91547503d716f5abe5360946b8df8de1636ee53b2532e739519d19a1a",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no payment data, customer identifiers, Stripe secrets, or tenant destinations."
+        },
+        {
+            "path": "product/verification/parity/admin-subscriptions-mobile.png",
+            "role": "admin",
+            "route": "/admin/subscriptions",
+            "state": "stacked subscription cards and override controls",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "cbb5c4673d4f35c70443d2c49e85077793a47ba06be31c083eafb3e2c3995588",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no payment data, customer identifiers, Stripe secrets, or tenant destinations."
         }
     ]
 }

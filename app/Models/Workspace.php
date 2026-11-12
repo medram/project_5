@@ -16,6 +16,7 @@ use Laravel\Cashier\Subscription;
  * @property-read int|null $links_count
  * @property-read int|null $bio_pages_count
  * @property-read WorkspaceSubscription|null $legacySubscription
+ * @property-read User|null $owner
  * @property-read int|null $members_count
  * @property-read int|null $custom_domains_count
  * @property-read \Illuminate\Database\Eloquent\Relations\Pivot $pivot
@@ -35,6 +36,7 @@ class Workspace extends Model
         return $this->belongsTo(User::class, 'personal_owner_user_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');

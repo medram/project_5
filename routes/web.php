@@ -5,7 +5,9 @@ use App\Http\Controllers\AccountAnalyticsController;
 use App\Http\Controllers\Admin\AdminHomeController;
 use App\Http\Controllers\Admin\AdminInsightsController;
 use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\AdminPlanController;
 use App\Http\Controllers\Admin\AdminRoleController;
+use App\Http\Controllers\Admin\AdminSubscriptionController;
 use App\Http\Controllers\Admin\AdminUserActionController;
 use App\Http\Controllers\Admin\AdminUserIndexController;
 use App\Http\Controllers\Admin\AdminUserShowController;
@@ -330,6 +332,29 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         Route::get('insights/visitors', [AdminInsightsController::class, 'visitors'])
             ->middleware('platform:admin.insights.view')
             ->name('insights.visitors');
+
+        Route::get('plans', [AdminPlanController::class, 'index'])
+            ->middleware('platform:admin.billing.view')
+            ->name('plans.index');
+        Route::patch('plans/{plan:code}', [AdminPlanController::class, 'update'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('plans.update');
+
+        Route::get('subscriptions', [AdminSubscriptionController::class, 'index'])
+            ->middleware('platform:admin.billing.view')
+            ->name('subscriptions.index');
+        Route::post('subscriptions/{workspace}/cancel', [AdminSubscriptionController::class, 'cancel'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('subscriptions.cancel');
+        Route::post('subscriptions/{workspace}/resume', [AdminSubscriptionController::class, 'resume'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('subscriptions.resume');
+        Route::post('subscriptions/{workspace}/overrides', [AdminSubscriptionController::class, 'storeOverride'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('subscriptions.overrides.store');
+        Route::patch('subscriptions/{workspace}/overrides/{override}/revoke', [AdminSubscriptionController::class, 'revokeOverride'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('subscriptions.overrides.revoke');
 
         Route::get('roles', AdminRoleController::class)
             ->middleware('platform:admin.users.manage_roles')

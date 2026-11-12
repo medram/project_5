@@ -283,10 +283,15 @@
         },
         {
             "id": "admin-plans-subscriptions",
-            "state": "in_progress",
-            "lastVerifiedAt": null,
-            "checks": [],
-            "blockers": []
+            "state": "blocked_external",
+            "lastVerifiedAt": "2026-11-12T15:57:00Z",
+            "checks": [
+                "Billing administration suite passed 7 tests and 99 assertions across permissions, locked plan fields, audited review changes, overrides, expiry fallback, and disabled provider actions.",
+                "Managed Chromium at 1440x1000 and 390x844 rendered Plans and Subscriptions without horizontal overflow or page errors."
+            ],
+            "blockers": [
+                "Stripe test credentials and a disposable test subscription are required to verify live provider cancel/resume behavior."
+            ]
         },
         {
             "id": "admin-users-roles",

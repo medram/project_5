@@ -3,25 +3,25 @@
     "id": "admin-plans-subscriptions",
     "area": "Administration",
     "name": "Plan and subscription operations",
-    "status": "in_progress",
+    "status": "blocked_external",
     "requirements": [
         {
             "id": "APLN-1",
             "text": "Authorized billing administrators manage plan catalog metadata, Stripe mappings, and explicit workspace overrides.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         },
         {
             "id": "APLN-2",
             "text": "Admin overrides require actor, reason, source, optional expiry, and an immutable audit record.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         },
         {
             "id": "APLN-3",
             "text": "Stripe-owned subscription state changes continue through Cashier and Stripe rather than local imitation.",
             "priority": "P1",
-            "status": "planned"
+            "status": "blocked_external"
         }
     ],
     "routes": ["/admin/plans", "/admin/subscriptions"],
@@ -62,5 +62,24 @@
             ]
         }
     ],
-    "implementationEvidence": []
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Billing administration suite passed 7 tests and 99 assertions: permission boundaries, locked-field plan edits, audited metadata/price-mapping changes, override reason/source/expiry/idempotency, expiry fallback to Free, scoped revocation, hidden payment identifiers, and disabled provider actions without Stripe configuration.",
+            "reference": "tests/Feature/Admin/AdminBillingTest.php",
+            "verifiedAt": "2026-11-12T15:57:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Full application suite passed 529 tests and 17,642 assertions after adding plan and subscription operations.",
+            "reference": "php -d memory_limit=1G vendor/bin/phpunit",
+            "verifiedAt": "2026-11-12T15:57:00Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium at 1440x1000 and 390x844 rendered Plans and Subscriptions without horizontal overflow or page errors. Readiness warnings, locked catalog values, override creation controls, and provider-disabled actions were visible.",
+            "reference": "product/verification/parity/admin-plans-desktop.png; product/verification/parity/admin-subscriptions-desktop.png; product/verification/parity/admin-plans-mobile.png; product/verification/parity/admin-subscriptions-mobile.png",
+            "verifiedAt": "2026-11-12T15:57:00Z"
+        }
+    ]
 }
