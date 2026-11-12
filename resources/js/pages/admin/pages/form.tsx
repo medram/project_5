@@ -1,0 +1,322 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, ExternalLink, Save } from 'lucide-react';
+import { CustomPageEditor } from '@/components/admin/custom-page-editor';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import pages from '@/routes/admin/pages';
+import type { AdminPageFormProps } from '@/types/admin-pages';
+
+export default function AdminPageForm({ page }: AdminPageFormProps) {
+    const form = useForm({
+        slug: page?.slug ?? '',
+        title: page?.title ?? '',
+        body: page?.body ?? '<p></p>',
+        state: page?.state ?? 'draft',
+        placement: page?.placement ?? 'none',
+        seo_title: page?.seo_title ?? '',
+        seo_description: page?.seo_description ?? '',
+        og_media_id: page?.og_media_id ? String(page.og_media_id) : '',
+    });
+
+    function submit() {
+        form.transform((data) => ({
+            ...data,
+            placement: data.placement === 'none' ? null : data.placement,
+            og_media_id: data.og_media_id ? Number(data.og_media_id) : null,
+            seo_title: data.seo_title || null,
+            seo_description: data.seo_description || null,
+        }));
+
+        if (page) {
+            form.patch(pages.update(page.id).url, { preserveScroll: true });
+        } else {
+            form.post(pages.store().url);
+        }
+    }
+
+    return (
+        <>
+            <Head
+                title={`${page ? 'Edit' : 'New'} custom page — Administration`}
+            />
+            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+                <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <Button
+                            asChild
+                            variant="ghost"
+                            size="sm"
+                            className="px-0"
+                        >
+                            <Link href={pages.index().url}>
+                                <ArrowLeft aria-hidden="true" />
+                                Custom pages
+                            </Link>
+                        </Button>
+                        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+                            {page ? 'Edit custom page' : 'New custom page'}
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Server sanitization is authoritative. Only safe
+                            paragraphs, headings, lists, emphasis, quotes, code,
+                            and http/https/mailto links survive.
+                        </p>
+                    </div>
+                    {page && (
+                        <Button asChild variant="outline" className="min-h-11">
+                            <a
+                                href={pages.preview(page.id).url}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                <ExternalLink aria-hidden="true" />
+                                Preview
+                            </a>
+                        </Button>
+                    )}
+                </header>
+
+                <form
+                    className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        submit();
+                    }}
+                >
+                    <div className="grid min-w-0 gap-4">
+                        <Card>
+                            <CardHeader className="gap-1">
+                                <CardTitle>Page content</CardTitle>
+                                <CardDescription>
+                                    The editor exposes a restricted toolbar; the
+                                    server strips unsupported markup and unsafe
+                                    link protocols on write and render.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="page-title">Title</Label>
+                                    <Input
+                                        id="page-title"
+                                        value={form.data.title}
+                                        maxLength={160}
+                                        required
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'title',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    {form.errors.title && (
+                                        <p className="text-sm text-destructive">
+                                            {form.errors.title}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Body</Label>
+                                    <CustomPageEditor
+                                        value={form.data.body}
+                                        onChange={(html) =>
+                                            form.setData('body', html)
+                                        }
+                                    />
+                                    {form.errors.body && (
+                                        <p className="text-sm text-destructive">
+                                            {form.errors.body}
+                                        </p>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="grid min-w-0 content-start gap-4">
+                        <Card>
+                            <CardHeader className="gap-1">
+                                <CardTitle>Publication</CardTitle>
+                                <CardDescription>
+                                    Reserved application slugs are rejected.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid gap-3">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="page-slug">Slug</Label>
+                                    <Input
+                                        id="page-slug"
+                                        value={form.data.slug}
+                                        maxLength={80}
+                                        required
+                                        placeholder="about-us"
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'slug',
+                                                event.target.value.toLowerCase(),
+                                            )
+                                        }
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        /content/
+                                        {form.data.slug || 'slug'}
+                                    </p>
+                                    {form.errors.slug && (
+                                        <p className="text-sm text-destructive">
+                                            {form.errors.slug}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="page-state">State</Label>
+                                    <Select
+                                        value={form.data.state}
+                                        onValueChange={(value) =>
+                                            form.setData('state', value)
+                                        }
+                                    >
+                                        <SelectTrigger
+                                            id="page-state"
+                                            className="min-h-11 w-full"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="draft">
+                                                Draft
+                                            </SelectItem>
+                                            <SelectItem value="published">
+                                                Published
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="page-placement">
+                                        Optional placement
+                                    </Label>
+                                    <Select
+                                        value={form.data.placement}
+                                        onValueChange={(value) =>
+                                            form.setData('placement', value)
+                                        }
+                                    >
+                                        <SelectTrigger
+                                            id="page-placement"
+                                            className="min-h-11 w-full"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">
+                                                None
+                                            </SelectItem>
+                                            <SelectItem value="header">
+                                                Header
+                                            </SelectItem>
+                                            <SelectItem value="footer">
+                                                Footer
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader className="gap-1">
+                                <CardTitle>SEO and OG media</CardTitle>
+                                <CardDescription>
+                                    Optional metadata. Existing content media
+                                    may be referenced by ID; no upload path is
+                                    added here.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid gap-3">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="page-seo-title">
+                                        SEO title
+                                    </Label>
+                                    <Input
+                                        id="page-seo-title"
+                                        value={form.data.seo_title}
+                                        maxLength={160}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'seo_title',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="page-seo-description">
+                                        SEO description
+                                    </Label>
+                                    <Textarea
+                                        id="page-seo-description"
+                                        value={form.data.seo_description}
+                                        maxLength={320}
+                                        rows={3}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'seo_description',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="page-og-media">
+                                        OG media ID
+                                    </Label>
+                                    <Input
+                                        id="page-og-media"
+                                        type="number"
+                                        min={1}
+                                        value={form.data.og_media_id}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'og_media_id',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    {form.errors.og_media_id && (
+                                        <p className="text-sm text-destructive">
+                                            {form.errors.og_media_id}
+                                        </p>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Button
+                            type="submit"
+                            className="min-h-11"
+                            disabled={form.processing}
+                        >
+                            <Save aria-hidden="true" />
+                            {form.processing ? 'Saving…' : 'Save page'}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </>
+    );
+}

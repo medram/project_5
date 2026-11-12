@@ -2,8 +2,10 @@ import { usePage } from '@inertiajs/react';
 import {
     BarChart3,
     CreditCard,
+    BookOpenText,
     FileText,
     Folder,
+    FolderOpen,
     Globe2,
     Link2,
     PanelsTopLeft,
@@ -28,6 +30,8 @@ import insights from '@/routes/admin/insights';
 import plans from '@/routes/admin/plans';
 import subscriptions from '@/routes/admin/subscriptions';
 import content from '@/routes/admin/content';
+import files from '@/routes/admin/files';
+import pages from '@/routes/admin/pages';
 
 export default function AdminSidebar() {
     const { url, props } = usePage();
@@ -41,6 +45,18 @@ export default function AdminSidebar() {
             href: users.index().url,
             icon: Users,
             visible: abilities.includes('admin.users.view'),
+        },
+        {
+            label: 'Files',
+            href: files.index().url,
+            icon: FolderOpen,
+            visible: abilities.includes('admin.files.view'),
+        },
+        {
+            label: 'Custom pages',
+            href: pages.index().url,
+            icon: BookOpenText,
+            visible: abilities.includes('admin.pages.manage'),
         },
         {
             label: 'Links',

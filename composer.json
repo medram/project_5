@@ -23,6 +23,7 @@
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
         "maxmind-db/reader": "^1.14",
+        "symfony/html-sanitizer": "^8.1",
         "symfony/intl": "^8.0"
     },
     "require-dev": {

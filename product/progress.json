@@ -329,9 +329,12 @@
         },
         {
             "id": "admin-files-pages-localization-logs",
-            "state": "planned",
-            "lastVerifiedAt": null,
-            "checks": [],
+            "state": "in_progress",
+            "lastVerifiedAt": "2026-11-12T16:22:00Z",
+            "checks": [
+                "Files/pages suite passed 5 tests and 82 assertions across permissions, safe metadata, soft-delete/restore audits, sanitization, reserved slugs, publication, preview, and media validation.",
+                "Managed Chromium rendered files, pages, editor, and public page at 1440x1000 and 390x844; a page was created, published, and served publicly."
+            ],
             "blockers": []
         }
     ]

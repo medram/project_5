@@ -19,6 +19,7 @@ void createInertiaApp({
             case name === 'links/overlay':
             case name === 'links/unlock':
             case name === 'qr-codes/unlock':
+            case name === 'content/show':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;

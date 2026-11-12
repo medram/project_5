@@ -3,19 +3,19 @@
     "id": "admin-files-pages-localization-logs",
     "area": "Administration",
     "name": "Files, custom pages, localization, and system logs",
-    "status": "planned",
+    "status": "in_progress",
     "requirements": [
         {
             "id": "AOPS-1",
             "text": "Media files retain workspace/uploader ownership, opaque storage names, MIME/size/hash metadata, visibility, scan state, and soft deletion.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         },
         {
             "id": "AOPS-2",
             "text": "Safe custom pages use reserved-aware slugs, sanitized rich text, draft/published state, navigation placement, and SEO metadata.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         },
         {
             "id": "AOPS-3",
@@ -102,5 +102,24 @@
             ]
         }
     ],
-    "implementationEvidence": []
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Files/pages suite passed 5 tests and 82 assertions: separate file/page permissions, safe file metadata serialization, reasoned soft-delete/restore audits, sanitized custom-page writes and rendering, reserved/duplicate slug rejection, publication visibility, admin preview, foreign OG media rejection, and deletion audits. Existing content-storage tests cover metadata re-encoding, mismatched bytes, and fail-closed ClamAV behavior.",
+            "reference": "tests/Feature/Admin/AdminFilesPagesTest.php; tests/Feature/Content/ContentMediaStorageTest.php",
+            "verifiedAt": "2026-11-12T16:22:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Full application suite passed 537 tests and 17,986 assertions after adding safe files and custom pages.",
+            "reference": "php -d memory_limit=1G vendor/bin/phpunit",
+            "verifiedAt": "2026-11-12T16:22:00Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium rendered the files list, custom-page list, restricted TipTap editor, and a published public page at 1440x1000 and 390x844 without horizontal overflow or page errors. A draft was created through the editor, published, and served at /content/about-linkpilot.",
+            "reference": "product/verification/parity/admin-files-desktop.png; product/verification/parity/admin-pages-desktop.png; product/verification/parity/admin-page-editor-desktop.png; product/verification/parity/admin-pages-mobile.png; product/verification/parity/admin-page-editor-mobile.png; product/verification/parity/custom-page-public-desktop.png; product/verification/parity/custom-page-public-mobile.png",
+            "verifiedAt": "2026-11-12T16:22:00Z"
+        }
+    ]
 }

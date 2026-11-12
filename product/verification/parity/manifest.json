@@ -1,6 +1,6 @@
 {
     "schemaVersion": "1.0.0",
-    "capturedAt": "2026-11-12T16:05:00Z",
+    "capturedAt": "2026-11-12T16:20:00Z",
     "sourceBaseUrl": "http://localhost:8000",
     "browser": {
         "engine": "managed Chromium",
@@ -732,6 +732,83 @@
             "sha256": "afa5ff58f29100eb48a0b4a0b98726b9eb7e67300f07b3b59cecd54ab464f575",
             "bytes": 36,
             "privacyNote": "Seeded .test workspaces only; no destination URLs, access codes, verification tokens, provider IDs, failure bodies, lead values, or visitor dimensions."
+        },
+        {
+            "path": "product/verification/parity/admin-files-desktop.png",
+            "role": "admin",
+            "route": "/admin/files",
+            "state": "retained media metadata list with no previews or paths",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "247bd96445961400fef7695ee42744e64d1d7dcc91ab79ce0e2b5137968854b7",
+            "bytes": 36,
+            "privacyNote": "Seeded .test data only; no storage paths, downloads, tenant file contents, secrets, or unsanitized rich text."
+        },
+        {
+            "path": "product/verification/parity/admin-pages-desktop.png",
+            "role": "admin",
+            "route": "/admin/custom-pages",
+            "state": "custom page list with publication and preview actions",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "0a08316cef3f55b02946643a7b989d06060e4d0d3777dbe2f186ad5fa2e5197b",
+            "bytes": 36,
+            "privacyNote": "Seeded .test data only; no storage paths, downloads, tenant file contents, secrets, or unsanitized rich text."
+        },
+        {
+            "path": "product/verification/parity/admin-page-editor-desktop.png",
+            "role": "admin",
+            "route": "/admin/custom-pages/create",
+            "state": "TipTap editor with restricted toolbar",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "0f78269e0748c5571a15790e04d2fd5eb12341f87f547abeba0f531a20280f50",
+            "bytes": 36,
+            "privacyNote": "Seeded .test data only; no storage paths, downloads, tenant file contents, secrets, or unsanitized rich text."
+        },
+        {
+            "path": "product/verification/parity/admin-pages-mobile.png",
+            "role": "admin",
+            "route": "/admin/custom-pages",
+            "state": "mobile custom page cards",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "4830196bd3fc592b338debf99d8f844abbb6dfa9a030b1f08054e30193595c43",
+            "bytes": 36,
+            "privacyNote": "Seeded .test data only; no storage paths, downloads, tenant file contents, secrets, or unsanitized rich text."
+        },
+        {
+            "path": "product/verification/parity/admin-page-editor-mobile.png",
+            "role": "admin",
+            "route": "/admin/custom-pages/create",
+            "state": "mobile restricted editor",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "d90d0281440e40590dd3bbe6e44b10ac78aaea3df1afdba53211f954cff08ecd",
+            "bytes": 36,
+            "privacyNote": "Seeded .test data only; no storage paths, downloads, tenant file contents, secrets, or unsanitized rich text."
+        },
+        {
+            "path": "product/verification/parity/custom-page-public-desktop.png",
+            "role": "guest",
+            "route": "/content/about-linkpilot",
+            "state": "published sanitized custom page",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "c4de74ac2882bf26f2c277b722e7fdfc859eb5701f9e1f43dfa8547a051181f4",
+            "bytes": 36,
+            "privacyNote": "Seeded .test data only; no storage paths, downloads, tenant file contents, secrets, or unsanitized rich text."
+        },
+        {
+            "path": "product/verification/parity/custom-page-public-mobile.png",
+            "role": "guest",
+            "route": "/content/about-linkpilot",
+            "state": "mobile published sanitized custom page",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "8e27397ae5c45401f4e445b4ee5431357e551d84d43af152d07d80029957924d",
+            "bytes": 36,
+            "privacyNote": "Seeded .test data only; no storage paths, downloads, tenant file contents, secrets, or unsanitized rich text."
         }
     ]
 }

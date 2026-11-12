@@ -3,6 +3,8 @@
 use App\Http\Controllers\AcceptWorkspaceInvitationController;
 use App\Http\Controllers\AccountAnalyticsController;
 use App\Http\Controllers\Admin\AdminContentController;
+use App\Http\Controllers\Admin\AdminCustomPageController;
+use App\Http\Controllers\Admin\AdminFileController;
 use App\Http\Controllers\Admin\AdminHomeController;
 use App\Http\Controllers\Admin\AdminInsightsController;
 use App\Http\Controllers\Admin\AdminNotificationController;
@@ -49,6 +51,7 @@ use App\Http\Controllers\NotificationCenterController;
 use App\Http\Controllers\PricingController;
 use App\Http\Controllers\PublicBioContentBlockController;
 use App\Http\Controllers\PublicBioContentMediaController;
+use App\Http\Controllers\PublicCustomPageController;
 use App\Http\Controllers\PublicBioLinkController;
 use App\Http\Controllers\PublicBioPageController;
 use App\Http\Controllers\PublicLinkController;
@@ -356,6 +359,41 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
             ->middleware('platform:admin.content.view_metadata')
             ->name('content.pixels');
 
+        Route::get('files', [AdminFileController::class, 'index'])
+            ->middleware('platform:admin.files.view')
+            ->name('files.index');
+        Route::delete('files/{media}', [AdminFileController::class, 'destroy'])
+            ->middleware('platform:admin.files.manage')
+            ->name('files.destroy');
+        Route::patch('files/{media}/restore', [AdminFileController::class, 'restore'])
+            ->middleware('platform:admin.files.manage')
+            ->name('files.restore');
+
+        Route::get('custom-pages', [AdminCustomPageController::class, 'index'])
+            ->middleware('platform:admin.pages.manage')
+            ->name('pages.index');
+        Route::get('custom-pages/create', [AdminCustomPageController::class, 'create'])
+            ->middleware('platform:admin.pages.manage')
+            ->name('pages.create');
+        Route::post('custom-pages', [AdminCustomPageController::class, 'store'])
+            ->middleware('platform:admin.pages.manage')
+            ->name('pages.store');
+        Route::get('custom-pages/{customPage}/edit', [AdminCustomPageController::class, 'edit'])
+            ->middleware('platform:admin.pages.manage')
+            ->name('pages.edit');
+        Route::patch('custom-pages/{customPage}', [AdminCustomPageController::class, 'update'])
+            ->middleware('platform:admin.pages.manage')
+            ->name('pages.update');
+        Route::delete('custom-pages/{customPage}', [AdminCustomPageController::class, 'destroy'])
+            ->middleware('platform:admin.pages.manage')
+            ->name('pages.destroy');
+        Route::patch('custom-pages/{customPage}/publish', [AdminCustomPageController::class, 'publish'])
+            ->middleware('platform:admin.pages.manage')
+            ->name('pages.publish');
+        Route::get('custom-pages/{customPage}/preview', [AdminCustomPageController::class, 'preview'])
+            ->middleware('platform:admin.pages.manage')
+            ->name('pages.preview');
+
         Route::get('plans', [AdminPlanController::class, 'index'])
             ->middleware('platform:admin.billing.view')
             ->name('plans.index');
@@ -400,6 +438,10 @@ require __DIR__.'/settings.php';
 
 Route::post('tracking-consent', TrackingConsentController::class)
     ->name('tracking-consent.store');
+Route::get('content/{slug}', PublicCustomPageController::class)
+    ->where('slug', '[a-z0-9-]{3,80}')
+    ->name('custom-pages.show');
+
 Route::get('content-media/{publicId}', ContentMediaController::class)
     ->whereUuid('publicId')
     ->name('content-media.show');
