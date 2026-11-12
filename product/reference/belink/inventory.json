@@ -1786,10 +1786,7 @@
         {
             "referenceState": "User bio list",
             "referenceRoute": "/dashboard/biolinks",
-            "viewports": [
-                "1440x1000",
-                "390x844"
-            ],
+            "viewports": ["1440x1000", "390x844"],
             "result": "Unavailable: the observed route redirected to a specific editor.",
             "linkPilotRoute": "/dashboard/biolinks",
             "requiredImplementationScreenshots": [
@@ -1800,10 +1797,7 @@
         {
             "referenceState": "Brand verification settings",
             "referenceRoute": "/admin/settings/brand-verification",
-            "viewports": [
-                "1440x1000",
-                "390x844"
-            ],
+            "viewports": ["1440x1000", "390x844"],
             "result": "Unavailable: direct navigation rendered the reference not-found page.",
             "linkPilotRoute": "/admin/settings/brand-verification",
             "requiredImplementationScreenshots": [
