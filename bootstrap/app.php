@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountUsable;
 use App\Http\Middleware\EnsureActiveAccount;
 use App\Http\Middleware\EnsureAdministrator;
 use App\Http\Middleware\EnsureAllowedHost;
@@ -42,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureAllowedHost::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
+            EnsureAccountUsable::class,
             TrackLastSeen::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);

@@ -68,6 +68,9 @@ class AccountDeletionWorkspaceOwnershipTest extends TestCase
         $this->actingAs($member)->delete(route('profile.destroy'), ['password' => 'password'])
             ->assertRedirect(route('home'));
 
+        $this->travel(31)->days();
+        $this->artisan('linkpilot:purge-deleted-accounts')->assertSuccessful();
+
         foreach ([
             [$link, 'links'],
             [$folder, 'folders'],
@@ -147,6 +150,9 @@ class AccountDeletionWorkspaceOwnershipTest extends TestCase
 
         $this->actingAs($owner)->delete(route('profile.destroy'), ['password' => 'correct-password'])
             ->assertRedirect(route('home'));
+
+        $this->travel(31)->days();
+        $this->artisan('linkpilot:purge-deleted-accounts')->assertSuccessful();
 
         $this->assertNull($owner->fresh());
         $this->assertSame($newOwner->id, $workspace->fresh()->owner_id);

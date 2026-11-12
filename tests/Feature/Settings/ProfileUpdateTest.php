@@ -61,7 +61,7 @@ class ProfileUpdateTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
-    public function test_user_can_delete_their_account()
+    public function test_user_can_schedule_their_account_for_deletion()
     {
         $user = User::factory()->create();
 
@@ -76,7 +76,10 @@ class ProfileUpdateTest extends TestCase
             ->assertRedirect(route('home'));
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+        $user->refresh();
+        $this->assertNotNull($user->deletion_requested_at);
+        $this->assertNotNull($user->purge_after);
+        $this->assertTrue($user->purge_after->between(now()->addDays(29), now()->addDays(31)));
     }
 
     public function test_correct_password_must_be_provided_to_delete_account()

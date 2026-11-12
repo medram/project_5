@@ -27,7 +27,7 @@
             "id": "ID-5",
             "text": "Account deletion follows retention and billing policy.",
             "priority": "P3",
-            "status": "planned"
+            "status": "in_progress"
         },
         {
             "id": "AUTH-1",
@@ -43,14 +43,15 @@
         },
         {
             "id": "AUTH-3",
-            "text": "Account deletion, restoration, and purge follow the approved 30-day lifecycle with ownership and subscription safeguards.",
+            "text": "Account deletion schedules a restorable 30-day lifecycle with credentialed restore, subscription/ownership/super-admin safeguards, and a locked daily purge that preserves shared content attribution.",
             "priority": "P1",
-            "status": "planned"
+            "status": "in_progress"
         }
     ],
     "routes": [
         "/account-settings/avatar/{publicId}",
         "/account-settings/general",
+        "/account-settings/restore",
         "/account-settings/security",
         "/auth/google/callback",
         "/auth/google/redirect",
@@ -137,6 +138,18 @@
             "description": "Managed Chromium confirmed the general settings avatar/regional controls and security session cards at 1440x1000 and 390x844 with no horizontal overflow, HTTP errors, page errors, or visible Google controls while OAuth is unconfigured.",
             "reference": "product/verification/parity/user-settings-general-desktop.png; product/verification/parity/user-settings-security-desktop.png",
             "verifiedAt": "2026-11-12T13:50:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Deletion lifecycle suites passed 14 tests and 88 assertions: credential revocation and idempotent scheduling, pending-account restore-only access, exact day-29/30 purge boundary, solo/shared workspace cleanup, subscription/ownership/admin safeguards, restore-before-purge, and command execution.",
+            "reference": "tests/Feature/Settings/AccountDeletionLifecycleTest.php; tests/Feature/Settings/AccountDeletionWorkspaceOwnershipTest.php; tests/Feature/Settings/ProfileUpdateTest.php",
+            "verifiedAt": "2026-11-12T14:05:00Z"
+        },
+        {
+            "type": "command",
+            "description": "`linkpilot:purge-deleted-accounts` is scheduled daily and purges only accounts past their 30-day window; a live browser restore flow returned the pending account to the dashboard.",
+            "reference": "routes/console.php; app/Console/Commands/PurgeDeletedAccounts.php; /account-settings/restore",
+            "verifiedAt": "2026-11-12T14:05:00Z"
         }
     ]
 }

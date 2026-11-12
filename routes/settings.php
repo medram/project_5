@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Settings\AccountAvatarController;
 use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\Settings\RestoreAccountController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\SessionController;
 use Illuminate\Auth\Middleware\RequirePassword;
@@ -13,6 +14,11 @@ Route::middleware(['auth', 'active-account'])->group(function () {
 
     Route::get('account-settings/general', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('account-settings/general', [ProfileController::class, 'update'])->name('profile.update');
+
+    Route::get('account-settings/restore', [RestoreAccountController::class, 'show'])->name('account.restore');
+    Route::post('account-settings/restore', [RestoreAccountController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('account.restore.store');
 });
 
 Route::middleware(['auth', 'verified', 'active-account'])->group(function () {

@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Accounts\AccountProfileOptions;
 use App\Services\Accounts\GoogleConnection;
+use App\Services\Accounts\ScheduleAccountDeletion;
 use App\Services\Content\ContentMediaStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -135,44 +136,18 @@ class ProfileController extends Controller
     }
 
     /**
-     * Delete the user's profile.
+     * Schedule the user's account for deletion after the 30-day restore window.
      */
-    public function destroy(ProfileDeleteRequest $request): RedirectResponse
+    public function destroy(ProfileDeleteRequest $request, ScheduleAccountDeletion $schedule): RedirectResponse
     {
-        $user = $request->user();
+        $schedule->schedule($request->user());
 
-        DB::transaction(function () use ($user): void {
-            $ownedWorkspaces = Workspace::query()
-                ->where('owner_id', $user->getKey())
-                ->lockForUpdate()
-                ->get();
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Your account is scheduled for deletion in 30 days.'),
+        ]);
 
-            foreach ($ownedWorkspaces as $workspace) {
-                $hasOtherMembers = DB::table('workspace_user')
-                    ->where('workspace_id', $workspace->getKey())
-                    ->where('user_id', '!=', $user->getKey())
-                    ->exists();
-
-                if ($hasOtherMembers) {
-                    throw ValidationException::withMessages([
-                        'workspaces' => "Transfer ownership of {$workspace->name} to another member before deleting your account.",
-                    ]);
-                }
-            }
-
-            foreach ($ownedWorkspaces as $workspace) {
-                foreach (['analytics_events', 'custom_domains', 'webhooks', 'tracking_pixels', 'link_pages', 'link_overlays', 'bio_pages', 'folders', 'links'] as $table) {
-                    DB::table($table)->where('workspace_id', $workspace->getKey())->delete();
-                }
-
-                $workspace->delete();
-            }
-
-            $user->refresh();
-            Auth::logout();
-            $user->delete();
-        });
-
+        Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

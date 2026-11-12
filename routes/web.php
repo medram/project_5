@@ -278,6 +278,8 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
             ->name('users.administrator.update');
         Route::patch('users/{user}/plan', [AdminUserController::class, 'updatePlan'])
             ->name('users.plan.update');
+        Route::patch('users/{user}/deletion/restore', [AdminUserController::class, 'restoreDeletion'])
+            ->name('users.deletion.restore');
         Route::post('notifications/broadcast', [AdminNotificationController::class, 'store'])
             ->name('notifications.broadcast');
     });

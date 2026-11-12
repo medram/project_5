@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\User;
+use App\Services\Accounts\RestoreAccount;
 use App\Services\Billing\WorkspaceUsage;
 use App\Services\Workspaces\CreatesPersonalWorkspace;
 use Closure;
@@ -55,6 +56,17 @@ class AdminUserController extends Controller
 
         $this->mutateAsAdministrator($request, $user, function (User $account) use ($isAdministrator): void {
             $account->forceFill(['is_admin' => $isAdministrator])->save();
+        });
+
+        return $this->redirectToIndex($request);
+    }
+
+    public function restoreDeletion(Request $request, User $user, RestoreAccount $restore): RedirectResponse
+    {
+        $this->ensureAnotherAccount($request, $user);
+
+        $this->mutateAsAdministrator($request, $user, function (User $account) use ($restore): void {
+            $restore->restore($account);
         });
 
         return $this->redirectToIndex($request);

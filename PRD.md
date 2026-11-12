@@ -139,9 +139,10 @@ A verified custom domain resolves only a link explicitly assigned to that host. 
 | ID-2   | Password, passkey, and two-factor management use current Fortify security flows.                                                                    |       P0 | In progress — existing implementation                                                            |
 | ID-3   | A suspended account cannot access authenticated LinkPilot resources.                                                                                |       P1 | In progress — existing implementation                                                            |
 | ID-4   | Account notifications and notification preferences are configurable.                                                                                |       P3 | Verified — preference-save tests and independent user review.                                    |
-| ID-5   | Account deletion follows retention and billing policy.                                                                                              |       P3 | Planned                                                                                          |
+| ID-5   | Account deletion follows retention and billing policy.                                                                                              |       P3 | In progress — restorable 30-day lifecycle implemented; final gates pending                       |
 | AUTH-1 | Allowed-host middleware protects authenticated and reset-password routes, and reset links always use the configured application URL.                |       P0 | Verified — Phase 2 test and browser evidence                                                     |
 | AUTH-2 | General account settings support avatar, locale, ISO country, timezone, session review, and optional Google sign-in without unsafe account linking. |       P2 | In progress — local implementation and guards verified; live Google credentials remain external. |
+| AUTH-3 | Account deletion, restoration, and purge follow an approved 30-day lifecycle with ownership and subscription safeguards.                            |       P1 | In progress — local lifecycle and safeguards verified; final gates pending.                      |
 
 ### 7.2 Short links — Phase 5 campaign delivery
 
