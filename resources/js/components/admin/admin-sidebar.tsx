@@ -2,8 +2,15 @@ import { usePage } from '@inertiajs/react';
 import {
     BarChart3,
     CreditCard,
+    FileText,
+    Folder,
+    Globe2,
+    Link2,
+    PanelsTopLeft,
     ReceiptText,
+    ScanLine,
     ShieldCheck,
+    UserRound,
     Users,
 } from 'lucide-react';
 import {
@@ -20,6 +27,7 @@ import roles from '@/routes/admin/roles';
 import insights from '@/routes/admin/insights';
 import plans from '@/routes/admin/plans';
 import subscriptions from '@/routes/admin/subscriptions';
+import content from '@/routes/admin/content';
 
 export default function AdminSidebar() {
     const { url, props } = usePage();
@@ -33,6 +41,48 @@ export default function AdminSidebar() {
             href: users.index().url,
             icon: Users,
             visible: abilities.includes('admin.users.view'),
+        },
+        {
+            label: 'Links',
+            href: content.links().url,
+            icon: Link2,
+            visible: abilities.includes('admin.content.view_metadata'),
+        },
+        {
+            label: 'Bio pages',
+            href: content.biolinks().url,
+            icon: UserRound,
+            visible: abilities.includes('admin.content.view_metadata'),
+        },
+        {
+            label: 'Folders',
+            href: content.folders().url,
+            icon: Folder,
+            visible: abilities.includes('admin.content.view_metadata'),
+        },
+        {
+            label: 'Domains',
+            href: content.domains().url,
+            icon: Globe2,
+            visible: abilities.includes('admin.content.view_metadata'),
+        },
+        {
+            label: 'Overlays',
+            href: content.overlays().url,
+            icon: PanelsTopLeft,
+            visible: abilities.includes('admin.content.view_metadata'),
+        },
+        {
+            label: 'Link pages',
+            href: content.pages().url,
+            icon: FileText,
+            visible: abilities.includes('admin.content.view_metadata'),
+        },
+        {
+            label: 'Pixels',
+            href: content.pixels().url,
+            icon: ScanLine,
+            visible: abilities.includes('admin.content.view_metadata'),
         },
         {
             label: 'Plans',

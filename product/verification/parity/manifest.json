@@ -1,6 +1,6 @@
 {
     "schemaVersion": "1.0.0",
-    "capturedAt": "2026-11-12T15:55:00Z",
+    "capturedAt": "2026-11-12T16:05:00Z",
     "sourceBaseUrl": "http://localhost:8000",
     "browser": {
         "engine": "managed Chromium",
@@ -633,6 +633,105 @@
             "sha256": "cbb5c4673d4f35c70443d2c49e85077793a47ba06be31c083eafb3e2c3995588",
             "bytes": 36,
             "privacyNote": "Seeded .test workspaces only; no payment data, customer identifiers, Stripe secrets, or tenant destinations."
+        },
+        {
+            "path": "product/verification/parity/admin-links-desktop.png",
+            "role": "admin",
+            "route": "/admin/links",
+            "state": "cross-owner short-link metadata",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "2503e2d5f13d942017be9d4ad2636c583f56c8be82db6fa3f0faf70b9f98b28c",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no destination URLs, access codes, verification tokens, provider IDs, failure bodies, lead values, or visitor dimensions."
+        },
+        {
+            "path": "product/verification/parity/admin-biolinks-desktop.png",
+            "role": "admin",
+            "route": "/admin/biolinks",
+            "state": "cross-owner bio-page metadata",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "3aed71cafda54ebf5f63bbd56a9d5063444f504cd6d9157441c3904a69ebbfdf",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no destination URLs, access codes, verification tokens, provider IDs, failure bodies, lead values, or visitor dimensions."
+        },
+        {
+            "path": "product/verification/parity/admin-folders-desktop.png",
+            "role": "admin",
+            "route": "/admin/folders",
+            "state": "cross-owner folder metadata",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "7c0539da09bd673acb7ae3c510ab2fa47357513fc524a7da804993c157d50592",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no destination URLs, access codes, verification tokens, provider IDs, failure bodies, lead values, or visitor dimensions."
+        },
+        {
+            "path": "product/verification/parity/admin-custom-domains-desktop.png",
+            "role": "admin",
+            "route": "/admin/custom-domains",
+            "state": "cross-owner domain metadata",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "6df2153a5f1a3ac8801fad9a4732d110be32451fad166ae3089bd2b764d2fd76",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no destination URLs, access codes, verification tokens, provider IDs, failure bodies, lead values, or visitor dimensions."
+        },
+        {
+            "path": "product/verification/parity/admin-link-overlays-desktop.png",
+            "role": "admin",
+            "route": "/admin/link-overlays",
+            "state": "cross-owner overlay metadata",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "16a6b6216776616927ea3117b2c033de288ccf90e2ed48ee3990d94d6c1e3454",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no destination URLs, access codes, verification tokens, provider IDs, failure bodies, lead values, or visitor dimensions."
+        },
+        {
+            "path": "product/verification/parity/admin-link-pages-desktop.png",
+            "role": "admin",
+            "route": "/admin/link-pages",
+            "state": "cross-owner link-page metadata",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "30dcb7b98db872bc3ec7592fcc73927b8ef7c192d6c08a966905a74cb6409eab",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no destination URLs, access codes, verification tokens, provider IDs, failure bodies, lead values, or visitor dimensions."
+        },
+        {
+            "path": "product/verification/parity/admin-pixels-desktop.png",
+            "role": "admin",
+            "route": "/admin/pixels",
+            "state": "cross-owner pixel metadata",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "a1b0d8dc6f52ff25de510b51704ce33451c016f2dbbe94191a7e3c431087fb3c",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no destination URLs, access codes, verification tokens, provider IDs, failure bodies, lead values, or visitor dimensions."
+        },
+        {
+            "path": "product/verification/parity/admin-content-links-mobile.png",
+            "role": "admin",
+            "route": "/admin/links",
+            "state": "mobile short-link metadata cards",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "efe668c8bb7adf5e1e65fd4ea36ae6c7d726d4e44d57cb215bb7ec31738b5906",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no destination URLs, access codes, verification tokens, provider IDs, failure bodies, lead values, or visitor dimensions."
+        },
+        {
+            "path": "product/verification/parity/admin-content-pixels-mobile.png",
+            "role": "admin",
+            "route": "/admin/pixels",
+            "state": "mobile pixel metadata cards",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "afa5ff58f29100eb48a0b4a0b98726b9eb7e67300f07b3b59cecd54ab464f575",
+            "bytes": 36,
+            "privacyNote": "Seeded .test workspaces only; no destination URLs, access codes, verification tokens, provider IDs, failure bodies, lead values, or visitor dimensions."
         }
     ]
 }

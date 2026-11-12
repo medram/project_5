@@ -3,25 +3,25 @@
     "id": "admin-content",
     "area": "Administration",
     "name": "Cross-workspace content operations",
-    "status": "planned",
+    "status": "verified",
     "requirements": [
         {
             "id": "ACNT-1",
             "text": "Authorized administrators can list cross-workspace links, bio pages, folders, domains, overlays, link pages, and pixels.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         },
         {
             "id": "ACNT-2",
             "text": "Administration content views show owner/workspace metadata, state, counts, and timestamps but never private destinations or secrets.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         },
         {
             "id": "ACNT-3",
             "text": "Administration content access never grants silent impersonation or tenant membership.",
             "priority": "P0",
-            "status": "planned"
+            "status": "verified"
         }
     ],
     "routes": [
@@ -126,5 +126,24 @@
             ]
         }
     ],
-    "implementationEvidence": []
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Content administration suite passed 3 tests and 137 assertions: permission boundaries, support read access, cross-owner coverage for all seven resource types, safe-field serialization, hidden destinations/tokens/provider IDs/body copy, URL-backed filters/sorting/pagination, and query-injection resistance.",
+            "reference": "tests/Feature/Admin/AdminContentTest.php",
+            "verifiedAt": "2026-11-12T16:07:00Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium rendered all seven cross-owner content lists at 1440x1000, plus mobile links and pixels at 390x844, without horizontal overflow or page errors.",
+            "reference": "product/verification/parity/admin-links-desktop.png; product/verification/parity/admin-biolinks-desktop.png; product/verification/parity/admin-folders-desktop.png; product/verification/parity/admin-custom-domains-desktop.png; product/verification/parity/admin-link-overlays-desktop.png; product/verification/parity/admin-link-pages-desktop.png; product/verification/parity/admin-pixels-desktop.png; product/verification/parity/admin-content-links-mobile.png; product/verification/parity/admin-content-pixels-mobile.png",
+            "verifiedAt": "2026-11-12T16:07:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Full application suite passed 532 tests and 17,884 assertions after adding cross-owner content metadata screens.",
+            "reference": "php -d memory_limit=1G vendor/bin/phpunit",
+            "verifiedAt": "2026-11-12T16:08:00Z"
+        }
+    ]
 }

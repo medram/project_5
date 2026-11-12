@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcceptWorkspaceInvitationController;
 use App\Http\Controllers\AccountAnalyticsController;
+use App\Http\Controllers\Admin\AdminContentController;
 use App\Http\Controllers\Admin\AdminHomeController;
 use App\Http\Controllers\Admin\AdminInsightsController;
 use App\Http\Controllers\Admin\AdminNotificationController;
@@ -332,6 +333,28 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         Route::get('insights/visitors', [AdminInsightsController::class, 'visitors'])
             ->middleware('platform:admin.insights.view')
             ->name('insights.visitors');
+
+        Route::get('links', [AdminContentController::class, 'links'])
+            ->middleware('platform:admin.content.view_metadata')
+            ->name('content.links');
+        Route::get('biolinks', [AdminContentController::class, 'bioLinks'])
+            ->middleware('platform:admin.content.view_metadata')
+            ->name('content.biolinks');
+        Route::get('folders', [AdminContentController::class, 'folders'])
+            ->middleware('platform:admin.content.view_metadata')
+            ->name('content.folders');
+        Route::get('custom-domains', [AdminContentController::class, 'domains'])
+            ->middleware('platform:admin.content.view_metadata')
+            ->name('content.domains');
+        Route::get('link-overlays', [AdminContentController::class, 'overlays'])
+            ->middleware('platform:admin.content.view_metadata')
+            ->name('content.overlays');
+        Route::get('link-pages', [AdminContentController::class, 'pages'])
+            ->middleware('platform:admin.content.view_metadata')
+            ->name('content.pages');
+        Route::get('pixels', [AdminContentController::class, 'pixels'])
+            ->middleware('platform:admin.content.view_metadata')
+            ->name('content.pixels');
 
         Route::get('plans', [AdminPlanController::class, 'index'])
             ->middleware('platform:admin.billing.view')
