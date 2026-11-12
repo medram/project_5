@@ -7,6 +7,7 @@ This directory is the durable, machine-readable product contract that complement
 - `catalog.json` is the ordered feature index.
 - `features/*.json` contains one feature record per catalog entry and validates against `schema/feature.schema.json`.
 - `progress.json` is the current cross-feature status and verification summary.
+- `reference/belink/inventory.json` records the untrusted static bundle inventory, observed navigation, runtime limitation, immutable PNG checksums, evidence rulings, and the reference-to-LinkPilot route/state screenshot matrix.
 - `reference/belink/manifest.json` inventories retained reference screenshots, including captures excluded from evidence.
 - `reference/belink/screenshots/` is immutable reference evidence. Implementation screenshots must be stored separately and must not overwrite it.
 
@@ -36,6 +37,8 @@ Status is conservative. Narrative labels such as “Delivered” do not automati
 Reference screenshots document visible hierarchy, controls, density, responsive behavior, and interaction states only. They do not prove server behavior. Evidence descriptions must state only what the image visibly shows. Every retained PNG is inventoried with role, route/state, viewport, capture time, privacy note, and observed behavior. Captures with the wrong state or visible token-like identifiers are marked `excluded` and must not be referenced by feature records.
 
 Do not commit live customer emails, IP addresses, credentials, access tokens, webhook secrets, or personal values. Crop or irreversibly blur sensitive values before committing a new image. Record the redaction in the manifest. Do not modify or delete the retained BeLink PNGs; replace invalid evidence with a new separately named capture and then update the manifest.
+
+The BeLink inventory is descriptive evidence only. Static route and lazy-module entries do not prove runtime behavior, and the route/state matrix maps visible reference hierarchy to LinkPilot-owned routes and required implementation captures without changing feature status. When a shared demo state is unavailable, record the exact limitation as `unverified — confirm first`; never invent or reuse credentials to fill the gap.
 
 ## Verification and reviewer gate
 

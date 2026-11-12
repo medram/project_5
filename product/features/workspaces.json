@@ -127,7 +127,7 @@
         {
             "type": "browser",
             "description": "At localhost:8101, an owner created a workspace and invited admin/member accounts; an admin accepted the owner-issued invitation. The workspace-admin view showed no Resend/Revoke controls for a pending owner-issued admin invitation while a pending member invitation retained both. The owner transfer form opened and was cancelled without submission; workspace settings at 390x844 had no horizontal overflow or browser errors.",
-            "reference": "http://localhost:8101/account-settings/workspaces; product/verification/workspace-owner-billing-mobile.png",
+            "reference": "http://localhost:8101/account-settings/workspaces",
             "verifiedAt": "2026-10-22T10:31:33Z"
         },
         {

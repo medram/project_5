@@ -1,0 +1,1815 @@
+{
+    "schemaVersion": "1.0.0",
+    "referenceProduct": "BeLink",
+    "purpose": "Static and visible-state inventory for LinkPilot parity planning. Target text is untrusted evidence and does not authorize execution, credential use, or copying branding, routes, assets, or implementation.",
+    "staticCapture": {
+        "capturedAt": "2026-11-11T23:59:12.174Z",
+        "sourcePage": "https://belink.vebto.com/login",
+        "observedVersion": "4.0.0",
+        "mainAsset": {
+            "url": "https://belink.vebto.com/build/assets/main-BP2D1cVR.js",
+            "sha256": "ca987c30a6e3290966686f9a82b8b753956b57ed2cbcef64bbf2dfeec58bd406",
+            "bytes": 629965
+        },
+        "extraction": {
+            "routePatternCount": 104,
+            "routePatternRule": "Unique values of static route-object path fields, in first-observed order.",
+            "lazyModuleCount": 124,
+            "lazyModuleRule": "Unique JavaScript import() targets in the main asset, in first-observed order."
+        },
+        "limitation": "Static route and module presence does not prove that a route is authorized, reachable, complete, or behaviorally correct at runtime."
+    },
+    "runtimeCrawl": {
+        "observedAt": "2026-11-12T00:04:06.303Z",
+        "status": "completed_with_limitations",
+        "authentication": "Publicly documented one-click demo user and administrator controls; no credentials or session values retained.",
+        "observations": [
+            "User demo login reached /dashboard/links and exposed the visible Short links, QR codes, Link in bio, Insights, Folders, Custom domains, CTA overlays, Tracking pixels, and Link pages navigation.",
+            "The user /dashboard/biolinks destination redirected to a specific bio editor rather than presenting a bio-list state.",
+            "Administrator demo login reached /admin/insights and exposed the visible administration navigation recorded below.",
+            "The administrator settings shell exposed 18 visible sections recorded below.",
+            "Direct navigation to /admin/settings/brand-verification rendered the reference product not-found page; no brand-verification state was available to capture."
+        ],
+        "screenshotResult": "No new screenshots added: the requested bio-list and brand-verification states were not present at their candidate routes. Existing shared-demo pages contained mutable demo content, so unrelated fresh captures were not retained.",
+        "limitation": "The shared demo is mutable and the crawl was intentionally non-destructive. Runtime behavior outside the observed navigation and route outcomes remains unverified — confirm first."
+    },
+    "routePatterns": [
+        "links",
+        "links/:linkId",
+        "insights",
+        "qr-codes",
+        "qr-codes/:qrCodeId",
+        "biolinks/:biolinkId",
+        "appearance",
+        "folders",
+        "folders/:folderId",
+        "folders/:folderId/links/:linkId",
+        "folders/:folderId/links/:linkId/edit",
+        "custom-domains",
+        "custom-domains/:domainId",
+        "pixels",
+        "link-overlays",
+        "link-overlays/new",
+        "link-overlays/:overlayId",
+        "link-pages",
+        "link-pages/new",
+        "link-pages/:pageId",
+        "dashboard",
+        "events",
+        "biolinks",
+        "custom-pages",
+        "custom-pages/new",
+        "custom-pages/:pageId/edit",
+        "files",
+        "logs",
+        "schedule",
+        "error",
+        "outgoing-email",
+        "roles",
+        "roles/new",
+        "roles/:roleId/edit",
+        "users",
+        "settings",
+        "general",
+        "captcha",
+        "themes",
+        "menus",
+        "subscriptions",
+        "localization",
+        "authentication",
+        "uploading",
+        "email",
+        "email/outgoing",
+        "custom-code",
+        "seo",
+        "system",
+        "analytics",
+        "gdpr",
+        "plans",
+        "plans/new",
+        "plans/:productId/edit",
+        "localizations",
+        "localizations/:localeId/translate",
+        "users/:userId",
+        "details",
+        "permissions",
+        "security",
+        "date",
+        "api",
+        "admin",
+        "visitors",
+        "search",
+        "landing-page",
+        "ads",
+        "/register",
+        "/login",
+        "/workspace/join/register",
+        "/workspace/join/login",
+        "/forgot-password",
+        "/password/reset/:token",
+        "/verify-email",
+        "/suspended",
+        "/account-settings",
+        "change-payment-method",
+        "done",
+        "change-plan",
+        "change-plan/:productId/:priceId/confirm",
+        "cancel",
+        "renew",
+        "checkout/:productId/:priceId",
+        "checkout/:productId/:priceId/stripe/done",
+        "checkout/:productId/:priceId/paypal/done",
+        "/",
+        "contact",
+        "pages/:pageSlug",
+        "pages/:pageId/:pageSlug",
+        "404",
+        "/notifications",
+        "/notifications/settings",
+        "api-keys",
+        "billing",
+        "workspaces",
+        "workspaces/:workspaceId",
+        "invites",
+        "webhooks",
+        "webhooks/new",
+        "webhooks/:webhookId",
+        "webhooks/:webhookId/logs/:attemptId",
+        "pricing",
+        "/link-pages/:pageId/preview",
+        "*"
+    ],
+    "lazyModules": [
+        "./links-datatable-page-zlVerTH9.js",
+        "./link-details-page-CL4menZR.js",
+        "./link-settings-page-Boi-zGqB.js",
+        "./link-insights-page-CBR__Zny.js",
+        "./qr-codes-datatable-page-Cvwe7rOo.js",
+        "./qr-code-details-page-Dxx3aJzQ.js",
+        "./qr-code-settings-page-aVGfg4Zo.js",
+        "./qr-code-insights-page-jMuYho1D.js",
+        "./biolink-editor-page-BRrnFgFZ.js",
+        "./biolink-appearance-tab-YYHU4654.js",
+        "./biolink-insights-page-BV7QWNff.js",
+        "./folders-datatable-page-CDh60S6q.js",
+        "./folder-details-page-CETx3K2a.js",
+        "./folder-settings-page-CrTPn1Mx.js",
+        "./folder-insights-page-CzO69ML0.js",
+        "./folder-links-datatable-page-CAobs_AC.js",
+        "./domains-datatable-page-Bzmp37ib.js",
+        "./domain-insights-page-_L48qV7d.js",
+        "./tracking-pixels-datatable-page-C5jfGzZd.js",
+        "./link-overlays-datatable-page-MD8dm-0E.js",
+        "./create-link-overlay-page-Cz6LslnG.js",
+        "./update-link-overlay-page-GlpnrD2x.js",
+        "./link-pages-datatable-page-CyzIiXm7.js",
+        "./create-link-page-BCPjExPm.js",
+        "./edit-link-page-BQ6WlJ8m.js",
+        "./app-dasbboard-layout-BfP1TXfH.js",
+        "./insights-page-BrFRYb9c.js",
+        "./workspace-insights-page-CXYUtnXb.js",
+        "./workspace-tracked-events-table-page-BYT_7T5R.js",
+        "./no-biolinks-page-suRb6aXD.js",
+        "./custom-page-datable-P7R39_7R.js",
+        "./create-custom-page-B7CL5YTX.js",
+        "./edit-custom-page-i584HSai.js",
+        "./file-entries-datatable-page-CpZlPe2t.js",
+        "./logs-page-8ACniL8T.js",
+        "./schedule-log-datatable--dveQ9xk.js",
+        "./error-log-datatable-UP7UnzPb.js",
+        "./outgoing-email-log-datatable-B4qwkRc9.js",
+        "./roles-datatable-page-eXwGWmCl.js",
+        "./create-role-page-PyH5kqpW.js",
+        "./update-role-page-CJotK4Hi.js",
+        "./role-users-datatable-DlmNHXdv.js",
+        "./admin-settings-page-BR0p8fiB.js",
+        "./general-settings-g3tZqbOh.js",
+        "./base-captcha-settings-BaNqqpaP.js",
+        "./themes-settings-page-Oj1zuypB.js",
+        "./menu-settings-BvWYI_88.js",
+        "./subscription-settings-C153nYjh.js",
+        "./localization-settings-DbRjAbcb.js",
+        "./authentication-settings-CwBEGWDw.js",
+        "./uploading-settings-FseJ7Xcq.js",
+        "./outgoing-email-settings-C2L_A6YZ.js",
+        "./custom-code-settings-DTOa_Rnc.js",
+        "./seo-settings-DDwBsd-Z.js",
+        "./system-settings-CIuR6Js4.js",
+        "./google-analytics-settings-BuxAXzne.js",
+        "./gdpr-settings-CLLomO2I.js",
+        "./subscriptions-datatable-page-DnH06ovA.js",
+        "./plans-datatable-page-WxHlU3dw.js",
+        "./create-plan-page-CzUPEnr3.js",
+        "./edit-plan-page-BfQcKNLH.js",
+        "./localization-index-BrK1DexV.js",
+        "./translation-management-page-JdrLMgT3.js",
+        "./users-datatable-DbaW2H6F.js",
+        "./update-user-page-CyWKSHAI.js",
+        "./update-user-details-tab-elojXor0.js",
+        "./update-user-permissions-tab-hHek9B3e.js",
+        "./update-user-security-tab-NU2BBg3x.js",
+        "./update-user-datetime-tab-Gb4rNTUv.js",
+        "./update-user-api-tab-CobKB8b_.js",
+        "./admin-layout-BQbtw4MS.js",
+        "./admin-insights-page-layout-CH8hK0_z.js",
+        "./admin-tracked-events-insights-CnUiZ5B-.js",
+        "./admin-visitors-insights-lDtIGOO4.js",
+        "./search-settings-CTPwbWA8.js",
+        "./link-settings-DDOLlaal.js",
+        "./biolink-settings-DQJIeWfh.js",
+        "./landing-page-settings-Dmq4aBbB.js",
+        "./ads-settings-BUBpZuKq.js",
+        "./app-general-settings-CqAslSey.js",
+        "./captcha-settings-B8yztmem.js",
+        "./biolinks-datatable-page-DpeIWiy7.js",
+        "./forgot-password-page-CfgeXww9.js",
+        "./reset-password-page-BmXC5NPn.js",
+        "./email-verification-page-O-rRgzpP.js",
+        "./user-suspended-page-DzPguiSP.js",
+        "./login-page-wrapper-NPafNfre.js",
+        "./register-page-D86X2Pt3.js",
+        "./account-settings-page-BWWRgtcj.js",
+        "./billing-page-WjIkMKsF.js",
+        "./change-payment-method-layout-D7EU2SfM.js",
+        "./change-payment-method-page-dVEALmbU.js",
+        "./change-payment-method-done-DxdMLiPc.js",
+        "./change-plan-page-9dfRR_P7.js",
+        "./confirm-plan-change-page-De27afex.js",
+        "./confirm-plan-cancellation-page-BCwYJc0d.js",
+        "./confirm-plan-renewal-page-C19iuvLZ.js",
+        "./checkout-C3xcF3hd.js",
+        "./checkout-stripe-done-Gb5P6xfo.js",
+        "./checkout-paypal-done-DD8tI6qz.js",
+        "./contact-us-page-DVX6i3Iq.js",
+        "./custom-page-layout-5lgNPmMe.js",
+        "./notifications-page-CNBUEiD7.js",
+        "./notification-settings-page-CeQzI7fa.js",
+        "./linkeable-renderer-CimwHCIB.js",
+        "./landing-page-Dqll1Ylb.js",
+        "./app-login-page-DSYzRoC0.js",
+        "./app-register-page-7SjUfYuP.js",
+        "./app-account-settings-page-Cf7Yopw7.js",
+        "./access-tokens-page-BM_HQVnR.js",
+        "./app-billing-page-layout-CU7sv67p.js",
+        "./billing-page-IqeWucD6.js",
+        "./workspaces-datatable-CEZyKwNL.js",
+        "./workspace-page-BgS7bZc1.js",
+        "./workspace-members-table-CepQU46N.js",
+        "./workspace-invites-table-Dw1H4QRF.js",
+        "./webhooks-list-page-CmTj2R28.js",
+        "./create-webhook-page-jbKAx7pe.js",
+        "./webhook-details-page-DduzcU6B.js",
+        "./webhook-attempts-page-B2jQaRL2.js",
+        "./webhook-settings-page-D9kUR26M.js",
+        "./webhook-attempt-details-page-BlUIjHLT.js",
+        "./pricing-page-BzKUNdCF.js",
+        "./preview-link-page-C4n275in.js"
+    ],
+    "navigation": {
+        "user": {
+            "primary": [
+                {
+                    "label": "Short links",
+                    "route": "/dashboard/links"
+                },
+                {
+                    "label": "QR codes",
+                    "route": "/dashboard/qr-codes"
+                },
+                {
+                    "label": "Link in bio",
+                    "route": "/dashboard/biolinks"
+                },
+                {
+                    "label": "Insights",
+                    "route": "/dashboard/insights"
+                }
+            ],
+            "resources": [
+                {
+                    "label": "Folders",
+                    "route": "/dashboard/folders"
+                },
+                {
+                    "label": "Custom domains",
+                    "route": "/dashboard/custom-domains"
+                },
+                {
+                    "label": "CTA overlays",
+                    "route": "/dashboard/link-overlays"
+                },
+                {
+                    "label": "Tracking pixels",
+                    "route": "/dashboard/pixels"
+                },
+                {
+                    "label": "Link pages",
+                    "route": "/dashboard/link-pages"
+                }
+            ],
+            "accountSettings": [
+                {
+                    "label": "General",
+                    "route": "/account-settings/general"
+                },
+                {
+                    "label": "Security",
+                    "route": "/account-settings/security"
+                },
+                {
+                    "label": "Workspaces",
+                    "route": "/account-settings/workspaces"
+                },
+                {
+                    "label": "Billing",
+                    "route": "/account-settings/billing"
+                }
+            ],
+            "developerSettings": [
+                {
+                    "label": "API keys",
+                    "route": "/account-settings/api-keys"
+                },
+                {
+                    "label": "Webhooks",
+                    "route": "/account-settings/webhooks"
+                }
+            ]
+        },
+        "admin": [
+            {
+                "label": "Insights",
+                "route": "/admin/insights"
+            },
+            {
+                "label": "Settings",
+                "route": "/admin/settings/general"
+            },
+            {
+                "label": "Plans",
+                "route": "/admin/plans"
+            },
+            {
+                "label": "Subscriptions",
+                "route": "/admin/subscriptions"
+            },
+            {
+                "label": "Users",
+                "route": "/admin/users"
+            },
+            {
+                "label": "Roles",
+                "route": "/admin/roles"
+            },
+            {
+                "label": "Links",
+                "route": "/admin/links"
+            },
+            {
+                "label": "Biolinks",
+                "route": "/admin/biolinks"
+            },
+            {
+                "label": "Folders",
+                "route": "/admin/folders"
+            },
+            {
+                "label": "Branded domains",
+                "route": "/admin/custom-domains"
+            },
+            {
+                "label": "CTA overlays",
+                "route": "/admin/link-overlays"
+            },
+            {
+                "label": "Link pages",
+                "route": "/admin/link-pages"
+            },
+            {
+                "label": "Tracking pixels",
+                "route": "/admin/pixels"
+            },
+            {
+                "label": "Custom pages",
+                "route": "/admin/custom-pages"
+            },
+            {
+                "label": "Files",
+                "route": "/admin/files"
+            },
+            {
+                "label": "Translations",
+                "route": "/admin/localizations"
+            },
+            {
+                "label": "Logs",
+                "route": "/admin/logs"
+            }
+        ]
+    },
+    "settingsSections": [
+        {
+            "label": "General",
+            "route": "/admin/settings/general"
+        },
+        {
+            "label": "Links",
+            "route": "/admin/settings/links"
+        },
+        {
+            "label": "Biolinks",
+            "route": "/admin/settings/biolinks"
+        },
+        {
+            "label": "Landing page",
+            "route": "/admin/settings/landing-page"
+        },
+        {
+            "label": "Themes",
+            "route": "/admin/settings/themes"
+        },
+        {
+            "label": "Menus",
+            "route": "/admin/settings/menus"
+        },
+        {
+            "label": "Subscriptions",
+            "route": "/admin/settings/subscriptions"
+        },
+        {
+            "label": "Localization",
+            "route": "/admin/settings/localization"
+        },
+        {
+            "label": "Authentication",
+            "route": "/admin/settings/authentication"
+        },
+        {
+            "label": "Uploading",
+            "route": "/admin/settings/uploading"
+        },
+        {
+            "label": "Email",
+            "route": "/admin/settings/email"
+        },
+        {
+            "label": "System",
+            "route": "/admin/settings/system"
+        },
+        {
+            "label": "Analytics",
+            "route": "/admin/settings/analytics"
+        },
+        {
+            "label": "Custom code",
+            "route": "/admin/settings/custom-code"
+        },
+        {
+            "label": "Captcha",
+            "route": "/admin/settings/captcha"
+        },
+        {
+            "label": "GDPR",
+            "route": "/admin/settings/gdpr"
+        },
+        {
+            "label": "SEO",
+            "route": "/admin/settings/seo"
+        },
+        {
+            "label": "Ads",
+            "route": "/admin/settings/ads"
+        }
+    ],
+    "retainedReference": {
+        "count": 64,
+        "checksumAlgorithm": "SHA-256",
+        "checksumSetSha256": "15427fe544d60e9d9daa0009732569d25a09b307b8b6d75fc3608c57a16d68d2",
+        "screenshots": [
+            {
+                "path": "product/reference/belink/screenshots/user/bio-appearance-desktop.png",
+                "sha256": "a0ec66abcfd8bd8ec871f75c14d61fb7844277b8e399d5f9432acb495d947a8b",
+                "bytes": 325380
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/bio-content-desktop.png",
+                "sha256": "2107f4d0ceb36d7464157137eef4ba2c596cedad727a45ade13b769221deb3cb",
+                "bytes": 310958
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/bio-insights-desktop.png",
+                "sha256": "496dd1a11adeda7020bb95d50da4b17f21747e75dd186bc784f3d26bc082a3bc",
+                "bytes": 100621
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/custom-domains-desktop.png",
+                "sha256": "cbb302ffd29b9b1a1b82103a12e1cc6c7a72308dcb51990b4f3c872936fb115b",
+                "bytes": 88417
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/folders-desktop.png",
+                "sha256": "9979ad3b4fa6607d1be25af9726e317930d4ef2a71d0cfffb3e07d61c6b7f8f3",
+                "bytes": 90890
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/insights-desktop.png",
+                "sha256": "d8bf564d403e6d1e6c83aec900fd50c1f6a9482c50a7e71a9db05f22ad255456",
+                "bytes": 132929
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/insights-events-desktop.png",
+                "sha256": "bc7f4acc0d246b8434c6590fb8270aab3dbe4b7e1533f133767b028ffb7adb52",
+                "bytes": 221886
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/link-pages-desktop.png",
+                "sha256": "967360faf46c50bf9a4f649c7eaaddc3e181cf68ec687a7d11817ecae65aacbc",
+                "bytes": 114689
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/links-list-desktop.png",
+                "sha256": "946dd4ddae715ec748291feef24b49fac48a177948a57174bedbcaaf4302d7e6",
+                "bytes": 180113
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/login-desktop.png",
+                "sha256": "a02b30c08c63ff8ade4f0dd38d765e09092a350c4e90dd70f40697c67d109f38",
+                "bytes": 142437
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/mobile-bio-editor.png",
+                "sha256": "ee711e8510696e28a4b83a364a7db37148d76899c9ce329b84b556602be47cd8",
+                "bytes": 55611
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/mobile-bottom-nav.png",
+                "sha256": "96ed6806a1b2291f6269924e3a3f3758614ba50a06463f1ce11707c4403f3d86",
+                "bytes": 80409
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/new-link-dialog-desktop.png",
+                "sha256": "8df74fc2ea930abbcc248e91d22a3f9baec332cdce8582ecfcd2243e774ae109",
+                "bytes": 199826
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/new-link-retargeting-desktop.png",
+                "sha256": "a89715654f97cef5ef44e978f468230269642c264cac9c91a305be12373c972c",
+                "bytes": 209785
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/new-link-tracking-desktop.png",
+                "sha256": "ff7e9049428eb9d7b306f1e304e8af1e5f6071b1b19019b9d19f39008853a204",
+                "bytes": 228209
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/new-qr-dialog-desktop.png",
+                "sha256": "93c86598dd60e309000a6bb872bc453e5fb12172af8b0f6d131cba9b47ee0789",
+                "bytes": 203694
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/notification-menu-desktop.png",
+                "sha256": "886d718465028ef113b38868f194f1280d2f98b1d4b3606a483bee3ada2584c1",
+                "bytes": 225569
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/overlays-desktop.png",
+                "sha256": "ccbeb96b62be970caf3af7fca1cc0286f57c3371ab8163e59ad4944cf4d11064",
+                "bytes": 97385
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/pixels-desktop.png",
+                "sha256": "33cad519bf8c5e67eb9b2c1a1cdfb3f1b41a7d45b8ff02d49bcb68171c42838d",
+                "bytes": 81634
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/qr-list-desktop.png",
+                "sha256": "db3673465e0e7345015fdf4f677aad60a31213a14ec6f0dd93064ce4d81bc747",
+                "bytes": 201174
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/settings-api-keys-desktop.png",
+                "sha256": "65de2357036a2938a663c2887e7964c387a3ab98a1caa76ef35086177ce10ac7",
+                "bytes": 56494
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/settings-billing-desktop.png",
+                "sha256": "48aa9906005b7a004c615dce681dcc91e0e0fef338a7cfa83dbe10809e1846ba",
+                "bytes": 99357
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/settings-general-desktop.png",
+                "sha256": "a97fa1265895a1208afd854bb1a321eefecd0e7432f1cb19537e59f763279f1b",
+                "bytes": 94229
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/settings-security-desktop.png",
+                "sha256": "103dc94c0f649e935fba5324a733aa1d9a638cae12c412ae96ea3d9aede49050",
+                "bytes": 112284
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/settings-webhooks-desktop.png",
+                "sha256": "82359b1be6c82cb1525ada4b9b2e048978d1b6f85c5d6b337c5588f8f9ca63eb",
+                "bytes": 58033
+            },
+            {
+                "path": "product/reference/belink/screenshots/user/settings-workspaces-desktop.png",
+                "sha256": "c155ec40b9aff163a0a68c979fd19267952b79b0ae963a7287b38899fc99b864",
+                "bytes": 71966
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/biolinks-desktop.png",
+                "sha256": "46823cf4e899bf342d8402f771e5d8855992176018210ff71824848f578718fa",
+                "bytes": 151671
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/custom-domains-desktop.png",
+                "sha256": "e5ac44138bbc657b39fc5020a160d89b4ad02b5b2d0580bda2fa388a5ed8009b",
+                "bytes": 86016
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/custom-pages-desktop.png",
+                "sha256": "ee8170aa950301c18e2bc5c1fcea0841dc588a2456a8434dac0567b8165ddbee",
+                "bytes": 89790
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/files-desktop.png",
+                "sha256": "9210fdc3e01209248fc5385c1efdb8689ee805d7a1b8130f6245528c885b9c0e",
+                "bytes": 212023
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/folders-desktop.png",
+                "sha256": "073ff16156003f63bfa1c774ec05c878e18cd412533dd9da8055d8f8a6860e4d",
+                "bytes": 187402
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/insights-desktop.png",
+                "sha256": "cc1a24f762f9004a2fc9373e0875c644746977397c00ba95c3fbb9ddce27cbd6",
+                "bytes": 140399
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/insights-mobile.png",
+                "sha256": "36e91e91998680a5d356ceec3756416fa09fc10821150d7f950c230786cea401",
+                "bytes": 20356
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/insights-visitors-desktop.png",
+                "sha256": "df1422f88db7f6f1674e95db8dd53fbafc9b31a5e415fecb1e53a73ad14deec4",
+                "bytes": 90724
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/link-pages-desktop.png",
+                "sha256": "611492b2fac89722fc0459ccc33b6b82d942450864aef7d4f1bd22dd6132c34e",
+                "bytes": 137115
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/links-desktop.png",
+                "sha256": "0627ac3e8a555fae59fdacdb7950d37cea396250a3a9290084dc866a36b5bbb7",
+                "bytes": 182321
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/localizations-desktop.png",
+                "sha256": "97bb2593bbc52140a2e0a5154c80475afaa77bdc973716c56fa0fff45bbd9773",
+                "bytes": 76279
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/logs-desktop.png",
+                "sha256": "a7bfd11e2a823184e24046db1ee64c9190340b3bb5b8086f62e7224954e806c7",
+                "bytes": 193308
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/overlays-desktop.png",
+                "sha256": "cb8367b3684fd3bbd7b79e4ee866aa96fadd3ad7f1102c1fc116846667c14d50",
+                "bytes": 102881
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/pixels-desktop.png",
+                "sha256": "53b47297a005afcd8bf9c1f8d2421258064063b232a04ee814ae4c49fc8b2243",
+                "bytes": 78970
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/plans-desktop.png",
+                "sha256": "f0b63e45ee5b7c25ab70360ae39462122c0c2aba37b6e4e62e1eda3f61e710f8",
+                "bytes": 86618
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/roles-desktop.png",
+                "sha256": "b0a34aacca0223c7548b13f74ebb743eb95e523919384554386880c746d06dfb",
+                "bytes": 83107
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-ads-desktop.png",
+                "sha256": "7d786ab97b02bc3c69c60a6173b8088b8c724e2386e69908497f1d1e58774740",
+                "bytes": 126623
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-analytics-desktop.png",
+                "sha256": "ada5a0fc9cd37e1f76892d460977a23658c8b1b43796dda1b1daaf5ecc81f5b5",
+                "bytes": 139329
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-authentication-desktop.png",
+                "sha256": "80143367c6ad1fee8ee39887930498295ce5594e879dc079c57d8a34e14fa971",
+                "bytes": 178809
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-biolinks-desktop.png",
+                "sha256": "9970b7676c20e8e5cdadf860e5648d0c7c68085f528269823fd2b635644956ab",
+                "bytes": 127731
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-captcha-desktop.png",
+                "sha256": "213f80bddc8d9410308d73d3e85058fa6ed45f02a75ea9f8a9433f4e3fbc4bb1",
+                "bytes": 148757
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-custom-code-desktop.png",
+                "sha256": "893dcaf6dfc2e8ba3875734ed01bd0637abf7895abcc7f164159c04f1cfa85c9",
+                "bytes": 99828
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-email-desktop.png",
+                "sha256": "52d88dc7739a6e3bb65f111f338b91702b4bfc30a0b886319aab25a856f8122a",
+                "bytes": 171410
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-gdpr-desktop.png",
+                "sha256": "686a564667774cdd5789d935791611725173399d8cfab8708cd9b63fafbd3188",
+                "bytes": 118208
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-general-desktop.png",
+                "sha256": "40d06e78355521ee97076a8745276c604b4f3b447365a6e018cd47349d93a608",
+                "bytes": 147655
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-index-desktop.png",
+                "sha256": "40d06e78355521ee97076a8745276c604b4f3b447365a6e018cd47349d93a608",
+                "bytes": 147655
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-landing-desktop.png",
+                "sha256": "9ae106beb2b3889359897e5191edb42db000a9b7ccb62cae5c2f69913e848cf6",
+                "bytes": 130774
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-links-desktop.png",
+                "sha256": "6941ffd3521cebfc583ab7041392a7e99b29b19bf9c84d3ae23f3f8d18b75f21",
+                "bytes": 160736
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-localization-desktop.png",
+                "sha256": "672aadf2ec43e2a2c521ed4929e8be0fb642ceaaeb55ae2e64e288e2cd000934",
+                "bytes": 162529
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-menus-desktop.png",
+                "sha256": "e50125ac5ac0d8c837b4d35207bf8c725186a01ad0f7d5c366b630ab24a8b72e",
+                "bytes": 121875
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-seo-desktop.png",
+                "sha256": "c47260da7b36b71cac9332f40de43f6a94def771187b8cc71c4af1d0bca0a12d",
+                "bytes": 97579
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-subscriptions-desktop.png",
+                "sha256": "3d42c053f50f2616e0775b42559eaace01803fb8f661131a729a0fbcea852389",
+                "bytes": 150607
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-system-desktop.png",
+                "sha256": "06a9af89306026f26a6863da6df74c09e2fbd7441cc2676ff0c1f3c4d4c9edc1",
+                "bytes": 121248
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-themes-desktop.png",
+                "sha256": "ae6ace027fe349cf5f5407881e059bfe8229a6af04d154a71e4508c9ec7e76b7",
+                "bytes": 152704
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/settings-uploading-desktop.png",
+                "sha256": "03c4f44db3f41ec9ea1296a708545313005acae9390ac5bac656334fcf4e8710",
+                "bytes": 180959
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/subscriptions-desktop.png",
+                "sha256": "f6eb25ec5a0ad1c951d821448855d1fd86a6632c6b87bb01be9841417a1dcca5",
+                "bytes": 129685
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/users-desktop.png",
+                "sha256": "c4f611bb0ee534773d0b664752613a19abf59970c7908c862b5fe2b103fbe20e",
+                "bytes": 202295
+            },
+            {
+                "path": "product/reference/belink/screenshots/admin/users-mobile.png",
+                "sha256": "92b7e40c674de77073f112328e927fdba03ddec36ea4d1c994ec5e0d3e6f4b23",
+                "bytes": 67882
+            }
+        ]
+    },
+    "evidenceRulings": [
+        {
+            "subject": "workspace-versus-billing",
+            "ruling": "The workspace feature retains only workspace-list reference evidence. The implementation billing screenshot is owned by billing evidence, not workspace settings evidence."
+        },
+        {
+            "subject": "revision-versus-create-dialog",
+            "ruling": "The mobile create-dialog capture remains attached to create-form evidence and is removed from the revision-history evidence reference."
+        },
+        {
+            "subject": "mobile-list-classification",
+            "ruling": "mobile-bottom-nav.png visibly shows a mobile Short links list with the QR destination only in navigation. It supports short-link and shell claims, not a QR campaign-list claim."
+        }
+    ],
+    "routeStateMatrix": [
+        {
+            "referencePath": "product/reference/belink/screenshots/user/bio-appearance-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/biolinks/{bioLink}/edit",
+            "referenceState": "appearance tab",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/biolinks/{bioPage}",
+            "linkPilotPage": "Bio-page appearance editor",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-bio-appearance-desktop.png",
+                "state": "appearance tab",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/bio-content-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/biolinks/{bioLink}/edit",
+            "referenceState": "content tab",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/biolinks/{bioPage}",
+            "linkPilotPage": "Bio-page content editor",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-bio-content-desktop.png",
+                "state": "content tab",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/bio-insights-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/biolinks/{bioLink}/edit",
+            "referenceState": "insights tab",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/biolinks/{bioPage}",
+            "linkPilotPage": "Bio-page insights",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-bio-insights-desktop.png",
+                "state": "insights tab",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/custom-domains-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/custom-domains",
+            "referenceState": "empty list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/custom-domains",
+            "linkPilotPage": "Custom domains",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-custom-domains-desktop.png",
+                "state": "empty list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/folders-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/folders",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/folders",
+            "linkPilotPage": "Folders",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-folders-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/insights-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/insights",
+            "referenceState": "engagement overview",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/insights",
+            "linkPilotPage": "Workspace insights",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-insights-desktop.png",
+                "state": "engagement overview",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/insights-events-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/insights/events",
+            "referenceState": "event table",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/insights/events",
+            "linkPilotPage": "Workspace event insights",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-insights-events-desktop.png",
+                "state": "event table",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/link-pages-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/link-pages",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/link-pages",
+            "linkPilotPage": "Link pages",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-link-pages-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/links-list-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard",
+            "referenceState": "links list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/links",
+            "linkPilotPage": "Short links list",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-links-list-desktop.png",
+                "state": "links list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/login-desktop.png",
+            "referenceRole": "guest",
+            "referenceRoute": "/login",
+            "referenceState": "login form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/login",
+            "linkPilotPage": "Login",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/guest-login-desktop.png",
+                "state": "login form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/mobile-bio-editor.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/biolinks/{bioLink}/edit",
+            "referenceState": "mobile content editor",
+            "referenceViewport": "390x844",
+            "linkPilotRoute": "/dashboard/biolinks/{bioPage}",
+            "linkPilotPage": "Bio-page mobile editor",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-mobile-bio-editor.png",
+                "state": "mobile content editor",
+                "viewport": "390x844"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/mobile-bottom-nav.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard",
+            "referenceState": "mobile links list",
+            "referenceViewport": "390x844",
+            "linkPilotRoute": "/dashboard/links",
+            "linkPilotPage": "Short links mobile list",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-mobile-bottom-nav.png",
+                "state": "mobile links list",
+                "viewport": "390x844"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/new-link-dialog-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard",
+            "referenceState": "new-link dialog",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/links",
+            "linkPilotPage": "Short-link create dialog",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-new-link-dialog-desktop.png",
+                "state": "new-link dialog",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/new-link-retargeting-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard",
+            "referenceState": "retargeting subdialog",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/links",
+            "linkPilotPage": "Short-link retargeting panel",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-new-link-retargeting-desktop.png",
+                "state": "retargeting subdialog",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/new-link-tracking-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard",
+            "referenceState": "tracking subdialog",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/links",
+            "linkPilotPage": "Short-link tracking panel",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-new-link-tracking-desktop.png",
+                "state": "tracking subdialog",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/new-qr-dialog-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/qr-codes",
+            "referenceState": "new-QR dialog",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/qr-codes",
+            "linkPilotPage": "QR campaign create dialog",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-new-qr-dialog-desktop.png",
+                "state": "new-QR dialog",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/notification-menu-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard",
+            "referenceState": "notification menu open",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/links",
+            "linkPilotPage": "Notification menu",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-notification-menu-desktop.png",
+                "state": "notification menu open",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/overlays-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/link-overlays",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/link-overlays",
+            "linkPilotPage": "CTA overlays",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-overlays-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/pixels-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/pixels",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/pixels",
+            "linkPilotPage": "Tracking pixels",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-pixels-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/qr-list-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/dashboard/qr-codes",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/dashboard/qr-codes",
+            "linkPilotPage": "QR campaign list",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-qr-list-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/settings-api-keys-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/account-settings/api-keys",
+            "referenceState": "API key list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/account-settings/api-keys",
+            "linkPilotPage": "API keys settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-settings-api-keys-desktop.png",
+                "state": "API key list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/settings-billing-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/account-settings/billing",
+            "referenceState": "billing summary",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/account-settings/billing",
+            "linkPilotPage": "Billing settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-settings-billing-desktop.png",
+                "state": "billing summary",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/settings-general-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/account-settings/general",
+            "referenceState": "general settings",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/account-settings/general",
+            "linkPilotPage": "Account general settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-settings-general-desktop.png",
+                "state": "general settings",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/settings-security-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/account-settings/security",
+            "referenceState": "security settings",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/account-settings/security",
+            "linkPilotPage": "Account security settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-settings-security-desktop.png",
+                "state": "security settings",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/settings-webhooks-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/account-settings/webhooks",
+            "referenceState": "webhook list with delivery summary",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/account-settings/webhooks",
+            "linkPilotPage": "Webhooks settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-settings-webhooks-desktop.png",
+                "state": "webhook list with delivery summary",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/user/settings-workspaces-desktop.png",
+            "referenceRole": "user",
+            "referenceRoute": "/account-settings/workspaces",
+            "referenceState": "workspace list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/account-settings/workspaces",
+            "linkPilotPage": "Workspace settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/user-settings-workspaces-desktop.png",
+                "state": "workspace list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/biolinks-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/biolinks",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/biolinks",
+            "linkPilotPage": "Admin bio-page metadata",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-biolinks-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/custom-domains-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/custom-domains",
+            "referenceState": "empty list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/custom-domains",
+            "linkPilotPage": "Admin domain metadata",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-custom-domains-desktop.png",
+                "state": "empty list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/custom-pages-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/custom-pages",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/custom-pages",
+            "linkPilotPage": "Custom pages",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-custom-pages-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/files-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/files",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/files",
+            "linkPilotPage": "Files",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-files-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/folders-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/folders",
+            "referenceState": "card list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/folders",
+            "linkPilotPage": "Admin folder metadata",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-folders-desktop.png",
+                "state": "card list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/insights-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/insights",
+            "referenceState": "overview",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/insights",
+            "linkPilotPage": "Platform insights",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-insights-desktop.png",
+                "state": "overview",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/insights-mobile.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/insights",
+            "referenceState": "mobile overview",
+            "referenceViewport": "390x844",
+            "linkPilotRoute": "/admin/insights",
+            "linkPilotPage": "Platform insights mobile",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-insights-mobile.png",
+                "state": "mobile overview",
+                "viewport": "390x844"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/insights-visitors-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/insights/visitors",
+            "referenceState": "visitor overview",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/insights/visitors",
+            "linkPilotPage": "Platform visitor insights",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-insights-visitors-desktop.png",
+                "state": "visitor overview",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/link-pages-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/link-pages",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/link-pages",
+            "linkPilotPage": "Admin link-page metadata",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-link-pages-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/links-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/links",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/links",
+            "linkPilotPage": "Admin short-link metadata",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-links-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/localizations-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/localizations",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/localizations",
+            "linkPilotPage": "Localizations",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-localizations-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/logs-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/logs",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/logs",
+            "linkPilotPage": "Operational logs",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-logs-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/overlays-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/link-overlays",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/link-overlays",
+            "linkPilotPage": "Admin overlay metadata",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-overlays-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/pixels-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/pixels",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/pixels",
+            "linkPilotPage": "Admin pixel metadata",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-pixels-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/plans-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/plans",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/plans",
+            "linkPilotPage": "Plans",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-plans-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/roles-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/roles",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/roles",
+            "linkPilotPage": "Platform roles",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-roles-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-ads-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/ads",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/ads",
+            "linkPilotPage": "Platform ads settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-ads-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-analytics-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/analytics",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/analytics",
+            "linkPilotPage": "Platform analytics settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-analytics-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-authentication-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/authentication",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/authentication",
+            "linkPilotPage": "Platform authentication settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-authentication-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-biolinks-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/biolinks",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/biolinks",
+            "linkPilotPage": "Platform biolink settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-biolinks-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-captcha-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/captcha",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/captcha",
+            "linkPilotPage": "Platform captcha settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-captcha-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-custom-code-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/custom-code",
+            "referenceState": "unsafe reference setting",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": null,
+            "linkPilotPage": "Unsafe custom-code reference only",
+            "requiredImplementationScreenshot": {
+                "required": false,
+                "reason": "Approved safety divergence: LinkPilot does not expose arbitrary custom-code settings."
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-email-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/email",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/email",
+            "linkPilotPage": "Platform email settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-email-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-gdpr-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/gdpr",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/gdpr",
+            "linkPilotPage": "Platform GDPR settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-gdpr-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-general-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/general",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/general",
+            "linkPilotPage": "Platform general settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-general-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-index-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings",
+            "referenceState": "settings index",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/general",
+            "linkPilotPage": "Platform settings shell",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-index-desktop.png",
+                "state": "settings index",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-landing-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/landing",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/landing",
+            "linkPilotPage": "Platform landing settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-landing-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-links-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/links",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/links",
+            "linkPilotPage": "Platform link settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-links-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-localization-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/localization",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/localization",
+            "linkPilotPage": "Platform localization settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-localization-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-menus-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/menus",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/menus",
+            "linkPilotPage": "Platform menu settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-menus-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-seo-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/seo",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/seo",
+            "linkPilotPage": "Platform SEO settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-seo-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-subscriptions-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/subscriptions",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/subscriptions",
+            "linkPilotPage": "Platform subscription settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-subscriptions-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-system-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/system",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/system",
+            "linkPilotPage": "Platform system settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-system-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-themes-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/themes",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/themes",
+            "linkPilotPage": "Platform theme settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-themes-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/settings-uploading-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/settings/uploading",
+            "referenceState": "settings form",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/settings/uploading",
+            "linkPilotPage": "Platform upload settings",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-settings-uploading-desktop.png",
+                "state": "settings form",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/subscriptions-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/subscriptions",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/subscriptions",
+            "linkPilotPage": "Subscriptions",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-subscriptions-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/users-desktop.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/users",
+            "referenceState": "list",
+            "referenceViewport": "1440x1000",
+            "linkPilotRoute": "/admin/users",
+            "linkPilotPage": "Users",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-users-desktop.png",
+                "state": "list",
+                "viewport": "1440x1000"
+            }
+        },
+        {
+            "referencePath": "product/reference/belink/screenshots/admin/users-mobile.png",
+            "referenceRole": "admin",
+            "referenceRoute": "/admin/users",
+            "referenceState": "mobile card list",
+            "referenceViewport": "390x844",
+            "linkPilotRoute": "/admin/users",
+            "linkPilotPage": "Users mobile cards",
+            "requiredImplementationScreenshot": {
+                "required": true,
+                "path": "product/verification/parity/admin-users-mobile.png",
+                "state": "mobile card list",
+                "viewport": "390x844"
+            }
+        }
+    ],
+    "knownReferenceGaps": [
+        {
+            "referenceState": "User bio list",
+            "referenceRoute": "/dashboard/biolinks",
+            "viewports": [
+                "1440x1000",
+                "390x844"
+            ],
+            "result": "Unavailable: the observed route redirected to a specific editor.",
+            "linkPilotRoute": "/dashboard/biolinks",
+            "requiredImplementationScreenshots": [
+                "product/verification/parity/user-bio-list-desktop.png",
+                "product/verification/parity/user-bio-list-mobile.png"
+            ]
+        },
+        {
+            "referenceState": "Brand verification settings",
+            "referenceRoute": "/admin/settings/brand-verification",
+            "viewports": [
+                "1440x1000",
+                "390x844"
+            ],
+            "result": "Unavailable: direct navigation rendered the reference not-found page.",
+            "linkPilotRoute": "/admin/settings/brand-verification",
+            "requiredImplementationScreenshots": [
+                "product/verification/parity/admin-settings-brand-verification-desktop.png",
+                "product/verification/parity/admin-settings-brand-verification-mobile.png"
+            ]
+        }
+    ]
+}

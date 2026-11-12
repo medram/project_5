@@ -164,6 +164,17 @@
         {
             "route": "/dashboard",
             "role": "user",
+            "viewport": "390x844",
+            "capturedAt": "2026-10-20T17:11:06Z",
+            "screenshotPath": "product/reference/belink/screenshots/user/mobile-bottom-nav.png",
+            "observedBehaviors": [
+                "Short links are presented as stacked mobile cards with click counts and row actions.",
+                "The fixed bottom navigation includes a QR destination, but the visible list state is Short links."
+            ]
+        },
+        {
+            "route": "/dashboard",
+            "role": "user",
             "viewport": "1440x1000",
             "capturedAt": "2026-10-20T17:07:27Z",
             "screenshotPath": "product/reference/belink/screenshots/user/new-link-dialog-desktop.png",
@@ -254,7 +265,7 @@
         {
             "type": "browser",
             "description": "At a 390px viewport, revision history shows the expanded delivery snapshot, preserves validated list state in both the page and shell breadcrumbs, and wraps a full 500-character rejection note without horizontal overflow; the desktop capture shows the complete note.",
-            "reference": "product/verification/phase5-link-form-mobile-focused.webp; product/verification/phase5-revision-history-mobile.webp; product/verification/phase5-revision-history-desktop.webp; http://localhost:8101/dashboard/links/27/revisions?search=Phase%205%20Revision%20Reject%20QA&status=pending&sort=title&direction=asc&page=1&view=cards",
+            "reference": "product/verification/phase5-revision-history-mobile.webp; product/verification/phase5-revision-history-desktop.webp; http://localhost:8101/dashboard/links/27/revisions?search=Phase%205%20Revision%20Reject%20QA&status=pending&sort=title&direction=asc&page=1&view=cards",
             "verifiedAt": "2026-10-22T21:24:45Z"
         },
         {

@@ -2,6 +2,7 @@
     "schemaVersion": "1.0.0",
     "referenceProduct": "BeLink",
     "purpose": "Authenticated reference evidence for LinkPilot information architecture, density, responsive behavior, and interaction sequencing; never a source of branding, copy, assets, or proprietary implementation.",
+    "inventoryPath": "product/reference/belink/inventory.json",
     "captureContext": {
         "capturedOn": "2026-10-20",
         "desktopViewport": "1440x1000",
@@ -184,8 +185,9 @@
             "capturedAt": "2026-10-20T17:11:06Z",
             "redactionNote": "Privacy-reviewed: visible values are synthetic public reference-demo metadata; no email address, IP address, credential, access token, webhook secret, or non-demo personal value is present.",
             "observedBehaviors": [
+                "The capture visibly shows mobile short-link cards; it is not a QR campaign-list capture.",
                 "The resource list is presented without desktop sidebar navigation.",
-                "A fixed bottom navigation exposes five labelled destinations."
+                "A fixed bottom navigation exposes five labelled destinations, including a QR navigation destination."
             ],
             "evidenceStatus": "retained",
             "exclusionReason": null
