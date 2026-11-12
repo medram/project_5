@@ -6,6 +6,7 @@ use App\Models\Folder;
 use App\Models\Link;
 use App\Models\LinkTag;
 use App\Services\Links\FirstPartyDestinationGuard;
+use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
@@ -43,10 +44,11 @@ abstract class LinkRequest extends FormRequest
 
         if (! $this->has('delivery_mode')) {
             $routeLink = $this->route('link');
+            $settings = app(PlatformSettings::class)->resolved();
             $this->merge([
                 'delivery_mode' => $routeLink instanceof Link
                     ? $routeLink->delivery_mode
-                    : ($this->filled('link_overlay_id') ? 'overlay' : 'direct'),
+                    : ($this->filled('link_overlay_id') ? 'overlay' : ($settings['links']['default_delivery'] ?? 'direct')),
             ]);
         }
     }
@@ -55,6 +57,12 @@ abstract class LinkRequest extends FormRequest
     protected function linkRules(?Link $ignoredLink = null, bool $slugRequired = false): array
     {
         $workspace = app(WorkspaceContext::class)->currentFor($this->user());
+        $settings = app(PlatformSettings::class)->resolved();
+        $slugMin = max(2, (int) ($settings['links']['slug_min'] ?? 4));
+        $slugMax = max($slugMin, min(64, (int) ($settings['links']['slug_max'] ?? 32)));
+        $slugPattern = ($settings['links']['slug_charset'] ?? 'alphanumeric_dash') === 'alphanumeric'
+            ? "/\\A[a-z0-9]{".$slugMin.",".$slugMax."}\\z/"
+            : "/\\A[a-z0-9-]{".$slugMin.",".$slugMax."}\\z/";
         $uniqueSlug = Rule::unique(Link::class, 'slug');
         if ($ignoredLink !== null) {
             $uniqueSlug->ignore($ignoredLink);
@@ -68,16 +76,42 @@ abstract class LinkRequest extends FormRequest
                 'string',
                 'max:2048',
                 (new Url)->protocols(['http', 'https']),
-                function (string $attribute, mixed $value, Closure $fail): void {
-                    if (is_string($value) && app(FirstPartyDestinationGuard::class)->rejects($value)) {
+                function (string $attribute, mixed $value, Closure $fail) use ($settings): void {
+                    if (! is_string($value)) {
+                        return;
+                    }
+
+                    if (app(FirstPartyDestinationGuard::class)->rejects($value)) {
                         $fail('The destination URL must not target this application.');
+
+                        return;
+                    }
+
+                    $host = strtolower((string) parse_url($value, PHP_URL_HOST));
+                    $blockedDomains = array_filter(array_map('trim', preg_split('/\\R/', (string) ($settings['links']['domain_blocklist'] ?? '')) ?: []));
+                    $blockedKeywords = array_filter(array_map('trim', preg_split('/\\R/', (string) ($settings['links']['keyword_blocklist'] ?? '')) ?: []));
+
+                    foreach ($blockedDomains as $domain) {
+                        if ($host === strtolower($domain) || str_ends_with($host, '.'.strtolower($domain))) {
+                            $fail('This destination domain is blocked by platform policy.');
+
+                            return;
+                        }
+                    }
+
+                    foreach ($blockedKeywords as $keyword) {
+                        if (str_contains(strtolower($value), strtolower($keyword))) {
+                            $fail('This destination is blocked by platform policy.');
+
+                            return;
+                        }
                     }
                 },
             ],
             'title' => ['nullable', 'string', 'max:160'],
             'slug' => [
-                $slugRequired ? 'required' : 'nullable', 'string', 'max:32',
-                'regex:/\A[a-z0-9-]{4,32}\z/',
+                $slugRequired ? 'required' : 'nullable', 'string', 'max:'.$slugMax,
+                'regex:'.$slugPattern,
                 Rule::notIn((array) config('linkpilot.reserved_slugs', [])), $uniqueSlug,
             ],
             'is_active' => ['required', 'boolean'],
@@ -89,12 +123,19 @@ abstract class LinkRequest extends FormRequest
                 Rule::exists(LinkTag::class, 'id')->where('workspace_id', $workspace->id),
             ],
             'folder_id' => ['nullable', 'integer', Rule::exists(Folder::class, 'id')->where('workspace_id', $workspace->getKey())],
-            'custom_domain_id' => ['nullable', 'integer', function (string $attribute, mixed $value, Closure $fail) use ($workspace): void {
+            'custom_domain_id' => ['nullable', 'integer', function (string $attribute, mixed $value, Closure $fail) use ($workspace, $settings): void {
                 if ($value === null || $value === '') {
                     return;
                 }
+
+                if (! (bool) ($settings['links']['domains_enabled'] ?? true)) {
+                    $fail('Custom domains are disabled by platform policy.');
+
+                    return;
+                }
                 Gate::authorize('selectIntegrations', $workspace);
-                $domain = $workspace->customDomains()->find($value);
+                /** @var \App\Models\CustomDomain|null $domain */
+                $domain = $workspace->customDomains()->whereKey($value)->first();
                 $link = $this->route('link');
                 if ($domain === null || ($domain->status !== 'active' && ! ($link instanceof Link && $link->custom_domain_id === $domain->id))) {
                     $fail('Only an active custom domain in this workspace can be assigned to a link.');
@@ -116,7 +157,8 @@ abstract class LinkRequest extends FormRequest
                     return;
                 }
                 Gate::authorize('selectIntegrations', $workspace);
-                $overlay = $workspace->linkOverlays()->find($value);
+                /** @var \App\Models\LinkOverlay|null $overlay */
+                $overlay = $workspace->linkOverlays()->whereKey($value)->first();
                 $link = $this->route('link');
                 if ($overlay === null || (! $overlay->is_active && ! ($link instanceof Link && $link->link_overlay_id === $overlay->id))) {
                     $fail('Only an active overlay in this workspace can be assigned to a link.');
@@ -137,7 +179,7 @@ abstract class LinkRequest extends FormRequest
                     return;
                 }
                 Gate::authorize('selectIntegrations', $workspace);
-                $page = $workspace->linkPages()->find($value);
+                $page = $workspace->linkPages()->whereKey($value)->first();
                 if ($page === null || ! $page->is_published) {
                     $fail('Choose a published link page in this workspace for link-page delivery.');
                 }
@@ -171,7 +213,11 @@ abstract class LinkRequest extends FormRequest
                 }
             }],
             'custom_parameters.*' => ['nullable', 'string', 'max:512'],
-            'routing_rules' => ['sometimes', 'array', 'max:25'],
+            'routing_rules' => ['sometimes', 'array', 'max:25', function (string $attribute, mixed $value, Closure $fail) use ($settings): void {
+                if (is_array($value) && $value !== [] && ! (bool) ($settings['links']['targeting_enabled'] ?? true)) {
+                    $fail('Targeting rules are disabled by platform policy.');
+                }
+            }],
             'routing_rules.*' => ['required', 'array:rule_type,match_value,target_url'],
             'routing_rules.*.rule_type' => ['required', 'in:country,device,platform'],
             'routing_rules.*.match_value' => ['required', 'string', 'max:16', function (string $attribute, mixed $value, Closure $fail): void {

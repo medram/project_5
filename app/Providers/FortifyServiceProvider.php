@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Middleware\EnsureActiveAccount;
+use App\Http\Middleware\EnsureRegistrationEnabled;
+use App\Http\Middleware\VerifyTurnstile;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
@@ -107,6 +109,16 @@ class FortifyServiceProvider extends ServiceProvider
     {
         $this->app->booted(function (): void {
             foreach (Route::getRoutes() as $route) {
+                if (in_array($route->getName(), ['register', 'register.store'], true)) {
+                    $action = $route->getAction();
+                    $action['middleware'] = [
+                        ...($action['middleware'] ?? []),
+                        EnsureRegistrationEnabled::class,
+                        ...($route->getName() === 'register.store' ? [VerifyTurnstile::class] : []),
+                    ];
+                    $route->setAction($action);
+                }
+
                 if ($route->getName() !== 'logout') {
                     continue;
                 }

@@ -1,4 +1,4 @@
-import type { Auth } from '@/types/auth';
+import type { Auth, PlatformBranding } from '@/types/auth';
 import type { NotificationPreview } from '@/types/notifications';
 
 declare module 'react' {
@@ -11,6 +11,7 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
+            platform?: PlatformBranding;
             auth: Auth;
             notificationUnreadCount: number;
             notificationPreview: NotificationPreview[];

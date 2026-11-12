@@ -280,6 +280,12 @@
             "description": "Managed Chromium browsed all 18 settings sections at 1440x1000 and 390x844 with zero page errors and no horizontal overflow; desktop and mobile General/Captcha captures are retained.",
             "reference": "product/verification/parity/admin-settings-general-desktop.png; product/verification/parity/admin-settings-captcha-desktop.png; product/verification/parity/admin-settings-general-mobile.png; product/verification/parity/admin-settings-captcha-mobile.png",
             "verifiedAt": "2026-11-12T16:37:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Consumer behavior suite passed 7 tests and 51 assertions: public site identity/menus/SEO/verification/ads payload, homepage/pricing visibility, registration and blocked-domain enforcement, Google disablement, fail-closed Turnstile with hostname/action checks, mail and analytics-retention settings, link defaults/toggles/blocklists/slug policy. Full suite passed 550 tests and 18,212 assertions.",
+            "reference": "tests/Feature/Admin/PlatformSettingsBehaviorTest.php; php -d memory_limit=1G vendor/bin/phpunit",
+            "verifiedAt": "2026-11-12T16:55:00Z"
         }
     ]
 }

@@ -323,10 +323,11 @@
         {
             "id": "admin-settings",
             "state": "in_progress",
-            "lastVerifiedAt": "2026-11-12T16:37:00Z",
+            "lastVerifiedAt": "2026-11-12T16:55:00Z",
             "checks": [
                 "Settings repository suite passed 6 tests and 55 assertions across permissions, 18-section registry, typed values, encryption, environment precedence, optimistic versions, and audits.",
-                "Managed Chromium browsed all 18 sections at 1440x1000 and 390x844 with no overflow or page errors."
+                "Managed Chromium browsed all 18 sections at 1440x1000 and 390x844 with no overflow or page errors.",
+                "Settings consumer suite passed 7/51: public payload, homepage/pricing, registration/domain blocks, Google, Turnstile fail-closed, mail, retention, and link policy toggles; full suite 550/18,212."
             ],
             "blockers": []
         },

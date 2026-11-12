@@ -10,6 +10,45 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type PlatformBranding = {
+    siteName: string;
+    supportEmail: string | null;
+    homepage: string;
+    logos: {
+        light: string | null;
+        dark: string | null;
+        compact: string | null;
+        favicon: string | null;
+    };
+    theme: { scheme: string; accent: string; radius: string };
+    menus: {
+        header: Array<{ label: string; href: string }>;
+        footer: Array<{ label: string; href: string }>;
+    };
+    visibility: {
+        pricing: boolean;
+        contact: boolean;
+        registration: boolean;
+    };
+    seo: { title: string | null; description: string | null };
+    verification: Record<string, string>;
+    gdpr: {
+        notice: string | null;
+        position: string;
+        defaultDenied: boolean;
+        privacyUrl: string | null;
+        termsUrl: string | null;
+    };
+    analytics: { consentEnabled: boolean; ga4: string | null };
+    ads: {
+        provider: string;
+        publisherId: string | null;
+        headerSlot: string | null;
+        contentSlot: string | null;
+        consentRequired: boolean;
+    } | null;
+};
+
 export type Auth = {
     user: User | null;
     isAdmin: boolean;

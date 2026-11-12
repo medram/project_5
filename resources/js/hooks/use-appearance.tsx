@@ -76,8 +76,14 @@ export function initializeTheme(): void {
     }
 
     if (!localStorage.getItem('appearance')) {
-        localStorage.setItem('appearance', 'system');
-        setCookie('appearance', 'system');
+        const platformScheme = document.documentElement.dataset.platformScheme;
+        const initialAppearance =
+            platformScheme === 'light' || platformScheme === 'dark'
+                ? platformScheme
+                : 'system';
+
+        localStorage.setItem('appearance', initialAppearance);
+        setCookie('appearance', initialAppearance);
     }
 
     currentAppearance = getStoredAppearance();

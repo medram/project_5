@@ -7,6 +7,7 @@ use App\Services\Accounts\GoogleConnection;
 use App\Services\Billing\WorkspaceUsage;
 use App\Services\Notifications\NotificationVisibility;
 use App\Services\Platform\PlatformAuthorization;
+use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -64,6 +65,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'platform' => fn (): array => app(PlatformSettings::class)->publicPayload(),
             'auth' => [
                 'user' => $request->user(),
                 'isAdmin' => $request->user() !== null && app(PlatformAuthorization::class)->canAccessAdmin($request->user()),

@@ -8,6 +8,7 @@ use App\Models\ContentMedia;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Billing\EnforcesPlanLimits;
+use App\Services\Settings\PlatformSettings;
 use ErrorException;
 use finfo;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -23,6 +24,8 @@ use Throwable;
 
 class ContentMediaStorage
 {
+    public function __construct(private readonly PlatformSettings $settings) {}
+
     private const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
     private const MAX_FILE_BYTES = 25 * 1024 * 1024;
@@ -58,8 +61,9 @@ class ContentMediaStorage
 
         try {
             if ($purpose === MediaPurpose::Image || $purpose === MediaPurpose::AccountAvatar) {
+                $maxImageBytes = $this->softLimitBytes('max_image_mb', self::MAX_IMAGE_BYTES);
                 if (
-                    $size > self::MAX_IMAGE_BYTES
+                    $size > $maxImageBytes
                     || ! isset(self::IMAGE_EXTENSIONS[$mimeType])
                     || ! in_array($originalExtension, self::IMAGE_EXTENSIONS[$mimeType], true)
                 ) {
@@ -70,7 +74,8 @@ class ContentMediaStorage
                 $sourcePath = $temporaryPath;
                 $extension = $mimeType === 'image/jpeg' ? 'jpg' : substr($mimeType, 6);
             } else {
-                if ($size > self::MAX_FILE_BYTES || $mimeType !== 'application/pdf' || $originalExtension !== 'pdf') {
+                $maxFileBytes = $this->softLimitBytes('max_file_mb', self::MAX_FILE_BYTES);
+                if ($size > $maxFileBytes || $mimeType !== 'application/pdf' || $originalExtension !== 'pdf') {
                     $this->rejectFile();
                 }
 
@@ -131,7 +136,7 @@ class ContentMediaStorage
                             'purpose' => $purpose,
                             'expires_at' => $purpose->retainsIndefinitely()
                                 ? null
-                                : now('UTC')->addDays(max(1, (int) config('services.linkpilot.media.retention_days', 365))),
+                                : now('UTC')->addDays($this->retentionDays()),
                         ]);
                     } catch (Throwable $exception) {
                         if ($disk->exists($path)) {
@@ -272,6 +277,13 @@ class ContentMediaStorage
 
     private function diskName(): string
     {
+        if ($this->settings->hasStored('uploading', 'disk')) {
+            $configured = $this->settings->resolved()['uploading']['disk'] ?? null;
+            if (is_string($configured) && config('filesystems.disks.'.$configured) !== null) {
+                return $configured;
+            }
+        }
+
         $disk = config('services.linkpilot.media.disk');
         if (! is_string($disk) || trim($disk) === '') {
             if (app()->environment('production')) {
@@ -286,6 +298,26 @@ class ContentMediaStorage
         }
 
         return $disk;
+    }
+
+    private function softLimitBytes(string $key, int $hardLimit): int
+    {
+        if (! $this->settings->hasStored('uploading', $key)) {
+            return $hardLimit;
+        }
+
+        $megabytes = (int) ($this->settings->resolved()['uploading'][$key] ?? 0);
+
+        return $megabytes > 0 ? min($hardLimit, $megabytes * 1024 * 1024) : $hardLimit;
+    }
+
+    private function retentionDays(): int
+    {
+        if ($this->settings->hasStored('uploading', 'retention_days')) {
+            return max(1, (int) ($this->settings->resolved()['uploading']['retention_days'] ?? 365));
+        }
+
+        return max(1, (int) config('services.linkpilot.media.retention_days', 365));
     }
 
     private function safeOriginalName(UploadedFile $file): string

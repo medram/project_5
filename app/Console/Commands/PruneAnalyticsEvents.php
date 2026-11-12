@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\AnalyticsEvent;
+use App\Services\Settings\PlatformSettings;
 use Illuminate\Console\Command;
 
 class PruneAnalyticsEvents extends Command
@@ -13,7 +14,10 @@ class PruneAnalyticsEvents extends Command
 
     public function handle(): int
     {
-        $retentionDays = (int) config('services.linkpilot.analytics.retention_days', 90);
+        $settings = app(PlatformSettings::class);
+        $retentionDays = $settings->hasStored('analytics', 'retention_days')
+            ? (int) ($settings->resolved()['analytics']['retention_days'] ?? 90)
+            : (int) config('services.linkpilot.analytics.retention_days', 90);
         $deleted = AnalyticsEvent::query()
             ->where('occurred_at', '<', now('UTC')->subDays($retentionDays))
             ->delete();

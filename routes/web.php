@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcceptWorkspaceInvitationController;
 use App\Http\Controllers\AccountAnalyticsController;
+use App\Http\Controllers\HomePageController;
 use App\Http\Controllers\Admin\AdminContentController;
 use App\Http\Controllers\Admin\AdminCustomPageController;
 use App\Http\Controllers\Admin\AdminFileController;
@@ -52,6 +53,7 @@ use App\Http\Controllers\NotificationCenterController;
 use App\Http\Controllers\PricingController;
 use App\Http\Controllers\PublicBioContentBlockController;
 use App\Http\Controllers\PublicBioContentMediaController;
+use App\Http\Controllers\PlatformMediaController;
 use App\Http\Controllers\PublicCustomPageController;
 use App\Http\Controllers\PublicBioLinkController;
 use App\Http\Controllers\PublicBioPageController;
@@ -112,8 +114,8 @@ Route::get('up', function (Request $request) {
     ]), status: $status);
 })->name('health');
 
-Route::inertia('/', 'welcome')->name('home');
-Route::get('pricing', PricingController::class)->name('pricing');
+Route::get('/', HomePageController::class)->name('home');
+Route::get('pricing', PricingController::class)->middleware(\App\Http\Middleware\EnsurePricingEnabled::class)->name('pricing');
 
 Route::middleware(['auth', 'verified', 'active-account'])->group(function (): void {
     Route::get('dashboard', fn () => to_route('links.index'))->name('dashboard');
@@ -449,6 +451,10 @@ require __DIR__.'/settings.php';
 
 Route::post('tracking-consent', TrackingConsentController::class)
     ->name('tracking-consent.store');
+Route::get('platform-media/{media}', PlatformMediaController::class)
+    ->whereNumber('media')
+    ->name('platform.media');
+
 Route::get('content/{slug}', PublicCustomPageController::class)
     ->where('slug', '[a-z0-9-]{3,80}')
     ->name('custom-pages.show');

@@ -3,6 +3,7 @@
 namespace App\Services\Settings;
 
 use App\Enums\PlatformPermission;
+use App\Models\CustomPage;
 use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Services\Platform\AdminAudit;
@@ -107,6 +108,127 @@ class PlatformSettings
         ]);
 
         return $values;
+    }
+
+    public function hasStored(string $section, string $key): bool
+    {
+        return Schema::hasTable('platform_settings')
+            && PlatformSetting::query()->where('section', $section)->where('key', $key)->exists();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function publicPayload(): array
+    {
+        $settings = $this->resolved();
+        $general = $settings['general'] ?? [];
+        $theme = $settings['themes'] ?? [];
+        $menus = $settings['menus'] ?? [];
+        $landing = $settings['landing'] ?? [];
+        $seo = $settings['seo'] ?? [];
+        $verification = $settings['brand-verification'] ?? [];
+        $gdpr = $settings['gdpr'] ?? [];
+        $analytics = $settings['analytics'] ?? [];
+        $ads = $settings['ads'] ?? [];
+        $captcha = $settings['captcha'] ?? [];
+
+        $knownRoutes = [
+            'home' => route('home'),
+            'pricing' => route('pricing'),
+            'login' => route('login'),
+            'register' => route('register'),
+        ];
+
+        if (isset($general['support_email']) && is_string($general['support_email'])) {
+            $knownRoutes['contact'] = 'mailto:'.$general['support_email'];
+        }
+
+        $pageIds = array_map('intval', array_merge(
+            is_array($menus['header_page_ids'] ?? null) ? $menus['header_page_ids'] : [],
+            is_array($menus['footer_page_ids'] ?? null) ? $menus['footer_page_ids'] : [],
+        ));
+        $pages = $pageIds === [] ? collect() : CustomPage::query()->published()->whereIn('id', $pageIds)->pluck('slug', 'id');
+
+        $menuItems = function (mixed $items, mixed $ids) use ($knownRoutes, $pages): array {
+            $result = [];
+            foreach (is_array($items) ? $items : [] as $item) {
+                if (is_string($item) && isset($knownRoutes[$item])) {
+                    $result[] = ['label' => ucfirst($item), 'href' => $knownRoutes[$item]];
+                }
+            }
+            foreach (is_array($ids) ? $ids : [] as $id) {
+                $id = (int) $id;
+                if ($pages->has($id)) {
+                    $result[] = ['label' => ucfirst(str_replace('-', ' ', (string) $pages[$id])), 'href' => route('custom-pages.show', ['slug' => $pages[$id]])];
+                }
+            }
+
+            return $result;
+        };
+
+        $logo = function (mixed $id): ?string {
+            $id = is_numeric($id) ? (int) $id : 0;
+
+            return $id > 0 ? route('platform.media', ['media' => $id]) : null;
+        };
+
+        return [
+            'siteName' => is_string($general['site_name'] ?? null) ? $general['site_name'] : config('app.name'),
+            'supportEmail' => is_string($general['support_email'] ?? null) ? $general['support_email'] : null,
+            'homepage' => is_string($landing['homepage'] ?? null) ? $landing['homepage'] : 'home',
+            'logos' => [
+                'light' => $logo($general['logo_light_id'] ?? null),
+                'dark' => $logo($general['logo_dark_id'] ?? null),
+                'compact' => $logo($general['compact_logo_id'] ?? null),
+                'favicon' => $logo($general['favicon_id'] ?? null),
+            ],
+            'theme' => [
+                'scheme' => is_string($theme['default_scheme'] ?? null) ? $theme['default_scheme'] : 'system',
+                'accent' => is_string($theme['accent'] ?? null) ? $theme['accent'] : 'blue',
+                'radius' => is_string($theme['radius'] ?? null) ? $theme['radius'] : 'md',
+            ],
+            'menus' => [
+                'header' => $menuItems($menus['header_items'] ?? [], $menus['header_page_ids'] ?? []),
+                'footer' => $menuItems($menus['footer_items'] ?? [], $menus['footer_page_ids'] ?? []),
+            ],
+            'visibility' => [
+                'pricing' => (bool) ($landing['pricing_enabled'] ?? false),
+                'contact' => (bool) ($landing['contact_enabled'] ?? false),
+                'registration' => (bool) ($landing['registration_enabled'] ?? true),
+            ],
+            'seo' => [
+                'title' => is_string($seo['default_title'] ?? null) ? $seo['default_title'] : null,
+                'description' => is_string($seo['default_description'] ?? null) ? $seo['default_description'] : null,
+            ],
+            'verification' => array_filter([
+                'google' => $verification['google_token'] ?? null,
+                'bing' => $verification['bing_token'] ?? null,
+                'pinterest' => $verification['pinterest_token'] ?? null,
+            ]),
+            'gdpr' => [
+                'notice' => $gdpr['consent_notice'] ?? null,
+                'position' => $gdpr['consent_position'] ?? 'banner',
+                'defaultDenied' => (bool) ($gdpr['analytics_default_denied'] ?? true),
+                'privacyUrl' => $gdpr['privacy_url'] ?? null,
+                'termsUrl' => $gdpr['terms_url'] ?? null,
+            ],
+            'analytics' => [
+                'consentEnabled' => (bool) ($analytics['consent_enabled'] ?? true),
+                'ga4' => $analytics['ga4_measurement_id'] ?? null,
+            ],
+            'captcha' => ($captcha['provider'] ?? 'none') === 'turnstile' && is_string($captcha['site_key'] ?? null) && $captcha['site_key'] !== '' ? [
+                'enabled' => true,
+                'siteKey' => $captcha['site_key'],
+            ] : ['enabled' => false, 'siteKey' => null],
+            'ads' => ($ads['provider'] ?? 'none') === 'adsense' ? [
+                'provider' => 'adsense',
+                'publisherId' => $ads['publisher_id'] ?? null,
+                'headerSlot' => $ads['header_slot'] ?? null,
+                'contentSlot' => $ads['content_slot'] ?? null,
+                'consentRequired' => (bool) ($ads['consent_required'] ?? true),
+            ] : null,
+        ];
     }
 
     /**
@@ -223,6 +345,19 @@ class PlatformSettings
 
         app()->setLocale($locale);
         config(['app.locale' => $locale, 'app.timezone' => $timezone]);
+
+        if ($this->hasStored('email', 'mailer')) {
+            $mailer = $settings['email']['mailer'] ?? null;
+            if (is_string($mailer) && $mailer !== '') {
+                config(['mail.default' => $mailer]);
+            }
+        }
+
+        $senderName = $settings['email']['sender_name'] ?? null;
+        $senderAddress = $settings['email']['sender_address'] ?? null;
+        if ($this->hasStored('email', 'sender_name') && is_string($senderName) && $senderName !== '' && is_string($senderAddress) && $senderAddress !== '') {
+            config(['mail.from.name' => $senderName, 'mail.from.address' => $senderAddress]);
+        }
 
         try {
             date_default_timezone_set($timezone);
