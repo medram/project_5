@@ -3,19 +3,19 @@
     "id": "webhooks",
     "area": "Developer",
     "name": "Outbound webhooks",
-    "status": "in_progress",
+    "status": "blocked_external",
     "requirements": [
         {
             "id": "WHK-1",
             "text": "An authenticated workspace owner or admin can create, update, disable, delete, and rotate a webhook for selected events.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WHK-2",
             "text": "Creation and every delivery attempt require HTTPS and fresh public-address validation without redirects.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "blocked_external"
         },
         {
             "id": "WHK-3",
@@ -27,7 +27,7 @@
             "id": "WHK-4",
             "text": "The immutable envelope includes schema version, event UUID/name/time, workspace ID, and minimal resource data.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WHK-5",
@@ -39,13 +39,13 @@
             "id": "WHK-6",
             "text": "Delivery allows three total attempts with 60-second and 300-second retries, strict timeouts, and 2xx-only success.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WHK-7",
             "text": "Webhook mutation cancels pending deliveries while preserving history; secrets are encrypted and shown only on create/rotate.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WHK-8",
@@ -127,6 +127,18 @@
             "description": "Fresh PRD-alignment review passed: owner/admin management wording and canonical history evidence match the implementation; live delivery remains blocked on a public HTTPS receiver, with the feature retained in progress for other unresolved requirements.",
             "reference": "PRDAlignment-2 final review; PRD.md and product/features/webhooks.json",
             "verifiedAt": "2026-10-26T16:33:15Z"
+        },
+        {
+            "type": "test",
+            "description": "Current Task 3 webhook suites passed inside the focused run, including SSRF validation, encrypted one-time secrets, immutable payload/signature bytes, retries, stale-revision cancellation, bounded history, redelivery lineage, and endpoint health.",
+            "reference": "tests/Feature/Webhooks; app/Http/Controllers/WebhookController.php; Task 3 focused run (363 passed, 1 skipped, 4166 assertions)",
+            "verifiedAt": "2026-11-12T12:38:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium captured the webhook delivery-summary list at desktop and its responsive mobile cards with no one-time secret exposed, HTTP/page errors, or horizontal overflow.",
+            "reference": "product/verification/parity/user-settings-webhooks-desktop.png; product/verification/parity/mobile-webhooks-cards.png; product/verification/parity/manifest.json",
+            "verifiedAt": "2026-11-12T12:38:36Z"
         }
     ]
 }

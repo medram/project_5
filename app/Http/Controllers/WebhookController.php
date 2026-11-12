@@ -35,7 +35,7 @@ class WebhookController extends Controller
                 ->all(),
             'supportedEvents' => Webhook::supportedEvents(),
             'canManageIntegrations' => $canManageIntegrations,
-            'oneTimeSecret' => session('webhookSecret'),
+            'oneTimeSecret' => $request->session()->pull('webhookSecret'),
         ]);
     }
 

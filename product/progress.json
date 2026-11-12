@@ -33,7 +33,7 @@
         {
             "id": "short-links",
             "state": "in_progress",
-            "lastVerifiedAt": "2026-10-23T12:22:37Z",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "Phase 5A focused suites: 84 tests and 834 assertions passed, including routing, delivery guards/side-effect ordering, CSV, revisions, folder scope, and legacy migration/backfill/rollback.",
                 "Migration proof: legacy clicks backfill into click_count, approval and overlay mode defaults are explicit, existing links/folders/overlays/clicks survive, and destructive campaign rollback is refused.",
@@ -49,26 +49,30 @@
                 "ProductCatalogTest passed 3 tests and 10,447 assertions after final short-link, folder, mobile, and QR evidence updates.",
                 "Browser at 390x844: duplicate non-empty UTM/custom keys collapse to one last-wins value (utm_source=custom_last) in the non-executing preview; the saved link's 302 Location matched exactly while the old configured value was replaced and repeated unrelated values plus #section were preserved. Capture: phase5a-query-collision-preview-mobile.webp.",
                 "Browser at 390x844: a later empty custom-parameter duplicate preserves the earlier non-empty value; the preview exactly matches the saved redirect Location and keeps unrelated repeated values and #part. Captures: phase5a-empty-duplicate-preview-mobile.png, phase5a-empty-duplicate-rows-mobile.png; GET /phase5a-empty-duplicate-evidence returns the matching 302 Location.",
-                "Browser at 390x844: a 100-character search chip truncates with its full aria-label; no-results copy stays inside the card; a long short-link destination truncates with ellipsis inside the card (308px link ends at x=349 before card edge x=374), with no page overflow. At 1440x1000 the links table remains visible and page width is 1440px."
+                "Browser at 390x844: a 100-character search chip truncates with its full aria-label; no-results copy stays inside the card; a long short-link destination truncates with ellipsis inside the card (308px link ends at x=349 before card edge x=374), with no page overflow. At 1440x1000 the links table remains visible and page width is 1440px.",
+                "Current Task 3 focused behavior run passed all link suites inside the 363-passed/1-conditional-skip run, including delivery controls, routing, revisions, CSV, tenant scope, migration safety, and first-party destination rejection.",
+                "Managed Chromium exercised the populated desktop/mobile list, create dialog, UTM/custom-query panel, ordered targeting rules, keyboard focus, and required destination validation with no HTTP/page errors or horizontal overflow."
             ],
             "blockers": []
         },
         {
             "id": "folders",
             "state": "in_progress",
-            "lastVerifiedAt": "2026-10-23T10:58:56Z",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "Folder management tests cover workspace-safe list/mutations/deletion and link/click/event rollups, including mismatched foreign-workspace link/event rows.",
                 "Browser: the desktop folder screenshot shows a rollup of 3 links, 2 clicks, and 0 consented events.",
                 "Browser at 390x844: folder card showed 1 link, 14 clicks, and 3 events; document scroll width was 375px, so the page had no horizontal overflow. Capture: product/verification/phase5-folders-mobile.png.",
-                "Browser at 390x844: folder view=table URL shows the card layout with no view selector; long search filter and no-results text stay contained, and the filter retains its complete accessible name. Capture: product/verification/phase5a-responsive-folder-search-mobile.png."
+                "Browser at 390x844: folder view=table URL shows the card layout with no view selector; long search filter and no-results text stay contained, and the filter retains its complete accessible name. Capture: product/verification/phase5a-responsive-folder-search-mobile.png.",
+                "Current Task 3 folder coverage passed inside the focused run, including CRUD, safe bulk deletion, list state, pagination, active-workspace isolation, and workspace-safe click/event rollups.",
+                "Managed Chromium captured the populated desktop rollup and responsive mobile card surface at 390x844 with no horizontal overflow or page errors."
             ],
             "blockers": []
         },
         {
             "id": "qr-codes",
-            "state": "in_progress",
-            "lastVerifiedAt": "2026-10-23T12:23:54Z",
+            "state": "blocked_external",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "QrCodeTest passed: 37 tests and 360 assertions, including scoped linked-target insights, scan-time access-code version revalidation, invalid-target CSV row isolation, route guards, schedule/access/max-scan controls, workspace isolation, preview, exports, analytics, all four image formats, and logo lifecycle.",
                 "ProductCatalogTest passed: 3 tests and 10,447 assertions after the final PRD and feature-catalog alignment.",
@@ -83,21 +87,25 @@
                 "Platform-admin browser smoke created and deleted its own QR campaign. The regular owner received 404 for the foreign preview, PNG download, insights, and PATCH; admin readback showed the campaign unchanged. Forged POST /workspaces/1/switch returned 403 and left Demo Owner's workspace active.",
                 "Workspace member and invitation flows remain deferred at the user's request; no collaboration or role changes were added. Existing QR member-list and cross-workspace isolation behavior is covered by QrCodeTest.",
                 "Fresh independent reviews after the direct QR search fix: regular-user UX, admin/authorization, and PRD-alignment reviewers found no actionable findings. UX reviewed campaign flows, responsive navigation, keyboard/focus, and direct search; authorization covered workspace isolation and safe search metadata; PRD alignment confirmed the production-storage blocker remains explicit.",
-                "Resolved the QA click-counter caveat: phase5-query-collision has 4 Click rows and click_count=4; phase5a-empty-duplicate-evidence has 2 rows and click_count=2. Both URLs had documented GET/302 delivery checks, which correctly increment Click counters through LinkDeliveryService::complete()."
+                "Resolved the QA click-counter caveat: phase5-query-collision has 4 Click rows and click_count=4; phase5a-empty-duplicate-evidence has 2 rows and click_count=2. Both URLs had documented GET/302 delivery checks, which correctly increment Click counters through LinkDeliveryService::complete().",
+                "Current Task 3 QR coverage passed inside the focused run, including migration/backfill, direct and linked delivery controls, scans, private logo lifecycle, previews, export, insights, and SVG/PNG/JPEG/WebP downloads.",
+                "Managed Chromium captured populated desktop/mobile QR lists and the real create-campaign dialog with no HTTP/page errors or horizontal overflow."
             ],
             "blockers": [
-                "Production must configure and verify durable private storage for uploaded QR logos at storage/app/private/qr-logos; no production storage mount was exercised."
+                "Durable private production storage for QR logos is not configured because LINKPILOT_MEDIA_DISK is unset."
             ]
         },
         {
             "id": "bio-pages",
             "state": "blocked_external",
-            "lastVerifiedAt": "2026-10-24T06:01:23Z",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "Full Laravel suite: 428 passed, 15,151 assertions; 1 ClamAV-dependent PDF-delivery case skipped. Bio management, content, projection, insights, and media-validation tests passed.",
                 "Owner browser at 1440x1000 and 390x844 checked Content/Appearance/Insights, click-to-load embeds, keyboard block ordering, and a 390px document width.",
                 "At 390x844, first-party Bio-link validation retained submitted values, rendered a role=alert, marked the URL aria-invalid, and cleared the error after correction.",
-                "ContentMedia records workspace/uploader ownership, opaque public ID/path, MIME/size/SHA-256, visibility/scan state, expiry, and soft-delete metadata needed by later AOPS-1; no Phase 9 admin-files UI was added."
+                "ContentMedia records workspace/uploader ownership, opaque public ID/path, MIME/size/SHA-256, visibility/scan state, expiry, and soft-delete metadata needed by later AOPS-1; no Phase 9 admin-files UI was added.",
+                "Current Task 3 bio-page suites passed inside the focused run, covering management, ordered content, private image delivery, provider-ID validation, public projection, and privacy-minimal insights.",
+                "Managed Chromium captured the populated bio list, Content, Appearance, and Insights tabs, plus the 390x844 editor with no HTTP/page errors or horizontal overflow."
             ],
             "blockers": [
                 "LINKPILOT_MEDIA_DISK is unset; durable private production storage for bio media is not configured or verified."
@@ -106,77 +114,95 @@
         {
             "id": "analytics",
             "state": "blocked_external",
-            "lastVerifiedAt": "2026-10-26T16:41:06Z",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "Final isolated Laravel suite passed 475 tests and 16,100 assertions with one conditional ClamAV-dependent skip. ProductCatalogTest passed all three schema, PRD-mapping, and reference-manifest cases after evidence/status reconciliation; Phase6MigrationTest passed all three migration-preservation probes.",
                 "Independent regular-user review passed after the shadcn chart sizing fix: at 390x844 the chart plot was 252px, its rightmost tick stayed inside the card, and the page had no horizontal overflow; evidence ev_e4d79e65d87f60de22305ed2df8404805c7f311929d5a3cc610a3e20f3c119f1.",
-                "Shared-filter/export coverage and the responsive insights surface are verified. The fresh PRD alignment review passed; positive country lookup remains blocked_external until a local MaxMind database is available."
+                "Shared-filter/export coverage and the responsive insights surface are verified. The fresh PRD alignment review passed; positive country lookup remains blocked_external until a local MaxMind database is available.",
+                "Current Task 3 analytics suites passed inside the focused run, covering consent, data minimization, attribution, filters/export, custom events, tracking pixels, pruning, and explicit absent/corrupt GeoIP behavior.",
+                "Managed Chromium captured the current analytics overview, event table, and responsive event cards with no HTTP/page errors or horizontal overflow."
             ],
             "blockers": [
-                "ANALYTICS_GEOIP_DATABASE is unset and no local MaxMind database is available; missing/corrupt-database behavior is tested, but positive country resolution cannot be verified."
+                "ANALYTICS_HASH_KEY and ANALYTICS_HASH_KEY_VERSION are unset in the production configuration.",
+                "PUBLIC_PRIVACY_URL is unset, so the production granted-consent path remains unavailable.",
+                "ANALYTICS_GEOIP_DATABASE is unset and no local MaxMind database is available for positive country resolution."
             ]
         },
         {
             "id": "custom-domains",
-            "state": "in_progress",
-            "lastVerifiedAt": "2026-10-21T14:57:29Z",
+            "state": "blocked_external",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "DOM-2/DOM-6/DOM-8/DOM-9: full suite, host and compare-and-swap boundaries, unknown-host 404",
-                "Mobile create dialog renders the plan quota error without closing"
+                "Mobile create dialog renders the plan quota error without closing",
+                "Current Task 3 domain coverage passed inside the focused run, including normalization, unsafe/default-host rejection, owner scope, DNS/TLS state progression, compare-and-swap token safety, prevalidated HTTPS probing, assignment, challenge routing, and deletion.",
+                "Managed Chromium captured desktop and mobile empty states in a disposable Pro workspace, then restored the seeded workspace and deleted the disposable workspace; no HTTP/page errors or horizontal overflow occurred."
             ],
-            "blockers": []
+            "blockers": [
+                "No customer-controlled DNS TXT record is available for live verification.",
+                "No production reverse-proxy/application host route is configured for a customer domain.",
+                "No valid TLS certificate is available for a live customer-domain activation check."
+            ]
         },
         {
             "id": "overlays",
             "state": "verified",
-            "lastVerifiedAt": "2026-10-24T06:01:23Z",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "OverlayDeliveryTest and OverlaySchedulingTest passed; full Laravel suite passed 428 tests and 15,151 assertions with one ClamAV-dependent PDF-delivery case skipped.",
-                "Owner browser verified the five-second overlay deadline at desktop and 390px; mobile create/edit dialogs were viewport-bounded and internally scrollable, and keyboard traversal reached the Save action without horizontal overflow."
+                "Owner browser verified the five-second overlay deadline at desktop and 390px; mobile create/edit dialogs were viewport-bounded and internally scrollable, and keyboard traversal reached the Save action without horizontal overflow.",
+                "Current Task 3 overlay suites passed inside the focused run, including management, ownership, consented views, access-code gates, continuation revalidation, scheduling, and server-side delay enforcement.",
+                "Managed Chromium captured the populated overlay manager at desktop and its responsive mobile surface with no HTTP/page errors or horizontal overflow."
             ],
             "blockers": []
         },
         {
             "id": "tracking-pixels",
             "state": "verified",
-            "lastVerifiedAt": "2026-10-24T06:01:23Z",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "TrackingPixelTriggersTest and AnalyticsTrackingTest focused behavior coverage passed; full Laravel suite passed 428 tests and 15,151 assertions with one ClamAV-dependent PDF-delivery case skipped.",
-                "Owner browser observed no Meta/GA4 scripts or requests before consent; consented page-view/click dispatch and accepted-lead-only trigger behavior passed with vendor requests intercepted."
+                "Owner browser observed no Meta/GA4 scripts or requests before consent; consented page-view/click dispatch and accepted-lead-only trigger behavior passed with vendor requests intercepted.",
+                "Current Task 3 pixel-trigger and public-surface suites passed inside the focused run, including fixed providers, identifier validation, consent gating, owned-surface attachments, trigger allowlists, and Meta deduplication.",
+                "Managed Chromium captured the populated tracking-pixel manager at desktop and its responsive mobile surface with no HTTP/page errors or horizontal overflow."
             ],
             "blockers": []
         },
         {
             "id": "link-pages",
             "state": "blocked_external",
-            "lastVerifiedAt": "2026-10-24T06:01:23Z",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "Full Laravel suite passed 428 tests and 15,151 assertions; one successful PDF-delivery case was skipped because ClamAV is unavailable. LinkPageBlocksTest, LinkPageLeadTest, LinkPageVariantsTest, LinkPageMediaDeliveryTest, and Phase6MigrationTest passed.",
                 "Phase 6 migration probes preserved legacy records and passed SQLite integrity_check and foreign_key_check.",
                 "Owner browser reviewed templates, forms, variants, PDF fail-closed behavior, and 390px layout; no horizontal overflow.",
                 "Workspace admin accessed page leads at 390px and 1440px; nonmember platform admin received 404 for lead listing and private editor-image preview.",
-                "LINKPILOT_MEDIA_DISK, PUBLIC_PRIVACY_URL, and CLAMSCAN_PATH are unset; clamscan is unavailable."
+                "LINKPILOT_MEDIA_DISK, PUBLIC_PRIVACY_URL, and CLAMSCAN_PATH are unset; clamscan is unavailable.",
+                "Current Task 3 publishing/media suites passed inside the focused run, including blocks/templates, encrypted leads and retention, deterministic variants, migration preservation, private image delivery, and fail-closed PDF handling; the clean-PDF case remained conditionally skipped without ClamAV.",
+                "Managed Chromium captured the populated desktop link-page list and responsive mobile surface with no HTTP/page errors or horizontal overflow."
             ],
             "blockers": [
                 "LINKPILOT_MEDIA_DISK is unset; durable private production storage is not configured or verified.",
-                "ClamAV executable is unavailable; successful clean-PDF upload and delivery remain unverified and uploads fail closed.",
+                "ClamAV is unavailable; successful clean-PDF upload and attachment delivery remain unverified while uploads fail closed.",
                 "PUBLIC_PRIVACY_URL is unset; production lead capture remains disabled until the privacy disclosure is configured."
             ]
         },
         {
             "id": "workspaces",
-            "state": "in_progress",
-            "lastVerifiedAt": "2026-10-22T10:40:27Z",
+            "state": "blocked_external",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "A populated disposable SQLite copy was rolled back and re-applied across the three workspace migrations. Legacy-column SHA-256 row-streams matched for 18 application tables; personal subscription values matched after owner normalization; 2 users, 2 personal workspaces, 2 owner memberships, and 2 subscriptions remained; all nine workspace-owned tables had zero unassigned rows; integrity_check=ok and foreign_key_check=0.",
                 "Full Laravel suite passed 218 tests and 10,891 assertions, including analytics workspace scoping, shared-workspace overlay consent, active-workspace link-insight/QR isolation, invitation limits, and product-catalog validation. Independent code review found no actionable Phase 3 defects; security review found no verified vulnerabilities (both static).",
                 "At localhost:8101, an owner-issued admin invitation was accepted; the workspace-admin view showed no Resend/Revoke actions for a pending admin invitation while a pending member invitation retained both actions.",
                 "Workspace settings at 390x844 had no horizontal overflow or browser errors. Owner-mobile and workspace-admin desktop billing screenshots are in product/verification/.",
-                "Frontend typecheck and Vite production build passed; member webhook metadata omitted endpoint URL and signing secret, and GET /webhooks/2/deliveries returned 403."
+                "Frontend typecheck and Vite production build passed; member webhook metadata omitted endpoint URL and signing secret, and GET /webhooks/2/deliveries returned 403.",
+                "Current Task 3 workspace suites passed inside the focused run, including backfill/contract chronology, membership and role authorization, invitation lifecycle, ownership transfer, capacity locking semantics, tenant scoping, and append-only workspace audit records.",
+                "Managed Chromium captured desktop/mobile workspace settings and exercised real create/switch behavior with a disposable workspace; Task 2 separately proved invitation SMTP and queued mail through Mailpit."
             ],
             "blockers": [
-                "Invitation SMTP delivery was not exercised; browser acceptance used one-time links.",
-                "Migration proof used an isolated populated SQLite copy; a production database snapshot was not available and production migration safety remains unverified."
+                "Production SMTP is unconfigured; local invitation and queued-mail delivery through the development Mailpit transport passed.",
+                "No production-like populated database snapshot is available for migration proof; isolated SQLite migration chronology/backfill tests passed."
             ]
         },
         {
@@ -206,28 +232,32 @@
         },
         {
             "id": "webhooks",
-            "state": "in_progress",
-            "lastVerifiedAt": "2026-10-26T16:41:06Z",
+            "state": "blocked_external",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "Final isolated Laravel suite passed 475 tests and 16,100 assertions with one conditional skip, including webhook retry, manual-redelivery lineage, and stale-failure cleanup coverage.",
                 "At 390px on canonical /account-settings/webhooks, History displayed a synthetic failed delivery, three attempts, HTTP 503, failure detail, and bounded response excerpt; document width was 390px. No redelivery was triggered.",
-                "Independent admin-role review passed: normal users and workspace admins receive 403 at /admin. Fresh PRD alignment re-review confirmed the HTTPS receiver blocker and retained in_progress while WHK-1/2/4/6/7 remain in_progress."
+                "Independent admin-role review passed: normal users and workspace admins receive 403 at /admin. Fresh PRD alignment re-review confirmed the HTTPS receiver blocker and retained in_progress while WHK-1/2/4/6/7 remain in_progress.",
+                "Current Task 3 webhook suites passed inside the focused run, including SSRF validation, encrypted one-time secrets, immutable payload/signature bytes, retries, stale-revision cancellation, bounded history, redelivery lineage, and endpoint health.",
+                "Managed Chromium captured the webhook delivery-summary list at desktop and its responsive mobile cards with no one-time secret exposed, HTTP/page errors, or horizontal overflow."
             ],
             "blockers": [
-                "No publicly routable HTTPS receiver is available for live queued delivery and successful manual-redelivery proof."
+                "No publicly routable HTTPS receiver is available for live queued delivery or successful manual-redelivery proof."
             ]
         },
         {
             "id": "notifications",
             "state": "blocked_external",
-            "lastVerifiedAt": "2026-10-26T16:41:06Z",
+            "lastVerifiedAt": "2026-11-12T12:38:36Z",
             "checks": [
                 "Final isolated Laravel suite passed 475 tests and 16,100 assertions with one conditional ClamAV-dependent skip; notification preference gating, database delivery, read-state, and admin-broadcast coverage pass.",
                 "Independent regular-user review saved a notification category preference and observed the success toast; admin broadcast UI was reviewed at desktop/mobile widths and ordinary-user /admin returned 403.",
-                "No email was sent; the disposable environment uses MAIL_MAILER=log. Fresh PRD alignment review passed; ID-4 is verified and the feature remains blocked_external only for real SMTP."
+                "No email was sent; the disposable environment uses MAIL_MAILER=log. Fresh PRD alignment review passed; ID-4 is verified and the feature remains blocked_external only for real SMTP.",
+                "Current Task 3 notification-center coverage passed inside the focused run, including visibility, unread/all filtering, mark-one/all-read, shared counts, preference gating, safe target deletion, failure/usage/billing/invitation events, and active-account admin broadcasts.",
+                "Managed Chromium captured the populated notification menu, notification center/preferences, and responsive mobile cards with no HTTP/page errors or horizontal overflow."
             ],
             "blockers": [
-                "A real SMTP transport is not configured; live email delivery remains unverified."
+                "Production SMTP is unconfigured; local application and queue delivery through the development Mailpit transport passed."
             ]
         },
         {

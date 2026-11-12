@@ -157,6 +157,18 @@
             "description": "At 390x844, a rejected first-party Bio-link destination displayed its server validation alert with aria-invalid=true while preserving submitted values; editing the URL cleared the alert and invalid state.",
             "reference": "http://localhost:8108/dashboard/biolinks/2",
             "verifiedAt": "2026-10-24T06:01:23Z"
+        },
+        {
+            "type": "test",
+            "description": "Current Task 3 bio-page suites passed inside the focused run, covering management, ordered content, private image delivery, provider-ID validation, public projection, and privacy-minimal insights.",
+            "reference": "tests/Feature/BioPages; tests/Feature/Content/ContentMediaStorageTest.php; Task 3 focused run (363 passed, 1 skipped, 4166 assertions)",
+            "verifiedAt": "2026-11-12T12:38:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium captured the populated bio list, Content, Appearance, and Insights tabs, plus the 390x844 editor with no HTTP/page errors or horizontal overflow.",
+            "reference": "product/verification/parity/user-bio-list-desktop.png; product/verification/parity/user-bio-content-desktop.png; product/verification/parity/user-bio-appearance-desktop.png; product/verification/parity/user-bio-insights-desktop.png; product/verification/parity/user-mobile-bio-editor.png; product/verification/parity/manifest.json",
+            "verifiedAt": "2026-11-12T12:38:36Z"
         }
     ]
 }

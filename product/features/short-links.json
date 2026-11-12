@@ -9,85 +9,85 @@
             "id": "LNK-1",
             "text": "An active-workspace member can create an HTTP(S) short link with destination URL, title, active flag, and a unique normalized slug.",
             "priority": "P0",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-2",
             "text": "Generated slugs retry on collision; custom slugs reject reserved application paths.",
             "priority": "P0",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-3",
             "text": "A link can be placed in one folder.",
             "priority": "P0",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-4",
             "text": "A link can be scheduled with optional UTC start and expiry timestamps.",
             "priority": "P0",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-5",
             "text": "A link can require an access code stored only as a Laravel hash; unlocks are link-specific, versioned, valid for eight hours, and rate-limited to five failed attempts per five minutes per link/visitor cache key.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-6",
             "text": "Unavailable links return 404 without creating a click or event record.",
             "priority": "P0",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-7",
             "text": "A link can select one active custom domain in the active workspace.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-8",
             "text": "A link can select one active CTA overlay in the active workspace.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-9",
             "text": "A final short-link delivery writes a rich event only after explicit tracking consent; the aggregate click counter remains independent.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-10",
             "text": "Link lists support search, filters, tags, safe preview, UTM/custom-parameter building, delivery variants, CSV import/export, and capped bulk actions; mobile cards replace unavailable tables without a misleading view selector, long active-filter values/no-result text stay within the list card, and long destination URLs truncate within short-link cards while preserving full link text.",
             "priority": "P2",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-11",
             "text": "Link edits retain immutable delivery snapshots and support an optional owner/admin approval workflow.",
             "priority": "P3",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-12",
             "text": "Existing short-link, bio-link, and link-page item destinations reject LinkPilot default aliases and every claimed custom-domain host.",
             "priority": "P0",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-13",
             "text": "Published links support guarded direct, splash, local published-page, and LinkPilot-controlled CTA-overlay delivery plus ordered country/device/platform rules.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "LNK-14",
             "text": "Bulk actions and CSV import/export preserve workspace authorization and return row-level validation outcomes.",
             "priority": "P2",
-            "status": "in_progress"
+            "status": "verified"
         }
     ],
     "routes": [
@@ -255,7 +255,6 @@
             "reference": "product/verification/phase5-link-form-mobile-focused.webp",
             "verifiedAt": "2026-10-22T20:32:03Z"
         },
-
         {
             "type": "test",
             "description": "The complete Laravel suite passed 314 tests and 12,845 assertions. Regression coverage verifies claimed-host delivery rejection, stale approval after a host claim, validated list-state preservation through revision review, spreadsheet-safe CSV titles, and explicit overlay delivery mode.",
@@ -321,6 +320,18 @@
             "description": "At 390x844, a long short-link destination now truncates with an ellipsis inside its mobile card. Before the fix the 475px destination box extended 142px beyond the card; afterward the box was 308px wide and ended at x=349 inside the card's x=16..374 bounds. The document remained 390px wide; at 1440x1000 the table remained visible without horizontal overflow.",
             "reference": "Isolated browser at http://localhost:8107/dashboard/links; long test destination on /phase5a-empty-duplicate-evidence.",
             "verifiedAt": "2026-10-23T11:26:59Z"
+        },
+        {
+            "type": "test",
+            "description": "Current Task 3 focused behavior run passed all link suites inside the 363-passed/1-conditional-skip run, including delivery controls, routing, revisions, CSV, tenant scope, migration safety, and first-party destination rejection.",
+            "reference": "tests/Feature/Links; phpunit.xml; Task 3 focused run (363 passed, 1 skipped, 4166 assertions)",
+            "verifiedAt": "2026-11-12T12:38:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium exercised the populated desktop/mobile list, create dialog, UTM/custom-query panel, ordered targeting rules, keyboard focus, and required destination validation with no HTTP/page errors or horizontal overflow.",
+            "reference": "product/verification/parity/user-links-list-desktop.png; product/verification/parity/user-new-link-dialog-desktop.png; product/verification/parity/user-new-link-tracking-desktop.png; product/verification/parity/user-new-link-retargeting-desktop.png; product/verification/parity/user-mobile-bottom-nav.png; product/verification/parity/manifest.json",
+            "verifiedAt": "2026-11-12T12:38:36Z"
         }
     ]
 }

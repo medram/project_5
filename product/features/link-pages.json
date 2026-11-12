@@ -57,7 +57,7 @@
             "id": "PAG-9",
             "text": "Workspace-owned images and PDFs are delivered only from unexpired, eligible blocks on published pages; PDFs require a clean malware scan and attachment-only delivery.",
             "priority": "P3",
-            "status": "in_progress"
+            "status": "blocked_external"
         },
         {
             "id": "PAG-10",
@@ -172,6 +172,18 @@
             "description": "At 390px, the editor showed templates, mixed blocks, lead forms, and variants without horizontal overflow; PDF upload failed closed without ClamAV. Workspace admins opened leads at 390px and 1440px; a nonmember platform admin received 404 for leads and private image preview.",
             "reference": "http://localhost:8108/dashboard/link-pages/1; /dashboard/link-pages/1/leads; /dashboard/link-pages/1/blocks/3/image",
             "verifiedAt": "2026-10-24T05:40:47Z"
+        },
+        {
+            "type": "test",
+            "description": "Current Task 3 publishing/media suites passed inside the focused run, including blocks/templates, encrypted leads and retention, deterministic variants, migration preservation, private image delivery, and fail-closed PDF handling; the clean-PDF case remained conditionally skipped without ClamAV.",
+            "reference": "tests/Feature/LinkPages; tests/Feature/Content; Task 3 focused run (363 passed, 1 skipped, 4166 assertions)",
+            "verifiedAt": "2026-11-12T12:38:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium captured the populated desktop link-page list and responsive mobile surface with no HTTP/page errors or horizontal overflow.",
+            "reference": "product/verification/parity/user-link-pages-desktop.png; product/verification/parity/mobile-link-pages-cards.png; product/verification/parity/manifest.json",
+            "verifiedAt": "2026-11-12T12:38:36Z"
         }
     ]
 }

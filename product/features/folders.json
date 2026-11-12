@@ -9,25 +9,25 @@
             "id": "FOL-1",
             "text": "Create, rename, list, search, sort, paginate, and delete private folders in the active workspace; mobile cards replace unavailable tables without a misleading view selector, and long active-filter values/no-result text stay within the list card.",
             "priority": "P0",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "FOL-2",
             "text": "Deleting one or more folders preserves their links and clears folder_id on each affected link.",
             "priority": "P0",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "FOL-3",
             "text": "Folder lists show link count and click/event rollups.",
             "priority": "P2",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "FOL-4",
             "text": "Folder queries, mutations, counts, and rollups are scoped to the active workspace.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         }
     ],
     "routes": ["/dashboard/folders", "/dashboard/folders/{folder}"],
@@ -94,6 +94,18 @@
             "description": "At 390x844, a 100-character unbroken folder search stays within the active-filter chip and no-results card, with the full accessible filter name retained. A view=table URL renders folders as cards and hides the unavailable table control.",
             "reference": "product/verification/phase5a-responsive-folder-search-mobile.png; isolated browser at http://localhost:8107/dashboard/folders",
             "verifiedAt": "2026-10-23T10:55:10Z"
+        },
+        {
+            "type": "test",
+            "description": "Current Task 3 folder coverage passed inside the focused run, including CRUD, safe bulk deletion, list state, pagination, active-workspace isolation, and workspace-safe click/event rollups.",
+            "reference": "tests/Feature/Folders/FolderManagementTest.php; Task 3 focused run (363 passed, 1 skipped, 4166 assertions)",
+            "verifiedAt": "2026-11-12T12:38:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium captured the populated desktop rollup and responsive mobile card surface at 390x844 with no horizontal overflow or page errors.",
+            "reference": "product/verification/parity/user-folders-desktop.png; product/verification/parity/mobile-folders-cards.png; product/verification/parity/manifest.json",
+            "verifiedAt": "2026-11-12T12:38:36Z"
         }
     ]
 }

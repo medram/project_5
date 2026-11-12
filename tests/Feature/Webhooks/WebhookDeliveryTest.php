@@ -13,6 +13,7 @@ use App\Services\Analytics\AnalyticsTracker;
 use App\Services\Analytics\TrackingConsent;
 use App\Services\Webhooks\WebhookEndpointValidator;
 use App\Services\Webhooks\WebhookPayload;
+use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -135,14 +136,20 @@ class WebhookDeliveryTest extends TestCase
         $this->assertNotSame($secret, $rotated);
         $this->assertNotSame($rotated, DB::table('webhooks')->value('secret'));
 
-        // The rotate flash shows the new secret once; after that the list is secret-free.
-        $this->actingAs($owner)->get('/account-settings/webhooks')->assertOk();
+        // The rotate flash shows the new secret once; after that the page prop is secret-free.
+        $this->actingAs($owner)
+            ->get('/account-settings/webhooks')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('webhooks/index')
+                ->where('oneTimeSecret', $rotated));
 
         $this->actingAs($owner)
             ->get('/account-settings/webhooks')
             ->assertOk()
-            ->assertDontSee($secret)
-            ->assertDontSee($rotated);
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('webhooks/index')
+                ->where('oneTimeSecret', null));
     }
 
     public function test_webhook_management_is_scoped_to_the_active_workspace_and_integration_managers(): void
@@ -164,7 +171,7 @@ class WebhookDeliveryTest extends TestCase
                 ->where('canManageIntegrations', true)
                 ->has('webhooks', 1));
 
-        $this->app->make(\App\Services\Workspaces\WorkspaceContext::class)
+        $this->app->make(WorkspaceContext::class)
             ->activate($owner, $otherWorkspace);
         $owner->refresh();
         $this->assertSame((int) $otherWorkspace->id, (int) $owner->current_workspace_id);
@@ -190,7 +197,7 @@ class WebhookDeliveryTest extends TestCase
             ->post('/account-settings/webhooks', $this->webhookPayload())
             ->assertForbidden();
 
-        $this->app->make(\App\Services\Workspaces\WorkspaceContext::class)
+        $this->app->make(WorkspaceContext::class)
             ->activate($owner, $otherWorkspace);
         $otherWorkspace->members()->updateExistingPivot($owner->id, ['role' => 'admin']);
 
@@ -201,6 +208,7 @@ class WebhookDeliveryTest extends TestCase
         $this->assertSame(1, $otherWorkspace->webhooks()->count());
         $this->assertSame($owner->id, $otherWorkspace->webhooks()->sole()->user_id);
     }
+
     public function test_workspace_members_can_read_redacted_webhook_metadata_but_not_delivery_details(): void
     {
         $owner = User::factory()->create();
@@ -212,7 +220,7 @@ class WebhookDeliveryTest extends TestCase
             $webhook,
             $this->makeEvent($owner, Link::factory()->for($owner)->create()),
         );
-        app(\App\Services\Workspaces\WorkspaceContext::class)->activate($member, $workspace);
+        app(WorkspaceContext::class)->activate($member, $workspace);
 
         $this->actingAs($member)
             ->get('/account-settings/webhooks')
@@ -225,8 +233,6 @@ class WebhookDeliveryTest extends TestCase
             ->getJson(route('webhooks.deliveries.index', $webhook))
             ->assertForbidden();
     }
-
-
 
     public function test_webhook_payload_carries_immutable_workspace_snapshot(): void
     {
@@ -243,6 +249,7 @@ class WebhookDeliveryTest extends TestCase
         $this->assertSame($workspace->id, $payload['workspace_id']);
         $this->assertArrayNotHasKey('account_id', $payload);
     }
+
     public function test_workspace_webhook_receives_events_from_other_workspace_members(): void
     {
         $owner = User::factory()->create();
@@ -265,7 +272,6 @@ class WebhookDeliveryTest extends TestCase
         $this->assertArrayNotHasKey('account_id', $payload);
         Queue::assertPushed(DeliverWebhook::class);
     }
-
 
     public function test_persisting_consented_event_creates_delivery_and_dispatches_job(): void
     {

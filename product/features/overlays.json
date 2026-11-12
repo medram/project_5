@@ -85,6 +85,18 @@
             "description": "Owner browser verified a scheduled five-second overlay deadline and continue flow at desktop and 390px. At 390x844, create/edit dialogs stayed within the viewport with internal scrolling; keyboard traversal revealed the edit Save action inside the dialog, and the manager had no horizontal overflow.",
             "reference": "http://localhost:8108/dashboard/link-overlays",
             "verifiedAt": "2026-10-24T06:01:23Z"
+        },
+        {
+            "type": "test",
+            "description": "Current Task 3 overlay suites passed inside the focused run, including management, ownership, consented views, access-code gates, continuation revalidation, scheduling, and server-side delay enforcement.",
+            "reference": "tests/Feature/Overlays; Task 3 focused run (363 passed, 1 skipped, 4166 assertions)",
+            "verifiedAt": "2026-11-12T12:38:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium captured the populated overlay manager at desktop and its responsive mobile surface with no HTTP/page errors or horizontal overflow.",
+            "reference": "product/verification/parity/user-overlays-desktop.png; product/verification/parity/mobile-overlays-cards.png; product/verification/parity/manifest.json",
+            "verifiedAt": "2026-11-12T12:38:36Z"
         }
     ]
 }

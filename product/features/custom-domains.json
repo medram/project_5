@@ -3,13 +3,13 @@
     "id": "custom-domains",
     "area": "Integrations",
     "name": "Custom domains",
-    "status": "in_progress",
+    "status": "blocked_external",
     "requirements": [
         {
             "id": "DOM-1",
             "text": "An account owner can enter a normalized hostname for their account.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "DOM-2",
@@ -21,19 +21,19 @@
             "id": "DOM-3",
             "text": "LinkPilot generates a unique token and requires exact DNS TXT proof at _linkpilot-verify.<domain>.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "blocked_external"
         },
         {
             "id": "DOM-4",
             "text": "Only an active domain with current TXT proof, application routing, and valid HTTPS may be assigned or used canonically.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "blocked_external"
         },
         {
             "id": "DOM-5",
             "text": "Custom-domain requests resolve only links assigned to that active host, and failed revalidation pauses delivery.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "blocked_external"
         },
         {
             "id": "DOM-6",
@@ -109,6 +109,18 @@
             "description": "An unclaimed host returned 404 and a zero-domain quota account received an inline plan-limit error without losing dialog state.",
             "reference": "http://unknown.localhost:8000/login; http://localhost:8000/custom-domains",
             "verifiedAt": "2026-10-21T09:44:31Z"
+        },
+        {
+            "type": "test",
+            "description": "Current Task 3 domain coverage passed inside the focused run, including normalization, unsafe/default-host rejection, owner scope, DNS/TLS state progression, compare-and-swap token safety, prevalidated HTTPS probing, assignment, challenge routing, and deletion.",
+            "reference": "tests/Feature/Domains/CustomDomainTest.php; Task 3 focused run (363 passed, 1 skipped, 4166 assertions)",
+            "verifiedAt": "2026-11-12T12:38:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium captured desktop and mobile empty states in a disposable Pro workspace, then restored the seeded workspace and deleted the disposable workspace; no HTTP/page errors or horizontal overflow occurred.",
+            "reference": "product/verification/parity/user-custom-domains-desktop.png; product/verification/parity/mobile-custom-domains-empty.png; product/verification/parity/manifest.json",
+            "verifiedAt": "2026-11-12T12:38:36Z"
         }
     ]
 }

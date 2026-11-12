@@ -104,6 +104,18 @@
             "description": "Non-security implementation review approved preference persistence and success-toast feedback; no actionable findings.",
             "reference": "Phase7CodeReview; NotificationCenterController.php and NotificationCenterTest.php",
             "verifiedAt": "2026-10-26T16:31:18Z"
+        },
+        {
+            "type": "test",
+            "description": "Current Task 3 notification-center coverage passed inside the focused run, including visibility, unread/all filtering, mark-one/all-read, shared counts, preference gating, safe target deletion, failure/usage/billing/invitation events, and active-account admin broadcasts.",
+            "reference": "tests/Feature/Notifications/NotificationCenterTest.php; Task 3 focused run (363 passed, 1 skipped, 4166 assertions)",
+            "verifiedAt": "2026-11-12T12:38:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium captured the populated notification menu, notification center/preferences, and responsive mobile cards with no HTTP/page errors or horizontal overflow.",
+            "reference": "product/verification/parity/user-notification-menu-desktop.png; product/verification/parity/user-notification-center-desktop.png; product/verification/parity/mobile-notification-center-cards.png; product/verification/parity/manifest.json",
+            "verifiedAt": "2026-11-12T12:38:36Z"
         }
     ]
 }

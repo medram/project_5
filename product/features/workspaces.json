@@ -3,55 +3,55 @@
     "id": "workspaces",
     "area": "Collaboration",
     "name": "Workspaces, roles, and invitations",
-    "status": "in_progress",
+    "status": "blocked_external",
     "requirements": [
         {
             "id": "WKS-1",
             "text": "Every user receives a personal workspace and active-workspace pointer.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WKS-2",
             "text": "Existing owned resources are backfilled to the personal workspace without losing creator attribution.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WKS-3",
             "text": "Users create and switch workspaces, and invalid active pointers are repaired deterministically.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WKS-4",
             "text": "Owners may invite admin or member; admins may invite only member; neither may invite owner.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WKS-5",
             "text": "Invitations use one-time URLs, expire after seven days, and can be listed, resent, revoked, or replaced.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WKS-6",
             "text": "Acceptance requires an authenticated non-suspended matching-email user and atomically creates one membership.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WKS-7",
             "text": "Owners and admins manage only the member roles permitted by the role matrix and cannot invalidate the owner invariant.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WKS-8",
             "text": "Non-members cannot forge active workspace selection or access workspace resources.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WKS-9",
@@ -63,13 +63,13 @@
             "id": "WKS-10",
             "text": "Ownership transfer requires password confirmation, an existing member target, atomic role exchange, and an audit record.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "WKS-11",
             "text": "Member-capacity checks include unexpired invitations and lock the workspace while reserving capacity.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         }
     ],
     "routes": [
@@ -135,6 +135,18 @@
             "description": "A workspace member saw a webhook summary without endpoint URL or signing secret; direct delivery-history access returned HTTP 403. Owner and workspace-admin billing views were compared at localhost:8101; only the owner had plan-change controls.",
             "reference": "http://localhost:8101/webhooks; GET /webhooks/2/deliveries; http://localhost:8101/billing; product/verification/workspace-admin-billing-desktop.png",
             "verifiedAt": "2026-10-22T09:37:06Z"
+        },
+        {
+            "type": "test",
+            "description": "Current Task 3 workspace suites passed inside the focused run, including backfill/contract chronology, membership and role authorization, invitation lifecycle, ownership transfer, capacity locking semantics, tenant scoping, and append-only workspace audit records.",
+            "reference": "tests/Feature/Workspaces; Task 3 focused run (363 passed, 1 skipped, 4166 assertions)",
+            "verifiedAt": "2026-11-12T12:38:36Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium captured desktop/mobile workspace settings and exercised real create/switch behavior with a disposable workspace; Task 2 separately proved invitation SMTP and queued mail through Mailpit.",
+            "reference": "product/verification/parity/user-settings-workspaces-desktop.png; product/verification/parity/mobile-workspaces-cards.png; .superpowers/sdd/belink-parity-completion-plan/task-2-report.md; product/verification/parity/manifest.json",
+            "verifiedAt": "2026-11-12T12:38:36Z"
         }
     ]
 }
