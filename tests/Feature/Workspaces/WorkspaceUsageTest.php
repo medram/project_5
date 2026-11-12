@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Workspaces;
 
+use App\Enums\PlanMetric;
 use App\Models\Link;
+use App\Models\Plan;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Billing\EnforcesPlanLimits;
@@ -50,9 +52,7 @@ class WorkspaceUsageTest extends TestCase
         $this->assertSame(2, $capacity['available']);
         $this->assertFalse($capacity['overLimit']);
 
-        $workspace->subscription()->update([
-            'plan_id' => DB::table('plans')->where('code', 'business')->value('id'),
-        ]);
+        app(WorkspaceUsage::class)->assignPlan($workspace, Plan::query()->where('code', 'business')->sole());
         $businessCapacity = app(WorkspaceUsage::class)->memberCapacityFor($workspace->fresh());
         $this->assertNull($businessCapacity['limit']);
         $this->assertNull($businessCapacity['available']);
@@ -64,9 +64,7 @@ class WorkspaceUsageTest extends TestCase
         $member = User::factory()->create();
         $workspace = $this->teamWorkspace($owner, 'pro');
         $workspace->members()->attach($member->id, ['role' => 'member']);
-        $workspace->subscription()->update([
-            'plan_id' => DB::table('plans')->where('code', 'free')->value('id'),
-        ]);
+        app(WorkspaceUsage::class)->assignPlan($workspace, Plan::query()->where('code', 'free')->sole());
 
         $capacity = app(WorkspaceUsage::class)->memberCapacityFor($workspace->fresh());
         $this->assertSame(2, $capacity['members']);
@@ -91,7 +89,7 @@ class WorkspaceUsageTest extends TestCase
             'used' => 1,
             'limit' => 25,
             'overLimit' => false,
-        ], app(WorkspaceUsage::class)->metricFor($workspace, 'links'));
+        ], app(WorkspaceUsage::class)->metricFor($workspace, PlanMetric::Links));
     }
 
     public function test_plan_limits_reserve_capacity_per_workspace_not_per_user(): void
@@ -106,7 +104,7 @@ class WorkspaceUsageTest extends TestCase
 
         $created = app(EnforcesPlanLimits::class)->create(
             $workspace,
-            'links',
+            PlanMetric::Links,
             function (Workspace $lockedWorkspace) use ($owner): Link {
                 $id = $this->insertLink($lockedWorkspace, $owner, 'current-final');
 
@@ -122,7 +120,7 @@ class WorkspaceUsageTest extends TestCase
         try {
             app(EnforcesPlanLimits::class)->create(
                 $workspace->fresh(),
-                'links',
+                PlanMetric::Links,
                 function (Workspace $lockedWorkspace) use ($owner, &$creatorCalled): Link {
                     $creatorCalled = true;
                     $id = $this->insertLink($lockedWorkspace, $owner, 'current-over-limit');
@@ -175,16 +173,13 @@ class WorkspaceUsageTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        DB::table('workspace_subscriptions')->insert([
-            'workspace_id' => $workspaceId,
-            'plan_id' => DB::table('plans')->where('code', $planCode)->value('id'),
-            'status' => 'active',
-            'source' => 'manual',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $workspace = Workspace::query()->findOrFail($workspaceId);
+        app(WorkspaceUsage::class)->assignPlan(
+            $workspace,
+            Plan::query()->where('code', $planCode)->sole(),
+        );
 
-        return Workspace::query()->findOrFail($workspaceId);
+        return $workspace;
     }
 
     private function invitation(

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\Api\V1\WebhookRequest as ApiWebhookRequest;
 use App\Http\Resources\Api\V1\WebhookResource;
 use App\Models\User;
@@ -37,7 +38,7 @@ class WebhookController extends ApiController
 
         $webhook = $this->planLimits->create(
             $workspace,
-            'webhooks',
+            PlanMetric::Webhooks,
             function (Workspace $lockedWorkspace) use ($actor, $attributes, $secret): Webhook {
                 $webhook = $lockedWorkspace->webhooks()->make($attributes);
                 $webhook->forceFill([

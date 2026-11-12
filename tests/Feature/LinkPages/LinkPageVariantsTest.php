@@ -8,6 +8,7 @@ use App\Models\LinkPageItem;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\Analytics\TrackingConsent;
+use App\Services\Billing\WorkspaceUsage;
 use App\Services\LinkPages\LinkPageVariantAssignment;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -551,8 +552,6 @@ class LinkPageVariantsTest extends TestCase
 
     private function makePro(User $user): void
     {
-        $user->currentWorkspace()->firstOrFail()->subscription()->update([
-            'plan_id' => Plan::query()->where('code', 'pro')->sole()->id,
-        ]);
+        app(WorkspaceUsage::class)->assignPlan($user->currentWorkspace()->firstOrFail(), Plan::query()->where('code', 'pro')->sole());
     }
 }

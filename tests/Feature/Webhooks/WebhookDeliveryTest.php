@@ -11,6 +11,7 @@ use App\Models\Webhook;
 use App\Models\WebhookDelivery;
 use App\Services\Analytics\AnalyticsTracker;
 use App\Services\Analytics\TrackingConsent;
+use App\Services\Billing\WorkspaceUsage;
 use App\Services\Webhooks\WebhookEndpointValidator;
 use App\Services\Webhooks\WebhookPayload;
 use App\Services\Workspaces\WorkspaceContext;
@@ -158,9 +159,7 @@ class WebhookDeliveryTest extends TestCase
         $other = User::factory()->create();
         $otherWorkspace = $other->personalWorkspace()->firstOrFail();
         $owner->workspaces()->attach($otherWorkspace, ['role' => 'member']);
-        $otherWorkspace->subscription()->update([
-            'plan_id' => Plan::query()->where('code', 'pro')->sole()->id,
-        ]);
+        app(WorkspaceUsage::class)->assignPlan($otherWorkspace, Plan::query()->where('code', 'pro')->sole());
         $this->bindEndpointResolution(['8.8.8.8']);
         $webhook = $this->createWebhook($owner);
 
@@ -611,8 +610,6 @@ class WebhookDeliveryTest extends TestCase
 
     private function makePro(User $user): void
     {
-        $user->currentWorkspace()->firstOrFail()->subscription()->update([
-            'plan_id' => Plan::query()->where('code', 'pro')->sole()->id,
-        ]);
+        app(WorkspaceUsage::class)->assignPlan($user->currentWorkspace()->firstOrFail(), Plan::query()->where('code', 'pro')->sole());
     }
 }

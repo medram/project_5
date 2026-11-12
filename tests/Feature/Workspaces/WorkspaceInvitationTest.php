@@ -2,10 +2,13 @@
 
 namespace Tests\Feature\Workspaces;
 
+use App\Models\Plan;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceInvitation;
 use App\Notifications\WorkspaceInvitationNotification;
+use App\Services\Billing\WorkspaceUsage;
+use App\Services\Workspaces\WorkspaceContext;
 use App\Services\Workspaces\WorkspaceInvitationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +60,7 @@ class WorkspaceInvitationTest extends TestCase
         $this->assertDatabaseMissing('workspace_invitations', ['email' => 'forbidden-admin@example.test']);
         $this->assertDatabaseMissing('workspace_invitations', ['email' => 'forbidden-member@example.test']);
     }
+
     public function test_admin_cannot_revoke_or_replace_an_owner_issued_admin_invitation(): void
     {
         Notification::fake();
@@ -90,8 +94,6 @@ class WorkspaceInvitationTest extends TestCase
             'revoked_at' => null,
         ]);
     }
-
-
 
     public function test_invitation_url_is_hashed_expires_in_seven_days_and_resend_or_replacement_rotates_it(): void
     {
@@ -173,7 +175,7 @@ class WorkspaceInvitationTest extends TestCase
 
         try {
             $this->actingAs($owner);
-            app(\App\Services\Workspaces\WorkspaceContext::class)->activate($owner, $workspace);
+            app(WorkspaceContext::class)->activate($owner, $workspace);
             app(WorkspaceInvitationService::class)->resend($owner, $workspace, $staleInvitation);
             $this->fail('An accepted invitation must not be rotated from a stale model.');
         } catch (HttpException $exception) {
@@ -366,6 +368,7 @@ class WorkspaceInvitationTest extends TestCase
                     ->where('invitations.0.status', 'pending'));
         }
     }
+
     private function teamWorkspace(User $owner, string $planCode = 'pro'): Workspace
     {
         $now = now();
@@ -384,16 +387,13 @@ class WorkspaceInvitationTest extends TestCase
             'created_at' => $now,
             'updated_at' => $now,
         ]);
-        DB::table('workspace_subscriptions')->insert([
-            'workspace_id' => $workspaceId,
-            'plan_id' => DB::table('plans')->where('code', $planCode)->value('id'),
-            'status' => 'active',
-            'source' => 'manual',
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+        $workspace = Workspace::query()->findOrFail($workspaceId);
+        app(WorkspaceUsage::class)->assignPlan(
+            $workspace,
+            Plan::query()->where('code', $planCode)->sole(),
+        );
 
-        return Workspace::query()->findOrFail($workspaceId);
+        return $workspace;
     }
 
     private function addMember(Workspace $workspace, User $user, string $role): void

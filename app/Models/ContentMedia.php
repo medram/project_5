@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MediaPurpose;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $byte_size
  * @property string $visibility
  * @property string $scan_state
+ * @property MediaPurpose $purpose
  * @property CarbonInterface|null $expires_at
  */
 #[Fillable([
@@ -34,6 +36,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'sha256',
     'visibility',
     'scan_state',
+    'purpose',
     'expires_at',
 ])]
 class ContentMedia extends Model
@@ -47,6 +50,7 @@ class ContentMedia extends Model
     {
         return [
             'byte_size' => 'integer',
+            'purpose' => MediaPurpose::class,
             'expires_at' => 'datetime',
         ];
     }

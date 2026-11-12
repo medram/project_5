@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\Api\V1\BioPageRequest as ApiBioPageRequest;
 use App\Http\Resources\Api\V1\BioPageResource;
+use App\Models\BioPage;
 use App\Models\User;
+use App\Services\Billing\EnforcesPlanLimits;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class BioPageController extends ApiController
 {
+    public function __construct(private readonly EnforcesPlanLimits $planLimits) {}
+
     public function index(Request $request): JsonResponse
     {
         $page = $this->workspace($request)->bioPages()
@@ -25,10 +30,15 @@ class BioPageController extends ApiController
     {
         $actor = $request->user();
         abort_unless($actor instanceof User, 401);
-        $bioPage = $this->workspace($request)->bioPages()->create([
-            ...$request->validated(),
-            'user_id' => $actor->getKey(),
-        ]);
+        $workspace = $this->workspace($request);
+        $bioPage = $this->planLimits->create(
+            $workspace,
+            PlanMetric::BioPages,
+            fn (): BioPage => $workspace->bioPages()->create([
+                ...$request->validated(),
+                'user_id' => $actor->getKey(),
+            ]),
+        );
 
         return (new BioPageResource($bioPage))->response()->setStatusCode(201);
     }

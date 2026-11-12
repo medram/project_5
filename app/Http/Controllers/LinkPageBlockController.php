@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MediaPurpose;
 use App\Http\Requests\StoreLinkPageBlockRequest;
 use App\Models\ContentMedia;
 use App\Models\LinkPage;
@@ -37,6 +38,7 @@ class LinkPageBlockController extends Controller
         );
         $data['link_page_variant_id'] = $variant->id;
         $uploadField = $data['type'] === 'file' ? 'file' : 'image';
+        $mediaPurpose = $data['type'] === 'file' ? MediaPurpose::File : MediaPurpose::Image;
         $file = $request->file($uploadField);
         $block = $linkPage->blocks()->create([
             ...$this->attributes($data),
@@ -49,7 +51,7 @@ class LinkPageBlockController extends Controller
         if ($file) {
             $media = null;
             try {
-                $media = $this->media->store($file, $workspace, $request->user(), $data['type']);
+                $media = $this->media->store($file, $workspace, $request->user(), $mediaPurpose);
                 $block->update(['content_media_id' => $media->id]);
             } catch (Throwable $exception) {
                 if ($media) {
@@ -80,9 +82,10 @@ class LinkPageBlockController extends Controller
         );
         $data['link_page_variant_id'] = $variant->id;
         $uploadField = $data['type'] === 'file' ? 'file' : 'image';
+        $mediaPurpose = $data['type'] === 'file' ? MediaPurpose::File : MediaPurpose::Image;
         $file = $request->file($uploadField);
         $newMedia = $file
-            ? $this->media->store($file, $workspace, $request->user(), $data['type'])
+            ? $this->media->store($file, $workspace, $request->user(), $mediaPurpose)
             : null;
 
         try {

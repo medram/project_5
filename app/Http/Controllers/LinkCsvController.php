@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\StoreLinkRequest;
 use App\Models\Link;
 use App\Services\Billing\EnforcesPlanLimits;
@@ -223,7 +224,7 @@ class LinkCsvController extends Controller
                 $routingRules = $validated['routing_rules'] ?? [];
                 $link = $this->planLimits->create(
                     $workspace,
-                    'links',
+                    PlanMetric::Links,
                     function ($lockedWorkspace) use ($validated, $tagIds, $routingRules, $request): Link {
                         $link = $lockedWorkspace->links()->create([
                             ...$this->linkAttributes->fromValidated($validated),

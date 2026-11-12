@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\Api\V1\LinkPageRequest as ApiLinkPageRequest;
 use App\Http\Resources\Api\V1\LinkPageResource;
 use App\Models\LinkPage;
@@ -39,7 +40,7 @@ class LinkPageController extends ApiController
 
         $linkPage = $this->planLimits->create(
             $this->workspace($request),
-            'link_pages',
+            PlanMetric::LinkPages,
             function (Workspace $workspace) use ($attributes, $actor): LinkPage {
                 $linkPage = $workspace->linkPages()->create([
                     ...$attributes,

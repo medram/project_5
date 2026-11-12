@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\StoreTrackingPixelRequest;
 use App\Http\Requests\StoreTrackingPixelRuleRequest;
 use App\Models\BioPage;
@@ -140,7 +141,7 @@ class TrackingPixelController extends Controller
     {
         $workspace = $this->workspaces->currentFor($request->user());
         Gate::authorize('manageIntegrations', $workspace);
-        $this->planLimits->create($workspace, 'pixels', fn ($workspace): TrackingPixel => $workspace->trackingPixels()->create([...$request->validated(), 'user_id' => $request->user()->id])
+        $this->planLimits->create($workspace, PlanMetric::Pixels, fn ($workspace): TrackingPixel => $workspace->trackingPixels()->create([...$request->validated(), 'user_id' => $request->user()->id])
         );
 
         return to_route('tracking-pixels.index');

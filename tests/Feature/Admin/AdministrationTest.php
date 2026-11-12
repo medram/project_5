@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Plan;
 use App\Models\User;
+use App\Services\Billing\WorkspaceUsage;
 use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -68,9 +69,7 @@ class AdministrationTest extends TestCase
             'email' => 'other@example.test',
         ]);
         $pro = Plan::query()->where('code', 'pro')->sole();
-        $matching->personalWorkspace()->firstOrFail()
-            ->subscription()->firstOrFail()
-            ->update(['plan_id' => $pro->id]);
+        app(WorkspaceUsage::class)->assignPlan($matching->personalWorkspace()->firstOrFail(), $pro);
         $matching->personalWorkspace()->firstOrFail()->links()->create([
             'user_id' => $matching->id,
             'slug' => 'private-search-link',
@@ -148,7 +147,7 @@ class AdministrationTest extends TestCase
         $this->assertSame(
             $pro->id,
             $planAccount->personalWorkspace()->firstOrFail()
-                ->subscription()->firstOrFail()->plan_id,
+                ->legacySubscription()->firstOrFail()->plan_id,
         );
     }
 
@@ -282,8 +281,8 @@ class AdministrationTest extends TestCase
             ->patch("/admin/users/{$account->id}/plan", ['plan' => $pro->code])
             ->assertRedirect('/admin');
 
-        $this->assertSame($pro->id, $account->personalWorkspace()->firstOrFail()->subscription()->firstOrFail()->plan_id);
-        $this->assertSame('free', $unrelated->personalWorkspace()->firstOrFail()->subscription()->with('plan')->firstOrFail()->plan->code);
+        $this->assertSame($pro->id, $account->personalWorkspace()->firstOrFail()->legacySubscription()->firstOrFail()->plan_id);
+        $this->assertSame('free', $unrelated->personalWorkspace()->firstOrFail()->legacySubscription()->with('plan')->firstOrFail()->plan->code);
 
         $this->actingAs($administrator)
             ->patch("/admin/users/{$administrator->id}/plan", ['plan' => $pro->code])
@@ -291,7 +290,7 @@ class AdministrationTest extends TestCase
 
         $this->assertSame(
             'free',
-            $administrator->personalWorkspace()->firstOrFail()->subscription()->with('plan')->firstOrFail()->plan->code,
+            $administrator->personalWorkspace()->firstOrFail()->legacySubscription()->with('plan')->firstOrFail()->plan->code,
         );
     }
 

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\StoreBioPageRequest;
 use App\Http\Requests\UpdateBioPageRequest;
 use App\Models\BioPage;
+use App\Services\Billing\EnforcesPlanLimits;
 use App\Services\BioPages\BioPagePresentation;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +17,10 @@ use Inertia\Response;
 
 class BioPageController extends Controller
 {
-    public function __construct(private readonly WorkspaceContext $workspaces) {}
+    public function __construct(
+        private readonly WorkspaceContext $workspaces,
+        private readonly EnforcesPlanLimits $planLimits,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -27,7 +32,14 @@ class BioPageController extends Controller
     public function store(StoreBioPageRequest $request): RedirectResponse
     {
         $workspace = $this->workspaces->currentFor($request->user());
-        $bioPage = $workspace->bioPages()->create([...$request->validated(), 'user_id' => $request->user()->id]);
+        $bioPage = $this->planLimits->create(
+            $workspace,
+            PlanMetric::BioPages,
+            fn (): BioPage => $workspace->bioPages()->create([
+                ...$request->validated(),
+                'user_id' => $request->user()->id,
+            ]),
+        );
 
         return to_route('bio-pages.show', $bioPage);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MediaPurpose;
 use App\Http\Requests\ReorderBioPageItemsRequest;
 use App\Http\Requests\StoreBioContentBlockRequest;
 use App\Http\Requests\UpdateBioContentBlockRequest;
@@ -30,7 +31,7 @@ class BioContentBlockController extends Controller
         if ($file) {
             $media = null;
             try {
-                $media = $this->media->store($file, $bioPage->workspace, $request->user(), 'image');
+                $media = $this->media->store($file, $bioPage->workspace, $request->user(), MediaPurpose::Image);
                 $block->update(['content_media_id' => $media->id]);
             } catch (\Throwable $exception) {
                 if ($media) {
@@ -54,7 +55,7 @@ class BioContentBlockController extends Controller
         $data['content'] = $this->content($data, $bioBlock);
         $newMedia = null;
         if ($file) {
-            $newMedia = $this->media->store($file, $bioPage->workspace, $request->user(), 'image');
+            $newMedia = $this->media->store($file, $bioPage->workspace, $request->user(), MediaPurpose::Image);
             $bioBlock->content_media_id = $newMedia->id;
         } elseif (($data['type'] ?? $bioBlock->type) !== 'image') {
             $bioBlock->content_media_id = null;

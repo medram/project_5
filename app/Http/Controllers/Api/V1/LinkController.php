@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\Api\V1\LinkRequest as ApiLinkRequest;
 use App\Http\Resources\Api\V1\LinkResource;
 use App\Models\Link;
@@ -40,7 +41,7 @@ class LinkController extends ApiController
 
         $link = $this->planLimits->create(
             $workspace,
-            'links',
+            PlanMetric::Links,
             function (Workspace $lockedWorkspace) use ($actor, $attributes): Link {
                 $link = $lockedWorkspace->links()->create([
                     'user_id' => $actor->getKey(),

@@ -8,6 +8,7 @@ use App\Models\Plan;
 use App\Models\TrackingPixel;
 use App\Models\User;
 use App\Services\Analytics\TrackingConsent;
+use App\Services\Billing\WorkspaceUsage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -490,8 +491,6 @@ class LinkPageTest extends TestCase
 
     private function makePro(User $user): void
     {
-        $user->currentWorkspace()->firstOrFail()->subscription()->update([
-            'plan_id' => Plan::query()->where('code', 'pro')->sole()->id,
-        ]);
+        app(WorkspaceUsage::class)->assignPlan($user->currentWorkspace()->firstOrFail(), Plan::query()->where('code', 'pro')->sole());
     }
 }

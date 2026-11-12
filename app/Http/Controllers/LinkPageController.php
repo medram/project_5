@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\StoreLinkPageRequest;
 use App\Models\LinkPage;
 use App\Models\Workspace;
@@ -46,7 +47,7 @@ class LinkPageController extends Controller
         $attributes = $request->validated();
         $linkPage = $this->planLimits->create(
             $workspace,
-            'link_pages',
+            PlanMetric::LinkPages,
             function (Workspace $workspace) use ($attributes, $request): LinkPage {
                 $linkPage = $workspace->linkPages()->create([
                     ...$attributes,
@@ -130,7 +131,6 @@ class LinkPageController extends Controller
 
         return to_route('link-pages.index');
     }
-
 
     /** @return array<string, mixed> */
     private function pageData(LinkPage $linkPage): array

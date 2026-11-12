@@ -2,9 +2,12 @@
 
 namespace App\Services\Content;
 
+use App\Enums\MediaPurpose;
+use App\Enums\PlanMetric;
 use App\Models\ContentMedia;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Billing\EnforcesPlanLimits;
 use ErrorException;
 use finfo;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -33,7 +36,7 @@ class ContentMediaStorage
         'image/webp' => ['webp'],
     ];
 
-    public function store(UploadedFile $file, Workspace $workspace, User $user, string $purpose): ContentMedia
+    public function store(UploadedFile $file, Workspace $workspace, User $user, MediaPurpose $purpose): ContentMedia
     {
         if (! $user->belongsToWorkspace($workspace)) {
             throw new AuthorizationException('The user is not a member of the media workspace.');
@@ -54,7 +57,7 @@ class ContentMediaStorage
         $temporaryPath = null;
 
         try {
-            if ($purpose === 'image') {
+            if ($purpose === MediaPurpose::Image || $purpose === MediaPurpose::AccountAvatar) {
                 if (
                     $size > self::MAX_IMAGE_BYTES
                     || ! isset(self::IMAGE_EXTENSIONS[$mimeType])
@@ -66,7 +69,7 @@ class ContentMediaStorage
                 $temporaryPath = $this->reencodeImage($file->getRealPath(), $mimeType);
                 $sourcePath = $temporaryPath;
                 $extension = $mimeType === 'image/jpeg' ? 'jpg' : substr($mimeType, 6);
-            } elseif ($purpose === 'file') {
+            } else {
                 if ($size > self::MAX_FILE_BYTES || $mimeType !== 'application/pdf' || $originalExtension !== 'pdf') {
                     $this->rejectFile();
                 }
@@ -75,8 +78,6 @@ class ContentMediaStorage
                 $sourcePath = $file->getRealPath();
                 $extension = 'pdf';
                 $scanState = 'clean';
-            } else {
-                $this->rejectFile();
             }
 
             $hash = hash_file('sha256', $sourcePath);
@@ -87,37 +88,61 @@ class ContentMediaStorage
 
             $diskName = $this->diskName();
             $publicId = (string) Str::uuid();
-            $directory = "workspaces/{$workspace->getKey()}/content-media";
-            $path = "{$directory}/{$publicId}.{$extension}";
-            $disk = Storage::disk($diskName);
+            $originalName = $this->safeOriginalName($file);
 
-            try {
-                $storedPath = $disk->putFileAs($directory, $sourcePath, basename($path), ['visibility' => 'private']);
-                if (! is_string($storedPath)) {
-                    throw new RuntimeException('Unable to store content media.');
-                }
+            return app(EnforcesPlanLimits::class)->create(
+                $workspace,
+                PlanMetric::StorageBytes,
+                function (Workspace $lockedWorkspace) use (
+                    $purpose,
+                    $mimeType,
+                    $extension,
+                    $sourcePath,
+                    $publicId,
+                    $diskName,
+                    $user,
+                    $originalName,
+                    $storedSize,
+                    $hash,
+                    $scanState,
+                ): ContentMedia {
+                    $directory = "workspaces/{$lockedWorkspace->getKey()}/content-media";
+                    $path = "{$directory}/{$publicId}.{$extension}";
+                    $disk = Storage::disk($diskName);
 
-                return ContentMedia::query()->create([
-                    'workspace_id' => $workspace->getKey(),
-                    'uploaded_by' => $user->getKey(),
-                    'public_id' => $publicId,
-                    'disk' => $diskName,
-                    'path' => $storedPath,
-                    'original_name' => $this->safeOriginalName($file),
-                    'mime_type' => $mimeType,
-                    'byte_size' => $storedSize,
-                    'sha256' => $hash,
-                    'visibility' => 'private',
-                    'scan_state' => $scanState,
-                    'expires_at' => now('UTC')->addDays(max(1, (int) config('services.linkpilot.media.retention_days', 365))),
-                ]);
-            } catch (Throwable $exception) {
-                if ($disk->exists($path)) {
-                    $disk->delete($path);
-                }
+                    try {
+                        $storedPath = $disk->putFileAs($directory, $sourcePath, basename($path), ['visibility' => 'private']);
+                        if (! is_string($storedPath)) {
+                            throw new RuntimeException('Unable to store content media.');
+                        }
 
-                throw $exception;
-            }
+                        return ContentMedia::query()->create([
+                            'workspace_id' => $lockedWorkspace->getKey(),
+                            'uploaded_by' => $user->getKey(),
+                            'public_id' => $publicId,
+                            'disk' => $diskName,
+                            'path' => $storedPath,
+                            'original_name' => $originalName,
+                            'mime_type' => $mimeType,
+                            'byte_size' => $storedSize,
+                            'sha256' => $hash,
+                            'visibility' => 'private',
+                            'scan_state' => $scanState,
+                            'purpose' => $purpose,
+                            'expires_at' => $purpose->retainsIndefinitely()
+                                ? null
+                                : now('UTC')->addDays(max(1, (int) config('services.linkpilot.media.retention_days', 365))),
+                        ]);
+                    } catch (Throwable $exception) {
+                        if ($disk->exists($path)) {
+                            $disk->delete($path);
+                        }
+
+                        throw $exception;
+                    }
+                },
+                $storedSize,
+            );
         } finally {
             if ($temporaryPath !== null && is_file($temporaryPath)) {
                 unlink($temporaryPath);

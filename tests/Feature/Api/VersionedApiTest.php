@@ -6,6 +6,7 @@ use App\Models\Link;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Billing\WorkspaceUsage;
 use App\Services\Webhooks\WebhookEndpointValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
@@ -370,9 +371,7 @@ class VersionedApiTest extends TestCase
 
     private function makePro(User $user): void
     {
-        $user->currentWorkspace()->firstOrFail()->subscription()->update([
-            'plan_id' => Plan::query()->where('code', 'pro')->sole()->id,
-        ]);
+        app(WorkspaceUsage::class)->assignPlan($user->currentWorkspace()->firstOrFail(), Plan::query()->where('code', 'pro')->sole());
     }
 
     /** @param list<string> $addresses */

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\StoreApiKeyRequest;
 use App\Models\WorkspaceApiToken;
+use App\Services\Billing\EnforcesPlanLimits;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +16,10 @@ use Inertia\Response;
 
 class ApiKeyController extends Controller
 {
-    public function __construct(private readonly WorkspaceContext $workspaceContext) {}
+    public function __construct(
+        private readonly WorkspaceContext $workspaceContext,
+        private readonly EnforcesPlanLimits $planLimits,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -56,11 +61,15 @@ class ApiKeyController extends Controller
         Gate::authorize('manageIntegrations', $workspace);
         $attributes = $request->validated();
 
-        $token = $request->user()->createWorkspaceApiToken(
+        $token = $this->planLimits->create(
             $workspace,
-            $attributes['name'],
-            $attributes['abilities'],
-            isset($attributes['expires_at']) ? Carbon::parse($attributes['expires_at']) : null,
+            PlanMetric::ApiKeys,
+            fn () => $request->user()->createWorkspaceApiToken(
+                $workspace,
+                $attributes['name'],
+                $attributes['abilities'],
+                isset($attributes['expires_at']) ? Carbon::parse($attributes['expires_at']) : null,
+            ),
         );
 
         return to_route('api-keys.index')->with([

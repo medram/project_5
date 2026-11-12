@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Content;
 
+use App\Enums\MediaPurpose;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Content\ContentMediaStorage;
@@ -38,7 +39,7 @@ class ContentMediaStorageTest extends TestCase
         $this->travelTo($now);
         [$user, $workspace] = $this->createOwnerAndWorkspace();
         $upload = UploadedFile::fake()->createWithContent('brand.png', $this->pngWithTextMetadata());
-        $media = app(ContentMediaStorage::class)->store($upload, $workspace, $user, 'image');
+        $media = app(ContentMediaStorage::class)->store($upload, $workspace, $user, MediaPurpose::Image);
         $disk = Storage::disk(self::DISK);
         $stored = $disk->get($media->path);
         $dimensions = getimagesizefromstring($stored);
@@ -68,7 +69,7 @@ class ContentMediaStorageTest extends TestCase
         $jpeg = $this->jpegWithExifMarker();
         $upload = UploadedFile::fake()->createWithContent('portrait.jpg', $jpeg);
 
-        $media = app(ContentMediaStorage::class)->store($upload, $workspace, $user, 'image');
+        $media = app(ContentMediaStorage::class)->store($upload, $workspace, $user, MediaPurpose::Image);
         $stored = Storage::disk(self::DISK)->get($media->path);
 
         $this->assertSame('image/jpeg', $media->mime_type);
@@ -83,7 +84,7 @@ class ContentMediaStorageTest extends TestCase
         $invalid = UploadedFile::fake()->createWithContent('broken.png', 'not an image');
 
         try {
-            app(ContentMediaStorage::class)->store($invalid, $workspace, $user, 'image');
+            app(ContentMediaStorage::class)->store($invalid, $workspace, $user, MediaPurpose::Image);
             $this->fail('Invalid image bytes must be rejected.');
         } catch (ValidationException) {
             $this->assertDatabaseCount('content_media', 0);
@@ -98,7 +99,7 @@ class ContentMediaStorageTest extends TestCase
         config()->set('services.linkpilot.media.clamav_path', '/missing/linkpilot-clamscan');
 
         try {
-            app(ContentMediaStorage::class)->store($pdf, $workspace, $user, 'file');
+            app(ContentMediaStorage::class)->store($pdf, $workspace, $user, MediaPurpose::File);
             $this->fail('A PDF must fail closed when ClamAV is unavailable.');
         } catch (ValidationException) {
             $this->assertDatabaseCount('content_media', 0);
@@ -113,7 +114,7 @@ class ContentMediaStorageTest extends TestCase
         $upload = UploadedFile::fake()->createWithContent('brand.png', $this->pngWithTextMetadata());
 
         try {
-            app(ContentMediaStorage::class)->store($upload, $workspace, $otherUser, 'image');
+            app(ContentMediaStorage::class)->store($upload, $workspace, $otherUser, MediaPurpose::Image);
             $this->fail('A user outside the workspace must not store media there.');
         } catch (AuthorizationException) {
             $this->assertDatabaseCount('content_media', 0);
@@ -130,7 +131,7 @@ class ContentMediaStorageTest extends TestCase
         });
 
         try {
-            app(ContentMediaStorage::class)->store($upload, $workspace, $user, 'image');
+            app(ContentMediaStorage::class)->store($upload, $workspace, $user, MediaPurpose::Image);
             $this->fail('The simulated database error must be rethrown.');
         } catch (RuntimeException $exception) {
             $this->assertSame('simulated database write failure', $exception->getMessage());
@@ -147,19 +148,19 @@ class ContentMediaStorageTest extends TestCase
             UploadedFile::fake()->createWithContent('expired.png', $this->pngWithTextMetadata()),
             $workspace,
             $user,
-            'image',
+            MediaPurpose::Image,
         );
         $deleted = $storage->store(
             UploadedFile::fake()->createWithContent('deleted.png', $this->pngWithTextMetadata()),
             $workspace,
             $user,
-            'image',
+            MediaPurpose::Image,
         );
         $active = $storage->store(
             UploadedFile::fake()->createWithContent('active.png', $this->pngWithTextMetadata()),
             $workspace,
             $user,
-            'image',
+            MediaPurpose::Image,
         );
         $expired->forceFill(['expires_at' => now('UTC')->subSecond()])->save();
         $storage->delete($deleted);

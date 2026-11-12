@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\QrCodes;
 
+use App\Enums\PlanMetric;
 use App\Models\Link;
 use App\Models\Plan;
 use App\Models\QrCode;
@@ -341,7 +342,7 @@ class QrCodeTest extends TestCase
         $campaign = $workspace->qrCodes()->where('source', 'campaign')->sole();
         $this->assertSame($link->id, $campaign->link_id);
         $this->assertNull($campaign->destination_url);
-        $usage = app(WorkspaceUsage::class)->metricFor($workspace, 'qr_campaigns');
+        $usage = app(WorkspaceUsage::class)->metricFor($workspace, PlanMetric::QrCampaigns);
         $this->assertSame(['used' => 0, 'limit' => 1], array_intersect_key($usage, ['used' => true, 'limit' => true]));
 
         $this->post('/dashboard/qr-codes', ['destination_url' => 'https://example.com/one'])
@@ -386,7 +387,7 @@ class QrCodeTest extends TestCase
             'link_id' => null,
             'destination_url' => 'https://example.com/allowed',
         ]);
-        $usage = app(WorkspaceUsage::class)->metricFor($workspace, 'qr_campaigns');
+        $usage = app(WorkspaceUsage::class)->metricFor($workspace, PlanMetric::QrCampaigns);
         $this->assertSame(['used' => 2, 'limit' => 2], array_intersect_key($usage, ['used' => true, 'limit' => true]));
     }
 

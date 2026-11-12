@@ -6,16 +6,18 @@ use App\Models\CustomDomain;
 use App\Models\Link;
 use App\Models\Plan;
 use App\Models\User;
-use App\Services\Domains\DomainVerificationService;
+use App\Services\Billing\WorkspaceUsage;
 use App\Services\Domains\DnsTxtLookup;
+use App\Services\Domains\DomainVerificationService;
 use App\Services\Domains\HttpsDomainChallengeProbe;
 use App\Services\Domains\PublicLinkHostResolver;
+use App\Services\Workspaces\WorkspaceContext;
 use Closure;
-use RuntimeException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
+use RuntimeException;
 use Tests\TestCase;
 
 class CustomDomainTest extends TestCase
@@ -68,6 +70,7 @@ class CustomDomainTest extends TestCase
                 ->where('domains.0.challengeUrl', "https://go.example.test/.well-known/linkpilot-domain/{$domain->verification_token}")
                 ->where('canManageIntegrations', true));
     }
+
     public function test_workspace_member_sees_only_active_domain_metadata_without_verification_tokens(): void
     {
         $owner = $this->userWithPlan('pro');
@@ -83,7 +86,7 @@ class CustomDomainTest extends TestCase
             'verification_token' => 'active-verification-secret',
             'status' => 'active',
         ]);
-        app(\App\Services\Workspaces\WorkspaceContext::class)->activate($member, $workspace);
+        app(WorkspaceContext::class)->activate($member, $workspace);
 
         $this->actingAs($member)
             ->get('/dashboard/custom-domains')
@@ -99,25 +102,21 @@ class CustomDomainTest extends TestCase
             ->assertDontSee($active->verification_token);
     }
 
-
     public function test_domain_management_is_workspace_scoped_and_limited_to_integration_managers(): void
     {
         $owner = $this->userWithPlan('pro');
         $other = User::factory()->create();
         $otherWorkspace = $other->personalWorkspace()->firstOrFail();
         $owner->workspaces()->attach($otherWorkspace, ['role' => 'member']);
-        $otherWorkspace->subscription()->update([
-            'plan_id' => Plan::query()->where('code', 'pro')->sole()->id,
-        ]);
+        app(WorkspaceUsage::class)->assignPlan($otherWorkspace, Plan::query()->where('code', 'pro')->sole());
         $domain = $this->domainFor($owner);
-
 
         $this->actingAs($owner)
             ->get('/dashboard/custom-domains')
             ->assertOk()
             ->assertSee($domain->hostname);
 
-        app(\App\Services\Workspaces\WorkspaceContext::class)->activate($owner, $otherWorkspace);
+        app(WorkspaceContext::class)->activate($owner, $otherWorkspace);
 
         $this->actingAs($owner)
             ->get('/dashboard/custom-domains')
@@ -131,7 +130,6 @@ class CustomDomainTest extends TestCase
         $this->actingAs($owner)
             ->post("/dashboard/custom-domains/{$domain->id}/reissue")
             ->assertNotFound();
-
 
         $this->actingAs($owner)
             ->delete("/dashboard/custom-domains/{$domain->id}", ['confirmation' => $domain->hostname])
@@ -149,7 +147,6 @@ class CustomDomainTest extends TestCase
         $created = $otherWorkspace->customDomains()->sole();
         $this->assertSame($owner->id, $created->user_id);
     }
-
 
     public function test_verification_advances_dns_tls_active_then_fails_a_later_recheck(): void
     {
@@ -200,6 +197,7 @@ class CustomDomainTest extends TestCase
         $this->assertNotNull($domain->failure_reason);
         $this->assertLessThanOrEqual(500, strlen($domain->failure_reason));
     }
+
     public function test_in_flight_verification_never_overwrites_a_reissued_token_state(): void
     {
         [$dns, $https] = $this->fakeVerificationBoundaries();
@@ -237,7 +235,6 @@ class CustomDomainTest extends TestCase
             $this->assertNull($fresh->failure_reason, $name);
         }
     }
-
 
     public function test_https_probe_uses_prevalidated_public_addresses(): void
     {
@@ -516,7 +513,8 @@ class CustomDomainTest extends TestCase
         $user = User::factory()->create();
         $plan = Plan::query()->where('code', $planCode)->sole();
 
-        $user->personalWorkspace()->firstOrFail()->subscription()->update(['plan_id' => $plan->id]);
+        app(WorkspaceUsage::class)->assignPlan($user->personalWorkspace()->firstOrFail(), $plan);
+
         return $user;
     }
 }

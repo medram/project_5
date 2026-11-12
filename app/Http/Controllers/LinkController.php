@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\StoreLinkRequest;
 use App\Http\Requests\UpdateLinkRequest;
 use App\Models\Link;
@@ -113,7 +114,7 @@ class LinkController extends Controller
         $validated = $request->validated();
         $this->planLimits->create(
             $workspace,
-            'links',
+            PlanMetric::Links,
             function ($workspace) use ($request, $validated): Link {
                 $link = $workspace->links()->create([
                     ...$this->linkAttributes->fromRequest($request),

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\StoreFolderRequest;
 use App\Http\Requests\UpdateFolderRequest;
 use App\Models\Folder;
+use App\Services\Billing\EnforcesPlanLimits;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +19,10 @@ use Inertia\Response;
 
 class FolderController extends Controller
 {
-    public function __construct(private readonly WorkspaceContext $workspaceContext) {}
+    public function __construct(
+        private readonly WorkspaceContext $workspaceContext,
+        private readonly EnforcesPlanLimits $planLimits,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -59,10 +64,14 @@ class FolderController extends Controller
     public function store(StoreFolderRequest $request): RedirectResponse
     {
         $workspace = $this->workspaceContext->currentFor($request->user());
-        $workspace->folders()->create([
-            ...$request->validated(),
-            'user_id' => $request->user()->id,
-        ]);
+        $this->planLimits->create(
+            $workspace,
+            PlanMetric::Folders,
+            fn (): Folder => $workspace->folders()->create([
+                ...$request->validated(),
+                'user_id' => $request->user()->id,
+            ]),
+        );
 
         return to_route('folders.index', $this->listState($request, resetPage: true));
     }

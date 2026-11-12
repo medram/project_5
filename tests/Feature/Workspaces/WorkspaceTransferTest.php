@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Workspaces;
 
+use App\Models\Plan;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Billing\WorkspaceUsage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -86,11 +88,7 @@ class WorkspaceTransferTest extends TestCase
         $owner = User::factory()->create();
         $newOwner = User::factory()->create();
         $workspace = $owner->personalWorkspace()->firstOrFail();
-        $workspace->subscription()->update([
-            'plan_id' => DB::table('plans')->where('code', 'pro')->value('id'),
-            'status' => 'active',
-            'source' => 'manual',
-        ]);
+        app(WorkspaceUsage::class)->assignPlan($workspace, Plan::query()->where('code', 'pro')->sole());
         $workspace->members()->attach($newOwner->id, ['role' => 'member']);
 
         $this->actingAs($owner)

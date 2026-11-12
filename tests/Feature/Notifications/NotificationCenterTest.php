@@ -298,7 +298,7 @@ class NotificationCenterTest extends TestCase
         $workspace = $owner->personalWorkspace()->sole();
         $workspace->members()->syncWithoutDetaching([$owner->id => ['role' => 'owner']]);
         $proPlan = Plan::query()->where('code', 'pro')->sole();
-        $workspace->subscription()->update(['plan_id' => $proPlan->id]);
+        app(WorkspaceUsage::class)->assignPlan($workspace, $proPlan);
         $invitations = app(WorkspaceInvitationService::class);
         $this->actingAs($owner);
         $issued = $invitations->issue($owner, $workspace, $invitee->email, 'member');

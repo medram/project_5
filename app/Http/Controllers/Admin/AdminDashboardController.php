@@ -21,14 +21,14 @@ class AdminDashboardController extends Controller
         $usersQuery = User::query()->with([
             'personalWorkspace' => fn ($workspace) => $workspace
                 ->withCount(['links', 'bioPages'])
-                ->with('subscription.plan:id,code,name'),
+                ->with('legacySubscription.plan:id,code,name'),
         ]);
 
         if ($search !== '') {
             $usersQuery->where(fn ($users) => $users
                 ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
                 ->orWhereRaw("email LIKE ? ESCAPE '!'", [$pattern])
-                ->orWhereHas('personalWorkspace.subscription.plan', fn ($plan) => $plan
+                ->orWhereHas('personalWorkspace.legacySubscription.plan', fn ($plan) => $plan
                     ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
                     ->orWhereRaw("code LIKE ? ESCAPE '!'", [$pattern])));
         }
@@ -49,9 +49,9 @@ class AdminDashboardController extends Controller
                     'suspendedAt' => $user->suspended_at?->toISOString(),
                     'personalWorkspaceName' => $workspace?->name,
                     'subscription' => [
-                        'status' => $workspace?->subscription?->status,
-                        'planCode' => $workspace?->subscription?->plan?->code,
-                        'planName' => $workspace?->subscription?->plan?->name,
+                        'status' => $workspace?->legacySubscription?->status,
+                        'planCode' => $workspace?->legacySubscription?->plan?->code,
+                        'planName' => $workspace?->legacySubscription?->plan?->name,
                     ],
                     'counts' => [
                         'links' => $workspace?->links_count ?? 0,

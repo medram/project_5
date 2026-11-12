@@ -2,14 +2,16 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Plan;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Billing\WorkspaceUsage;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -18,11 +20,11 @@ class ApiKeyTest extends TestCase
 {
     use RefreshDatabase;
 
-
     public function test_owner_can_create_a_workspace_bound_key_that_is_hashed_and_revealed_once(): void
     {
         $owner = User::factory()->create();
         $workspace = $owner->currentWorkspace()->firstOrFail();
+        $this->makePro($workspace);
         $expiresAt = now()->addDays(30)->format('Y-m-d\TH:i');
 
         $this->withoutVite();
@@ -105,6 +107,7 @@ class ApiKeyTest extends TestCase
         $firstWorkspace = $owner->currentWorkspace()->firstOrFail();
         $secondWorkspace = $this->teamWorkspace($owner, 'api-key-second-workspace');
         $this->activateWorkspace($owner, $firstWorkspace);
+        $this->makePro($firstWorkspace);
         $plainTextToken = $this->createApiKey($owner, [
             'name' => 'Workspace one key',
             'abilities' => ['links:read'],
@@ -140,13 +143,13 @@ class ApiKeyTest extends TestCase
     public function test_token_abilities_are_intersected_and_successful_use_updates_last_used_at(): void
     {
         $owner = User::factory()->create();
+        $this->makePro($owner->currentWorkspace()->firstOrFail());
         $plainTextToken = $this->createApiKey($owner, [
             'name' => 'Read-only key',
             'abilities' => ['links:read', 'analytics:read'],
             'expires_at' => null,
         ]);
         Auth::logout();
-
 
         Route::middleware(['auth:sanctum', 'abilities:links:read'])
             ->get('/__test/api-key/read', fn (Request $request) => response()->json([
@@ -175,13 +178,13 @@ class ApiKeyTest extends TestCase
     public function test_expired_tokens_are_rejected_by_sanctum(): void
     {
         $owner = User::factory()->create();
+        $this->makePro($owner->currentWorkspace()->firstOrFail());
         $plainTextToken = $this->createApiKey($owner, [
             'name' => 'Short-lived key',
             'abilities' => ['links:read'],
             'expires_at' => now()->addDay()->format('Y-m-d\TH:i'),
         ]);
         Auth::logout();
-
 
         Route::middleware('auth:sanctum')
             ->get('/__test/api-key/expiry', fn () => response()->json(['ok' => true]));
@@ -194,9 +197,6 @@ class ApiKeyTest extends TestCase
             ->where('id', $tokenId)
             ->update(['expires_at' => now()->subMinute()]);
         Auth::forgetGuards();
-
-
-
 
         $this->withToken($plainTextToken)
             ->getJson('/__test/api-key/expiry')
@@ -269,11 +269,22 @@ class ApiKeyTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        return Workspace::query()->findOrFail($workspaceId);
+        $workspace = Workspace::query()->findOrFail($workspaceId);
+        $this->makePro($workspace);
+
+        return $workspace;
     }
 
     private function activateWorkspace(User $user, Workspace $workspace): void
     {
         app(WorkspaceContext::class)->activate($user, $workspace);
+    }
+
+    private function makePro(Workspace $workspace): void
+    {
+        app(WorkspaceUsage::class)->assignPlan(
+            $workspace,
+            Plan::query()->where('code', 'pro')->sole(),
+        );
     }
 }

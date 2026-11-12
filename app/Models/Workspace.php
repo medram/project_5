@@ -8,10 +8,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Laravel\Cashier\Billable;
+use Laravel\Cashier\Cashier;
+use Laravel\Cashier\Subscription;
 
 #[Fillable(['name', 'slug', 'owner_id', 'personal_owner_user_id'])]
 class Workspace extends Model
 {
+    use Billable;
+
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'workspace_user')->withPivot('role')->withTimestamps();
@@ -27,9 +32,34 @@ class Workspace extends Model
         return $this->belongsTo(User::class, 'owner_id');
     }
 
-    public function subscription(): HasOne
+    /** @return HasMany<Subscription, $this> */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Cashier::$subscriptionModel, $this->getForeignKey())
+            ->orderByDesc('created_at');
+    }
+
+    /** @return HasOne<WorkspaceSubscription, $this> */
+    public function legacySubscription(): HasOne
     {
         return $this->hasOne(WorkspaceSubscription::class);
+    }
+
+    /** @return HasMany<WorkspacePlanOverride, $this> */
+    public function planOverrides(): HasMany
+    {
+        return $this->hasMany(WorkspacePlanOverride::class);
+    }
+
+    /** @return HasMany<BillingHealthRecord, $this> */
+    public function billingHealthRecords(): HasMany
+    {
+        return $this->hasMany(BillingHealthRecord::class);
+    }
+
+    public function contentMedia(): HasMany
+    {
+        return $this->hasMany(ContentMedia::class);
     }
 
     public function invitations(): HasMany
@@ -103,5 +133,4 @@ class Workspace extends Model
     {
         return $this->hasMany(AnalyticsEventDefinition::class);
     }
-
 }

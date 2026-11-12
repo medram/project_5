@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Billing;
 
+use App\Enums\PlanMetric;
 use App\Models\Link;
 use App\Models\Plan;
 use App\Models\User;
@@ -63,7 +64,7 @@ class WorkspaceBillingTest extends TestCase
         $creatorCalls = 0;
 
         try {
-            app(EnforcesPlanLimits::class)->create($workspace, 'links', function (Workspace $lockedWorkspace) use ($user, &$creatorCalls): Link {
+            app(EnforcesPlanLimits::class)->create($workspace, PlanMetric::Links, function (Workspace $lockedWorkspace) use ($user, &$creatorCalls): Link {
                 $creatorCalls++;
 
                 return $lockedWorkspace->links()->create([
@@ -88,7 +89,7 @@ class WorkspaceBillingTest extends TestCase
 
         app(EnforcesPlanLimits::class)->create(
             $workspace,
-            'links',
+            PlanMetric::Links,
             fn (Workspace $lockedWorkspace): Link => $lockedWorkspace->links()->create([
                 ...$this->linkAttributes('pro-capacity-link'),
                 'user_id' => $user->id,
@@ -104,7 +105,7 @@ class WorkspaceBillingTest extends TestCase
 
         app(EnforcesPlanLimits::class)->create(
             $businessWorkspace,
-            'links',
+            PlanMetric::Links,
             fn (Workspace $lockedWorkspace): Link => $lockedWorkspace->links()->create([
                 ...$this->linkAttributes('business-capacity-link'),
                 'user_id' => $businessUser->id,
@@ -175,7 +176,7 @@ class WorkspaceBillingTest extends TestCase
             ->patch('/account-settings/billing/plan', ['plan' => 'free'])
             ->assertRedirect('/account-settings/billing');
 
-        $this->assertSame('free', $workspace->subscription()->with('plan')->firstOrFail()->plan->code);
+        $this->assertSame('free', $workspace->legacySubscription()->with('plan')->firstOrFail()->plan->code);
     }
 
     /**

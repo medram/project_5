@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\StoreCustomDomainRequest;
 use App\Models\CustomDomain;
 use App\Models\Workspace;
@@ -69,7 +70,7 @@ class CustomDomainController extends Controller
 
         $this->planLimits->create(
             $workspace,
-            'domains',
+            PlanMetric::Domains,
             fn (Workspace $workspace): CustomDomain => $workspace->customDomains()->create([
                 'user_id' => $request->user()->id,
                 'hostname' => $request->validated('hostname'),

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\StoreWebhookRequest;
 use App\Models\Webhook;
 use App\Models\Workspace;
@@ -48,7 +49,7 @@ class WebhookController extends Controller
 
         $this->planLimits->create(
             $workspace,
-            'webhooks',
+            PlanMetric::Webhooks,
             function (Workspace $workspace) use ($request, $attributes, $secret): Webhook {
                 $webhook = $workspace->webhooks()->make($attributes);
 

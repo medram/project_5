@@ -208,15 +208,18 @@
         {
             "id": "billing",
             "state": "in_progress",
-            "lastVerifiedAt": "2026-10-22T10:40:27Z",
+            "lastVerifiedAt": "2026-11-12T13:29:14Z",
             "checks": [
                 "WorkspaceBillingTest, WorkspaceUsageTest, ProductCatalogTest, and the complete Laravel suite passed (218 tests, 10,891 assertions).",
                 "At localhost:8101, owner billing showed active workspace Pro usage and a Free-only change action; workspace-admin billing showed no plan controls and stated only owners can change plans.",
-                "Owner billing screenshot at 390x844 and workspace-admin billing screenshot at 1440x1000 are recorded in product/verification/; payment collection was unavailable in this local environment."
+                "Owner billing screenshot at 390x844 and workspace-admin billing screenshot at 1440x1000 are recorded in product/verification/; payment collection was unavailable in this local environment.",
+                "Phase 8 core suites passed 40 tests and 354 assertions covering the exact catalog, resolver precedence/expiry, provider price mapping with fail-closed health records, every count/byte metric, downgrade preservation, and API-key/admin enforcement.",
+                "Populated probe migration proof: exact catalog and legacy override backfill, media-purpose/nullable-expiry backfill, preserved counts and media expiries, integrity_check=ok, zero foreign-key violations, and rollback reconstruction.",
+                "Cashier bills the Workspace model through project-owned subscriptions tables; Stripe readiness remains truthful and checkout/portal UI is scheduled for the next billing slice."
             ],
             "blockers": [
-                "Cashier/Stripe billing is not implemented; live checkout, payment methods, invoices, and provider webhooks remain planned.",
-                "The Phase 8 target catalog is approved in PRD §7.12; the local entitlement schema still needs annual prices and expanded resource-limit columns."
+                "Stripe test-mode API keys, price IDs, webhook secret, and tax-policy acknowledgment are not configured.",
+                "No production-like populated database snapshot was available; migration proof used an isolated populated SQLite probe."
             ]
         },
         {
@@ -279,7 +282,7 @@
             "state": "in_progress",
             "lastVerifiedAt": "2026-10-22T17:41:53Z",
             "checks": [
-                "Platform-admin UX review exercised /admin on desktop/mobile; a normal user received 403; the reviewer’s accidental Demo Owner suspension was restored, followed by a successful user login.",
+                "Platform-admin UX review exercised /admin on desktop/mobile; a normal user received 403; the reviewer\u2019s accidental Demo Owner suspension was restored, followed by a successful user login.",
                 "Disposable review app: admin action dialogs identified each target and action; cancel left account state unchanged; confirmed suspension/restoration and administrator grant/revoke round trips, and assigned Pro to a synthetic personal workspace. Ordinary-user /admin remained 403.",
                 "Mobile account-list browser evidence at 390x844: labelled stacked cards, no horizontal overflow; private tenant content and visitor data absent (product/verification/phase4-admin-shell-mobile.png)."
             ],

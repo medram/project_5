@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Enums\PlanMetric;
 use App\Models\Workspace;
 use App\Services\Notifications\WorkspaceNotificationService;
 use Closure;
@@ -20,13 +21,19 @@ class EnforcesPlanLimits
      *
      * @throws ValidationException
      */
-    public function create(Workspace $workspace, string $metric, Closure $creator): mixed
+    public function create(Workspace $workspace, PlanMetric $metric, Closure $creator, int $bytes = 0): mixed
     {
-        return DB::transaction(function () use ($workspace, $metric, $creator): mixed {
-            $lockedWorkspace = Workspace::query()->lockForUpdate()->findOrFail($workspace->getKey());
-            $usage = $this->usage->metricFor($lockedWorkspace, $metric);
+        if ($bytes < 0) {
+            throw new \InvalidArgumentException('Quota byte reservations cannot be negative.');
+        }
 
-            if ($usage['limit'] !== null && $usage['used'] >= $usage['limit']) {
+        return DB::transaction(function () use ($workspace, $metric, $creator, $bytes): mixed {
+            $lockedWorkspace = Workspace::query()->lockForUpdate()->findOrFail($workspace->getKey());
+            /** @var Workspace $lockedWorkspace */
+            $usage = $this->usage->metricFor($lockedWorkspace, $metric);
+            $reservation = $metric->isByteMetric() ? $bytes : 1;
+
+            if ($usage['limit'] !== null && $usage['limit'] < $usage['used'] + $reservation) {
                 throw ValidationException::withMessages([
                     'plan' => "The current workspace plan allows {$usage['limit']} {$usage['label']}.",
                 ]);

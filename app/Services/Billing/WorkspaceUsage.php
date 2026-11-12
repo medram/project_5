@@ -2,29 +2,47 @@
 
 namespace App\Services\Billing;
 
+use App\Enums\PlanMetric;
+use App\Models\ContentMedia;
 use App\Models\Plan;
+use App\Models\User;
 use App\Models\Workspace;
+use App\Models\WorkspaceApiToken;
+use App\Models\WorkspacePlanOverride;
 use App\Models\WorkspaceSubscription;
 use App\Services\Notifications\WorkspaceNotificationService;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Laravel\Cashier\Subscription;
 
 class WorkspaceUsage
 {
+    public function __construct(
+        private readonly EffectiveWorkspacePlan $effectivePlan,
+        private readonly WorkspacePlanOverrides $overrides,
+    ) {}
+
     public function planFor(Workspace $workspace): Plan
     {
-        $subscription = $workspace->subscription()->with('plan')->first();
-
-        return $subscription?->plan ?? Plan::query()->where('code', 'free')->sole();
+        return $this->effectivePlan->for($workspace)['plan'];
     }
 
+    /**
+     * @return array{plan: Plan, source: string, override: WorkspacePlanOverride|null, subscription: Subscription|null}
+     */
+    public function effectivePlanFor(Workspace $workspace): array
+    {
+        return $this->effectivePlan->for($workspace);
+    }
+
+    /**
+     * The legacy local subscription row backs the current billing screen until
+     * provider-owned billing replaces it; it never decides the effective plan.
+     */
     public function subscriptionFor(Workspace $workspace): WorkspaceSubscription
     {
-        return $workspace->subscription()->firstOrCreate([], [
-            'plan_id' => Plan::query()->where('code', 'free')->sole()->id,
-            'status' => 'active',
-            'source' => 'manual',
-        ]);
+        return $this->legacySubscription($workspace);
     }
 
     /**
@@ -32,52 +50,60 @@ class WorkspaceUsage
      */
     public function for(Workspace $workspace): array
     {
-        $plan = $this->planFor($workspace);
+        $links = $this->metricFor($workspace, PlanMetric::Links);
+        $domains = $this->metricFor($workspace, PlanMetric::Domains);
+        $pixels = $this->metricFor($workspace, PlanMetric::Pixels);
+        $linkPages = $this->metricFor($workspace, PlanMetric::LinkPages);
+        $webhooks = $this->metricFor($workspace, PlanMetric::Webhooks);
 
         return [
-            'links' => $this->metric('Short links', $workspace->links()->count(), $plan->link_limit),
-            'domains' => $this->metric('Custom domains', $workspace->customDomains()->count(), $plan->domain_limit),
-            'pixels' => $this->metric('Tracking pixels', $workspace->trackingPixels()->count(), $plan->pixel_limit),
-            'linkPages' => $this->metric('Link pages', $workspace->linkPages()->count(), $plan->link_page_limit),
-            'webhooks' => $this->metric('Webhooks', $workspace->webhooks()->count(), $plan->webhook_limit),
+            'links' => $links,
+            'folders' => $this->metricFor($workspace, PlanMetric::Folders),
+            'qrCampaigns' => $this->metricFor($workspace, PlanMetric::QrCampaigns),
+            'bioPages' => $this->metricFor($workspace, PlanMetric::BioPages),
+            'domains' => $domains,
+            'pixels' => $pixels,
+            'members' => $this->metricFor($workspace, PlanMetric::Members),
+            'webhooks' => $webhooks,
+            'linkPages' => $linkPages,
+            'apiKeys' => $this->metricFor($workspace, PlanMetric::ApiKeys),
+            'storage' => $this->metricFor($workspace, PlanMetric::StorageBytes),
         ];
     }
 
     /**
      * @return array{label: string, used: int, limit: int|null, overLimit: bool}
      */
-    public function metricFor(Workspace $workspace, string $metric): array
+    public function metricFor(Workspace $workspace, PlanMetric $metric): array
     {
         $plan = $this->planFor($workspace);
+        $limit = $plan->getAttribute($metric->planColumn());
 
-        return match ($metric) {
-            'links' => $this->metric('Short links', $workspace->links()->count(), $plan->link_limit),
-            'domains' => $this->metric('Custom domains', $workspace->customDomains()->count(), $plan->domain_limit),
-            'pixels' => $this->metric('Tracking pixels', $workspace->trackingPixels()->count(), $plan->pixel_limit),
-            'link_pages' => $this->metric('Link pages', $workspace->linkPages()->count(), $plan->link_page_limit),
-            'qr_campaigns' => $this->metric(
-                'Direct QR campaigns',
-                $workspace->qrCodes()->where('source', 'campaign')->whereNotNull('destination_url')->count(),
-                $plan->qr_campaign_limit,
-            ),
-            'webhooks' => $this->metric('Webhooks', $workspace->webhooks()->count(), $plan->webhook_limit),
-            default => throw new \InvalidArgumentException("Unknown metered resource [{$metric}]."),
-        };
+        return $this->metric($metric->label(), $this->usedFor($workspace, $metric), $limit);
     }
 
     public function assignPlan(Workspace $workspace, Plan $plan): WorkspaceSubscription
     {
         return DB::transaction(function () use ($workspace, $plan): WorkspaceSubscription {
             $lockedWorkspace = Workspace::query()->lockForUpdate()->findOrFail($workspace->getKey());
-            $subscription = $this->subscriptionFor($lockedWorkspace);
-            $previousPlanId = $subscription->plan_id;
+            /** @var Workspace $lockedWorkspace */
+            $previousPlanId = (int) $this->planFor($lockedWorkspace)->getKey();
+            $subscription = $this->legacySubscription($lockedWorkspace);
             $subscription->update([
                 'plan_id' => $plan->getKey(),
                 'status' => 'active',
                 'source' => 'manual',
             ]);
 
-            if ((int) $previousPlanId !== (int) $plan->getKey()) {
+            $this->overrides->assign(
+                $lockedWorkspace,
+                $plan,
+                null,
+                'legacy_manual',
+                'Legacy manual plan assignment.',
+            );
+
+            if ($previousPlanId !== (int) $plan->getKey()) {
                 app(WorkspaceNotificationService::class)->notifyManagers(
                     $lockedWorkspace,
                     'billing',
@@ -88,10 +114,28 @@ class WorkspaceUsage
                 );
             }
 
-            return WorkspaceSubscription::query()
+            /** @var WorkspaceSubscription $updated */
+            $updated = WorkspaceSubscription::query()
                 ->with('plan')
                 ->findOrFail($subscription->getKey());
+
+            return $updated;
         });
+    }
+
+    /**
+     * @param  CarbonInterface|null  $expiresAt  Reserved for the admin override workflow.
+     */
+    public function assignOverride(
+        Workspace $workspace,
+        Plan $plan,
+        ?User $actor,
+        string $source,
+        string $reason,
+        ?CarbonInterface $startsAt = null,
+        ?CarbonInterface $expiresAt = null,
+    ): WorkspacePlanOverride {
+        return $this->overrides->assign($workspace, $plan, $actor, $source, $reason, $startsAt, $expiresAt);
     }
 
     /** @return array{plan: string, limit: int|null, members: int, pending: int, available: int|null, overLimit: bool} */
@@ -125,6 +169,42 @@ class WorkspaceUsage
                 'plan' => "The {$capacity['plan']} plan allows up to {$capacity['limit']} workspace members, including pending invitations.",
             ]);
         }
+    }
+
+    private function legacySubscription(Workspace $workspace): WorkspaceSubscription
+    {
+        return $workspace->legacySubscription()->firstOrCreate([], [
+            'plan_id' => Plan::query()->where('code', 'free')->sole()->id,
+            'status' => 'active',
+            'source' => 'manual',
+        ]);
+    }
+
+    private function usedFor(Workspace $workspace, PlanMetric $metric): int
+    {
+        return match ($metric) {
+            PlanMetric::Links => $workspace->links()->count(),
+            PlanMetric::Folders => $workspace->folders()->count(),
+            PlanMetric::QrCampaigns => $workspace->qrCodes()
+                ->where('source', 'campaign')
+                ->whereNotNull('destination_url')
+                ->count(),
+            PlanMetric::BioPages => $workspace->bioPages()->count(),
+            PlanMetric::Domains => $workspace->customDomains()->count(),
+            PlanMetric::Pixels => $workspace->trackingPixels()->count(),
+            PlanMetric::Members => $workspace->members()->count(),
+            PlanMetric::Webhooks => $workspace->webhooks()->count(),
+            PlanMetric::LinkPages => $workspace->linkPages()->count(),
+            PlanMetric::ApiKeys => WorkspaceApiToken::query()
+                ->where('workspace_id', $workspace->getKey())
+                ->where(fn ($query) => $query
+                    ->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now()))
+                ->count(),
+            PlanMetric::StorageBytes => (int) ContentMedia::withTrashed()
+                ->where('workspace_id', $workspace->getKey())
+                ->sum('byte_size'),
+        };
     }
 
     /**

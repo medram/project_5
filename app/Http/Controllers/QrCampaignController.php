@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanMetric;
 use App\Http\Requests\StoreQrCodeRequest;
 use App\Http\Requests\UpdateQrCodeRequest;
 use App\Models\QrCode;
@@ -51,7 +52,7 @@ class QrCampaignController extends Controller
 
         try {
             if ($destination !== null) {
-                $this->planLimits->create($workspace, 'qr_campaigns', $create);
+                $this->planLimits->create($workspace, PlanMetric::QrCampaigns, $create);
             } else {
                 $create($workspace);
             }
@@ -106,7 +107,7 @@ class QrCampaignController extends Controller
 
         try {
             if ($becomingDirectTarget) {
-                $this->planLimits->create($workspace, 'qr_campaigns', fn (Workspace $lockedWorkspace) => $persist());
+                $this->planLimits->create($workspace, PlanMetric::QrCampaigns, fn (Workspace $lockedWorkspace) => $persist());
             } else {
                 $persist();
             }
