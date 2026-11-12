@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureAdministrator;
 use App\Http\Middleware\EnsureAllowedHost;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\TrackLastSeen;
 use App\Http\Responses\ApiError;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -41,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureAllowedHost::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
+            TrackLastSeen::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
         $middleware->prependToPriorityList(AuthenticatesRequests::class, EnsureAllowedHost::class);

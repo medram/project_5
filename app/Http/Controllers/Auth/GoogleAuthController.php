@@ -178,12 +178,9 @@ class GoogleAuthController extends Controller
             $user = $this->driver()
                 ->redirectUrl($redirectUrl)
                 ->user();
-            fwrite(STDERR, json_encode(['class' => get_class($user), 'is' => $user instanceof SocialiteUser])."\n");
 
             return $user instanceof SocialiteUser ? $user : null;
-        } catch (Throwable $e) {
-            fwrite(STDERR, json_encode(['exception' => get_class($e), 'message' => $e->getMessage()])."\n");
-
+        } catch (Throwable) {
             return null;
         }
     }
