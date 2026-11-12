@@ -12,7 +12,6 @@ class WebhookPolicy
         return app(WorkspacePolicy::class)->manageIntegrations($user, $webhook->workspace);
     }
 
-
     public function update(User $user, Webhook $webhook): bool
     {
         return app(WorkspacePolicy::class)->manageIntegrations($user, $webhook->workspace);

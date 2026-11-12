@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\PlatformRoleCode;
+use App\Models\PlatformRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -36,6 +38,16 @@ class UserFactory extends Factory
         ];
     }
 
+    public function admin(): static
+    {
+        return $this->withPlatformRole(PlatformRoleCode::SuperAdmin);
+    }
+
+    public function support(): static
+    {
+        return $this->withPlatformRole(PlatformRoleCode::Support);
+    }
+
     /**
      * Indicate that the model's email address should be unverified.
      */
@@ -44,6 +56,14 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    private function withPlatformRole(PlatformRoleCode $role): static
+    {
+        return $this->afterCreating(function (User $user) use ($role): void {
+            $roleId = PlatformRole::query()->where('code', $role->value)->sole()->getKey();
+            $user->platformRoles()->syncWithoutDetaching([$roleId]);
+        });
     }
 
     /**

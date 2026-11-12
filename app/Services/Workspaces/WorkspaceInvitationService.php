@@ -56,7 +56,6 @@ class WorkspaceInvitationService
                 abort(403);
             }
 
-
             if ($lockedInvitation->accepted_at !== null) {
                 abort(409, 'An accepted invitation cannot be revoked.');
             }

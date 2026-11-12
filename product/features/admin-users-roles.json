@@ -9,7 +9,7 @@
             "id": "ADM-1",
             "text": "Platform access requires an explicit seeded platform role with admin.access; no self-service path grants it.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "ADM-3",
@@ -21,19 +21,19 @@
             "id": "ADM-4",
             "text": "An administrator cannot self-suspend, self-demote, or remove the last super administrator.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         },
         {
             "id": "ADM-5",
             "text": "The operations provisioning command grants the seeded super-admin role rather than a user boolean.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         },
         {
             "id": "AUSR-1",
             "text": "Immutable super-admin and support roles receive the approved platform permission sets.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         },
         {
             "id": "AUSR-2",
@@ -104,6 +104,24 @@
             "description": "At 390x844, /admin displayed labelled account cards without horizontal document overflow. Account metadata remains visible; private tenant content and visitor data are absent.",
             "reference": "Disposable review app http://localhost:8101/admin; product/verification/phase4-admin-shell-mobile.png.",
             "verifiedAt": "2026-10-22T17:41:53Z"
+        },
+        {
+            "type": "test",
+            "description": "RBAC suite passed 13 tests and 104 assertions: immutable seeded super-admin/support matrices, explicit admin permissions on every current mutation, support refusal for role/billing/broadcast actions, self-mutation and last-super-admin guards, transaction-time actor revalidation, append-only audit redaction, seeded-role command provisioning, no legacy boolean writes, and dashboard metadata without private content.",
+            "reference": "tests/Feature/Admin/AdministrationTest.php; tests/Feature/WorkspaceSearchTest.php; tests/Feature/Notifications/NotificationCenterTest.php; tests/Feature/LinkPages/LinkPageLeadTest.php",
+            "verifiedAt": "2026-11-12T14:45:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Full application suite passed 512 tests and 17,113 assertions after migrating existing administrators to the seeded super-admin role and replacing the administrator middleware and search gate with explicit permissions.",
+            "reference": "php -d memory_limit=1G vendor/bin/phpunit",
+            "verifiedAt": "2026-11-12T14:45:00Z"
+        },
+        {
+            "type": "command",
+            "description": "`linkpilot:grant-admin` now assigns the immutable seeded super_admin role through the audited assignment service; it still requires an existing account and never creates one.",
+            "reference": "php artisan linkpilot:grant-admin {email}",
+            "verifiedAt": "2026-11-12T14:45:00Z"
         }
     ]
 }

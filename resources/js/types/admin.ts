@@ -10,6 +10,7 @@ export type AdminAccount = {
     emailVerifiedAt: string | null;
     createdAt: string | null;
     isAdmin: boolean;
+    roles: Array<{ code: string; name: string }>;
     isSuspended: boolean;
     suspendedAt: string | null;
     personalWorkspaceName: string | null;

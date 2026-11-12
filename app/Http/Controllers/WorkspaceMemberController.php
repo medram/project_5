@@ -7,7 +7,6 @@ use App\Models\Workspace;
 use App\Services\Workspaces\WorkspaceMembershipService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class WorkspaceMemberController
 {

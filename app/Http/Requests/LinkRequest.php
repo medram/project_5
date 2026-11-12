@@ -5,7 +5,6 @@ namespace App\Http\Requests;
 use App\Models\Folder;
 use App\Models\Link;
 use App\Models\LinkTag;
-use App\Models\LinkPage;
 use App\Services\Links\FirstPartyDestinationGuard;
 use App\Services\Workspaces\WorkspaceContext;
 use Closure;

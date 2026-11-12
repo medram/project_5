@@ -8,6 +8,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 class WorkspaceApiToken extends PersonalAccessToken
 {
     protected $table = 'personal_access_tokens';
+
     protected $fillable = [
         'name',
         'token',

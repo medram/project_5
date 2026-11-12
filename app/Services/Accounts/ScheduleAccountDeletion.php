@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounts;
 
+use App\Enums\PlatformRoleCode;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,7 @@ final class ScheduleAccountDeletion
 
     public function assertCanSchedule(User $user): void
     {
-        if ($user->is_admin) {
+        if ($user->hasPlatformRole(PlatformRoleCode::SuperAdmin)) {
             throw ValidationException::withMessages([
                 'account' => 'Remove platform administrator access before deleting this account.',
             ]);

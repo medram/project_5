@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PlatformPermission;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\AccountNotification;
+use App\Services\Platform\AdminAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class AdminNotificationController extends Controller
 {
+    public function __construct(private readonly AdminAudit $audit) {}
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -18,6 +22,8 @@ class AdminNotificationController extends Controller
         ]);
         $title = trim($validated['title']);
         $body = trim($validated['body']);
+
+        $recipients = User::query()->where('is_suspended', false)->count();
 
         User::query()
             ->where('is_suspended', false)
@@ -31,6 +37,15 @@ class AdminNotificationController extends Controller
                     ));
                 }
             });
+
+        $this->audit->record(
+            $request->user(),
+            PlatformPermission::AdminNotificationsBroadcast,
+            'broadcast_notification',
+            null,
+            null,
+            ['recipients' => $recipients],
+        );
 
         return to_route('admin.index')->with('success', 'Announcement sent to active accounts.');
     }

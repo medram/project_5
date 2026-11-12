@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Enums\MediaPurpose;
+use App\Enums\PlatformPermission;
 use App\Http\Controllers\Controller;
 use App\Models\ContentMedia;
 use App\Models\User;
+use App\Services\Platform\PlatformAuthorization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -23,7 +25,7 @@ class AccountAvatarController extends Controller
         $viewer = $request->user();
 
         abort_unless(
-            $viewer !== null && ($viewer->sharesWorkspaceWith($owner) || $viewer->is_admin),
+            $viewer !== null && ($viewer->sharesWorkspaceWith($owner) || app(PlatformAuthorization::class)->allows($viewer, PlatformPermission::AdminUsersView)),
             403,
         );
 

@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Enums\PlatformPermission;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceApiToken;
+use App\Services\Platform\PlatformAuthorization;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -35,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Cashier::useCustomerModel(Workspace::class);
-        Gate::define('admin.search', fn (User $user): bool => (bool) $user->is_admin);
+        Gate::define('admin.search', fn (User $user): bool => app(PlatformAuthorization::class)->allows($user, PlatformPermission::AdminSearch));
         Gate::define('viewApiDocs', fn (?User $user): bool => app()->environment(['local', 'testing']));
         RateLimiter::for('api-v1', function (Request $request): Limit {
             $token = $request->user()?->currentAccessToken();

@@ -283,17 +283,22 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
     Route::patch('dashboard/link-overlays/{linkOverlay}', [LinkOverlayController::class, 'update'])->name('overlays.update');
     Route::delete('dashboard/link-overlays/{linkOverlay}', [LinkOverlayController::class, 'destroy'])->name('overlays.destroy');
 
-    Route::prefix('admin')->name('admin.')->middleware('administrator')->group(function (): void {
+    Route::prefix('admin')->name('admin.')->middleware('platform:admin.access')->group(function (): void {
         Route::get('/', AdminDashboardController::class)->name('index');
         Route::patch('users/{user}/suspension', [AdminUserController::class, 'updateSuspension'])
+            ->middleware('platform:admin.users.manage_status')
             ->name('users.suspension.update');
         Route::patch('users/{user}/administrator', [AdminUserController::class, 'updateAdministrator'])
+            ->middleware('platform:admin.users.manage_roles')
             ->name('users.administrator.update');
         Route::patch('users/{user}/plan', [AdminUserController::class, 'updatePlan'])
+            ->middleware('platform:admin.billing.manage')
             ->name('users.plan.update');
         Route::patch('users/{user}/deletion/restore', [AdminUserController::class, 'restoreDeletion'])
+            ->middleware('platform:admin.users.schedule_deletion')
             ->name('users.deletion.restore');
         Route::post('notifications/broadcast', [AdminNotificationController::class, 'store'])
+            ->middleware('platform:admin.notifications.broadcast')
             ->name('notifications.broadcast');
     });
 });

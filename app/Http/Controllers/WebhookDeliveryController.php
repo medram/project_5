@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Webhook;
 use App\Http\Requests\RedeliverWebhookRequest;
 use App\Jobs\DeliverWebhook;
-use App\Services\Workspaces\WorkspaceContext;
+use App\Models\Webhook;
 use App\Models\WebhookDelivery;
+use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -66,5 +66,4 @@ class WebhookDeliveryController extends Controller
 
         return to_route('webhooks.index')->with('status', 'Redelivery queued.');
     }
-
 }

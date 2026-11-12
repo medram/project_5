@@ -6,6 +6,7 @@ use App\Models\Workspace;
 use App\Services\Accounts\GoogleConnection;
 use App\Services\Billing\WorkspaceUsage;
 use App\Services\Notifications\NotificationVisibility;
+use App\Services\Platform\PlatformAuthorization;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -65,8 +66,9 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
-                'isAdmin' => (bool) $request->user()?->is_admin,
-                'canSearchPlatform' => $request->user() !== null && $request->user()->can('admin.search'),
+                'isAdmin' => $request->user() !== null && app(PlatformAuthorization::class)->canAccessAdmin($request->user()),
+                'canSearchPlatform' => $request->user()?->can('admin.search') ?? false,
+                'adminAbilities' => $request->user() === null ? [] : app(PlatformAuthorization::class)->abilities($request->user()),
             ],
             'notificationUnreadCount' => fn (): int => $loadNotificationData()['unreadCount'],
             'notificationPreview' => fn (): array => $loadNotificationData()['preview'],

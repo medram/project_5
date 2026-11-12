@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Notifications;
 
+use App\Enums\PlanMetric;
 use App\Jobs\DeliverWebhook;
 use App\Models\CustomDomain;
 use App\Models\Plan;
@@ -256,7 +257,7 @@ class NotificationCenterTest extends TestCase
         $freePlan = Plan::query()->where('code', 'free')->sole();
         DB::table('plans')->where('id', $freePlan->id)->update(['link_limit' => 1]);
 
-        app(EnforcesPlanLimits::class)->create($usageWorkspace, 'links', function (Workspace $lockedWorkspace) use ($usageOwner) {
+        app(EnforcesPlanLimits::class)->create($usageWorkspace, PlanMetric::Links, function (Workspace $lockedWorkspace) use ($usageOwner) {
             return $lockedWorkspace->links()->create([
                 'user_id' => $usageOwner->id,
                 'slug' => 'limit-notification',
@@ -314,7 +315,7 @@ class NotificationCenterTest extends TestCase
     public function test_platform_admin_broadcasts_to_active_accounts_only(): void
     {
         config(['mail.default' => 'log']);
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->admin()->create();
         $user = User::factory()->create();
         $suspended = User::factory()->create(['is_suspended' => true]);
 

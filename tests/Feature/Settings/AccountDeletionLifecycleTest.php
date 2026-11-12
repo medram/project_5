@@ -166,7 +166,7 @@ class AccountDeletionLifecycleTest extends TestCase
             $this->assertArrayHasKey('subscription', $exception->errors());
         }
 
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->admin()->create();
 
         try {
             app(ScheduleAccountDeletion::class)->schedule($admin);

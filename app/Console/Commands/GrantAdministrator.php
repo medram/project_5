@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\PlatformRoleCode;
 use App\Models\User;
+use App\Services\Platform\PlatformRoleAssignments;
 use Illuminate\Console\Command;
 
 class GrantAdministrator extends Command
@@ -23,7 +25,8 @@ class GrantAdministrator extends Command
 
     public function handle(): int
     {
-        $email = trim((string) $this->argument('email'));
+        $argument = $this->argument('email');
+        $email = trim(is_string($argument) ? $argument : '');
         $user = User::query()->where('email', $email)->first();
 
         if ($user === null) {
@@ -32,9 +35,11 @@ class GrantAdministrator extends Command
             return self::FAILURE;
         }
 
-        $user->forceFill(['is_admin' => true])->save();
+        $changed = app(PlatformRoleAssignments::class)->grantSystem($user, PlatformRoleCode::SuperAdmin);
 
-        $this->components->info("Granted administrator access to {$user->email}.");
+        $this->components->info($changed
+            ? "Granted super administrator access to {$user->email}."
+            : "{$user->email} already has super administrator access.");
 
         return self::SUCCESS;
     }

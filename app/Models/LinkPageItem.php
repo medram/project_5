@@ -20,6 +20,7 @@ class LinkPageItem extends Model
             'is_active' => 'boolean',
         ];
     }
+
     protected static function booted(): void
     {
         static::creating(function (LinkPageItem $item): void {
@@ -36,7 +37,6 @@ class LinkPageItem extends Model
             }
         });
     }
-
 
     public function linkPage(): BelongsTo
     {

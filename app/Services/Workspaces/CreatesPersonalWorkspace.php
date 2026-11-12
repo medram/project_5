@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\DB;
 
 class CreatesPersonalWorkspace
 {
-
     public function __construct(private readonly WorkspaceUsage $usage) {}
+
     public function for(User $user): Workspace
     {
         return DB::transaction(function () use ($user): Workspace {

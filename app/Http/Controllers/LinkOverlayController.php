@@ -66,7 +66,6 @@ class LinkOverlayController extends Controller
         return to_route('overlays.index');
     }
 
-
     private function overlayData(LinkOverlay $overlay): array
     {
         return [

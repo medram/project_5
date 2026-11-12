@@ -114,7 +114,6 @@ class PublicLinkPageLeadController extends Controller
             }
         }
 
-
         return to_route('link-pages.public', $linkPage->slug)
             ->with('success', 'Your response was submitted.');
     }

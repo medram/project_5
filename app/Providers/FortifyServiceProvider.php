@@ -18,8 +18,8 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 use Laravel\Fortify\Http\Requests\TwoFactorLoginRequest;
-use Laravel\Passkeys\Passkey;
 use Laravel\Passkeys\Contracts\PasskeyUser;
+use Laravel\Passkeys\Passkey;
 use Laravel\Passkeys\Passkeys;
 
 class FortifyServiceProvider extends ServiceProvider

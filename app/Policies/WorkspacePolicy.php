@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Workspace;
+use Illuminate\Support\Facades\DB;
 
 class WorkspacePolicy
 {
@@ -54,7 +55,7 @@ class WorkspacePolicy
 
     private function roleFor(User $user, Workspace $workspace): ?string
     {
-        return \Illuminate\Support\Facades\DB::table('workspace_user')
+        return DB::table('workspace_user')
             ->where('workspace_id', $workspace->getKey())
             ->where('user_id', $user->getKey())
             ->value('role');

@@ -171,7 +171,7 @@ class WorkspaceSearchTest extends TestCase
 
     public function test_platform_search_uses_named_ability_and_shares_effective_capability(): void
     {
-        $administrator = User::factory()->create(['is_admin' => true]);
+        $administrator = User::factory()->admin()->create();
         $workspace = $administrator->currentWorkspace;
         $workspace->folders()->create(['user_id' => $administrator->id, 'name' => 'Needle workspace folder']);
         $account = User::factory()->create(['name' => 'Needle private account']);
@@ -274,10 +274,9 @@ class WorkspaceSearchTest extends TestCase
 
     public function test_admin_global_search_returns_account_metadata_and_plans_by_name_or_code_only(): void
     {
-        $administrator = User::factory()->create([
+        $administrator = User::factory()->admin()->create([
             'name' => 'Platform Administrator',
             'email' => 'admin-search@example.test',
-            'is_admin' => true,
         ]);
         $account = User::factory()->create([
             'name' => 'Searchable Account Metadata',

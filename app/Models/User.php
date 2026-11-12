@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\PlatformPermission;
+use App\Enums\PlatformRoleCode;
 use App\Services\Workspaces\CreatesPersonalWorkspace;
 use Database\Factories\UserFactory;
 use DateTimeInterface;
@@ -35,6 +37,7 @@ use Laravel\Sanctum\NewAccessToken;
  * @property Carbon|null $created_at
  * @property bool $is_admin
  * @property bool $is_suspended
+ * @property Carbon|null $suspended_at
  * @property int|null $current_workspace_id
  * @property int|null $avatar_media_id
  * @property string|null $locale
@@ -44,6 +47,7 @@ use Laravel\Sanctum\NewAccessToken;
  * @property Carbon|null $deletion_requested_at
  * @property Carbon|null $purge_after
  * @property Carbon|null $updated_at
+ * @property-read Workspace|null $personalWorkspace
  */
 #[Fillable(['name', 'email', 'password', 'locale', 'country_code', 'timezone'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -82,6 +86,41 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function workspaces(): BelongsToMany
     {
         return $this->belongsToMany(Workspace::class, 'workspace_user')->withPivot('role')->withTimestamps();
+    }
+
+    /**
+     * @return BelongsToMany<PlatformRole, $this>
+     */
+    public function platformRoles(): BelongsToMany
+    {
+        return $this->belongsToMany(PlatformRole::class)->withTimestamps();
+    }
+
+    public function hasPlatformRole(PlatformRoleCode|string $code): bool
+    {
+        $code = $code instanceof PlatformRoleCode ? $code->value : $code;
+
+        return $this->platformRoles()->where('code', $code)->exists();
+    }
+
+    /**
+     * @return list<PlatformPermission>
+     */
+    public function platformPermissions(): array
+    {
+        if ($this->is_suspended || $this->deletion_requested_at !== null) {
+            return [];
+        }
+
+        $permissions = [];
+
+        foreach ($this->platformRoles()->get() as $role) {
+            foreach ($role->roleCode()->permissions() as $permission) {
+                $permissions[$permission->value] = $permission;
+            }
+        }
+
+        return array_values($permissions);
     }
 
     public function personalWorkspace(): HasOne

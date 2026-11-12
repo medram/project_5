@@ -12,6 +12,7 @@ use App\Models\LinkPage;
 use App\Models\User;
 use App\Models\WebhookDelivery;
 use App\Models\Workspace;
+use App\Services\Accounts\PurgeAccount;
 use App\Services\Analytics\TrackingConsent;
 use App\Services\Webhooks\WebhookPayload;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -284,6 +285,9 @@ class AnalyticsAttributionTest extends TestCase
         $this->actingAs($user)
             ->delete(route('profile.destroy'), ['password' => 'password'])
             ->assertRedirect(route('home'));
+
+        $user->refresh()->forceFill(['purge_after' => now()->subDay()])->save();
+        app(PurgeAccount::class)->purge($user->refresh());
     }
 
     /**

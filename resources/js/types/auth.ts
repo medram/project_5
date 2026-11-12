@@ -14,6 +14,7 @@ export type Auth = {
     user: User | null;
     isAdmin: boolean;
     canSearchPlatform: boolean;
+    adminAbilities: string[];
 };
 
 export type Passkey = {

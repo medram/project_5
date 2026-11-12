@@ -71,7 +71,6 @@ class AnalyticsEvent extends Model
                 }
             }
 
-
             foreach ($references as $reference) {
                 if ($reference['id'] === null) {
                     continue;
@@ -102,11 +101,11 @@ class AnalyticsEvent extends Model
             throw new LogicException('Analytics events are immutable.');
         });
     }
+
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class);
     }
-
 
     public function user(): BelongsTo
     {

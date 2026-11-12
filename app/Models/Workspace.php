@@ -12,6 +12,11 @@ use Laravel\Cashier\Billable;
 use Laravel\Cashier\Cashier;
 use Laravel\Cashier\Subscription;
 
+/**
+ * @property-read int|null $links_count
+ * @property-read int|null $bio_pages_count
+ * @property-read WorkspaceSubscription|null $legacySubscription
+ */
 #[Fillable(['name', 'slug', 'owner_id', 'personal_owner_user_id'])]
 class Workspace extends Model
 {

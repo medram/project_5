@@ -10,12 +10,12 @@ use LogicException;
 #[Fillable(['workspace_id', 'actor_user_id', 'subject_user_id', 'action', 'metadata'])]
 class WorkspaceAudit extends Model
 {
-
     protected static function booted(): void
     {
         static::updating(fn () => throw new LogicException('Workspace audit records are immutable.'));
         static::deleting(fn () => throw new LogicException('Workspace audit records are immutable.'));
     }
+
     protected function casts(): array
     {
         return ['metadata' => 'array'];

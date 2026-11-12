@@ -81,7 +81,7 @@ class AccountSettingsTest extends TestCase
         $owner = User::factory()->create();
         $peer = User::factory()->create();
         $outsider = User::factory()->create();
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->admin()->create();
 
         $workspace = Workspace::query()->create([
             'name' => 'Shared avatar workspace',

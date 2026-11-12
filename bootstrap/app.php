@@ -2,7 +2,7 @@
 
 use App\Http\Middleware\EnsureAccountUsable;
 use App\Http\Middleware\EnsureActiveAccount;
-use App\Http\Middleware\EnsureAdministrator;
+use App\Http\Middleware\EnsurePlatformPermission;
 use App\Http\Middleware\EnsureAllowedHost;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -34,7 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'active-account' => EnsureActiveAccount::class,
-            'administrator' => EnsureAdministrator::class,
+            'platform' => EnsurePlatformPermission::class,
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
         ]);

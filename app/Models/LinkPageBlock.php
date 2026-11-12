@@ -34,6 +34,7 @@ class LinkPageBlock extends Model
             'ends_at' => 'immutable_datetime',
         ];
     }
+
     protected static function booted(): void
     {
         static::creating(function (LinkPageBlock $block): void {
@@ -50,7 +51,6 @@ class LinkPageBlock extends Model
             }
         });
     }
-
 
     /** @return BelongsTo<LinkPage, $this> */
     public function linkPage(): BelongsTo

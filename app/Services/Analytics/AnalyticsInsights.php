@@ -6,12 +6,12 @@ use App\Models\AnalyticsEvent;
 use App\Models\Click;
 use App\Models\Link;
 use App\Models\Workspace;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use InvalidArgumentException;
 
 class AnalyticsInsights
 {
-
     public const EVENT_ROW_COLUMNS = [
         'uuid',
         'event_name',
@@ -210,7 +210,6 @@ class AnalyticsInsights
         ];
     }
 
-
     /**
      * @param array{
      *     resource_type: ?string,
@@ -291,7 +290,7 @@ class AnalyticsInsights
         return $events;
     }
 
-    /** @return array{0: \Carbon\CarbonInterface, 1: \Carbon\CarbonInterface} */
+    /** @return array{0: CarbonInterface, 1: CarbonInterface} */
     private function windowBounds(int $days): array
     {
         if (! in_array($days, [7, 30, 90], true)) {
@@ -304,12 +303,10 @@ class AnalyticsInsights
     }
 
     /**
-     * @param Builder<Click>|Builder<AnalyticsEvent> $query
-     * @param \Carbon\CarbonInterface $start
-     * @param \Carbon\CarbonInterface $end
+     * @param  Builder<Click>|Builder<AnalyticsEvent>  $query
      * @return Builder<Click>|Builder<AnalyticsEvent>
      */
-    private function withinWindow(Builder $query, \Carbon\CarbonInterface $start, \Carbon\CarbonInterface $end): Builder
+    private function withinWindow(Builder $query, CarbonInterface $start, CarbonInterface $end): Builder
     {
         return (clone $query)
             ->where('occurred_at', '>=', $start)

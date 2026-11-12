@@ -36,5 +36,4 @@ class StoreLinkPageItemRequest extends FormRequest
             'link_page_variant_id' => ['sometimes', 'integer', 'min:1'],
         ];
     }
-
 }

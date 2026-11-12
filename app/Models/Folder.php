@@ -35,6 +35,7 @@ class Folder extends Model
     {
         return $this->hasManyThrough(Click::class, Link::class);
     }
+
     public function analyticsEvents(): HasManyThrough
     {
         return $this->hasManyThrough(AnalyticsEvent::class, Link::class, 'folder_id', 'link_id')

@@ -151,5 +151,4 @@ class PublicLinkOverlayController extends Controller
     {
         return "linkpilot.overlay_skip_view.{$link->getKey()}.{$overlay->getKey()}";
     }
-
 }

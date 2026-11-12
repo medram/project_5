@@ -153,7 +153,7 @@ class LinkPageLeadTest extends TestCase
         $owner = User::factory()->create();
         $admin = User::factory()->create();
         $member = User::factory()->create();
-        $platformAdmin = User::factory()->create(['is_admin' => true]);
+        $platformAdmin = User::factory()->admin()->create();
         $workspace = $this->teamWorkspace($owner);
         $workspace->members()->attach($admin->id, ['role' => 'admin']);
         $workspace->members()->attach($member->id, ['role' => 'member']);

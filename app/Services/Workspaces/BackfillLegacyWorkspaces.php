@@ -34,7 +34,6 @@ class BackfillLegacyWorkspaces
                 }
             });
 
-
         foreach (self::OWNED_TABLES as $table) {
             DB::table($table)
                 ->select(['id', 'user_id'])

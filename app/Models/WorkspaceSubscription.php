@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property-read Plan|null $plan
+ */
 #[Fillable(['workspace_id', 'plan_id', 'status', 'source'])]
 class WorkspaceSubscription extends Model
 {

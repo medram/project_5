@@ -20,6 +20,7 @@ class WebhookPayload
             'workspace_id' => $event->workspace_id,
             'data' => static::dataFor($event),
         ];
+
         return json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 
