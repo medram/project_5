@@ -13,6 +13,7 @@ use LogicException;
  * @property int $id
  * @property string $code
  * @property string $name
+ * @property-read int $users_count
  */
 class PlatformRole extends Model
 {

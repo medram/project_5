@@ -287,14 +287,16 @@
         },
         {
             "id": "admin-users-roles",
-            "state": "in_progress",
-            "lastVerifiedAt": "2026-11-12T14:45:00Z",
+            "state": "verified",
+            "lastVerifiedAt": "2026-11-12T15:12:00Z",
             "checks": [
                 "Platform-admin UX review exercised /admin on desktop/mobile; a normal user received 403; the reviewer\u2019s accidental Demo Owner suspension was restored, followed by a successful user login.",
                 "Disposable review app: admin action dialogs identified each target and action; cancel left account state unchanged; confirmed suspension/restoration and administrator grant/revoke round trips, and assigned Pro to a synthetic personal workspace. Ordinary-user /admin remained 403.",
                 "Mobile account-list browser evidence at 390x844: labelled stacked cards, no horizontal overflow; private tenant content and visitor data absent (product/verification/phase4-admin-shell-mobile.png).",
                 "RBAC suite passed 13 tests and 104 assertions: immutable seeded role matrices, explicit route permissions, support refusal for privileged mutations, self and last-super-admin guards, transaction revalidation, append-only redacted audits, and command provisioning.",
-                "Full application suite passed 512 tests and 17,113 assertions after backfilling existing administrators into the seeded super_admin role."
+                "Full application suite passed 512 tests and 17,113 assertions after backfilling existing administrators into the seeded super_admin role.",
+                "Split administration suite passed 18 tests and 237 assertions across users/roles destinations, filters, pagination, user detail, audited actions, permission boundaries, and redacted audit records.",
+                "Managed Chromium at 1440x1000 and 390x844 verified Users, User detail, and Roles screens without overflow or page errors; a role grant/remove confirmation round trip succeeded."
             ],
             "blockers": [
                 "P1: Immutable platform roles, safe provisioning, and last-super-admin protections remain outstanding; the current interface is a limited is_admin starting state."

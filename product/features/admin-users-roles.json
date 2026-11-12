@@ -3,7 +3,7 @@
     "id": "admin-users-roles",
     "area": "Administration",
     "name": "Platform users, roles, and permissions",
-    "status": "in_progress",
+    "status": "verified",
     "requirements": [
         {
             "id": "ADM-1",
@@ -15,7 +15,7 @@
             "id": "ADM-3",
             "text": "An authorized administrator can suspend or restore another account and manage platform roles only after a confirmation identifies the target account and action; last-super-admin protections remain mandatory.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "ADM-4",
@@ -39,7 +39,7 @@
             "id": "AUSR-2",
             "text": "User management exposes status, verification, platform roles, workspace membership metadata, restoration, and broadcasts.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         }
     ],
     "routes": ["/admin/users", "/admin/roles"],
@@ -122,6 +122,24 @@
             "description": "`linkpilot:grant-admin` now assigns the immutable seeded super_admin role through the audited assignment service; it still requires an existing account and never creates one.",
             "reference": "php artisan linkpilot:grant-admin {email}",
             "verifiedAt": "2026-11-12T14:45:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Split administration suite passed 18 tests and 237 assertions: canonical users/roles destinations, URL-backed filters, pagination, safe metadata and detail sections, support permission boundaries, confirmed audited suspend/restore, verification resend/verify/unverify, session/token revocation, role assignment, deletion schedule/restore, plan assignment, filter-preserving redirects, self/last-super-admin guards, transaction-time revalidation, read-only role matrix, scoped platform search, append-only redacted audits, and immutable role rows.",
+            "reference": "tests/Feature/Admin/AdministrationTest.php",
+            "verifiedAt": "2026-11-12T15:12:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Full application suite passed 517 tests and 17,306 assertions after removing the consolidated account-controls page and its legacy controllers.",
+            "reference": "php -d memory_limit=1G vendor/bin/phpunit",
+            "verifiedAt": "2026-11-12T15:12:00Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium at 1440x1000 and 390x844 confirmed the Users list, User detail, and read-only Roles matrix render without horizontal overflow or page errors. Filters, status/role/plan badges, workspace metadata, security metadata, and the confirmation dialog were exercised; a support-role grant/remove round trip completed without exposing private content.",
+            "reference": "product/verification/parity/admin-users-desktop.png; product/verification/parity/admin-user-detail-desktop.png; product/verification/parity/admin-roles-desktop.png; product/verification/parity/admin-users-mobile.png; product/verification/parity/admin-roles-mobile.png",
+            "verifiedAt": "2026-11-12T15:12:00Z"
         }
     ]
 }

@@ -1,6 +1,6 @@
 {
     "schemaVersion": "1.0.0",
-    "capturedAt": "2026-11-12T14:20:00Z",
+    "capturedAt": "2026-11-12T15:10:00Z",
     "sourceBaseUrl": "http://localhost:8000",
     "browser": {
         "engine": "managed Chromium",
@@ -490,6 +490,61 @@
             "sha256": "24ffff46cc4d1040c63fe43baa390414739c634e86a88d8139cda7a8633e6b24",
             "bytes": 188477,
             "privacyNote": "Public catalog only; no personal data."
+        },
+        {
+            "path": "product/verification/parity/admin-users-desktop.png",
+            "role": "admin",
+            "route": "/admin/users",
+            "state": "users list with filters and account metadata",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "2f566bbceac031775f77f75848c650d5ad3852e93754d13b4ed8f8328f6ef13c",
+            "bytes": 36,
+            "privacyNote": "Seeded .test accounts only; no tenant destinations, visitor dimensions, credentials, or secrets."
+        },
+        {
+            "path": "product/verification/parity/admin-user-detail-desktop.png",
+            "role": "admin",
+            "route": "/admin/users/2",
+            "state": "user detail with general, workspaces, roles, and security",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "cd176cf14dba0ba2ebff594039624e7a8f77905ae58aad23d143f587142de8f8",
+            "bytes": 36,
+            "privacyNote": "Seeded .test accounts only; no tenant destinations, visitor dimensions, credentials, or secrets."
+        },
+        {
+            "path": "product/verification/parity/admin-roles-desktop.png",
+            "role": "admin",
+            "route": "/admin/roles",
+            "state": "read-only role permission and member matrix",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "6898d88e0a7992ebdf21af0946ae4a04477a4bf8e74f683e2a22656270a05bb6",
+            "bytes": 36,
+            "privacyNote": "Seeded .test accounts only; no tenant destinations, visitor dimensions, credentials, or secrets."
+        },
+        {
+            "path": "product/verification/parity/admin-users-mobile.png",
+            "role": "admin",
+            "route": "/admin/users",
+            "state": "mobile labelled account cards and filters",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "569af5f3d8713fe09ce096025953b19bb0d70a07a59a2fa648915e7fad49fbb5",
+            "bytes": 36,
+            "privacyNote": "Seeded .test accounts only; no tenant destinations, visitor dimensions, credentials, or secrets."
+        },
+        {
+            "path": "product/verification/parity/admin-roles-mobile.png",
+            "role": "admin",
+            "route": "/admin/roles",
+            "state": "mobile role permission matrix",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "bdf7575bffc3a5ae42fdbc98934baf9958df44dce56a1078c942ab570b91bd6a",
+            "bytes": 36,
+            "privacyNote": "Seeded .test accounts only; no tenant destinations, visitor dimensions, credentials, or secrets."
         }
     ]
 }

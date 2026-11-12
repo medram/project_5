@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\AcceptWorkspaceInvitationController;
 use App\Http\Controllers\AccountAnalyticsController;
-use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminHomeController;
 use App\Http\Controllers\Admin\AdminNotificationController;
-use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminRoleController;
+use App\Http\Controllers\Admin\AdminUserActionController;
+use App\Http\Controllers\Admin\AdminUserIndexController;
+use App\Http\Controllers\Admin\AdminUserShowController;
 use App\Http\Controllers\AnalyticsEventController;
 use App\Http\Controllers\AnalyticsEventDefinitionController;
 use App\Http\Controllers\AnalyticsExportController;
@@ -284,19 +287,46 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
     Route::delete('dashboard/link-overlays/{linkOverlay}', [LinkOverlayController::class, 'destroy'])->name('overlays.destroy');
 
     Route::prefix('admin')->name('admin.')->middleware('platform:admin.access')->group(function (): void {
-        Route::get('/', AdminDashboardController::class)->name('index');
-        Route::patch('users/{user}/suspension', [AdminUserController::class, 'updateSuspension'])
+        Route::get('/', AdminHomeController::class)->name('index');
+
+        Route::get('users', AdminUserIndexController::class)
+            ->middleware('platform:admin.users.view')
+            ->name('users.index');
+        Route::get('users/{user}', AdminUserShowController::class)
+            ->middleware('platform:admin.users.view')
+            ->name('users.show');
+        Route::patch('users/{user}/suspension', [AdminUserActionController::class, 'updateSuspension'])
             ->middleware('platform:admin.users.manage_status')
             ->name('users.suspension.update');
-        Route::patch('users/{user}/administrator', [AdminUserController::class, 'updateAdministrator'])
+        Route::patch('users/{user}/verification', [AdminUserActionController::class, 'updateVerification'])
+            ->middleware('platform:admin.users.manage_verification')
+            ->name('users.verification.update');
+        Route::post('users/{user}/verification/resend', [AdminUserActionController::class, 'resendVerification'])
+            ->middleware('platform:admin.users.manage_verification')
+            ->name('users.verification.resend');
+        Route::delete('users/{user}/sessions', [AdminUserActionController::class, 'revokeSessions'])
+            ->middleware('platform:admin.users.manage_status')
+            ->name('users.sessions.destroy');
+        Route::delete('users/{user}/tokens', [AdminUserActionController::class, 'revokeTokens'])
+            ->middleware('platform:admin.users.manage_status')
+            ->name('users.tokens.destroy');
+        Route::patch('users/{user}/roles', [AdminUserActionController::class, 'updateRole'])
             ->middleware('platform:admin.users.manage_roles')
-            ->name('users.administrator.update');
-        Route::patch('users/{user}/plan', [AdminUserController::class, 'updatePlan'])
-            ->middleware('platform:admin.billing.manage')
-            ->name('users.plan.update');
-        Route::patch('users/{user}/deletion/restore', [AdminUserController::class, 'restoreDeletion'])
+            ->name('users.roles.update');
+        Route::patch('users/{user}/deletion', [AdminUserActionController::class, 'scheduleDeletion'])
+            ->middleware('platform:admin.users.schedule_deletion')
+            ->name('users.deletion.schedule');
+        Route::patch('users/{user}/deletion/restore', [AdminUserActionController::class, 'restoreDeletion'])
             ->middleware('platform:admin.users.schedule_deletion')
             ->name('users.deletion.restore');
+        Route::patch('users/{user}/plan', [AdminUserActionController::class, 'updatePlan'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('users.plan.update');
+
+        Route::get('roles', AdminRoleController::class)
+            ->middleware('platform:admin.users.manage_roles')
+            ->name('roles.index');
+
         Route::post('notifications/broadcast', [AdminNotificationController::class, 'store'])
             ->middleware('platform:admin.notifications.broadcast')
             ->name('notifications.broadcast');

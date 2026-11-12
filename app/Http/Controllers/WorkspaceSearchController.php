@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlatformPermission;
 use App\Models\Plan;
 use App\Models\User;
+use App\Services\Platform\PlatformAuthorization;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,38 +21,49 @@ class WorkspaceSearchController extends Controller
         $escape = '\\';
 
         if ($request->user()->can('admin.search')) {
-            $results = [
-                ...User::query()
-                    ->where(fn ($users) => $users->whereRaw('name LIKE ? ESCAPE ?', [$pattern, $escape])
-                        ->orWhereRaw('email LIKE ? ESCAPE ?', [$pattern, $escape]))
-                    ->orderBy('name')
-                    ->limit(5)
-                    ->get(['id', 'name', 'email'])
-                    ->map(fn (User $user): array => [
-                        'id' => (int) $user->id,
-                        'type' => 'account',
-                        'title' => $user->name,
-                        'description' => $user->email,
-                        'href' => route('admin.index', ['q' => $query], false),
-                    ])
-                    ->all(),
-                ...Plan::query()
-                    ->where('is_active', true)
-                    ->where(fn ($plans) => $plans
-                        ->whereRaw('name LIKE ? ESCAPE ?', [$pattern, $escape])
-                        ->orWhereRaw('code LIKE ? ESCAPE ?', [$pattern, $escape]))
-                    ->orderBy('name')
-                    ->limit(5)
-                    ->get(['id', 'name'])
-                    ->map(fn (Plan $plan): array => [
-                        'id' => (int) $plan->id,
-                        'type' => 'plan',
-                        'title' => $plan->name,
-                        'description' => 'Plan',
-                        'href' => route('admin.index', ['q' => $query], false),
-                    ])
-                    ->all(),
-            ];
+            $authorization = app(PlatformAuthorization::class);
+            $results = [];
+
+            if ($authorization->allows($request->user(), PlatformPermission::AdminUsersView)) {
+                $results = [
+                    ...User::query()
+                        ->where(fn ($users) => $users->whereRaw('name LIKE ? ESCAPE ?', [$pattern, $escape])
+                            ->orWhereRaw('email LIKE ? ESCAPE ?', [$pattern, $escape]))
+                        ->orderBy('name')
+                        ->limit(5)
+                        ->get(['id', 'name', 'email'])
+                        ->map(fn (User $user): array => [
+                            'id' => (int) $user->id,
+                            'type' => 'account',
+                            'title' => $user->name,
+                            'description' => $user->email,
+                            'href' => route('admin.users.index', ['q' => $query], false),
+                        ])
+                        ->all(),
+                ];
+            }
+
+            if ($authorization->allows($request->user(), PlatformPermission::AdminBillingView)) {
+                $results = [
+                    ...$results,
+                    ...Plan::query()
+                        ->where('is_active', true)
+                        ->where(fn ($plans) => $plans
+                            ->whereRaw('name LIKE ? ESCAPE ?', [$pattern, $escape])
+                            ->orWhereRaw('code LIKE ? ESCAPE ?', [$pattern, $escape]))
+                        ->orderBy('name')
+                        ->limit(5)
+                        ->get(['id', 'name'])
+                        ->map(fn (Plan $plan): array => [
+                            'id' => (int) $plan->id,
+                            'type' => 'plan',
+                            'title' => $plan->name,
+                            'description' => 'Plan',
+                            'href' => route('admin.users.index', ['q' => $query], false),
+                        ])
+                        ->all(),
+                ];
+            }
 
             return response()->json(['results' => $results]);
         }

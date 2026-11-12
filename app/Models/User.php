@@ -48,6 +48,8 @@ use Laravel\Sanctum\NewAccessToken;
  * @property Carbon|null $purge_after
  * @property Carbon|null $updated_at
  * @property-read Workspace|null $personalWorkspace
+ * @property-read ContentMedia|null $avatarMedia
+ * @property-read int $workspaces_count
  */
 #[Fillable(['name', 'email', 'password', 'locale', 'country_code', 'timezone'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -83,6 +85,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         });
     }
 
+    /** @return BelongsToMany<Workspace, $this> */
     public function workspaces(): BelongsToMany
     {
         return $this->belongsToMany(Workspace::class, 'workspace_user')->withPivot('role')->withTimestamps();
