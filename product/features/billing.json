@@ -37,15 +37,15 @@
         },
         {
             "id": "BIL-6",
-            "text": "Checkout, payment methods, cancellation/resume, invoices, tax, and provider webhooks use verified Stripe state; this integration is not implemented.",
+            "text": "Checkout, payment methods, cancellation/resume, invoices, and provider webhooks use Laravel Cashier with Stripe and never infer success from return query parameters; live provider verification requires test-mode credentials.",
             "priority": "P1",
-            "status": "planned"
+            "status": "blocked_external"
         },
         {
             "id": "BIL-7",
-            "text": "Annual billing, provider-supported proration, coupons, and dunning remain planned Stripe capabilities.",
+            "text": "Usage invoices, proration, coupons, annual billing, and dunning use the Stripe Billing Portal flows; live verification requires merchant policy and credentials.",
             "priority": "P3",
-            "status": "planned"
+            "status": "blocked_external"
         },
         {
             "id": "BIL-8",
@@ -124,6 +124,18 @@
             "description": "A populated probe database proved exact catalog expansion, non-Free legacy_manual override backfill, media-purpose and nullable-expiry backfill, unchanged account/resource counts and media expiries, PRAGMA integrity_check=ok, zero foreign-key violations, and rollback reconstruction of legacy entitlements without record loss.",
             "reference": "tests/Feature/Billing/Phase8MigrationTest.php",
             "verifiedAt": "2026-11-12T13:29:14Z"
+        },
+        {
+            "type": "test",
+            "description": "Billing surface suites passed 34 tests and 453 assertions covering public pricing, missing-configuration disabled states, owner-only checkout, hidden/invalid plan and interval rejection, return-query spoofing, provider-state resolver behavior, portal eligibility, setup checklist, and redacted provider props.",
+            "reference": "tests/Feature/Billing/BillingSurfaceTest.php; tests/Feature/Billing/WorkspaceBillingTest.php; tests/Feature/LinkPages/LinkPageTest.php",
+            "verifiedAt": "2026-11-12T14:22:00Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium confirmed the billing page renders the effective plan, all eleven usage metrics, and the labelled Stripe setup checklist with no checkout buttons while unconfigured; the public pricing page renders the catalog at 1440x1000 with no overflow or page errors.",
+            "reference": "product/verification/parity/user-settings-billing-desktop.png; product/verification/parity/guest-pricing-desktop.png",
+            "verifiedAt": "2026-11-12T14:22:00Z"
         }
     ]
 }

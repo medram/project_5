@@ -35,7 +35,8 @@ class WorkspaceBillingTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('billing/index', false)
-                ->where('subscription.plan.code', 'free')
+                ->where('effectivePlan.code', 'free')
+                ->where('effectiveSource', 'free')
                 ->where('usage.links.used', 0)
                 ->where('usage.links.limit', 25)
                 ->where('canManageBilling', true)
@@ -163,7 +164,8 @@ class WorkspaceBillingTest extends TestCase
                 ->get('/account-settings/billing')
                 ->assertOk()
                 ->assertInertia(fn (Assert $page) => $page
-                    ->where('subscription.plan.code', 'pro')
+                    ->where('effectivePlan.code', 'pro')
+                    ->where('effectiveSource', 'legacy_manual')
                     ->where('canManageBilling', false),
                 );
 

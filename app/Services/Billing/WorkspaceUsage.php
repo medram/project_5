@@ -59,15 +59,15 @@ class WorkspaceUsage
         return [
             'links' => $links,
             'folders' => $this->metricFor($workspace, PlanMetric::Folders),
-            'qrCampaigns' => $this->metricFor($workspace, PlanMetric::QrCampaigns),
-            'bioPages' => $this->metricFor($workspace, PlanMetric::BioPages),
+            'qr_campaigns' => $this->metricFor($workspace, PlanMetric::QrCampaigns),
+            'bio_pages' => $this->metricFor($workspace, PlanMetric::BioPages),
             'domains' => $domains,
             'pixels' => $pixels,
             'members' => $this->metricFor($workspace, PlanMetric::Members),
             'webhooks' => $webhooks,
-            'linkPages' => $linkPages,
-            'apiKeys' => $this->metricFor($workspace, PlanMetric::ApiKeys),
-            'storage' => $this->metricFor($workspace, PlanMetric::StorageBytes),
+            'link_pages' => $linkPages,
+            'api_keys' => $this->metricFor($workspace, PlanMetric::ApiKeys),
+            'storage_bytes' => $this->metricFor($workspace, PlanMetric::StorageBytes),
         ];
     }
 

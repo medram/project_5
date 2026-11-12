@@ -61,6 +61,10 @@ return [
         'fr' => 'Français',
     ],
 
+    'billing' => [
+        'promotion_codes' => (bool) env('BILLING_PROMOTION_CODES', false),
+    ],
+
     'auth' => [
         'google_enabled' => (bool) env('GOOGLE_AUTH_ENABLED', false),
     ],

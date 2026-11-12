@@ -164,9 +164,9 @@ class Phase8BillingCoreTest extends TestCase
 
         $usage = app(WorkspaceUsage::class)->for($workspace);
         $this->assertSame(100, $usage['folders']['limit']);
-        $this->assertSame(10, $usage['bioPages']['limit']);
-        $this->assertSame(5, $usage['apiKeys']['limit']);
-        $this->assertSame(250, $usage['qrCampaigns']['limit']);
+        $this->assertSame(10, $usage['bio_pages']['limit']);
+        $this->assertSame(5, $usage['api_keys']['limit']);
+        $this->assertSame(250, $usage['qr_campaigns']['limit']);
 
         $workspace->folders()->create(['user_id' => $user->id, 'name' => 'One']);
         $workspace->bioPages()->create(['user_id' => $user->id, 'handle' => 'metric-bio', 'display_name' => 'Metric']);
@@ -191,8 +191,8 @@ class Phase8BillingCoreTest extends TestCase
 
         $usage = app(WorkspaceUsage::class)->for($workspace->fresh());
         $this->assertSame(1, $usage['folders']['used']);
-        $this->assertSame(1, $usage['bioPages']['used']);
-        $this->assertSame(1, $usage['apiKeys']['used']);
+        $this->assertSame(1, $usage['bio_pages']['used']);
+        $this->assertSame(1, $usage['api_keys']['used']);
     }
 
     public function test_free_plan_blocks_folder_bio_page_and_api_key_creation(): void

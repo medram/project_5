@@ -1,12 +1,7 @@
 import { Head, router } from '@inertiajs/react';
-import {
-    Check,
-    CreditCard,
-    Gauge,
-    Infinity as InfinityIcon,
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Check, CreditCard, Gauge, ShieldAlert } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -19,22 +14,50 @@ import {
 import type {
     BillingPageProps,
     BillingPlan,
+    PlanLimits,
     UsageMetric,
 } from '@/types/billing';
 
-function priceFor(plan: BillingPlan): string {
-    if (plan.monthlyPrice === 0) {
+const usageOrder: Array<{ key: keyof PlanLimits; noun: string }> = [
+    { key: 'links', noun: 'links' },
+    { key: 'folders', noun: 'folders' },
+    { key: 'qr_campaigns', noun: 'direct QR campaigns' },
+    { key: 'bio_pages', noun: 'bio pages' },
+    { key: 'domains', noun: 'custom domains' },
+    { key: 'pixels', noun: 'tracking pixels' },
+    { key: 'members', noun: 'members' },
+    { key: 'webhooks', noun: 'webhooks' },
+    { key: 'link_pages', noun: 'link pages' },
+    { key: 'api_keys', noun: 'active API keys' },
+    { key: 'storage_bytes', noun: 'retained media bytes' },
+];
+
+function formatAmount(plan: BillingPlan, amount: number): string {
+    if (amount === 0) {
         return 'Free';
     }
 
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: plan.currency,
-    }).format(plan.monthlyPrice / 100);
+    }).format(amount / 100);
 }
 
 function limitLabel(value: number | null): string {
     return value === null ? 'Unlimited' : value.toLocaleString();
+}
+
+function sourceLabel(source: string): string {
+    return (
+        {
+            stripe: 'Stripe subscription',
+            free: 'Free plan',
+            support_grant: 'Support override',
+            promotion: 'Promotion override',
+            manual: 'Manual override',
+            legacy_manual: 'Legacy override',
+        }[source] ?? source
+    );
 }
 
 function UsageRow({ metric, noun }: { metric: UsageMetric; noun: string }) {
@@ -63,19 +86,15 @@ function UsageRow({ metric, noun }: { metric: UsageMetric; noun: string }) {
 }
 
 export default function BillingIndex({
-    subscription,
+    effectivePlan,
+    effectiveSource,
+    override,
+    providerSubscription,
     plans,
     usage,
     canManageBilling,
+    billing,
 }: BillingPageProps) {
-    const usageMetrics: { metric: UsageMetric; noun: string }[] = [
-        { metric: usage.links, noun: 'links' },
-        { metric: usage.domains, noun: 'domains' },
-        { metric: usage.pixels, noun: 'pixels' },
-        { metric: usage.linkPages, noun: 'link pages' },
-        { metric: usage.webhooks, noun: 'webhooks' },
-    ];
-
     function selectFreePlan() {
         router.patch(
             '/account-settings/billing/plan',
@@ -83,6 +102,8 @@ export default function BillingIndex({
             { preserveScroll: true },
         );
     }
+
+    const providerManaged = effectiveSource === 'stripe';
 
     return (
         <>
@@ -93,7 +114,7 @@ export default function BillingIndex({
                     title="Plan and usage"
                     eyebrow="Workspace billing"
                     icon={CreditCard}
-                    description="Plans control the current workspace limits. Payment collection is not configured in this local environment."
+                    description="Stripe is authoritative for paid subscriptions. Missing provider configuration disables checkout instead of pretending success."
                 />
 
                 <div className="grid gap-4">
@@ -103,27 +124,132 @@ export default function BillingIndex({
                                 <div>
                                     <CardTitle>Current plan</CardTitle>
                                     <CardDescription>
-                                        Limits apply to the active workspace.
+                                        Entitlement for the active workspace.
                                     </CardDescription>
                                 </div>
                                 <Badge variant="secondary">
-                                    {subscription.status}
+                                    {sourceLabel(effectiveSource)}
                                 </Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
                                 <p className="text-2xl font-semibold">
-                                    {subscription.plan.name}
+                                    {effectivePlan.name}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                    {priceFor(subscription.plan)} / month
+                                    {formatAmount(
+                                        effectivePlan,
+                                        effectivePlan.monthlyPrice,
+                                    )}{' '}
+                                    / month
                                 </p>
                             </div>
-                            {usageMetrics.map(({ metric, noun }) => (
+
+                            {providerSubscription && (
+                                <div className="rounded-lg border p-3 text-sm">
+                                    <p className="font-medium">
+                                        Stripe status:{' '}
+                                        {providerSubscription.status}
+                                    </p>
+                                    {providerSubscription.interval && (
+                                        <p className="text-muted-foreground">
+                                            Billing interval:{' '}
+                                            {providerSubscription.interval ===
+                                            'year'
+                                                ? 'Yearly'
+                                                : 'Monthly'}
+                                        </p>
+                                    )}
+                                    {providerSubscription.endsAt && (
+                                        <p className="text-muted-foreground">
+                                            Access through{' '}
+                                            {new Date(
+                                                providerSubscription.endsAt,
+                                            ).toLocaleDateString()}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {override && (
+                                <div className="rounded-lg border border-dashed p-3 text-sm">
+                                    <p className="font-medium">
+                                        {sourceLabel(override.source)}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                        {override.reason}
+                                    </p>
+                                    {override.expiresAt && (
+                                        <p className="text-muted-foreground">
+                                            Expires{' '}
+                                            {new Date(
+                                                override.expiresAt,
+                                            ).toLocaleDateString()}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {billing.portalReady && canManageBilling && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() =>
+                                        router.get('/billing/portal')
+                                    }
+                                >
+                                    Open Stripe billing portal
+                                </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {!billing.checkoutReady && canManageBilling && (
+                        <Card className="border-dashed">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <ShieldAlert
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                    Billing setup required
+                                </CardTitle>
+                                <CardDescription>
+                                    Checkout stays disabled until every operator
+                                    prerequisite is configured.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="list-inside list-disc text-sm">
+                                    {billing.missing.map((item) => (
+                                        <li key={item}>{item}</li>
+                                    ))}
+                                </ul>
+                                {providerSubscription === null &&
+                                    effectiveSource !== 'stripe' && (
+                                        <p className="mt-3 text-sm text-muted-foreground">
+                                            No paid subscription is active for
+                                            this workspace.
+                                        </p>
+                                    )}
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Usage</CardTitle>
+                            <CardDescription>
+                                Downgrades keep existing resources; only new
+                                over-limit writes are blocked.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-3 md:grid-cols-2">
+                            {usageOrder.map(({ key, noun }) => (
                                 <UsageRow
-                                    key={noun}
-                                    metric={metric}
+                                    key={key}
+                                    metric={usage[key]}
                                     noun={noun}
                                 />
                             ))}
@@ -132,7 +258,7 @@ export default function BillingIndex({
 
                     <div className="grid gap-4 xl:grid-cols-3">
                         {plans.map((plan) => {
-                            const active = plan.code === subscription.plan.code;
+                            const active = plan.code === effectivePlan.code;
 
                             return (
                                 <Card key={plan.code} className="flex flex-col">
@@ -143,13 +269,27 @@ export default function BillingIndex({
                                                     {plan.name}
                                                 </CardTitle>
                                                 <CardDescription>
-                                                    {priceFor(plan)} / month
+                                                    {formatAmount(
+                                                        plan,
+                                                        plan.monthlyPrice,
+                                                    )}{' '}
+                                                    / month ·{' '}
+                                                    {formatAmount(
+                                                        plan,
+                                                        plan.annualPrice,
+                                                    )}{' '}
+                                                    / year
                                                 </CardDescription>
                                             </div>
                                             {active && <Badge>Current</Badge>}
                                         </div>
                                     </CardHeader>
                                     <CardContent className="flex-1 space-y-2 text-sm">
+                                        {plan.description && (
+                                            <p className="text-muted-foreground">
+                                                {plan.description}
+                                            </p>
+                                        )}
                                         <p>
                                             <span className="font-medium">
                                                 {limitLabel(plan.limits.links)}
@@ -159,7 +299,7 @@ export default function BillingIndex({
                                         <p>
                                             <span className="font-medium">
                                                 {limitLabel(
-                                                    plan.limits.linkPages,
+                                                    plan.limits.link_pages,
                                                 )}
                                             </span>{' '}
                                             link pages
@@ -172,8 +312,16 @@ export default function BillingIndex({
                                             </span>{' '}
                                             custom domains
                                         </p>
+                                        <p>
+                                            <span className="font-medium">
+                                                {limitLabel(
+                                                    plan.limits.storage_bytes,
+                                                )}
+                                            </span>{' '}
+                                            retained media bytes
+                                        </p>
                                     </CardContent>
-                                    <CardFooter>
+                                    <CardFooter className="flex flex-wrap gap-2">
                                         {active ? (
                                             <span className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <Check
@@ -183,7 +331,8 @@ export default function BillingIndex({
                                                 Active plan
                                             </span>
                                         ) : plan.code === 'free' ? (
-                                            canManageBilling ? (
+                                            canManageBilling &&
+                                            !providerManaged ? (
                                                 <Button
                                                     type="button"
                                                     variant="outline"
@@ -193,17 +342,48 @@ export default function BillingIndex({
                                                 </Button>
                                             ) : (
                                                 <span className="text-sm text-muted-foreground">
-                                                    Only workspace owners can
-                                                    change plans
+                                                    {providerManaged
+                                                        ? 'Manage the paid subscription in the portal'
+                                                        : 'Only workspace owners can change plans'}
                                                 </span>
                                             )
+                                        ) : canManageBilling &&
+                                          billing.checkoutReady &&
+                                          !providerManaged ? (
+                                            <div className="flex flex-wrap gap-2">
+                                                {plan.checkout.month && (
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            router.get(
+                                                                `/billing/checkout/${plan.code}/month`,
+                                                            )
+                                                        }
+                                                    >
+                                                        Choose monthly
+                                                    </Button>
+                                                )}
+                                                {plan.checkout.year && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        onClick={() =>
+                                                            router.get(
+                                                                `/billing/checkout/${plan.code}/year`,
+                                                            )
+                                                        }
+                                                    >
+                                                        Choose yearly
+                                                    </Button>
+                                                )}
+                                            </div>
                                         ) : (
-                                            <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <InfinityIcon
-                                                    className="size-4"
-                                                    aria-hidden="true"
-                                                />
-                                                Assigned by an administrator
+                                            <span className="text-sm text-muted-foreground">
+                                                {providerManaged
+                                                    ? 'Manage the paid subscription in the portal'
+                                                    : canManageBilling
+                                                      ? 'Checkout is not configured'
+                                                      : 'Only workspace owners can change plans'}
                                             </span>
                                         )}
                                     </CardFooter>

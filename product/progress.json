@@ -214,17 +214,19 @@
         {
             "id": "billing",
             "state": "in_progress",
-            "lastVerifiedAt": "2026-11-12T13:29:14Z",
+            "lastVerifiedAt": "2026-11-12T14:22:00Z",
             "checks": [
                 "WorkspaceBillingTest, WorkspaceUsageTest, ProductCatalogTest, and the complete Laravel suite passed (218 tests, 10,891 assertions).",
                 "At localhost:8101, owner billing showed active workspace Pro usage and a Free-only change action; workspace-admin billing showed no plan controls and stated only owners can change plans.",
                 "Owner billing screenshot at 390x844 and workspace-admin billing screenshot at 1440x1000 are recorded in product/verification/; payment collection was unavailable in this local environment.",
                 "Phase 8 core suites passed 40 tests and 354 assertions covering the exact catalog, resolver precedence/expiry, provider price mapping with fail-closed health records, every count/byte metric, downgrade preservation, and API-key/admin enforcement.",
                 "Populated probe migration proof: exact catalog and legacy override backfill, media-purpose/nullable-expiry backfill, preserved counts and media expiries, integrity_check=ok, zero foreign-key violations, and rollback reconstruction.",
-                "Cashier bills the Workspace model through project-owned subscriptions tables; Stripe readiness remains truthful and checkout/portal UI is scheduled for the next billing slice."
+                "Cashier bills the Workspace model through project-owned subscriptions tables; Stripe readiness remains truthful and checkout/portal UI is scheduled for the next billing slice.",
+                "Billing surface suites passed 34 tests and 453 assertions: public pricing, disabled configuration, owner authorization, hidden plans, interval validation, return-query spoofing, provider-state resolver, portal eligibility, setup checklist, and redacted props.",
+                "Browser: effective plan, all usage metrics, and Stripe setup checklist render with no checkout buttons while unconfigured; public pricing renders at 1440x1000 without overflow or page errors."
             ],
             "blockers": [
-                "Stripe test-mode API keys, price IDs, webhook secret, and tax-policy acknowledgment are not configured.",
+                "Stripe test-mode API keys, price IDs, webhook secret, tax-policy acknowledgment, and merchant compliance policy are not configured; live checkout/webhook/portal remains unverified.",
                 "No production-like populated database snapshot was available; migration proof used an isolated populated SQLite probe."
             ]
         },

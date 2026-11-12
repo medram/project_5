@@ -1,6 +1,6 @@
 {
     "schemaVersion": "1.0.0",
-    "capturedAt": "2026-11-12T13:45:00Z",
+    "capturedAt": "2026-11-12T14:20:00Z",
     "sourceBaseUrl": "http://localhost:8000",
     "browser": {
         "engine": "managed Chromium",
@@ -429,11 +429,11 @@
             "path": "product/verification/parity/user-settings-billing-desktop.png",
             "role": "user",
             "route": "/account-settings/billing",
-            "state": "workspace billing summary",
+            "state": "billing summary with effective plan, all usage metrics, and disabled-checkout setup checklist",
             "viewport": "1440x1000",
             "imagePixels": "1800x1250",
-            "sha256": "a2bef645209c9c3967b6a468aa46eeb0aa7c25a81b4ddc115843de4ae33c1508",
-            "bytes": 172194,
+            "sha256": "3a4474f96ec1f12107aaef9f671c5625c48ac65874378464199849b796e7c496",
+            "bytes": 202741,
             "privacyNote": "Seeded or disposable .test data only; no live customer data, credentials, full API keys, webhook secrets, or domain verification tokens."
         },
         {
@@ -479,6 +479,17 @@
             "sha256": "2a930da938d83f948065262f475af23ff996a8d34b3225476d840bd113188739",
             "bytes": 159063,
             "privacyNote": "Seeded or disposable .test data only; no live customer data, credentials, full API keys, webhook secrets, or domain verification tokens."
+        },
+        {
+            "path": "product/verification/parity/guest-pricing-desktop.png",
+            "role": "guest",
+            "route": "/pricing",
+            "state": "public plan catalog and pricing",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "24ffff46cc4d1040c63fe43baa390414739c634e86a88d8139cda7a8633e6b24",
+            "bytes": 188477,
+            "privacyNote": "Public catalog only; no personal data."
         }
     ]
 }

@@ -42,9 +42,26 @@ accepted as public storage paths. Production deployments must configure a durabl
 private disk or mount for that path and verify persistence across restarts; the
 development Compose bind mount is not a production durability guarantee.
 
-## Account plans and local billing
+## Plans, Stripe billing, and workspace usage
 
-Every account receives a local free subscription after migration or registration. The billing page reports usage for short links, custom domains, tracking pixels, link pages, and webhooks and enforces their plan limits. No Stripe, PayPal, checkout form, invoices, taxes, or payment processing are configured in this repository.
+Every workspace starts on Free and the effective plan resolves, in order: a current administrator override, a valid Stripe subscription mapped by its configured price, then Free. The catalog (Free/Pro/Business prices and every resource limit) is seeded by the Phase 8 migration, and one locked service enforces count and retained-byte limits.
+
+Stripe is the only paid path. `/account-settings/billing` shows the effective plan, all usage metrics, provider state, and a setup checklist; `/pricing` is public. Owner-only routes `/billing/checkout/{plan}/{interval}` and `/billing/portal` stay disabled until every prerequisite is configured. Cashier's signed webhook at `/stripe/webhook` is the only source of subscription activation—return URLs never grant a plan, and LinkPilot never edits Stripe status locally.
+
+Required operator configuration:
+
+```dotenv
+STRIPE_KEY=pk_test_...
+STRIPE_SECRET=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+CASHIER_TAX_POLICY_ACKNOWLEDGED=true
+CASHIER_CURRENCY=usd
+BILLING_PROMOTION_CODES=false
+```
+
+Set the monthly/yearly Stripe price IDs on the plans (`linkpilot` admin plan screens in Phase 9; direct plan records before then) and point the Stripe webhook endpoint at `/stripe/webhook`. Without test-mode credentials, checkout and portal stay visibly disabled; live provider verification remains an external gate.
+
+Optional Google sign-in is hidden unless `GOOGLE_AUTH_ENABLED=true` and both Google OAuth credentials are set. Existing email addresses are never auto-linked; connect Google from account settings while signed in.
 
 ## Local test accounts
 

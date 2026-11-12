@@ -124,8 +124,8 @@ class LinkPageTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('usage.pixels.used', 0)
                 ->where('usage.pixels.limit', 0)
-                ->where('usage.linkPages.used', 1)
-                ->where('usage.linkPages.limit', 1),
+                ->where('usage.link_pages.used', 1)
+                ->where('usage.link_pages.limit', 1),
             );
     }
 

@@ -1,23 +1,31 @@
 export type PlanLimits = {
     links: number | null;
+    folders: number | null;
+    qr_campaigns: number | null;
+    bio_pages: number | null;
     domains: number | null;
     pixels: number | null;
+    members: number | null;
     webhooks: number | null;
-    linkPages: number | null;
+    link_pages: number | null;
+    api_keys: number | null;
+    storage_bytes: number | null;
 };
 
 export type BillingPlan = {
     code: string;
     name: string;
+    description: string | null;
     monthlyPrice: number;
+    annualPrice: number;
     currency: string;
+    featured: boolean;
+    sortOrder: number;
     limits: PlanLimits;
-};
-
-export type Subscription = {
-    status: string;
-    source: string;
-    plan: BillingPlan;
+    checkout: {
+        month: boolean;
+        year: boolean;
+    };
 };
 
 export type UsageMetric = {
@@ -27,15 +35,35 @@ export type UsageMetric = {
     overLimit: boolean;
 };
 
+export type ProviderSubscription = {
+    status: string;
+    price: string | null;
+    interval: string | null;
+    trialEndsAt: string | null;
+    endsAt: string | null;
+    onGracePeriod: boolean;
+};
+
+export type BillingOverride = {
+    source: string;
+    reason: string;
+    expiresAt: string | null;
+};
+
+export type BillingReadiness = {
+    checkoutReady: boolean;
+    portalReady: boolean;
+    missing: string[];
+    promotionCodes: boolean;
+};
+
 export type BillingPageProps = {
-    subscription: Subscription;
+    effectivePlan: BillingPlan;
+    effectiveSource: string;
+    override: BillingOverride | null;
+    providerSubscription: ProviderSubscription | null;
     canManageBilling: boolean;
     plans: BillingPlan[];
-    usage: {
-        links: UsageMetric;
-        domains: UsageMetric;
-        pixels: UsageMetric;
-        linkPages: UsageMetric;
-        webhooks: UsageMetric;
-    };
+    usage: Record<keyof PlanLimits, UsageMetric>;
+    billing: BillingReadiness;
 };

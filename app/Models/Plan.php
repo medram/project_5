@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $link_page_limit
  * @property int|null $api_key_limit
  * @property int|null $storage_byte_limit
+ * @property array<string, mixed>|null $display_metadata
  * @property bool $is_active
  */
 #[Fillable([

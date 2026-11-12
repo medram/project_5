@@ -10,6 +10,9 @@ use App\Http\Controllers\AnalyticsEventDefinitionController;
 use App\Http\Controllers\AnalyticsExportController;
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\Billing\CheckoutController;
+use App\Http\Controllers\Billing\CheckoutResultController;
+use App\Http\Controllers\Billing\PortalController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BioContentBlockController;
 use App\Http\Controllers\BioContentMediaPreviewController;
@@ -36,6 +39,7 @@ use App\Http\Controllers\LinkQrCodeController;
 use App\Http\Controllers\LinkRevisionController;
 use App\Http\Controllers\LinkTagController;
 use App\Http\Controllers\NotificationCenterController;
+use App\Http\Controllers\PricingController;
 use App\Http\Controllers\PublicBioContentBlockController;
 use App\Http\Controllers\PublicBioContentMediaController;
 use App\Http\Controllers\PublicBioLinkController;
@@ -98,6 +102,7 @@ Route::get('up', function (Request $request) {
 })->name('health');
 
 Route::inertia('/', 'welcome')->name('home');
+Route::get('pricing', PricingController::class)->name('pricing');
 
 Route::middleware(['auth', 'verified', 'active-account'])->group(function (): void {
     Route::get('dashboard', fn () => to_route('links.index'))->name('dashboard');
@@ -149,6 +154,14 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         ->name('qr-codes.campaign-insights');
     Route::get('account-settings/billing', [BillingController::class, 'index'])->name('billing.index');
     Route::patch('account-settings/billing/plan', [BillingController::class, 'selectFree'])->name('billing.plan.update');
+    Route::get('billing/checkout/{plan:code}/{interval}', CheckoutController::class)
+        ->whereIn('interval', ['month', 'year'])
+        ->name('billing.checkout');
+    Route::get('billing/checkout/success', [CheckoutResultController::class, 'success'])
+        ->name('billing.checkout.success');
+    Route::get('billing/checkout/cancel', [CheckoutResultController::class, 'cancel'])
+        ->name('billing.checkout.cancel');
+    Route::get('billing/portal', PortalController::class)->name('billing.portal');
     Route::get('dashboard/custom-domains', [CustomDomainController::class, 'index'])->name('custom-domains.index');
     Route::get('dashboard/insights/custom-events', [AnalyticsEventDefinitionController::class, 'index'])
         ->name('analytics.custom-events.index');
