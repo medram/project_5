@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\PasswordUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
+use App\Services\Accounts\DeviceLabel;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,6 +16,8 @@ use Laravel\Fortify\Features;
 
 class SecurityController extends Controller
 {
+    public function __construct(private readonly DeviceLabel $deviceLabel) {}
+
     /**
      * Show the user's security settings page.
      */
@@ -38,6 +43,7 @@ class SecurityController extends Controller
                     ->all()
                 : [],
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'sessions' => $this->sessions($request),
         ];
 
         if (Features::canManageTwoFactorAuthentication()) {
@@ -48,6 +54,28 @@ class SecurityController extends Controller
         }
 
         return Inertia::render('settings/security', $props);
+    }
+
+    /**
+     * @return array<int, array{id: string, device: string, lastActivity: string, isCurrent: bool}>
+     */
+    private function sessions(TwoFactorAuthenticationRequest $request): array
+    {
+        $user = $request->user();
+        $currentId = $request->session()->getId();
+
+        return DB::table('sessions')
+            ->where('user_id', $user->getKey())
+            ->orderByDesc('last_activity')
+            ->get(['id', 'user_agent', 'last_activity'])
+            ->map(fn (object $session): array => [
+                'id' => (string) $session->id,
+                'device' => $this->deviceLabel->fromUserAgent($session->user_agent),
+                'lastActivity' => Carbon::createFromTimestamp((int) $session->last_activity)->toISOString(),
+                'isCurrent' => (string) $session->id === (string) $currentId,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

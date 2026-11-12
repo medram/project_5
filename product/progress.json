@@ -4,11 +4,15 @@
         {
             "id": "auth-account",
             "state": "in_progress",
-            "lastVerifiedAt": "2026-10-21T14:57:29Z",
+            "lastVerifiedAt": "2026-11-12T13:50:00Z",
             "checks": [
-                "AUTH-1 host/reset boundaries: full suite and canonical password-reset tests; unknown-host browser 404"
+                "AUTH-1 host/reset boundaries: full suite and canonical password-reset tests; unknown-host browser 404",
+                "Account settings suites passed 22 tests and 155 assertions: regional validation, email-verification transition, private avatar storage/authorization, Google missing-config/takeover denial, session and API-token revocation, and throttled last-seen updates.",
+                "Managed Chromium checked general and security settings at 1440x1000 and 390x844 without overflow, HTTP errors, or page errors; Google controls stay hidden while OAuth is unconfigured."
             ],
-            "blockers": []
+            "blockers": [
+                "Google OAuth client credentials and the platform Google setting are not configured; live consent/callback remains unverified."
+            ]
         },
         {
             "id": "dashboard-shell",

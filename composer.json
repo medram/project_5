@@ -22,7 +22,8 @@
         "laravel/socialite": "^5.24",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
-        "maxmind-db/reader": "^1.14"
+        "maxmind-db/reader": "^1.14",
+        "symfony/intl": "^8.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",

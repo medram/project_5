@@ -37,9 +37,9 @@
         },
         {
             "id": "AUTH-2",
-            "text": "General account settings support avatar, locale, country, timezone, and a safely configured Google sign-in connection.",
+            "text": "General account settings support avatar, locale, ISO country, timezone, database-session review, and a safely configured Google sign-in connection that never auto-links an existing email.",
             "priority": "P2",
-            "status": "planned"
+            "status": "in_progress"
         },
         {
             "id": "AUTH-3",
@@ -49,12 +49,15 @@
         }
     ],
     "routes": [
+        "/account-settings/avatar/{publicId}",
+        "/account-settings/general",
+        "/account-settings/security",
+        "/auth/google/callback",
+        "/auth/google/redirect",
+        "/forgot-password",
         "/login",
         "/register",
-        "/forgot-password",
-        "/reset-password/{token}",
-        "/account-settings/general",
-        "/account-settings/security"
+        "/reset-password/{token}"
     ],
     "dependencies": [],
     "externalPrerequisites": [
@@ -122,6 +125,18 @@
             "description": "An authentication route requested through an unknown host returned LinkPilot's 404 boundary.",
             "reference": "http://unknown.localhost:8000/login",
             "verifiedAt": "2026-10-21T09:44:31Z"
+        },
+        {
+            "type": "test",
+            "description": "Account settings suites passed 22 tests and 155 assertions covering regional validation, email-verification transitions, private avatar storage and delivery authorization, Google missing-configuration and takeover denial, session revocation with current-session preservation, API-token revocation, and throttled last-seen updates.",
+            "reference": "tests/Feature/Settings/AccountSettingsTest.php; tests/Feature/Settings/ProfileUpdateTest.php; tests/Feature/Settings/SecurityTest.php",
+            "verifiedAt": "2026-11-12T13:50:00Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium confirmed the general settings avatar/regional controls and security session cards at 1440x1000 and 390x844 with no horizontal overflow, HTTP errors, page errors, or visible Google controls while OAuth is unconfigured.",
+            "reference": "product/verification/parity/user-settings-general-desktop.png; product/verification/parity/user-settings-security-desktop.png",
+            "verifiedAt": "2026-11-12T13:50:00Z"
         }
     ]
 }

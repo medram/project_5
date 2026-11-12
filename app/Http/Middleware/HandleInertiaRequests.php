@@ -3,9 +3,10 @@
 namespace App\Http\Middleware;
 
 use App\Models\Workspace;
+use App\Services\Accounts\GoogleConnection;
 use App\Services\Billing\WorkspaceUsage;
-use App\Services\Workspaces\WorkspaceContext;
 use App\Services\Notifications\NotificationVisibility;
+use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -58,6 +59,7 @@ class HandleInertiaRequests extends Middleware
                 'preview' => $visibility->recent($user),
             ];
         };
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -84,6 +86,7 @@ class HandleInertiaRequests extends Middleware
                 return $workspace;
             },
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'googleAuthEnabled' => fn (): bool => app(GoogleConnection::class)->enabled(),
         ];
     }
 }

@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -18,11 +18,20 @@ type Props = {
 };
 
 export default function Login({ status, canResetPassword }: Props) {
+    const { googleAuthEnabled } = usePage<{ googleAuthEnabled: boolean }>()
+        .props;
+
     return (
         <>
             <Head title="Log in" />
 
             <PasskeyVerify />
+
+            {googleAuthEnabled && (
+                <Button variant="outline" className="w-full" asChild>
+                    <a href="/auth/google/redirect">Continue with Google</a>
+                </Button>
+            )}
 
             <Form
                 {...store.form()}
@@ -32,6 +41,8 @@ export default function Login({ status, canResetPassword }: Props) {
                 {({ processing, errors }) => (
                     <>
                         <div className="grid gap-6">
+                            <InputError message={errors.google} />
+
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email address</Label>
                                 <Input

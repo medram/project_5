@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use DateTimeInterface;
 use App\Services\Workspaces\CreatesPersonalWorkspace;
 use Database\Factories\UserFactory;
+use DateTimeInterface;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -36,9 +36,16 @@ use Laravel\Sanctum\NewAccessToken;
  * @property bool $is_admin
  * @property bool $is_suspended
  * @property int|null $current_workspace_id
+ * @property int|null $avatar_media_id
+ * @property string|null $locale
+ * @property string|null $country_code
+ * @property string|null $timezone
+ * @property Carbon|null $last_seen_at
+ * @property Carbon|null $deletion_requested_at
+ * @property Carbon|null $purge_after
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'locale', 'country_code', 'timezone'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
@@ -59,6 +66,9 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'is_admin' => 'boolean',
             'is_suspended' => 'boolean',
             'suspended_at' => 'datetime',
+            'last_seen_at' => 'datetime',
+            'deletion_requested_at' => 'datetime',
+            'purge_after' => 'datetime',
         ];
     }
 
@@ -89,9 +99,32 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $this->hasMany(NotificationPreference::class);
     }
 
+    /** @return BelongsTo<ContentMedia, $this> */
+    public function avatarMedia(): BelongsTo
+    {
+        return $this->belongsTo(ContentMedia::class, 'avatar_media_id');
+    }
+
+    /** @return HasMany<SocialAccount, $this> */
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
     public function belongsToWorkspace(Workspace $workspace): bool
     {
         return $this->workspaces()->whereKey($workspace->getKey())->exists();
+    }
+
+    public function sharesWorkspaceWith(User $other): bool
+    {
+        if ($this->is($other)) {
+            return true;
+        }
+
+        return $this->workspaces()
+            ->whereHas('members', fn ($members) => $members->whereKey($other->getKey()))
+            ->exists();
     }
 
     public function createWorkspaceApiToken(
@@ -111,5 +144,4 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 
         return new NewAccessToken($accessToken, $accessToken->getKey().'|'.$plainTextToken);
     }
-
 }

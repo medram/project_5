@@ -1,27 +1,60 @@
-import { Form, Head, usePage } from '@inertiajs/react';
-import { Link } from '@inertiajs/react';
+import { Form, Head, Link, router, usePage } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/profile';
-import type { Auth } from '@/types';
 import { send } from '@/routes/verification';
+import type { Auth } from '@/types';
+
+type Option = { code: string; name: string };
 
 type PageProps = {
     auth: Auth;
 };
 
+type Props = {
+    mustVerifyEmail: boolean;
+    status?: string;
+    avatarUrl: string | null;
+    profile: {
+        locale: string | null;
+        countryCode: string | null;
+        timezone: string | null;
+    };
+    options: {
+        locales: Option[];
+        countries: Option[];
+        timezones: string[];
+    };
+    google: {
+        enabled: boolean;
+        connected: boolean;
+        email: string | null;
+    };
+};
+
+const selectClassName =
+    'border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive h-9 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50';
+
 export default function Profile({
     mustVerifyEmail,
     status,
-}: {
-    mustVerifyEmail: boolean;
-    status?: string;
-}) {
+    avatarUrl,
+    profile,
+    options,
+    google,
+}: Props) {
     const { auth } = usePage<PageProps>().props;
 
     return (
@@ -34,7 +67,7 @@ export default function Profile({
                 <Heading
                     variant="small"
                     title="Profile"
-                    description="Update your name and email address"
+                    description="Update your avatar, identity, and regional preferences"
                 />
 
                 <Form
@@ -46,6 +79,55 @@ export default function Profile({
                 >
                     {({ processing, errors }) => (
                         <>
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                                <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted">
+                                    {avatarUrl ? (
+                                        <img
+                                            src={avatarUrl}
+                                            alt="Your avatar"
+                                            className="size-full object-cover"
+                                        />
+                                    ) : (
+                                        <span
+                                            className="text-lg font-medium text-muted-foreground"
+                                            aria-hidden="true"
+                                        >
+                                            {(auth.user?.name ?? '?')
+                                                .slice(0, 1)
+                                                .toUpperCase()}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="grid flex-1 gap-2">
+                                    <Label htmlFor="avatar">Avatar</Label>
+                                    <Input
+                                        id="avatar"
+                                        name="avatar"
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="max-w-sm"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        JPEG, PNG, or WebP up to 5 MB. Images
+                                        are re-encoded to remove metadata.
+                                    </p>
+                                    <InputError message={errors.avatar} />
+
+                                    {avatarUrl && (
+                                        <label className="flex items-center gap-2 text-sm">
+                                            <input
+                                                type="checkbox"
+                                                name="remove_avatar"
+                                                value="1"
+                                                className="size-4 rounded border"
+                                            />
+                                            Remove current avatar
+                                        </label>
+                                    )}
+                                </div>
+                            </div>
+
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
 
@@ -85,6 +167,77 @@ export default function Profile({
                                 />
                             </div>
 
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="locale">Language</Label>
+                                    <select
+                                        id="locale"
+                                        name="locale"
+                                        defaultValue={profile.locale ?? ''}
+                                        className={selectClassName}
+                                    >
+                                        <option value="">
+                                            Use platform default
+                                        </option>
+                                        {options.locales.map((locale) => (
+                                            <option
+                                                key={locale.code}
+                                                value={locale.code}
+                                            >
+                                                {locale.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <InputError message={errors.locale} />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="country_code">
+                                        Country
+                                    </Label>
+                                    <select
+                                        id="country_code"
+                                        name="country_code"
+                                        defaultValue={profile.countryCode ?? ''}
+                                        className={selectClassName}
+                                    >
+                                        <option value="">Not specified</option>
+                                        {options.countries.map((country) => (
+                                            <option
+                                                key={country.code}
+                                                value={country.code}
+                                            >
+                                                {country.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <InputError message={errors.country_code} />
+                                </div>
+
+                                <div className="grid gap-2 sm:col-span-2">
+                                    <Label htmlFor="timezone">Timezone</Label>
+                                    <select
+                                        id="timezone"
+                                        name="timezone"
+                                        defaultValue={profile.timezone ?? ''}
+                                        className={selectClassName}
+                                    >
+                                        <option value="">
+                                            Use platform default
+                                        </option>
+                                        {options.timezones.map((timezone) => (
+                                            <option
+                                                key={timezone}
+                                                value={timezone}
+                                            >
+                                                {timezone}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <InputError message={errors.timezone} />
+                                </div>
+                            </div>
+
                             {mustVerifyEmail &&
                                 auth.user?.email_verified_at === null && (
                                     <div>
@@ -121,6 +274,41 @@ export default function Profile({
                         </>
                     )}
                 </Form>
+
+                {google.enabled && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Google account</CardTitle>
+                            <CardDescription>
+                                {google.connected
+                                    ? `Connected as ${google.email ?? 'your Google account'}.`
+                                    : 'Connect Google to sign in without a password.'}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-wrap items-center gap-3">
+                            {google.connected ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() =>
+                                        router.delete(
+                                            '/account-settings/google',
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                >
+                                    Disconnect Google
+                                </Button>
+                            ) : (
+                                <Button type="button" variant="outline" asChild>
+                                    <a href="/account-settings/google/connect">
+                                        Connect Google
+                                    </a>
+                                </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
             </div>
 
             <DeleteUser />

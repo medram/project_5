@@ -1,6 +1,6 @@
 {
     "schemaVersion": "1.0.0",
-    "capturedAt": "2026-11-12T12:39:49.739Z",
+    "capturedAt": "2026-11-12T13:45:00Z",
     "sourceBaseUrl": "http://localhost:8000",
     "browser": {
         "engine": "managed Chromium",
@@ -440,22 +440,22 @@
             "path": "product/verification/parity/user-settings-general-desktop.png",
             "role": "user",
             "route": "/account-settings/general",
-            "state": "general profile settings",
+            "state": "general profile settings with avatar, identity, locale, country, and timezone controls",
             "viewport": "1440x1000",
             "imagePixels": "1800x1250",
-            "sha256": "681db6683cf5e93c7fb999849643cc547c1f7005fbfde20d5dcb068115371906",
-            "bytes": 135045,
+            "sha256": "e85b639d8811bfc49355c507f86130667f084fdcd47929c2c6caafffd5bd8907",
+            "bytes": 126322,
             "privacyNote": "Seeded or disposable .test data only; no live customer data, credentials, full API keys, webhook secrets, or domain verification tokens."
         },
         {
             "path": "product/verification/parity/user-settings-security-desktop.png",
             "role": "user",
             "route": "/account-settings/security",
-            "state": "password-confirmed security settings",
+            "state": "password-confirmed security settings with coarse session cards and revocation actions",
             "viewport": "1440x1000",
             "imagePixels": "1800x1250",
-            "sha256": "61c8db6493c01c5bb223b161cef5621c40b5944ef8b38e7bfecf4060a03c49dd",
-            "bytes": 165215,
+            "sha256": "20f3c8c3b2c6144fdc1005c9c192b406500b8a8e7f190d093423c44913d3c7d5",
+            "bytes": 137498,
             "privacyNote": "Seeded or disposable .test data only; no live customer data, credentials, full API keys, webhook secrets, or domain verification tokens."
         },
         {

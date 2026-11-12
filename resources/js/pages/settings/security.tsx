@@ -1,10 +1,18 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, router } from '@inertiajs/react';
 import { useRef } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/security';
 import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys';
@@ -13,8 +21,16 @@ import type { Props as ManageTwoFactorProps } from '@/components/manage-two-fact
 import ManageTwoFactor from '@/components/manage-two-factor';
 
 // oxfmt-ignore
+type Session = {
+    id: string;
+    device: string;
+    lastActivity: string;
+    isCurrent: boolean;
+};
+
 type Props = {
     passwordRules: string;
+    sessions: Session[];
 } & ManagePasskeysProps &
     ManageTwoFactorProps;
 
@@ -123,6 +139,69 @@ export default function Security(props: Props) {
                     )}
                 </Form>
             </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Sessions</CardTitle>
+                    <CardDescription>
+                        Devices currently signed in to this account. LinkPilot
+                        never shows IP addresses here.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <ul className="divide-y rounded-md border">
+                        {props.sessions.map((session) => (
+                            <li
+                                key={session.id}
+                                className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
+                            >
+                                <div>
+                                    <p className="flex items-center gap-2 font-medium">
+                                        {session.device}
+                                        {session.isCurrent && (
+                                            <Badge variant="secondary">
+                                                This device
+                                            </Badge>
+                                        )}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                        Last active{' '}
+                                        {new Date(
+                                            session.lastActivity,
+                                        ).toLocaleString()}
+                                    </p>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <div className="flex flex-wrap gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                                router.delete(
+                                    '/account-settings/sessions/others',
+                                    { preserveScroll: true },
+                                )
+                            }
+                        >
+                            Sign out other sessions
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                                router.delete('/account-settings/api-tokens', {
+                                    preserveScroll: true,
+                                })
+                            }
+                        >
+                            Revoke all API tokens
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
 
             <ManageTwoFactor
                 canManageTwoFactor={props.canManageTwoFactor}

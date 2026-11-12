@@ -52,4 +52,16 @@ return [
             explode(',', (string) env('LINKPILOT_COUNTRY_PROXY_CIDRS', '')),
         ), static fn (string $cidr): bool => $cidr !== '')),
     ],
+
+    'supported_locales' => [
+        'en' => 'English',
+        'ar' => 'العربية',
+        'de' => 'Deutsch',
+        'es' => 'Español',
+        'fr' => 'Français',
+    ],
+
+    'auth' => [
+        'google_enabled' => (bool) env('GOOGLE_AUTH_ENABLED', false),
+    ],
 ];

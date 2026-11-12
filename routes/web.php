@@ -2,15 +2,15 @@
 
 use App\Http\Controllers\AcceptWorkspaceInvitationController;
 use App\Http\Controllers\AccountAnalyticsController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\AnalyticsEventController;
 use App\Http\Controllers\AnalyticsEventDefinitionController;
 use App\Http\Controllers\AnalyticsExportController;
 use App\Http\Controllers\ApiKeyController;
-use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\Admin\AdminUserController;
-use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\BillingController;
-use App\Http\Controllers\NotificationCenterController;
 use App\Http\Controllers\BioContentBlockController;
 use App\Http\Controllers\BioContentMediaPreviewController;
 use App\Http\Controllers\BioLinkController;
@@ -29,12 +29,13 @@ use App\Http\Controllers\LinkOverlayController;
 use App\Http\Controllers\LinkPageBlockController;
 use App\Http\Controllers\LinkPageController;
 use App\Http\Controllers\LinkPageInsightsController;
-use App\Http\Controllers\LinkPageVariantController;
 use App\Http\Controllers\LinkPageItemController;
 use App\Http\Controllers\LinkPageLeadController;
+use App\Http\Controllers\LinkPageVariantController;
 use App\Http\Controllers\LinkQrCodeController;
 use App\Http\Controllers\LinkRevisionController;
 use App\Http\Controllers\LinkTagController;
+use App\Http\Controllers\NotificationCenterController;
 use App\Http\Controllers\PublicBioContentBlockController;
 use App\Http\Controllers\PublicBioContentMediaController;
 use App\Http\Controllers\PublicBioLinkController;
@@ -65,6 +66,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
+
+Route::middleware('guest')->group(function (): void {
+    Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
+    Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
+});
 
 Route::get('up', function (Request $request) {
     $exception = null;
