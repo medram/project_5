@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import { ShieldCheck, Users } from 'lucide-react';
+import { BarChart3, ShieldCheck, Users } from 'lucide-react';
 import {
     SidebarContent,
     SidebarGroup,
@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import users from '@/routes/admin/users';
 import roles from '@/routes/admin/roles';
+import insights from '@/routes/admin/insights';
 
 export default function AdminSidebar() {
     const { url, props } = usePage();
@@ -24,6 +25,12 @@ export default function AdminSidebar() {
             href: users.index().url,
             icon: Users,
             visible: abilities.includes('admin.users.view'),
+        },
+        {
+            label: 'Insights',
+            href: insights.index().url,
+            icon: BarChart3,
+            visible: abilities.includes('admin.insights.view'),
         },
         {
             label: 'Roles',

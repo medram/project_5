@@ -3,6 +3,7 @@
 use App\Http\Controllers\AcceptWorkspaceInvitationController;
 use App\Http\Controllers\AccountAnalyticsController;
 use App\Http\Controllers\Admin\AdminHomeController;
+use App\Http\Controllers\Admin\AdminInsightsController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminRoleController;
 use App\Http\Controllers\Admin\AdminUserActionController;
@@ -322,6 +323,13 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         Route::patch('users/{user}/plan', [AdminUserActionController::class, 'updatePlan'])
             ->middleware('platform:admin.billing.manage')
             ->name('users.plan.update');
+
+        Route::get('insights', [AdminInsightsController::class, 'index'])
+            ->middleware('platform:admin.insights.view')
+            ->name('insights.index');
+        Route::get('insights/visitors', [AdminInsightsController::class, 'visitors'])
+            ->middleware('platform:admin.insights.view')
+            ->name('insights.visitors');
 
         Route::get('roles', AdminRoleController::class)
             ->middleware('platform:admin.users.manage_roles')

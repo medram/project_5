@@ -1,6 +1,6 @@
 {
     "schemaVersion": "1.0.0",
-    "capturedAt": "2026-11-12T15:10:00Z",
+    "capturedAt": "2026-11-12T15:40:00Z",
     "sourceBaseUrl": "http://localhost:8000",
     "browser": {
         "engine": "managed Chromium",
@@ -545,6 +545,50 @@
             "sha256": "bdf7575bffc3a5ae42fdbc98934baf9958df44dce56a1078c942ab570b91bd6a",
             "bytes": 36,
             "privacyNote": "Seeded .test accounts only; no tenant destinations, visitor dimensions, credentials, or secrets."
+        },
+        {
+            "path": "product/verification/parity/admin-insights-desktop.png",
+            "role": "admin",
+            "route": "/admin/insights",
+            "state": "platform totals, provider revenue, charts, resources, and dimensions",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "f5db0d4e0f6029e9371f288a7f62286adf48ec3c4f6046585a38fe0c7d4d2d12",
+            "bytes": 36,
+            "privacyNote": "Seeded .test accounts only; no raw hashes, IPs, destinations, tenant drill-down, or low-cardinality buckets under five events."
+        },
+        {
+            "path": "product/verification/parity/admin-insights-visitors-desktop.png",
+            "role": "admin",
+            "route": "/admin/insights/visitors",
+            "state": "privacy-safe visitor totals, series, and dimensions",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "0e5b0574096299d98821c1dfeecb8ef7b3bab8e48a6b21f7feb078127e97fd85",
+            "bytes": 36,
+            "privacyNote": "Seeded .test accounts only; no raw hashes, IPs, destinations, tenant drill-down, or low-cardinality buckets under five events."
+        },
+        {
+            "path": "product/verification/parity/admin-insights-mobile.png",
+            "role": "admin",
+            "route": "/admin/insights",
+            "state": "stacked platform insight cards and range controls",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "0b377727e0b683d2938ee6ff5335d2dad8c1a66264458c6d8ef57a4d73dd2359",
+            "bytes": 36,
+            "privacyNote": "Seeded .test accounts only; no raw hashes, IPs, destinations, tenant drill-down, or low-cardinality buckets under five events."
+        },
+        {
+            "path": "product/verification/parity/admin-insights-visitors-mobile.png",
+            "role": "admin",
+            "route": "/admin/insights/visitors",
+            "state": "stacked visitor insight cards and range controls",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "3a53bfadf3480f3b6c459efdfb03526502aba8b626ee1175b3d4cde7fb415a96",
+            "bytes": 36,
+            "privacyNote": "Seeded .test accounts only; no raw hashes, IPs, destinations, tenant drill-down, or low-cardinality buckets under five events."
         }
     ]
 }

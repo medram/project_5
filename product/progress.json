@@ -273,9 +273,12 @@
         },
         {
             "id": "admin-insights",
-            "state": "in_progress",
-            "lastVerifiedAt": null,
-            "checks": [],
+            "state": "verified",
+            "lastVerifiedAt": "2026-11-12T15:42:00Z",
+            "checks": [
+                "Insights suite passed 5 tests and 111 assertions across permissions, ranges, zero-fill, provider MRR source rules, resource totals, k-anonymity, and raw-hash absence.",
+                "Managed Chromium at 1440x1000 and 390x844 rendered both insight pages with chart labels, exact tables, and no horizontal overflow or page errors."
+            ],
             "blockers": []
         },
         {

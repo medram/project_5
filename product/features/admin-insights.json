@@ -3,25 +3,25 @@
     "id": "admin-insights",
     "area": "Administration",
     "name": "Platform insights",
-    "status": "in_progress",
+    "status": "verified",
     "requirements": [
         {
             "id": "ADM-2",
             "text": "An admin dashboard lists privacy-safe user/workspace, plan/subscription, resource, and aggregate metadata without tenant-private destinations or visitor dimensions.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "AINS-1",
             "text": "Authorized administrators can inspect aggregate workspace, user, subscription, revenue, resource, event, country, and client health.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         },
         {
             "id": "AINS-2",
             "text": "Visitor insights expose privacy-safe aggregates without raw IPs, visitor hashes, destinations, or tenant-private dimensions.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         }
     ],
     "routes": ["/admin/insights", "/admin/insights/visitors"],
@@ -71,5 +71,24 @@
             ]
         }
     ],
-    "implementationEvidence": []
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Insights suite passed 5 tests and 111 assertions: permission boundaries, preset and custom ranges, 365-day cap, zero-filled daily series, provider MRR from mapped prices with overrides excluded, resource totals, aggregate-only visitor counts, low-cardinality collapse to Other, and absence of raw visitor hashes.",
+            "reference": "tests/Feature/Admin/AdminInsightsTest.php",
+            "verifiedAt": "2026-11-12T15:42:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Full application suite passed 522 tests and 17,480 assertions after adding platform and visitor insights.",
+            "reference": "php -d memory_limit=1G vendor/bin/phpunit",
+            "verifiedAt": "2026-11-12T15:42:00Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium at 1440x1000 and 390x844 rendered both insight pages with range controls, Recharts series, exact-value tables, and dimension panels without horizontal overflow or page errors.",
+            "reference": "product/verification/parity/admin-insights-desktop.png; product/verification/parity/admin-insights-visitors-desktop.png; product/verification/parity/admin-insights-mobile.png; product/verification/parity/admin-insights-visitors-mobile.png",
+            "verifiedAt": "2026-11-12T15:42:00Z"
+        }
+    ]
 }
