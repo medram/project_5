@@ -3,31 +3,31 @@
     "id": "admin-settings",
     "area": "Administration",
     "name": "Platform settings",
-    "status": "planned",
+    "status": "in_progress",
     "requirements": [
         {
             "id": "ADM-6",
             "text": "Platform administration includes roles, global insights, localization, and site, system, SEO, email, auth, GDPR, and analytics settings.",
             "priority": "P3",
-            "status": "planned"
+            "status": "in_progress"
         },
         {
             "id": "ASET-1",
             "text": "A typed settings repository accepts only whitelisted fields per section and encrypts secrets while environment security values take precedence.",
             "priority": "P0",
-            "status": "planned"
+            "status": "verified"
         },
         {
             "id": "ASET-2",
             "text": "Settings drive real site, link, bio, subscription, localization, authentication, upload, email, system, analytics, GDPR, captcha, SEO, ads, and safe brand-verification behavior.",
             "priority": "P1",
-            "status": "planned"
+            "status": "in_progress"
         },
         {
             "id": "ASET-3",
             "text": "Theme, menu, ad, verification, and branding extensibility is allowlisted; raw HTML, JavaScript, and unrestricted CSS are never stored or rendered.",
             "priority": "P0",
-            "status": "planned"
+            "status": "verified"
         }
     ],
     "routes": [
@@ -262,5 +262,24 @@
             ]
         }
     ],
-    "implementationEvidence": []
+    "implementationEvidence": [
+        {
+            "type": "test",
+            "description": "Settings repository suite passed 6 tests and 55 assertions: view/manage permissions, 18-section registry coverage, typed persistence and audit, bounds and unknown-key rejection, secret encryption with blank preservation and hidden UI values, environment precedence/read-only behavior, and optimistic version conflicts.",
+            "reference": "tests/Feature/Admin/AdminSettingsTest.php",
+            "verifiedAt": "2026-11-12T16:37:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Full application suite passed 543 tests and 18,101 assertions after adding the typed platform-settings repository and settings shell.",
+            "reference": "php -d memory_limit=1G vendor/bin/phpunit",
+            "verifiedAt": "2026-11-12T16:37:00Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium browsed all 18 settings sections at 1440x1000 and 390x844 with zero page errors and no horizontal overflow; desktop and mobile General/Captcha captures are retained.",
+            "reference": "product/verification/parity/admin-settings-general-desktop.png; product/verification/parity/admin-settings-captcha-desktop.png; product/verification/parity/admin-settings-general-mobile.png; product/verification/parity/admin-settings-captcha-mobile.png",
+            "verifiedAt": "2026-11-12T16:37:00Z"
+        }
+    ]
 }

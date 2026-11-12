@@ -322,9 +322,12 @@
         },
         {
             "id": "admin-settings",
-            "state": "planned",
-            "lastVerifiedAt": null,
-            "checks": [],
+            "state": "in_progress",
+            "lastVerifiedAt": "2026-11-12T16:37:00Z",
+            "checks": [
+                "Settings repository suite passed 6 tests and 55 assertions across permissions, 18-section registry, typed values, encryption, environment precedence, optimistic versions, and audits.",
+                "Managed Chromium browsed all 18 sections at 1440x1000 and 390x844 with no overflow or page errors."
+            ],
             "blockers": []
         },
         {

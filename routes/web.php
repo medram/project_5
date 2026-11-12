@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminInsightsController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminPlanController;
 use App\Http\Controllers\Admin\AdminRoleController;
+use App\Http\Controllers\Admin\AdminSettingController;
 use App\Http\Controllers\Admin\AdminSubscriptionController;
 use App\Http\Controllers\Admin\AdminUserActionController;
 use App\Http\Controllers\Admin\AdminUserIndexController;
@@ -393,6 +394,16 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         Route::get('custom-pages/{customPage}/preview', [AdminCustomPageController::class, 'preview'])
             ->middleware('platform:admin.pages.manage')
             ->name('pages.preview');
+
+        Route::get('settings', fn () => redirect()->route('admin.settings.show', ['section' => 'general']))
+            ->middleware('platform:admin.settings.view')
+            ->name('settings.index');
+        Route::get('settings/{section}', [AdminSettingController::class, 'show'])
+            ->middleware('platform:admin.settings.view')
+            ->name('settings.show');
+        Route::patch('settings/{section}', [AdminSettingController::class, 'update'])
+            ->middleware('platform:admin.settings.manage')
+            ->name('settings.update');
 
         Route::get('plans', [AdminPlanController::class, 'index'])
             ->middleware('platform:admin.billing.view')

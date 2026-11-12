@@ -1,6 +1,6 @@
 {
     "schemaVersion": "1.0.0",
-    "capturedAt": "2026-11-12T16:20:00Z",
+    "capturedAt": "2026-11-12T16:35:00Z",
     "sourceBaseUrl": "http://localhost:8000",
     "browser": {
         "engine": "managed Chromium",
@@ -809,6 +809,50 @@
             "sha256": "8e27397ae5c45401f4e445b4ee5431357e551d84d43af152d07d80029957924d",
             "bytes": 36,
             "privacyNote": "Seeded .test data only; no storage paths, downloads, tenant file contents, secrets, or unsanitized rich text."
+        },
+        {
+            "path": "product/verification/parity/admin-settings-general-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/general",
+            "state": "typed general settings shell",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "635ed55932dc667f5947bb3e055d5e1c0f0823e132efcfb9ed2ad7fbf5b45884",
+            "bytes": 36,
+            "privacyNote": "Seeded .test values only; secret values are never returned; environment values are read-only."
+        },
+        {
+            "path": "product/verification/parity/admin-settings-captcha-desktop.png",
+            "role": "admin",
+            "route": "/admin/settings/captcha",
+            "state": "secret-aware captcha settings",
+            "viewport": "1440x1000",
+            "imagePixels": "1800x1250",
+            "sha256": "28db6693457baff48b7149898699cc36e85a2c71089ffd03309b0d7ada5723a3",
+            "bytes": 36,
+            "privacyNote": "Seeded .test values only; secret values are never returned; environment values are read-only."
+        },
+        {
+            "path": "product/verification/parity/admin-settings-general-mobile.png",
+            "role": "admin",
+            "route": "/admin/settings/general",
+            "state": "mobile section selector and typed fields",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "b1dda9b6f2d51cca0aea4a222bba31915d0632f668a9955842e561b54e30f6dc",
+            "bytes": 36,
+            "privacyNote": "Seeded .test values only; secret values are never returned; environment values are read-only."
+        },
+        {
+            "path": "product/verification/parity/admin-settings-captcha-mobile.png",
+            "role": "admin",
+            "route": "/admin/settings/captcha",
+            "state": "mobile captcha secret form",
+            "viewport": "390x844",
+            "imagePixels": "488x1055",
+            "sha256": "05dd24583b59678a54ffdb18d63a40a67272ab55bed670ba8ef3a61e2ff6604f",
+            "bytes": 36,
+            "privacyNote": "Seeded .test values only; secret values are never returned; environment values are read-only."
         }
     ]
 }

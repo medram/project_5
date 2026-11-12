@@ -11,6 +11,7 @@ import {
     PanelsTopLeft,
     ReceiptText,
     ScanLine,
+    Settings2,
     ShieldCheck,
     UserRound,
     Users,
@@ -32,6 +33,7 @@ import subscriptions from '@/routes/admin/subscriptions';
 import content from '@/routes/admin/content';
 import files from '@/routes/admin/files';
 import pages from '@/routes/admin/pages';
+import settings from '@/routes/admin/settings';
 
 export default function AdminSidebar() {
     const { url, props } = usePage();
@@ -45,6 +47,12 @@ export default function AdminSidebar() {
             href: users.index().url,
             icon: Users,
             visible: abilities.includes('admin.users.view'),
+        },
+        {
+            label: 'Settings',
+            href: settings.show('general').url,
+            icon: Settings2,
+            visible: abilities.includes('admin.settings.view'),
         },
         {
             label: 'Files',

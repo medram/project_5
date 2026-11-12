@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ApplyPlatformSettings;
 use App\Http\Middleware\EnsureAccountUsable;
 use App\Http\Middleware\EnsureActiveAccount;
 use App\Http\Middleware\EnsurePlatformPermission;
@@ -31,6 +32,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
         $middleware->preventRequestsDuringMaintenance(except: ['/up']);
+
+        $middleware->web(append: [
+            ApplyPlatformSettings::class,
+        ]);
 
         $middleware->alias([
             'active-account' => EnsureActiveAccount::class,
