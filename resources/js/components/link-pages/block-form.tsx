@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { Plus, Save, Trash2 } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useId, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,10 +12,17 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FieldError } from '@/components/ui/field';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     destroy as destroyBlock,
     store as storeBlock,
@@ -116,6 +123,7 @@ export function LinkPageBlockForm({
     variants: LinkPageVariant[];
     selectedVariantId: number;
 }) {
+    const fieldPrefix = useId();
     const [value, setValue] = useState(() => initialValue(block));
     const [variantId, setVariantId] = useState(
         block?.linkPageVariantId ?? selectedVariantId,
@@ -277,16 +285,16 @@ export function LinkPageBlockForm({
             </CardHeader>
             <form onSubmit={submit}>
                 <CardContent className="space-y-4">
-                    <label className="grid gap-1 text-sm">
-                        Content type
-                        <select
-                            aria-invalid={Boolean(errors.type)}
-                            className="h-11 rounded-md border bg-background px-3"
+                    <Field data-invalid={Boolean(errors.type)}>
+                        <FieldLabel htmlFor={`${fieldPrefix}-content-type`}>
+                            Content type
+                        </FieldLabel>
+                        <Select
                             value={value.type}
                             disabled={busy}
-                            onChange={(event) => {
-                                const type = event.target
-                                    .value as BlockFormData['type'];
+                            onValueChange={(selectedType) => {
+                                const type =
+                                    selectedType as BlockFormData['type'];
                                 setErrors({});
                                 setValue((current) => ({
                                     ...current,
@@ -299,25 +307,36 @@ export function LinkPageBlockForm({
                                 }));
                             }}
                         >
-                            <option value="text">Text</option>
-                            <option value="image">Image</option>
-                            <option value="file">PDF file</option>
-                            <option value="form">Lead form</option>
-                        </select>
+                            <SelectTrigger
+                                id={`${fieldPrefix}-content-type`}
+                                aria-invalid={Boolean(errors.type)}
+                                className="h-11 w-full"
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="text">Text</SelectItem>
+                                <SelectItem value="image">Image</SelectItem>
+                                <SelectItem value="file">PDF file</SelectItem>
+                                <SelectItem value="form">Lead form</SelectItem>
+                            </SelectContent>
+                        </Select>
                         {errors.type && (
                             <FieldError role="alert">{errors.type}</FieldError>
                         )}
-                    </label>
+                    </Field>
 
-                    <label className="grid gap-1 text-sm">
-                        Variant
-                        <select
-                            aria-invalid={Boolean(errors.link_page_variant_id)}
-                            className="h-11 rounded-md border bg-background px-3"
-                            value={variantId}
+                    <Field
+                        data-invalid={Boolean(errors.link_page_variant_id)}
+                    >
+                        <FieldLabel htmlFor={`${fieldPrefix}-variant`}>
+                            Variant
+                        </FieldLabel>
+                        <Select
+                            value={String(variantId)}
                             disabled={busy}
-                            onChange={(event) => {
-                                setVariantId(Number(event.currentTarget.value));
+                            onValueChange={(value) => {
+                                setVariantId(Number(value));
                                 setErrors((current) => {
                                     const next = { ...current };
                                     delete next.link_page_variant_id;
@@ -325,19 +344,35 @@ export function LinkPageBlockForm({
                                 });
                             }}
                         >
-                            {variants.map((variant) => (
-                                <option key={variant.id} value={variant.id}>
-                                    {variant.name} · {variant.weight}%
-                                    {!variant.isActive ? ' · inactive' : ''}
-                                </option>
-                            ))}
-                        </select>
+                            <SelectTrigger
+                                id={`${fieldPrefix}-variant`}
+                                aria-invalid={Boolean(
+                                    errors.link_page_variant_id,
+                                )}
+                                className="h-11 w-full"
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {variants.map((variant) => (
+                                    <SelectItem
+                                        key={variant.id}
+                                        value={String(variant.id)}
+                                    >
+                                        {variant.name} · {variant.weight}%
+                                        {!variant.isActive
+                                            ? ' · inactive'
+                                            : ''}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         {errors.link_page_variant_id && (
                             <FieldError role="alert">
                                 {errors.link_page_variant_id}
                             </FieldError>
                         )}
-                    </label>
+                    </Field>
 
                     {value.type === 'text' ? (
                         <label className="grid gap-1 text-sm">
@@ -489,18 +524,23 @@ export function LinkPageBlockForm({
                                                 </FieldError>
                                             )}
                                         </label>
-                                        <label className="grid gap-1 text-sm">
-                                            Response type
-                                            <select
-                                                className="h-11 rounded-md border bg-background px-3"
+                                        <Field
+                                            className="gap-1"
+                                            data-invalid={Boolean(typeError)}
+                                        >
+                                            <FieldLabel
+                                                htmlFor={`${fieldPrefix}-${field.id}-response-type`}
+                                            >
+                                                Response type
+                                            </FieldLabel>
+                                            <Select
                                                 value={field.type}
                                                 disabled={busy}
-                                                aria-invalid={Boolean(
-                                                    typeError,
-                                                )}
-                                                onChange={(event) => {
-                                                    const type = event.target
-                                                        .value as LinkPageFormField['type'];
+                                                onValueChange={(
+                                                    selectedType,
+                                                ) => {
+                                                    const type =
+                                                        selectedType as LinkPageFormField['type'];
                                                     changeField(index, {
                                                         type,
                                                         optionsText:
@@ -511,25 +551,36 @@ export function LinkPageBlockForm({
                                                     });
                                                 }}
                                             >
-                                                <option value="text">
-                                                    Short text
-                                                </option>
-                                                <option value="email">
-                                                    Email
-                                                </option>
-                                                <option value="textarea">
-                                                    Long text
-                                                </option>
-                                                <option value="select">
-                                                    Choose from a list
-                                                </option>
-                                            </select>
+                                                <SelectTrigger
+                                                    id={`${fieldPrefix}-${field.id}-response-type`}
+                                                    aria-invalid={Boolean(
+                                                        typeError,
+                                                    )}
+                                                    className="h-11 w-full"
+                                                >
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="text">
+                                                        Short text
+                                                    </SelectItem>
+                                                    <SelectItem value="email">
+                                                        Email
+                                                    </SelectItem>
+                                                    <SelectItem value="textarea">
+                                                        Long text
+                                                    </SelectItem>
+                                                    <SelectItem value="select">
+                                                        Choose from a list
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             {typeError && (
                                                 <FieldError role="alert">
                                                     {typeError}
                                                 </FieldError>
                                             )}
-                                        </label>
+                                        </Field>
                                         {field.type === 'select' && (
                                             <label className="grid gap-1 text-sm sm:col-span-2">
                                                 Options

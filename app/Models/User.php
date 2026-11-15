@@ -35,7 +35,6 @@ use Laravel\Sanctum\NewAccessToken;
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
  * @property Carbon|null $created_at
- * @property bool $is_admin
  * @property bool $is_suspended
  * @property Carbon|null $suspended_at
  * @property int|null $current_workspace_id
@@ -69,7 +68,6 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
-            'is_admin' => 'boolean',
             'is_suspended' => 'boolean',
             'suspended_at' => 'datetime',
             'last_seen_at' => 'datetime',

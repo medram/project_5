@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Services\Billing\PlanCatalogPresenter;
 use App\Services\Billing\StripeReadiness;
 use App\Services\Billing\WorkspaceUsage;
+use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,6 +44,8 @@ class BillingController extends Controller
             'canManageBilling' => Gate::allows('manageBilling', $workspace),
             'usage' => $this->usage->for($workspace),
             'billing' => [
+                'enabled' => (bool) (app(PlatformSettings::class)->resolved()['subscriptions']['billing_enabled'] ?? true),
+                'annualDisplay' => (bool) (app(PlatformSettings::class)->resolved()['subscriptions']['annual_display'] ?? true),
                 'checkoutReady' => $this->readiness->checkoutReady(),
                 'portalReady' => $this->readiness->configured(),
                 'missing' => $this->readiness->missing(),

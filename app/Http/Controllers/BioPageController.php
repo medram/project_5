@@ -49,6 +49,7 @@ class BioPageController extends Controller
         $this->ensureInCurrentWorkspace($request, $bioPage);
         Gate::authorize('view', $bioPage);
         $presentation = app(BioPagePresentation::class)->make($bioPage, true);
+        $bioPage->setAttribute('appearance', $presentation['appearance']);
         $previewAt = now('UTC')->toISOString();
 
         return Inertia::render('bio-pages/edit', [
@@ -63,9 +64,18 @@ class BioPageController extends Controller
     {
         $this->ensureInCurrentWorkspace($request, $bioPage);
         Gate::authorize('update', $bioPage);
-        $bioPage->update($request->validated());
+        $data = $request->validated();
 
-        return to_route('bio-pages.show', $bioPage);
+        if (isset($data['appearance'])) {
+            $data['appearance'] = array_replace(
+                $bioPage->appearance ?? [],
+                $data['appearance'],
+            );
+        }
+
+        $bioPage->update($data);
+
+        return back(fallback: route('bio-pages.show', $bioPage));
     }
 
     public function destroy(Request $request, BioPage $bioPage): RedirectResponse

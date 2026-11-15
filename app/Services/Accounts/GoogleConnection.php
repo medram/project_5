@@ -11,13 +11,11 @@ final class GoogleConnection
     public function enabled(): bool
     {
         $settings = app(PlatformSettings::class);
-        $enabled = $settings->hasStored('authentication', 'google_enabled')
-            ? (bool) ($settings->resolved()['authentication']['google_enabled'] ?? false)
-            : (bool) config('linkpilot.auth.google_enabled');
+        $authentication = $settings->resolved()['authentication'] ?? [];
 
-        return $enabled
-            && filled(config('services.google.client_id'))
-            && filled(config('services.google.client_secret'));
+        return (bool) ($authentication['google_enabled'] ?? false)
+            && filled($authentication['google_client_id'] ?? null)
+            && $settings->secret('authentication', 'google_client_secret') !== null;
     }
 
     public function accountFor(User $user): ?SocialAccount

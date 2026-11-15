@@ -1,10 +1,15 @@
 import { usePage } from '@inertiajs/react';
 
 import AppLogoIcon from '@/components/app-logo-icon';
+import { useAppearance } from '@/hooks/use-appearance';
 
 export default function AppLogo() {
     const { name, platform } = usePage().props;
-    const logo = platform?.logos.light ?? null;
+    const { resolvedAppearance } = useAppearance();
+    const logo =
+        resolvedAppearance === 'dark'
+            ? (platform?.logos.dark ?? platform?.logos.light ?? null)
+            : (platform?.logos.light ?? null);
 
     return (
         <>

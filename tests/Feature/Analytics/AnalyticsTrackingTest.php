@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Analytics\AnalyticsTracker;
 use App\Services\Analytics\TrackingConsent;
+use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -70,7 +71,14 @@ class AnalyticsTrackingTest extends TestCase
 
     public function test_consented_bio_views_and_clicks_store_only_minimal_exact_references(): void
     {
-        config()->set('services.linkpilot.analytics.hash_key', 'test-analytics-key');
+        $analyticsKey = str_repeat('k', 32);
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'analytics', [
+            'visitor_hash_key' => $analyticsKey,
+            'visitor_hash_version' => 'test-v1',
+        ], $settings->version('analytics'));
+        config()->set('services.linkpilot.analytics.hash_key', $analyticsKey);
         config()->set('services.linkpilot.analytics.hash_key_version', 'test-v1');
 
         $owner = User::factory()->create();

@@ -35,19 +35,27 @@ export function AppSidebarHeader({
         }>().props;
 
     return (
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border/50 px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sm:px-6">
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-                <SidebarTrigger className="-ml-1 min-h-11 min-w-11" />
-                <Breadcrumbs breadcrumbs={breadcrumbs} />
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 bg-background px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-16 sm:px-5">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                <SidebarTrigger className="-ml-1 size-8 shrink-0 rounded-full text-muted-foreground hover:bg-surface-secondary hover:text-foreground" />
+                {breadcrumbs.length > 1 ? (
+                    <Breadcrumbs breadcrumbs={breadcrumbs} />
+                ) : (
+                    <span className="truncate text-[13px] font-medium text-foreground">
+                        {showWorkspace && workspace?.current
+                            ? workspace.current.name
+                            : 'Platform administration'}
+                    </span>
+                )}
             </div>
             <div className="ml-auto flex min-w-0 items-center gap-2">
                 {showSearch && <GlobalSearch />}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="icon"
-                            className="relative size-10 shrink-0"
+                            className="relative size-9 shrink-0 rounded-full"
                             aria-label={
                                 notificationUnreadCount > 0
                                     ? `Notifications, ${notificationUnreadCount} unread`
@@ -57,14 +65,10 @@ export function AppSidebarHeader({
                         >
                             <Bell aria-hidden="true" />
                             {notificationUnreadCount > 0 && (
-                                <Badge
-                                    variant="destructive"
-                                    className="absolute -top-1 -right-1 min-w-5 justify-center px-1 py-0 text-[10px]"
-                                >
-                                    {notificationUnreadCount > 99
-                                        ? '99+'
-                                        : notificationUnreadCount}
-                                </Badge>
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-primary"
+                                />
                             )}
                         </Button>
                     </DropdownMenuTrigger>
@@ -84,11 +88,11 @@ export function AppSidebarHeader({
                                 </p>
                             </div>
                             {notificationUnreadCount > 0 && (
-                                <Badge variant="secondary">
+                                <span className="text-xs text-muted-foreground tabular-nums">
                                     {notificationUnreadCount > 99
                                         ? '99+'
                                         : notificationUnreadCount}
-                                </Badge>
+                                </span>
                             )}
                         </div>
                         <DropdownMenuSeparator />
@@ -181,22 +185,6 @@ export function AppSidebarHeader({
                         </div>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                {showWorkspace && workspace?.current && (
-                    <div
-                        className="flex min-w-0 items-center gap-2 text-xs"
-                        aria-label={`Active workspace: ${workspace.current.name}, ${workspace.current.role}`}
-                    >
-                        <span className="max-w-[30vw] truncate font-medium sm:max-w-56">
-                            {workspace.current.name}
-                        </span>
-                        <Badge
-                            variant="secondary"
-                            className="shrink-0 capitalize"
-                        >
-                            {workspace.current.role}
-                        </Badge>
-                    </div>
-                )}
             </div>
         </header>
     );

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Laravel\Cashier\Billable;
 use Laravel\Cashier\Cashier;
 use Laravel\Cashier\Subscription;
@@ -15,11 +15,10 @@ use Laravel\Cashier\Subscription;
 /**
  * @property-read int|null $links_count
  * @property-read int|null $bio_pages_count
- * @property-read WorkspaceSubscription|null $legacySubscription
  * @property-read User|null $owner
  * @property-read int|null $members_count
  * @property-read int|null $custom_domains_count
- * @property-read \Illuminate\Database\Eloquent\Relations\Pivot $pivot
+ * @property-read Pivot $pivot
  */
 #[Fillable(['name', 'slug', 'owner_id', 'personal_owner_user_id'])]
 class Workspace extends Model
@@ -47,12 +46,6 @@ class Workspace extends Model
     {
         return $this->hasMany(Cashier::$subscriptionModel, $this->getForeignKey())
             ->orderByDesc('created_at');
-    }
-
-    /** @return HasOne<WorkspaceSubscription, $this> */
-    public function legacySubscription(): HasOne
-    {
-        return $this->hasOne(WorkspaceSubscription::class);
     }
 
     /** @return HasMany<WorkspacePlanOverride, $this> */

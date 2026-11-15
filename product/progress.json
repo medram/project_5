@@ -296,19 +296,18 @@
         {
             "id": "admin-users-roles",
             "state": "verified",
-            "lastVerifiedAt": "2026-11-12T15:12:00Z",
+            "lastVerifiedAt": "2026-11-12T15:53:45Z",
             "checks": [
-                "Platform-admin UX review exercised /admin on desktop/mobile; a normal user received 403; the reviewer\u2019s accidental Demo Owner suspension was restored, followed by a successful user login.",
+                "Platform-admin UX review exercised /admin on desktop/mobile; a normal user received 403; the reviewer’s accidental Demo Owner suspension was restored, followed by a successful user login.",
                 "Disposable review app: admin action dialogs identified each target and action; cancel left account state unchanged; confirmed suspension/restoration and administrator grant/revoke round trips, and assigned Pro to a synthetic personal workspace. Ordinary-user /admin remained 403.",
                 "Mobile account-list browser evidence at 390x844: labelled stacked cards, no horizontal overflow; private tenant content and visitor data absent (product/verification/phase4-admin-shell-mobile.png).",
                 "RBAC suite passed 13 tests and 104 assertions: immutable seeded role matrices, explicit route permissions, support refusal for privileged mutations, self and last-super-admin guards, transaction revalidation, append-only redacted audits, and command provisioning.",
                 "Full application suite passed 512 tests and 17,113 assertions after backfilling existing administrators into the seeded super_admin role.",
                 "Split administration suite passed 18 tests and 237 assertions across users/roles destinations, filters, pagination, user detail, audited actions, permission boundaries, and redacted audit records.",
-                "Managed Chromium at 1440x1000 and 390x844 verified Users, User detail, and Roles screens without overflow or page errors; a role grant/remove confirmation round trip succeeded."
+                "Managed Chromium at 1440x1000 and 390x844 verified Users, User detail, and Roles screens without overflow or page errors; a role grant/remove confirmation round trip succeeded.",
+                "Contraction removed users.is_admin; down reconstruction repopulated it from super_admin roles before re-dropping, and the 18-test administration suite passed against the contracted schema."
             ],
-            "blockers": [
-                "P1: Immutable platform roles, safe provisioning, and last-super-admin protections remain outstanding; the current interface is a limited is_admin starting state."
-            ]
+            "blockers": []
         },
         {
             "id": "admin-content",
@@ -334,12 +333,18 @@
         {
             "id": "admin-files-pages-localization-logs",
             "state": "in_progress",
-            "lastVerifiedAt": "2026-11-12T16:22:00Z",
+            "lastVerifiedAt": "2026-11-12T15:53:45Z",
             "checks": [
                 "Files/pages suite passed 5 tests and 82 assertions across permissions, safe metadata, soft-delete/restore audits, sanitization, reserved slugs, publication, preview, and media validation.",
-                "Managed Chromium rendered files, pages, editor, and public page at 1440x1000 and 390x844; a page was created, published, and served publicly."
+                "Managed Chromium rendered files, pages, editor, and public page at 1440x1000 and 390x844; a page was created, published, and served publicly.",
+                "Localization suite passed 5 tests and 56 assertions; /admin/localizations and /admin/logs passed desktop/mobile browser checks with no overflow or errors.",
+                "Public French and Arabic runtime strings/fallback and html dir=\"rtl\" were verified; the complete shipped-UI translation cutover remains in progress.",
+                "Operational logs suite passed 4 tests and 30 assertions for filters, redaction, append-only writes, retention, and CSV export; a redacted row rendered in Chromium.",
+                "Full application suite passed 561 tests and 18,420 assertions after RBAC is_admin removal and legacy workspace-subscription contraction."
             ],
-            "blockers": []
+            "blockers": [
+                "P1: Task 16 full shipped-surface translation cutover remains incomplete; localization infrastructure and representative public/admin strings are verified."
+            ]
         }
     ]
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1;
 
 use App\Services\Links\FirstPartyDestinationGuard;
+use App\Services\Links\LinkPolicy;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -38,8 +39,24 @@ class LinkRequest extends FormRequest
                 'max:2048',
                 (new Url)->protocols(['http', 'https']),
                 function (string $attribute, mixed $value, Closure $fail): void {
-                    if (is_string($value) && app(FirstPartyDestinationGuard::class)->rejects($value)) {
+                    if (! is_string($value)) {
+                        return;
+                    }
+
+                    if (app(FirstPartyDestinationGuard::class)->rejects($value)) {
                         $fail('The destination URL must not target this application.');
+
+                        return;
+                    }
+
+                    $rejection = app(LinkPolicy::class)->rejection(
+                        $value,
+                        is_string($this->input('slug')) ? $this->input('slug') : null,
+                        is_string($this->input('title')) ? $this->input('title') : null,
+                    );
+
+                    if ($rejection !== null) {
+                        $fail($rejection);
                     }
                 },
             ],

@@ -6,7 +6,14 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['qr_code_id', 'scanned_at'])]
+#[Fillable([
+    'qr_code_id',
+    'scanned_at',
+    'country_code',
+    'browser',
+    'platform',
+    'referrer_host',
+])]
 class QrScan extends Model
 {
     public $timestamps = false;

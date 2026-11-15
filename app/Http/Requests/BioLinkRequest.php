@@ -3,9 +3,11 @@
 namespace App\Http\Requests;
 
 use App\Services\Links\FirstPartyDestinationGuard;
+use App\Services\Settings\PlatformSettings;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Url;
+use Illuminate\Validation\Validator;
 
 abstract class BioLinkRequest extends FormRequest
 {
@@ -43,5 +45,17 @@ abstract class BioLinkRequest extends FormRequest
             'disk' => ['prohibited'],
             'path' => ['prohibited'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $allowed = app(PlatformSettings::class)->resolved()['biolinks']['available_blocks']
+                ?? ['link', 'text', 'image', 'social', 'embed'];
+
+            if (is_array($allowed) && ! in_array('link', $allowed, true)) {
+                $validator->errors()->add('destination_url', 'Bio buttons are unavailable on this platform.');
+            }
+        });
     }
 }

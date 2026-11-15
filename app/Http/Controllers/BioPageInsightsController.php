@@ -6,6 +6,7 @@ use App\Models\AnalyticsEvent;
 use App\Models\BioPage;
 use App\Services\BioPages\BioPagePresentation;
 use App\Services\Workspaces\WorkspaceContext;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -28,6 +29,7 @@ class BioPageInsightsController extends Controller
         Gate::authorize('view', $bioPage);
         $days = $this->selectedDays($request);
         $presentation = $this->presentation->make($bioPage, true);
+        $bioPage->setAttribute('appearance', $presentation['appearance']);
 
         return Inertia::render('bio-pages/edit', [
             'bioPage' => $bioPage,
@@ -57,7 +59,12 @@ class BioPageInsightsController extends Controller
      *     endDate: string,
      *     totalViews: int,
      *     totalClicks: int,
-     *     daily: list<array{date: string, views: int, clicks: int}>
+     *     daily: list<array{date: string, views: int, clicks: int}>,
+     *     topLinks: list<array{name: string, count: int}>,
+     *     topReferrers: list<array{name: string, count: int}>,
+     *     topCountries: list<array{name: string, count: int}>,
+     *     topBrowsers: list<array{name: string, count: int}>,
+     *     topPlatforms: list<array{name: string, count: int}>
      * }
      */
     private function insightsForPage(BioPage $bioPage, int $days): array
@@ -76,12 +83,7 @@ class BioPageInsightsController extends Controller
             ];
         }
 
-        $events = AnalyticsEvent::query()
-            ->where('workspace_id', $bioPage->workspace_id)
-            ->where('bio_page_id', $bioPage->getKey())
-            ->whereIn('event_name', ['bio_page.view', 'bio_page.clicked'])
-            ->where('occurred_at', '>=', $start)
-            ->where('occurred_at', '<', $end)
+        $events = $this->eventQuery($bioPage, $start, $end)
             ->selectRaw('DATE(occurred_at) as aggregate_date, event_name, COUNT(*) as aggregate_count')
             ->groupByRaw('DATE(occurred_at), event_name')
             ->get();
@@ -111,6 +113,78 @@ class BioPageInsightsController extends Controller
             'totalViews' => $totalViews,
             'totalClicks' => $totalClicks,
             'daily' => array_values($dailyByDate),
+            'topLinks' => $this->topLinks($bioPage, $start, $end),
+            'topReferrers' => $this->groupedEvents($bioPage, $start, $end, 'referrer_host'),
+            'topCountries' => $this->groupedEvents($bioPage, $start, $end, 'country_code'),
+            'topBrowsers' => $this->groupedEvents($bioPage, $start, $end, 'browser'),
+            'topPlatforms' => $this->groupedEvents($bioPage, $start, $end, 'platform'),
         ];
+    }
+
+    /**
+     * @return Builder<AnalyticsEvent>
+     */
+    private function eventQuery(BioPage $bioPage, \DateTimeInterface $start, \DateTimeInterface $end): Builder
+    {
+        return AnalyticsEvent::query()
+            ->where('analytics_events.workspace_id', $bioPage->workspace_id)
+            ->where('analytics_events.bio_page_id', $bioPage->getKey())
+            ->whereIn('analytics_events.event_name', ['bio_page.view', 'bio_page.clicked'])
+            ->where('analytics_events.occurred_at', '>=', $start)
+            ->where('analytics_events.occurred_at', '<', $end);
+    }
+
+    /**
+     * @return list<array{name: string, count: int}>
+     */
+    private function groupedEvents(
+        BioPage $bioPage,
+        \DateTimeInterface $start,
+        \DateTimeInterface $end,
+        string $column,
+    ): array {
+        if (! in_array($column, ['referrer_host', 'country_code', 'browser', 'platform'], true)) {
+            return [];
+        }
+
+        return $this->eventQuery($bioPage, $start, $end)
+            ->whereNotNull('analytics_events.'.$column)
+            ->where('analytics_events.'.$column, '<>', '')
+            ->select('analytics_events.'.$column)
+            ->selectRaw('COUNT(*) as aggregate_count')
+            ->groupBy('analytics_events.'.$column)
+            ->orderByDesc('aggregate_count')
+            ->orderBy('analytics_events.'.$column)
+            ->limit(5)
+            ->get()
+            ->map(fn (AnalyticsEvent $event): array => [
+                'name' => (string) $event->getAttribute($column),
+                'count' => (int) $event->getAttribute('aggregate_count'),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array{name: string, count: int}>
+     */
+    private function topLinks(BioPage $bioPage, \DateTimeInterface $start, \DateTimeInterface $end): array
+    {
+        return $this->eventQuery($bioPage, $start, $end)
+            ->join('bio_links', 'bio_links.id', '=', 'analytics_events.bio_link_id')
+            ->where('analytics_events.event_name', 'bio_page.clicked')
+            ->select('bio_links.title as aggregate_name')
+            ->selectRaw('COUNT(*) as aggregate_count')
+            ->groupBy('bio_links.id', 'bio_links.title')
+            ->orderByDesc('aggregate_count')
+            ->orderBy('bio_links.title')
+            ->limit(5)
+            ->get()
+            ->map(fn (AnalyticsEvent $event): array => [
+                'name' => (string) $event->getAttribute('aggregate_name'),
+                'count' => (int) $event->getAttribute('aggregate_count'),
+            ])
+            ->values()
+            ->all();
     }
 }

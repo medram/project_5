@@ -51,6 +51,8 @@ export type BillingOverride = {
 };
 
 export type BillingReadiness = {
+    enabled: boolean;
+    annualDisplay: boolean;
     checkoutReady: boolean;
     portalReady: boolean;
     missing: string[];

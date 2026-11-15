@@ -45,22 +45,31 @@ export function InsightsRangePicker({
     return (
         <form
             onSubmit={apply}
-            className="flex flex-col gap-3 rounded-lg border p-4 lg:flex-row lg:items-end"
+            className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-[var(--shadow-surface)] sm:flex-row sm:items-center"
         >
-            <div className="flex items-center gap-2 text-sm font-medium lg:mr-auto">
-                <CalendarRange className="size-4" aria-hidden="true" />
+            <div className="hidden items-center gap-2 text-sm font-medium sm:mr-auto sm:flex">
+                <CalendarRange
+                    className="size-4 text-muted-foreground"
+                    aria-hidden="true"
+                />
                 <span>{range.label}</span>
                 <span className="text-xs font-normal text-muted-foreground">
                     UTC
                 </span>
             </div>
-            <div className="grid gap-2 sm:grid-cols-3 lg:flex">
+            <div className="flex flex-wrap items-end gap-2">
                 <div className="grid gap-1">
-                    <Label htmlFor="insights-range">Window</Label>
+                    <Label
+                        htmlFor="insights-range"
+                        className="text-xs text-muted-foreground"
+                    >
+                        Window
+                    </Label>
                     <Select value={preset} onValueChange={setPreset}>
                         <SelectTrigger
                             id="insights-range"
-                            className="min-h-9 w-full lg:w-40"
+                            size="sm"
+                            className="w-full sm:w-40"
                         >
                             <SelectValue />
                         </SelectTrigger>
@@ -75,10 +84,16 @@ export function InsightsRangePicker({
                 {preset === 'custom' && (
                     <>
                         <div className="grid gap-1">
-                            <Label htmlFor="insights-from">From</Label>
+                            <Label
+                                htmlFor="insights-from"
+                                className="text-xs text-muted-foreground"
+                            >
+                                From
+                            </Label>
                             <Input
                                 id="insights-from"
                                 type="date"
+                                className="h-8"
                                 value={from}
                                 required
                                 onChange={(event) =>
@@ -87,10 +102,16 @@ export function InsightsRangePicker({
                             />
                         </div>
                         <div className="grid gap-1">
-                            <Label htmlFor="insights-to">To</Label>
+                            <Label
+                                htmlFor="insights-to"
+                                className="text-xs text-muted-foreground"
+                            >
+                                To
+                            </Label>
                             <Input
                                 id="insights-to"
                                 type="date"
+                                className="h-8"
                                 value={to}
                                 required
                                 onChange={(event) => setTo(event.target.value)}
@@ -98,7 +119,7 @@ export function InsightsRangePicker({
                         </div>
                     </>
                 )}
-                <Button type="submit" className="min-h-9 self-end">
+                <Button type="submit" size="sm" className="h-8">
                     Apply
                 </Button>
             </div>

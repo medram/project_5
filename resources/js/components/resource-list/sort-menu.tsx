@@ -1,3 +1,12 @@
+import { useId } from 'react';
+import { Field, FieldLabel } from '@/components/ui/field';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 export type ResourceListSortOption = {
     value: string;
     label: string;
@@ -10,20 +19,25 @@ export function ResourceListSortMenu({
     value: string;
     options: ResourceListSortOption[];
 }) {
+    const id = useId();
+
     return (
-        <label className="flex flex-col gap-1 text-sm">
-            <span>Sort by</span>
-            <select
-                name="sort"
-                defaultValue={value}
-                className="min-h-11 rounded-md border bg-background px-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-                {options.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </select>
-        </label>
+        <Field className="gap-1">
+            <FieldLabel htmlFor={id} className="text-sm">
+                Sort by
+            </FieldLabel>
+            <Select name="sort" defaultValue={value}>
+                <SelectTrigger id={id} className="min-h-11">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    {options.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </Field>
     );
 }

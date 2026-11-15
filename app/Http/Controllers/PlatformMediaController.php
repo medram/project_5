@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MediaPurpose;
 use App\Models\ContentMedia;
 use App\Services\Settings\PlatformSettings;
 use Illuminate\Support\Facades\Storage;
@@ -26,9 +27,12 @@ class PlatformMediaController extends Controller
 
         $file = ContentMedia::query()
             ->whereKey($media)
+            ->where('purpose', MediaPurpose::PlatformAsset)
+            ->whereNull('workspace_id')
+            ->where('visibility', 'private')
             ->whereIn('mime_type', ['image/jpeg', 'image/png', 'image/webp'])
             ->whereIn('scan_state', ['not_required', 'clean'])
-            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now('UTC')))
+            ->whereNull('expires_at')
             ->firstOrFail();
 
         $disk = Storage::disk($file->disk);

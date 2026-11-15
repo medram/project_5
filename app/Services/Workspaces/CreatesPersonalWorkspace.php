@@ -4,13 +4,10 @@ namespace App\Services\Workspaces;
 
 use App\Models\User;
 use App\Models\Workspace;
-use App\Services\Billing\WorkspaceUsage;
 use Illuminate\Support\Facades\DB;
 
 class CreatesPersonalWorkspace
 {
-    public function __construct(private readonly WorkspaceUsage $usage) {}
-
     public function for(User $user): Workspace
     {
         return DB::transaction(function () use ($user): Workspace {
@@ -26,7 +23,6 @@ class CreatesPersonalWorkspace
             $workspace->members()->syncWithoutDetaching([
                 $user->id => ['role' => 'owner'],
             ]);
-            $this->usage->subscriptionFor($workspace);
             $currentWorkspaceId = $user->current_workspace_id;
 
             if ($currentWorkspaceId === null || ! $user->workspaces()->whereKey($currentWorkspaceId)->exists()) {

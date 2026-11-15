@@ -7,6 +7,7 @@ use App\Http\Requests\StoreCustomDomainRequest;
 use App\Models\CustomDomain;
 use App\Models\Workspace;
 use App\Services\Billing\EnforcesPlanLimits;
+use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -67,6 +68,7 @@ class CustomDomainController extends Controller
     {
         $workspace = $this->workspaceContext->currentFor($request->user());
         Gate::authorize('manageIntegrations', $workspace);
+        abort_unless((bool) (app(PlatformSettings::class)->resolved()['links']['domains_enabled'] ?? true), 403);
 
         $this->planLimits->create(
             $workspace,

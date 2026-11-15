@@ -19,6 +19,13 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { show as showPage } from '@/routes/link-pages';
 import {
@@ -295,15 +302,11 @@ export function LinkPageVariantManager({
                     <FieldLabel htmlFor="selected-link-page-variant">
                         Editing variant
                     </FieldLabel>
-                    <select
-                        id="selected-link-page-variant"
-                        className="h-11 w-full rounded-md border bg-background px-3"
-                        value={selected.id}
-                        onChange={(event) => {
+                    <Select
+                        value={String(selected.id)}
+                        onValueChange={(value) => {
                             const next = variants.find(
-                                (variant) =>
-                                    variant.id ===
-                                    Number(event.currentTarget.value),
+                                (variant) => variant.id === Number(value),
                             );
                             router.get(
                                 showPage(page).url,
@@ -312,13 +315,24 @@ export function LinkPageVariantManager({
                             );
                         }}
                     >
-                        {variants.map((variant) => (
-                            <option key={variant.id} value={variant.id}>
-                                {variant.name} · {variant.weight}%
-                                {!variant.isActive ? ' · inactive' : ''}
-                            </option>
-                        ))}
-                    </select>
+                        <SelectTrigger
+                            id="selected-link-page-variant"
+                            className="h-11 w-full"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {variants.map((variant) => (
+                                <SelectItem
+                                    key={variant.id}
+                                    value={String(variant.id)}
+                                >
+                                    {variant.name} · {variant.weight}%
+                                    {!variant.isActive ? ' · inactive' : ''}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </Field>
                 <div className="flex flex-wrap items-center gap-2">
                     <Badge

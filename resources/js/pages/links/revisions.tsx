@@ -1,7 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowLeft, Check, History, X } from 'lucide-react';
+import { ArrowLeft, Check, X } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -86,7 +86,7 @@ export default function LinkRevisions({
     return (
         <>
             <Head title={`History for /${link.slug}`} />
-            <section className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <section className="flex flex-col gap-4">
                     <Button
                         variant="outline"
@@ -101,8 +101,6 @@ export default function LinkRevisions({
                     </Button>
                     <PageHeader
                         title={`/${link.slug}`}
-                        eyebrow="Revision history"
-                        icon={History}
                         description="Immutable delivery snapshots. Pending changes do not affect the live route until an authorized review applies them."
                     />
                 </section>

@@ -1,10 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
-import { CreditCard } from 'lucide-react';
-import AppLogo from '@/components/app-logo';
+import { HelpCircle, LogOut } from 'lucide-react';
+import { HelpDialog } from '@/components/help-dialog';
 import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
+import { SidebarIdentity } from '@/components/sidebar-identity';
+import { SidebarPlanUsage } from '@/components/sidebar-plan-usage';
 import { WorkspaceSwitcher } from '@/components/workspaces/workspace-switcher';
-import { Separator } from '@/components/ui/separator';
 import {
     Sidebar,
     SidebarContent,
@@ -15,97 +15,75 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
-import { index as billingIndex } from '@/routes/billing';
-import { index as linksIndex } from '@/routes/links';
-import { workspaceNavSections } from '@/components/workspace-navigation';
+import { filteredWorkspaceNavSections } from '@/components/workspace-navigation';
+import { logout } from '@/routes';
 import type { WorkspaceContext } from '@/types/workspaces';
 
 export function AppSidebar() {
     const { isMobile, setOpenMobile } = useSidebar();
-    const { workspace } = usePage<{ workspace?: WorkspaceContext }>().props;
+    const { workspace, platform } = usePage<{ workspace?: WorkspaceContext }>()
+        .props;
+
     return (
-        <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
+        <Sidebar collapsible="icon" variant="sidebar">
+            <SidebarHeader className="gap-1.5 p-3 pb-1">
+                <SidebarIdentity roleLabel={workspace?.current?.role} />
+                <WorkspaceSwitcher />
+            </SidebarHeader>
+
+            <SidebarContent className="px-2 pb-2">
+                <NavMain
+                    sections={filteredWorkspaceNavSections(
+                        platform?.capabilities,
+                    )}
+                />
+            </SidebarContent>
+
+            <SidebarFooter className="gap-1 p-3 pt-1 max-lg:border-t max-lg:border-sidebar-border">
+                {workspace?.current && (
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <SidebarPlanUsage
+                                plan={workspace.current.plan}
+                                role={workspace.current.role}
+                                usage={workspace.current.usage}
+                                onBillingClick={() => {
+                                    if (isMobile) {
+                                        setOpenMobile(false);
+                                    }
+                                }}
+                            />
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                )}
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
+                        <HelpDialog>
+                            <SidebarMenuButton>
+                                <HelpCircle aria-hidden="true" />
+                                <span>Help &amp; information</span>
+                            </SidebarMenuButton>
+                        </HelpDialog>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
                             <Link
-                                href={linksIndex()}
-                                prefetch
+                                href={logout()}
+                                method="post"
+                                as="button"
+                                className="w-full"
                                 onClick={() => {
                                     if (isMobile) {
                                         setOpenMobile(false);
                                     }
                                 }}
                             >
-                                <AppLogo />
+                                <LogOut aria-hidden="true" />
+                                <span>Log out</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
-            </SidebarHeader>
-
-            <SidebarContent>
-                <NavMain sections={workspaceNavSections} />
-            </SidebarContent>
-            <SidebarFooter className="gap-3">
-                <WorkspaceSwitcher />
-                {workspace?.current && (
-                    <section
-                        aria-label={`${workspace.current.plan} plan usage`}
-                        className="space-y-2 rounded-lg border p-3 group-data-[collapsible=icon]:hidden"
-                    >
-                        <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                                <p className="text-xs text-muted-foreground">
-                                    Current plan
-                                </p>
-                                <p className="truncate text-sm font-medium">
-                                    {workspace.current.plan}
-                                </p>
-                            </div>
-                            <SidebarMenuButton
-                                asChild
-                                size="sm"
-                                tooltip="Manage plan"
-                                className="min-h-11"
-                            >
-                                <Link
-                                    href={billingIndex()}
-                                    aria-label="Upgrade or manage plan"
-                                    onClick={() => {
-                                        if (isMobile) {
-                                            setOpenMobile(false);
-                                        }
-                                    }}
-                                >
-                                    <CreditCard aria-hidden="true" />
-                                    <span>Manage plan</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </div>
-                        <ul className="space-y-1 text-xs text-muted-foreground">
-                            {Object.entries(workspace.current.usage).map(
-                                ([key, metric]) => (
-                                    <li
-                                        key={key}
-                                        className="flex justify-between gap-2"
-                                    >
-                                        <span className="truncate">
-                                            {metric.label}
-                                        </span>
-                                        <span className="shrink-0 tabular-nums">
-                                            {metric.used} /{' '}
-                                            {metric.limit ?? 'Unlimited'}
-                                        </span>
-                                    </li>
-                                ),
-                            )}
-                        </ul>
-                    </section>
-                )}
-                <Separator />
-                <NavUser />
             </SidebarFooter>
         </Sidebar>
     );

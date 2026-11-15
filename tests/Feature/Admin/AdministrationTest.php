@@ -16,6 +16,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Testing\AssertableInertia as Assert;
 use LogicException;
 use Tests\TestCase;
@@ -124,6 +125,7 @@ class AdministrationTest extends TestCase
         $support = User::factory()->support()->create(['name' => 'Needle Support']);
         $pro = Plan::query()->where('code', 'pro')->sole();
         $proUser = User::factory()->create(['name' => 'Needle Pro']);
+        $freeUser = User::factory()->create(['name' => 'Needle Free']);
         app(WorkspaceUsage::class)->assignPlan($proUser->personalWorkspace()->firstOrFail(), $pro);
 
         $this->withoutVite();
@@ -156,6 +158,14 @@ class AdministrationTest extends TestCase
                 ->has('users.data', 1)
                 ->where('users.data.0.id', $proUser->id)
                 ->where('users.data.0.plan.code', 'pro'));
+
+        $this->actingAs($administrator)
+            ->get('/admin/users?q=Needle Free&plan=free')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('users.data', 1)
+                ->where('users.data.0.id', $freeUser->id)
+                ->where('users.data.0.plan.code', 'free'));
 
         $this->actingAs($administrator)
             ->get('/admin/users?role=none')
@@ -286,7 +296,8 @@ class AdministrationTest extends TestCase
             ->assertRedirect('/admin/users?q=Needle');
         $this->assertSame(
             $pro->id,
-            $account->personalWorkspace()->firstOrFail()->legacySubscription()->firstOrFail()->plan_id,
+            app(WorkspaceUsage::class)
+                ->effectivePlanFor($account->personalWorkspace()->firstOrFail())['plan']->id,
         );
 
         $this->from('/admin/users?q=Needle')
@@ -492,7 +503,7 @@ class AdministrationTest extends TestCase
             ->assertExitCode(0);
 
         $this->assertTrue($user->refresh()->hasPlatformRole(PlatformRoleCode::SuperAdmin));
-        $this->assertFalse($user->is_admin);
+        $this->assertFalse(Schema::hasColumn('users', 'is_admin'));
     }
 
     public function test_grant_administrator_command_does_not_create_a_missing_account(): void

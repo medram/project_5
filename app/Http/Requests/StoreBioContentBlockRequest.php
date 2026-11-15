@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\Settings\PlatformSettings;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -53,6 +54,11 @@ class StoreBioContentBlockRequest extends FormRequest
             $type = $this->input('type');
             $provider = $this->input('provider');
             $identifier = (string) $this->input('identifier', '');
+            $allowed = app(PlatformSettings::class)->resolved()['biolinks']['available_blocks'] ?? ['link', 'text', 'image', 'social', 'embed'];
+
+            if (is_string($type) && is_array($allowed) && ! in_array($type, $allowed, true)) {
+                $validator->errors()->add('type', 'This content type is unavailable on this platform.');
+            }
 
             $text = $this->input('text');
             if ($type === 'text' && is_string($text) && preg_match('/<\/?[a-z][^>]*>/i', $text)) {

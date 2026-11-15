@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Activity, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -57,11 +57,9 @@ export default function CustomAnalyticsEvents({
         <>
             <Head title="Custom analytics events" />
 
-            <section className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="Custom analytics events"
-                    eyebrow="Privacy-first analytics"
-                    icon={Activity}
                     description="Declare the event names your workspace may record. Only active names are accepted; existing analytics remain available after disabling one."
                     actions={
                         <Button asChild variant="outline">

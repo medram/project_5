@@ -1,8 +1,9 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 
 type TrackingConsentProps = {
     consent: 'granted' | 'denied' | null;
@@ -19,8 +20,15 @@ export function TrackingConsent({
     canGrantConsent,
 }: TrackingConsentProps) {
     const [processing, setProcessing] = useState(false);
+    const consentEnabled =
+        usePage().props.platform?.analytics.consentEnabled ?? true;
+    const gdpr = usePage().props.platform?.gdpr;
+    const notice =
+        gdpr?.notice ??
+        'Allow privacy-minimal visit analytics for this public page. Your choice is kept for 180 days.';
+    const corner = gdpr?.position === 'corner';
 
-    if (consent !== null) {
+    if (!consentEnabled || consent !== null) {
         return null;
     }
 
@@ -42,7 +50,10 @@ export function TrackingConsent({
     return (
         <aside
             aria-label="Privacy choices"
-            className="mx-auto mt-6 flex w-full max-w-xl flex-col gap-3 rounded-xl border bg-background/95 p-4 text-left shadow-sm"
+            className={cn(
+                'mt-6 flex w-full flex-col gap-3 rounded-xl border bg-background/95 p-4 text-left shadow-sm',
+                corner ? 'ml-auto max-w-sm' : 'mx-auto max-w-xl',
+            )}
         >
             <div className="flex gap-3">
                 <ShieldCheck
@@ -52,8 +63,7 @@ export function TrackingConsent({
                 <div className="space-y-1">
                     <p className="text-sm font-medium">Privacy choices</p>
                     <p className="text-sm leading-5 text-muted-foreground">
-                        Allow privacy-minimal visit analytics for this public
-                        page. Your choice is kept for 180 days.
+                        {notice}
                         {privacyUrl && (
                             <>
                                 {' '}
@@ -65,6 +75,17 @@ export function TrackingConsent({
                                 </a>
                             </>
                         )}
+                        {gdpr?.termsUrl ? (
+                            <>
+                                {' '}
+                                <a
+                                    href={gdpr.termsUrl}
+                                    className="underline underline-offset-4"
+                                >
+                                    Terms.
+                                </a>
+                            </>
+                        ) : null}
                     </p>
                 </div>
             </div>

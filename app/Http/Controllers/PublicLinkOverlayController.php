@@ -116,7 +116,7 @@ class PublicLinkOverlayController extends Controller
                 'ctaLabel' => $overlay->cta_label,
             ],
             'pixels' => $pixels,
-            'trackingConsent' => $this->consent->choice($request),
+            'trackingConsent' => $this->consent->effectiveChoice($request),
             'privacyUrl' => config('services.linkpilot.analytics.privacy_url'),
             'canGrantConsent' => $this->consent->canGrant(),
             'remainingDelaySeconds' => $remainingDelaySeconds,

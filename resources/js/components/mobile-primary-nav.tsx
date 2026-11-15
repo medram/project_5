@@ -1,16 +1,17 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { UserRound } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { cn } from '@/lib/utils';
 import { edit as profileEdit } from '@/routes/profile';
-import { workspaceNavSections } from '@/components/workspace-navigation';
+import { filteredWorkspaceNavSections } from '@/components/workspace-navigation';
 import type { NavItem } from '@/types';
 
 export function MobilePrimaryNav() {
     const { isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
-    const availableItems = workspaceNavSections.flatMap(
-        (section) => section.items,
-    );
+    const platform = usePage().props.platform;
+    const availableItems = filteredWorkspaceNavSections(
+        platform?.capabilities,
+    ).flatMap((section) => section.items);
     const primaryItems: NavItem[] = [
         {
             ...availableItems.find((item) => item.title === 'Short links')!,
@@ -32,7 +33,7 @@ export function MobilePrimaryNav() {
     ];
 
     return (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-background pb-[env(safe-area-inset-bottom)] min-[1025px]:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] min-[1025px]:hidden">
             <nav
                 aria-label="Primary navigation"
                 className="mx-auto flex w-full max-w-screen-md items-stretch gap-1 px-2 pt-1"
@@ -47,34 +48,35 @@ export function MobilePrimaryNav() {
                     const current = active && isCurrentUrl(item.href);
 
                     return (
-                        <Button
+                        <Link
                             key={item.title}
-                            variant={active ? 'secondary' : 'ghost'}
-                            size="sm"
-                            className="h-14 min-w-0 flex-1 flex-col gap-1 px-1 py-1 text-[10px]"
-                            asChild
+                            href={item.href}
+                            aria-current={
+                                active
+                                    ? current
+                                        ? 'page'
+                                        : 'location'
+                                    : undefined
+                            }
+                            className="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-medium text-muted-foreground transition-colors"
                         >
-                            <Link
-                                href={item.href}
-                                aria-current={
-                                    active
-                                        ? current
-                                            ? 'page'
-                                            : 'location'
-                                        : undefined
-                                }
-                            >
-                                {Icon && (
+                            {Icon && (
+                                <span
+                                    className={cn(
+                                        'flex h-6 min-w-9 items-center justify-center rounded-md px-2',
+                                        active && 'bg-default text-foreground',
+                                    )}
+                                >
                                     <Icon
-                                        data-icon="inline-start"
                                         aria-hidden="true"
+                                        className="size-[18px]"
                                     />
-                                )}
-                                <span className="max-w-full truncate">
-                                    {item.title}
                                 </span>
-                            </Link>
-                        </Button>
+                            )}
+                            <span className={cn(active && 'text-foreground')}>
+                                {item.title}
+                            </span>
+                        </Link>
                     );
                 })}
             </nav>

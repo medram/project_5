@@ -4,6 +4,7 @@ namespace App\Services\QrCodes;
 
 use App\Models\QrCode;
 use App\Models\QrScan;
+use App\Services\Analytics\RequestDimensions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -12,11 +13,14 @@ class QrScanRecorder
     public function __construct(
         private readonly QrCampaignDelivery $delivery,
         private readonly QrAccessUnlocks $unlocks,
+        private readonly RequestDimensions $dimensions,
     ) {}
 
     public function record(Request $request, QrCode $qrCode): ?string
     {
-        return DB::transaction(function () use ($request, $qrCode): ?string {
+        $dimensions = $this->dimensions->forRequest($request);
+
+        return DB::transaction(function () use ($request, $qrCode, $dimensions): ?string {
             $locked = QrCode::query()->lockForUpdate()->find($qrCode->getKey());
 
             if ($locked === null
@@ -42,6 +46,7 @@ class QrScanRecorder
             QrScan::query()->create([
                 'qr_code_id' => $locked->getKey(),
                 'scanned_at' => $now,
+                ...$dimensions,
             ]);
 
             return $targetUrl;

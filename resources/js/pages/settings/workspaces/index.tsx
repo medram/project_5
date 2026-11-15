@@ -6,8 +6,16 @@ import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import type {
     WorkspaceContext,
     WorkspaceInvitation,
@@ -149,6 +157,7 @@ export default function WorkspaceSettings({
             <Head title="Workspaces" />
             <div className="space-y-6">
                 <Heading
+                    variant="page"
                     title="Workspaces"
                     description="Choose where your team manages links and shared resources."
                 />
@@ -367,28 +376,38 @@ export default function WorkspaceSettings({
                                     />
                                     <InputError message={invite.errors.email} />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="invite-role">Role</Label>
-                                    <select
-                                        id="invite-role"
+                                <Field data-invalid={!!invite.errors.role}>
+                                    <FieldLabel htmlFor="invite-role">
+                                        Role
+                                    </FieldLabel>
+                                    <Select
                                         value={invite.data.role}
-                                        onChange={(e) =>
+                                        onValueChange={(value) =>
                                             invite.setData(
                                                 'role',
-                                                e.target.value as
-                                                    | 'admin'
-                                                    | 'member',
+                                                value as 'admin' | 'member',
                                             )
                                         }
-                                        aria-invalid={!!invite.errors.role}
-                                        className="min-h-11 w-full rounded-md border bg-background px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                                     >
-                                        <option value="member">Member</option>
-                                        {isOwner && (
-                                            <option value="admin">Admin</option>
-                                        )}
-                                    </select>
-                                </div>
+                                        <SelectTrigger
+                                            id="invite-role"
+                                            aria-invalid={!!invite.errors.role}
+                                            className="min-h-11 w-full"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="member">
+                                                Member
+                                            </SelectItem>
+                                            {isOwner && (
+                                                <SelectItem value="admin">
+                                                    Admin
+                                                </SelectItem>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </Field>
                                 <Button
                                     className="min-h-11"
                                     type="submit"
@@ -452,34 +471,41 @@ export default function WorkspaceSettings({
                                                 <>
                                                     {isOwner ? (
                                                         <>
-                                                            <Label
+                                                            <FieldLabel
                                                                 htmlFor={`member-role-${member.id}`}
                                                                 className="sr-only"
                                                             >
                                                                 Role for{' '}
                                                                 {member.email}
-                                                            </Label>
-                                                            <select
-                                                                id={`member-role-${member.id}`}
+                                                            </FieldLabel>
+                                                            <Select
                                                                 value={
                                                                     member.role
                                                                 }
-                                                                onChange={(e) =>
+                                                                onValueChange={(
+                                                                    value,
+                                                                ) =>
                                                                     updateMember(
                                                                         member,
-                                                                        e.target
-                                                                            .value,
+                                                                        value,
                                                                     )
                                                                 }
-                                                                className="min-h-11 rounded-md border bg-background px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                                                             >
-                                                                <option value="member">
-                                                                    Member
-                                                                </option>
-                                                                <option value="admin">
-                                                                    Admin
-                                                                </option>
-                                                            </select>
+                                                                <SelectTrigger
+                                                                    id={`member-role-${member.id}`}
+                                                                    className="min-h-11"
+                                                                >
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="member">
+                                                                        Member
+                                                                    </SelectItem>
+                                                                    <SelectItem value="admin">
+                                                                        Admin
+                                                                    </SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
                                                         </>
                                                     ) : (
                                                         <Badge variant="outline">
@@ -634,43 +660,56 @@ export default function WorkspaceSettings({
                                     onSubmit={submitTransfer}
                                     className="grid gap-4 sm:grid-cols-2"
                                 >
-                                    <div className="space-y-2">
-                                        <Label htmlFor="transfer-member">
+                                    <Field
+                                        data-invalid={!!transfer.errors.user_id}
+                                    >
+                                        <FieldLabel htmlFor="transfer-member">
                                             New owner
-                                        </Label>
-                                        <select
-                                            id="transfer-member"
-                                            required
-                                            value={transfer.data.user_id}
-                                            onChange={(e) =>
+                                        </FieldLabel>
+                                        <Select
+                                            name="user_id"
+                                            value={
+                                                transfer.data.user_id ||
+                                                undefined
+                                            }
+                                            onValueChange={(value) =>
                                                 transfer.setData(
                                                     'user_id',
-                                                    e.target.value,
+                                                    value,
                                                 )
                                             }
-                                            className="min-h-11 w-full rounded-md border bg-background px-3 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                            required
                                         >
-                                            <option value="">
-                                                Choose a member
-                                            </option>
-                                            {members
-                                                .filter(
-                                                    (m) => m.role !== 'owner',
-                                                )
-                                                .map((m) => (
-                                                    <option
-                                                        key={m.id}
-                                                        value={m.id}
-                                                    >
-                                                        {m.name || m.email} (
-                                                        {m.email})
-                                                    </option>
-                                                ))}
-                                        </select>
+                                            <SelectTrigger
+                                                id="transfer-member"
+                                                aria-invalid={
+                                                    !!transfer.errors.user_id
+                                                }
+                                                className="min-h-11 w-full"
+                                            >
+                                                <SelectValue placeholder="Choose a member" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {members
+                                                    .filter(
+                                                        (m) =>
+                                                            m.role !== 'owner',
+                                                    )
+                                                    .map((m) => (
+                                                        <SelectItem
+                                                            key={m.id}
+                                                            value={String(m.id)}
+                                                        >
+                                                            {m.name || m.email}{' '}
+                                                            ({m.email})
+                                                        </SelectItem>
+                                                    ))}
+                                            </SelectContent>
+                                        </Select>
                                         <InputError
                                             message={transfer.errors.user_id}
                                         />
-                                    </div>
+                                    </Field>
                                     <div className="space-y-2">
                                         <Label htmlFor="transfer-password">
                                             Confirm your password

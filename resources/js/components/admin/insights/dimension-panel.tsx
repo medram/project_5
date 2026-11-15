@@ -1,3 +1,5 @@
+import { DimensionDonut } from '@/components/admin/insights/donut-chart';
+import { RankedBars } from '@/components/admin/insights/ranked-bars';
 import {
     Card,
     CardContent,
@@ -7,48 +9,65 @@ import {
 } from '@/components/ui/card';
 import type { AdminDimension } from '@/types/admin-insights';
 
+type DimensionPanelProps = {
+    title: string;
+    description: string;
+    rows: AdminDimension[];
+    threshold?: number;
+    visual?: 'bars' | 'donut';
+    nameFormatter?: (name: string) => string;
+    footer?: string;
+    emptyMessage?: string;
+    totalLabel?: string;
+    cardVariant?: 'default' | 'transparent';
+};
+
 export function DimensionPanel({
     title,
     description,
     rows,
     threshold,
-}: {
-    title: string;
-    description: string;
-    rows: AdminDimension[];
-    threshold: number;
-}) {
+    visual = 'bars',
+    nameFormatter,
+    footer,
+    emptyMessage,
+    totalLabel,
+    cardVariant = 'default',
+}: DimensionPanelProps) {
     return (
-        <Card>
+        <Card variant={cardVariant} className="min-w-0">
             <CardHeader className="gap-1">
-                <CardTitle className="text-base">{title}</CardTitle>
+                <CardTitle className="text-base" as="h2">
+                    {title}
+                </CardTitle>
                 <CardDescription>
-                    {description} Buckets under {threshold} events are grouped
-                    as Other.
+                    {description}
+                    {threshold === undefined
+                        ? ''
+                        : ` Buckets under ${threshold} events are grouped as Other.`}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {rows.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                        No consenting activity in this window.
+                        {emptyMessage ??
+                            'No consenting activity in this window.'}
                     </p>
+                ) : visual === 'donut' ? (
+                    <DimensionDonut
+                        rows={rows}
+                        label={title}
+                        nameFormatter={nameFormatter}
+                        totalLabel={totalLabel ?? 'events'}
+                    />
                 ) : (
-                    <ul className="divide-y rounded-md border">
-                        {rows.map((row) => (
-                            <li
-                                key={row.name}
-                                className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
-                            >
-                                <span className="min-w-0 truncate">
-                                    {row.name}
-                                </span>
-                                <span className="shrink-0 tabular-nums">
-                                    {row.count.toLocaleString()}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
+                    <RankedBars rows={rows} nameFormatter={nameFormatter} />
                 )}
+                {footer ? (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                        {footer}
+                    </p>
+                ) : null}
             </CardContent>
         </Card>
     );

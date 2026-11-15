@@ -180,7 +180,7 @@ export function LivePreview({
     return (
         <Card className="gap-4 py-4">
             <CardHeader>
-                <div className="flex items-center gap-2 text-linkpilot-creator">
+                <div className="flex items-center gap-2 text-primary">
                     <Eye aria-hidden="true" />
                     <span className="text-sm font-medium">Live preview</span>
                 </div>
@@ -192,10 +192,26 @@ export function LivePreview({
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <BioPagePresentation
-                    presentation={presentation}
-                    previewAt={previewAt}
-                />
+                <div className="mx-auto w-full max-w-[22rem]">
+                    <div className="rounded-[2.4rem] border-[10px] border-linkpilot-ink bg-linkpilot-ink p-0.5 shadow-2xl">
+                        <div
+                            className={`bio-background-${presentation.appearance.background} relative min-h-[34rem] overflow-hidden rounded-[1.8rem] bg-background`}
+                        >
+                            <div
+                                className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center pt-2"
+                                aria-hidden="true"
+                            >
+                                <span className="h-5 w-20 rounded-full bg-linkpilot-ink" />
+                            </div>
+                            <div className="bio-preview-screen max-h-[40rem] overflow-y-auto p-4 pt-9">
+                                <BioPagePresentation
+                                    presentation={presentation}
+                                    previewAt={previewAt}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </CardContent>
             <CardFooter>
                 <p className="text-sm leading-6 text-muted-foreground">

@@ -112,6 +112,78 @@ class BioPageManagementTest extends TestCase
         ]);
     }
 
+    public function test_publishing_a_bio_page_from_the_index_returns_to_the_index(): void
+    {
+        $page = BioPage::factory()->create(['is_published' => false]);
+
+        $this->actingAs($page->user)
+            ->from(route('bio-pages.index'))
+            ->patch(route('bio-pages.update', $page), [
+                'handle' => $page->handle,
+                'display_name' => $page->display_name,
+                'bio' => $page->bio,
+                'is_published' => true,
+            ])
+            ->assertRedirect(route('bio-pages.index'));
+
+        $this->assertDatabaseHas('bio_pages', [
+            'id' => $page->id,
+            'is_published' => true,
+        ]);
+    }
+
+    public function test_owner_can_publish_and_unpublish_bio_page_from_editor(): void
+    {
+        $page = BioPage::factory()->create(['is_published' => false]);
+        $editorUrl = route('bio-pages.show', $page);
+
+        foreach ([true, false] as $isPublished) {
+            $this->actingAs($page->user)
+                ->from($editorUrl)
+                ->patch(route('bio-pages.update', $page), [
+                    'handle' => $page->handle,
+                    'display_name' => $page->display_name,
+                    'bio' => $page->bio,
+                    'is_published' => $isPublished,
+                ])
+                ->assertRedirect($editorUrl);
+
+            $this->assertDatabaseHas('bio_pages', [
+                'id' => $page->id,
+                'is_published' => $isPublished,
+            ]);
+        }
+    }
+
+    public function test_appearance_partial_update_preserves_existing_choices(): void
+    {
+        $page = BioPage::factory()->create([
+            'appearance' => [
+                'theme' => 'light',
+                'typography' => 'serif',
+                'color' => 'rose',
+                'background' => 'sand',
+            ],
+        ]);
+
+        $this->actingAs($page->user)
+            ->patch("/dashboard/biolinks/{$page->id}", [
+                'handle' => $page->handle,
+                'display_name' => $page->display_name,
+                'bio' => $page->bio,
+                'is_published' => $page->is_published,
+                'appearance' => ['theme' => 'dark'],
+            ])
+            ->assertRedirect("/dashboard/biolinks/{$page->id}");
+
+        $this->assertSame([
+            'theme' => 'dark',
+            'typography' => 'serif',
+            'color' => 'rose',
+            'background' => 'sand',
+        ], $page->refresh()->appearance);
+    }
+
     public function test_owner_can_toggle_a_link_with_a_partial_update(): void
     {
         $page = BioPage::factory()->create();

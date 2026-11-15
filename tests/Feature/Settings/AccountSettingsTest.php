@@ -7,6 +7,7 @@ use App\Models\ContentMedia;
 use App\Models\SocialAccount;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -304,9 +305,17 @@ class AccountSettingsTest extends TestCase
 
     private function enableGoogle(): void
     {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'authentication', [
+            'google_enabled' => true,
+            'google_client_id' => 'google-client-id.apps.googleusercontent.com',
+            'google_client_secret' => 'google-client-secret',
+        ], $settings->version('authentication'));
+
         config([
             'linkpilot.auth.google_enabled' => true,
-            'services.google.client_id' => 'google-client-id',
+            'services.google.client_id' => 'google-client-id.apps.googleusercontent.com',
             'services.google.client_secret' => 'google-client-secret',
         ]);
     }

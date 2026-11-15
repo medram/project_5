@@ -1,16 +1,15 @@
-import { Head, Link } from '@inertiajs/react';
-import { Activity, ArrowLeft, QrCode } from 'lucide-react';
-import { PageHeader } from '@/components/page-header';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Head } from '@inertiajs/react';
+import { ExternalLink } from 'lucide-react';
+import { QrScanInsights } from '@/components/qr-codes/qr-scan-insights';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+    qrCampaignBadgeVariant,
+    qrCampaignState,
+} from '@/components/qr-codes/qr-code-status';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader } from '@/components/ui/card';
+import { redirect as publicLink } from '@/routes/links';
 import { campaignInsights, index, insights } from '@/routes/qr-codes';
+import type { AnalyticsWindowDays } from '@/types/analytics';
 import type { QrCodeInsightsProps } from '@/types/qr-codes';
 
 export default function QrCodeInsights({
@@ -26,144 +25,80 @@ export default function QrCodeInsights({
         scope === 'campaign'
             ? qrCode?.title || qrCode?.link?.title || 'QR campaign scans'
             : 'Workspace QR scans';
+    const destinationLabel = qrCode
+        ? qrCode.link
+            ? `/${qrCode.link.slug}`
+            : (qrCode.destination_url ?? 'No destination')
+        : null;
+    const destinationUrl = qrCode
+        ? qrCode.link
+            ? publicLink(qrCode.link.slug).url
+            : qrCode.destination_url
+        : null;
+    const state = qrCode ? qrCampaignState(qrCode) : null;
+
+    function windowUrl(days: AnalyticsWindowDays): string {
+        return `${currentUrl}?days=${days}`;
+    }
 
     return (
         <>
             <Head title={`${title} · QR insights`} />
-            <section className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <PageHeader
-                    title="QR scan insights"
-                    eyebrow={
-                        scope === 'campaign'
-                            ? 'Campaign analytics'
-                            : 'Workspace analytics'
-                    }
-                    icon={Activity}
-                    description="Counts come only from anonymous QR scan records; short-link clicks and consent-based analytics are not included."
-                    actions={
-                        <Button variant="outline" asChild>
-                            <Link href={index().url}>
-                                <ArrowLeft data-icon="inline-start" />
-                                QR campaigns
-                            </Link>
-                        </Button>
-                    }
-                />
+            <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
+                <h1 className="sr-only">{title}</h1>
 
-                {qrCode && (
-                    <Card>
+                {qrCode && state && (
+                    <Card className="py-3">
                         <CardHeader>
-                            <CardDescription>Campaign</CardDescription>
-                            <CardTitle className="[overflow-wrap:anywhere] break-words">
-                                {title}
-                            </CardTitle>
-                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                                <Badge variant="outline">/{qrCode.code}</Badge>
-                                <span className="min-w-0 break-all">
-                                    {qrCode.link
-                                        ? `/${qrCode.link.slug}`
-                                        : qrCode.destination_url}
-                                </span>
+                            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+                                <div className="flex min-w-0 flex-1 items-baseline gap-2">
+                                    <span className="shrink-0 text-xs text-muted-foreground">
+                                        Destination
+                                    </span>
+                                    <span
+                                        className="min-w-0 truncate text-sm font-semibold"
+                                        title={destinationLabel ?? undefined}
+                                    >
+                                        {destinationLabel}
+                                    </span>
+                                </div>
+                                <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground sm:w-auto">
+                                    <Badge variant="outline">
+                                        /{qrCode.code}
+                                    </Badge>
+                                    <span className="hidden sm:inline">
+                                        {qrCode.source === 'linked'
+                                            ? 'Linked short link'
+                                            : 'Direct campaign'}
+                                    </span>
+                                    <Badge
+                                        variant={qrCampaignBadgeVariant(state)}
+                                    >
+                                        {state}
+                                    </Badge>
+                                    {destinationUrl ? (
+                                        <a
+                                            href={destinationUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="ml-auto inline-flex w-fit items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
+                                        >
+                                            Open destination
+                                            <ExternalLink
+                                                aria-hidden="true"
+                                                className="size-3.5"
+                                            />
+                                        </a>
+                                    ) : (
+                                        <span>No available destination</span>
+                                    )}
+                                </div>
                             </div>
                         </CardHeader>
                     </Card>
                 )}
 
-                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardDescription>
-                                Recorded scans · last {analytics.days} days
-                            </CardDescription>
-                            <CardTitle className="text-3xl tabular-nums">
-                                {analytics.totalScans}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <nav
-                        aria-label="Analytics time range"
-                        className="flex flex-wrap gap-2"
-                    >
-                        {[7, 30, 90].map((days) => (
-                            <Button
-                                key={days}
-                                variant={
-                                    analytics.days === days
-                                        ? 'default'
-                                        : 'outline'
-                                }
-                                size="sm"
-                                asChild
-                            >
-                                <Link href={`${currentUrl}?days=${days}`}>
-                                    {days} days
-                                </Link>
-                            </Button>
-                        ))}
-                    </nav>
-                </div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <QrCode aria-hidden="true" className="size-5" />
-                            Daily scans
-                        </CardTitle>
-                        <CardDescription>
-                            Each row counts one successful visit to a valid QR
-                            campaign URL.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="max-h-[32rem] overflow-auto rounded-md border">
-                            <table className="w-full text-sm">
-                                <caption className="sr-only">
-                                    Daily QR scan counts for the selected period
-                                </caption>
-                                <thead className="sticky top-0 bg-muted text-left">
-                                    <tr>
-                                        <th
-                                            scope="col"
-                                            className="px-4 py-3 font-medium"
-                                        >
-                                            Date
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            className="px-4 py-3 text-right font-medium"
-                                        >
-                                            Scans
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {analytics.daily.map((row) => (
-                                        <tr key={row.date} className="border-t">
-                                            <th
-                                                scope="row"
-                                                className="px-4 py-3 text-left font-normal"
-                                            >
-                                                {new Date(
-                                                    `${row.date}T12:00:00Z`,
-                                                ).toLocaleDateString(
-                                                    undefined,
-                                                    {
-                                                        year: 'numeric',
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                    },
-                                                )}
-                                            </th>
-                                            <td className="px-4 py-3 text-right tabular-nums">
-                                                {row.scans}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </CardContent>
-                </Card>
+                <QrScanInsights analytics={analytics} windowUrl={windowUrl} />
             </section>
         </>
     );

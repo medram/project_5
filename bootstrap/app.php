@@ -3,10 +3,11 @@
 use App\Http\Middleware\ApplyPlatformSettings;
 use App\Http\Middleware\EnsureAccountUsable;
 use App\Http\Middleware\EnsureActiveAccount;
-use App\Http\Middleware\EnsurePlatformPermission;
 use App\Http\Middleware\EnsureAllowedHost;
+use App\Http\Middleware\EnsurePlatformPermission;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackLastSeen;
 use App\Http\Responses\ApiError;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -32,9 +33,18 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
         $middleware->preventRequestsDuringMaintenance(except: ['/up']);
+        $middleware->validateCsrfTokens(except: ['stripe/webhook']);
+        $middleware->api(prepend: [ApplyPlatformSettings::class]);
 
         $middleware->web(append: [
+            EnsureAllowedHost::class,
             ApplyPlatformSettings::class,
+            SetLocale::class,
+            HandleAppearance::class,
+            HandleInertiaRequests::class,
+            EnsureAccountUsable::class,
+            TrackLastSeen::class,
+            AddLinkHeadersForPreloadedAssets::class,
         ]);
 
         $middleware->alias([
@@ -44,14 +54,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'ability' => CheckForAnyAbility::class,
         ]);
 
-        $middleware->web(append: [
-            EnsureAllowedHost::class,
-            HandleAppearance::class,
-            HandleInertiaRequests::class,
-            EnsureAccountUsable::class,
-            TrackLastSeen::class,
-            AddLinkHeadersForPreloadedAssets::class,
-        ]);
         $middleware->prependToPriorityList(AuthenticatesRequests::class, EnsureAllowedHost::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -37,6 +37,21 @@ class LinkManagementTest extends TestCase
         ]);
     }
 
+    public function test_link_index_exposes_country_options_for_targeting_selects(): void
+    {
+        $this->withoutVite();
+
+        $this->actingAs(User::factory()->create())
+            ->get('/dashboard/links')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('countries')
+                ->where('countries', fn ($countries) => collect($countries)->contains(
+                    fn ($country) => ($country['code'] ?? null) === 'US'
+                        && ($country['name'] ?? null) === 'United States',
+                )));
+    }
+
     public function test_link_index_includes_only_current_workspace_link_page_metadata(): void
     {
         $owner = User::factory()->create();

@@ -1,4 +1,5 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -14,6 +15,24 @@ type Props = {
 };
 
 export default function Register({ passwordRules }: Props) {
+    const captcha = usePage().props.platform?.captcha;
+
+    useEffect(() => {
+        if (
+            !captcha?.enabled ||
+            document.querySelector('script[data-turnstile]')
+        ) {
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+        script.async = true;
+        script.defer = true;
+        script.dataset.turnstile = 'true';
+        document.head.appendChild(script);
+    }, [captcha?.enabled]);
+
     return (
         <>
             <Head title="Register" />
@@ -89,6 +108,17 @@ export default function Register({ passwordRules }: Props) {
                                     message={errors.password_confirmation}
                                 />
                             </div>
+
+                            {captcha?.enabled && captcha.siteKey ? (
+                                <div
+                                    className="cf-turnstile"
+                                    data-sitekey={captcha.siteKey}
+                                    data-action="register"
+                                />
+                            ) : null}
+                            {errors.captcha ? (
+                                <InputError message={errors.captcha} />
+                            ) : null}
 
                             <Button
                                 type="submit"

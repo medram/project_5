@@ -22,8 +22,13 @@ export function NavMain({ sections }: { sections: Section[] }) {
     return (
         <>
             {sections.map((section) => (
-                <SidebarGroup key={section.title} className="px-2 py-0">
-                    <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+                <SidebarGroup
+                    key={section.title}
+                    className="mt-4 px-0 py-0 first:mt-0"
+                >
+                    <SidebarGroupLabel className="mb-0.5">
+                        {section.title}
+                    </SidebarGroupLabel>
                     <SidebarMenu>
                         {section.items.map((item) => {
                             const active = isCurrentOrParentUrl(item.href);
@@ -33,7 +38,7 @@ export function NavMain({ sections }: { sections: Section[] }) {
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton
                                         asChild
-                                        className="min-h-11"
+                                        className="h-9 max-md:h-11"
                                         isActive={active}
                                         tooltip={{ children: item.title }}
                                     >

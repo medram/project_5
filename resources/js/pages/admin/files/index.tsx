@@ -1,6 +1,6 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
-import { FileSearch, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { formatAdminDate, humanizeAdminValue } from '@/components/admin/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -77,13 +77,9 @@ export default function AdminFilesIndex({
     return (
         <>
             <Head title="Files — Administration" />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <header className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <FileSearch className="size-4" aria-hidden="true" />
-                        <span>Platform administration</span>
-                    </div>
-                    <h1 className="text-2xl font-semibold tracking-tight">
+                    <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
                         Files
                     </h1>
                     <p className="max-w-3xl text-sm text-muted-foreground">
@@ -190,9 +186,14 @@ export default function AdminFilesIndex({
                     </CardContent>
                 </Card>
 
-                <div className="hidden overflow-hidden rounded-lg border lg:block">
-                    <table className="w-full border-collapse text-sm">
-                        <thead className="bg-muted/50 text-left text-xs text-muted-foreground uppercase">
+                <div className="lp-table-shell hidden lg:block">
+                    <table
+                        data-table-surface={
+                            rows.data.length > 0 ? 'populated' : undefined
+                        }
+                        className="w-full border-collapse text-sm"
+                    >
+                        <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-3 font-medium">File</th>
                                 <th className="px-4 py-3 font-medium">
@@ -378,7 +379,7 @@ export default function AdminFilesIndex({
                         </Card>
                     ))}
                     {rows.data.length === 0 && (
-                        <Card>
+                        <Card variant="transparent">
                             <CardContent className="p-8 text-center text-sm text-muted-foreground">
                                 No retained media match these filters.
                             </CardContent>

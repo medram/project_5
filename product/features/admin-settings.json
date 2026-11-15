@@ -13,7 +13,7 @@
         },
         {
             "id": "ASET-1",
-            "text": "A typed settings repository accepts only whitelisted fields per section and encrypts secrets while environment security values take precedence.",
+            "text": "A typed settings repository accepts only whitelisted fields per section, encrypts administrator-managed secrets, never returns or caches decrypted secrets, and tracks durable per-section revisions.",
             "priority": "P0",
             "status": "verified"
         },
@@ -52,8 +52,9 @@
     ],
     "dependencies": ["admin-users-roles", "billing", "analytics"],
     "externalPrerequisites": [
-        "Mailer credentials for live test-email action",
-        "Configured captcha credentials when captcha is enabled"
+        "Administrator-managed SMTP credentials for live email delivery",
+        "Administrator-managed Stripe credentials for live checkout",
+        "Administrator-managed Google/Turnstile credentials when those providers are enabled"
     ],
     "acceptanceCriteria": [
         {
@@ -63,6 +64,10 @@
         {
             "id": "ASET-AC-2",
             "text": "Partially configured external providers remain disabled rather than appearing operational."
+        },
+        {
+            "id": "ASET-AC-4",
+            "text": "Runtime product and integration settings are administrator-owned database rows; bootstrap and infrastructure values remain deployment-owned and appear only as redacted readiness."
         },
         {
             "id": "ASET-AC-3",
@@ -286,6 +291,24 @@
             "description": "Consumer behavior suite passed 7 tests and 51 assertions: public site identity/menus/SEO/verification/ads payload, homepage/pricing visibility, registration and blocked-domain enforcement, Google disablement, fail-closed Turnstile with hostname/action checks, mail and analytics-retention settings, link defaults/toggles/blocklists/slug policy. Full suite passed 550 tests and 18,212 assertions.",
             "reference": "tests/Feature/Admin/PlatformSettingsBehaviorTest.php; php -d memory_limit=1G vendor/bin/phpunit",
             "verifiedAt": "2026-11-12T16:55:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Control-plane contract suite covers durable section revisions, encrypted but never cached/returned secrets, explicit secret removal, grouped schema, settings import dry-run/idempotency/redaction, legacy asset conversion with failure blocking, nullable workspace rollback, platform-asset eligibility, redacted readiness, option sources, versioned actions, and runtime application to HTTP, API, queue, console, and Cashier routes.",
+            "reference": "tests/Feature/Admin/AdminSettingsTest.php; tests/Feature/Admin/PlatformSettingsRuntimeTest.php; tests/Feature/Admin/PlatformSettingsMigrationTest.php; tests/Feature/Admin/PlatformSettingsImportTest.php; tests/Feature/Admin/PlatformAssetTest.php; tests/Feature/Admin/AdminSettingActionsTest.php",
+            "verifiedAt": "2026-11-13T00:00:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Control-plane focused suite passed 199 tests and 1,962 assertions across settings contracts, runtime application, migrations, import, platform assets, action endpoints, auth/account, bio pages, billing, links, API, webhooks, analytics, and content media.",
+            "reference": "tests/Feature/Admin; tests/Feature/Auth/RegistrationTest.php; tests/Feature/BioPages; tests/Feature/Billing/BillingSurfaceTest.php; tests/Feature/Links; tests/Feature/Api/VersionedApiTest.php; tests/Feature/Webhooks/WebhookDeliveryTest.php; tests/Feature/Analytics/AnalyticsTrackingTest.php; tests/Feature/Content/ContentMediaStorageTest.php",
+            "verifiedAt": "2026-11-13T00:00:00Z"
+        },
+        {
+            "type": "behavior",
+            "description": "Splash countdown, maintenance banner projection, Bio block allowlist rejection, optional Bio attribution, site/pricing billing display, centralized destination blocklists for web/CSV/API writes, and consent-gated platform GA4/AdSense projections are wired to administrator settings.",
+            "reference": "tests/Feature/Admin/PlatformSettingsBehaviorTest.php; tests/Feature/BioPages/BioContentBlockTest.php; tests/Feature/Billing/BillingSurfaceTest.php",
+            "verifiedAt": "2026-11-13T00:00:00Z"
         }
     ]
 }

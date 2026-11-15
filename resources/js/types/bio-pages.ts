@@ -53,6 +53,10 @@ export type BioLink = {
     updatedAt: string;
 };
 export type BioPageIndexProps = { bioPages: BioPagePayload[] };
+export type BioPageInsightCount = {
+    name: string;
+    count: number;
+};
 export type BioPageInsights = {
     days: 7 | 30 | 90;
     startDate: string;
@@ -60,6 +64,11 @@ export type BioPageInsights = {
     totalViews: number;
     totalClicks: number;
     daily: { date: string; views: number; clicks: number }[];
+    topLinks: BioPageInsightCount[];
+    topReferrers: BioPageInsightCount[];
+    topCountries: BioPageInsightCount[];
+    topBrowsers: BioPageInsightCount[];
+    topPlatforms: BioPageInsightCount[];
 };
 export type BioPageEditorProps = {
     bioPage: BioPagePayload;
@@ -111,6 +120,7 @@ export type BioPagePublicProps = {
     trackingConsent: 'granted' | 'denied' | null;
     privacyUrl: string | null;
     canGrantConsent: boolean;
+    branding: { label: string; logo: string | null } | null;
 };
 export function toBioPage(bioPage: BioPagePayload): BioPage {
     return {
@@ -119,11 +129,12 @@ export function toBioPage(bioPage: BioPagePayload): BioPage {
         displayName: bioPage.display_name,
         bio: bioPage.bio,
         isPublished: bioPage.is_published,
-        appearance: bioPage.appearance ?? {
+        appearance: {
             theme: 'light',
             typography: 'sans',
             color: 'blue',
             background: 'plain',
+            ...bioPage.appearance,
         },
         createdAt: bioPage.created_at,
         updatedAt: bioPage.updated_at,

@@ -59,7 +59,7 @@ export default function CheckoutResult({
                                 />
                             ) : (
                                 <Clock
-                                    className="size-5 text-amber-600"
+                                    className="size-5 text-warning"
                                     aria-hidden="true"
                                 />
                             )}

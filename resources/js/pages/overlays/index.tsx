@@ -1,5 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { Layers, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -439,11 +439,9 @@ export default function OverlaysIndex({
         <>
             <Head title="CTA overlays" />
 
-            <div className="flex flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="CTA overlays"
-                    eyebrow="Branded interstitials"
-                    icon={Layers}
                     description="Show a LinkPilot-controlled message before a short link delivers its destination."
                     actions={
                         canManageIntegrations ? (

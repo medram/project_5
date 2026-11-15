@@ -638,11 +638,9 @@ export default function WebhooksIndex({
         <>
             <Head title="Webhooks" />
 
-            <div className="flex flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="Webhooks"
-                    eyebrow="Signed event delivery"
-                    icon={WebhookIcon}
                     description="Receive consented analytics events for this workspace. Failed deliveries retry automatically; owners and admins can redeliver eligible attempts."
                     actions={
                         canManageIntegrations ? (

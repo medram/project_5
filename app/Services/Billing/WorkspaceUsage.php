@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceApiToken;
 use App\Models\WorkspacePlanOverride;
-use App\Models\WorkspaceSubscription;
 use App\Services\Notifications\WorkspaceNotificationService;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -34,15 +33,6 @@ class WorkspaceUsage
     public function effectivePlanFor(Workspace $workspace): array
     {
         return $this->effectivePlan->for($workspace);
-    }
-
-    /**
-     * The legacy local subscription row backs the current billing screen until
-     * provider-owned billing replaces it; it never decides the effective plan.
-     */
-    public function subscriptionFor(Workspace $workspace): WorkspaceSubscription
-    {
-        return $this->legacySubscription($workspace);
     }
 
     /**
@@ -82,25 +72,18 @@ class WorkspaceUsage
         return $this->metric($metric->label(), $this->usedFor($workspace, $metric), $limit);
     }
 
-    public function assignPlan(Workspace $workspace, Plan $plan): WorkspaceSubscription
+    public function assignPlan(Workspace $workspace, Plan $plan): WorkspacePlanOverride
     {
-        return DB::transaction(function () use ($workspace, $plan): WorkspaceSubscription {
+        return DB::transaction(function () use ($workspace, $plan): WorkspacePlanOverride {
             $lockedWorkspace = Workspace::query()->lockForUpdate()->findOrFail($workspace->getKey());
             /** @var Workspace $lockedWorkspace */
             $previousPlanId = (int) $this->planFor($lockedWorkspace)->getKey();
-            $subscription = $this->legacySubscription($lockedWorkspace);
-            $subscription->update([
-                'plan_id' => $plan->getKey(),
-                'status' => 'active',
-                'source' => 'manual',
-            ]);
-
-            $this->overrides->assign(
+            $override = $this->overrides->assign(
                 $lockedWorkspace,
                 $plan,
                 null,
-                'legacy_manual',
-                'Legacy manual plan assignment.',
+                'manual',
+                'Manual plan assignment.',
             );
 
             if ($previousPlanId !== (int) $plan->getKey()) {
@@ -114,12 +97,7 @@ class WorkspaceUsage
                 );
             }
 
-            /** @var WorkspaceSubscription $updated */
-            $updated = WorkspaceSubscription::query()
-                ->with('plan')
-                ->findOrFail($subscription->getKey());
-
-            return $updated;
+            return $override;
         });
     }
 
@@ -169,15 +147,6 @@ class WorkspaceUsage
                 'plan' => "The {$capacity['plan']} plan allows up to {$capacity['limit']} workspace members, including pending invitations.",
             ]);
         }
-    }
-
-    private function legacySubscription(Workspace $workspace): WorkspaceSubscription
-    {
-        return $workspace->legacySubscription()->firstOrCreate([], [
-            'plan_id' => Plan::query()->where('code', 'free')->sole()->id,
-            'status' => 'active',
-            'source' => 'manual',
-        ]);
     }
 
     private function usedFor(Workspace $workspace, PlanMetric $metric): int

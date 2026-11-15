@@ -1,25 +1,44 @@
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, ExternalLink, PanelsTopLeft } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { ArrowLeft, ExternalLink, Power } from 'lucide-react';
+import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { BioPageEditor } from '@/components/bio-pages/editor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { index, publicMethod } from '@/routes/bio-pages';
+import { Spinner } from '@/components/ui/spinner';
+import { index, publicMethod, update } from '@/routes/bio-pages';
 import { type BioPageEditorProps, toBioPage } from '@/types/bio-pages';
 
 export default function EditBioPage(props: BioPageEditorProps) {
     const bioPage = toBioPage(props.bioPage);
     const publicUrl = publicMethod(bioPage.handle).url;
+    const [updatingPublication, setUpdatingPublication] = useState(false);
+
+    function togglePublished() {
+        router.patch(
+            update(bioPage.id).url,
+            {
+                handle: bioPage.handle,
+                display_name: bioPage.displayName,
+                bio: bioPage.bio ?? '',
+                is_published: !bioPage.isPublished,
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onStart: () => setUpdatingPublication(true),
+                onFinish: () => setUpdatingPublication(false),
+            },
+        );
+    }
 
     return (
         <>
             <Head title={`Edit ${bioPage.displayName}`} />
 
-            <section className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title={bioPage.displayName}
-                    eyebrow="Publishing desk"
-                    icon={PanelsTopLeft}
                     description="Manage the profile, button order, and publication state from one place."
                     actions={
                         <>
@@ -30,6 +49,34 @@ export default function EditBioPage(props: BioPageEditorProps) {
                             >
                                 {bioPage.isPublished ? 'Published' : 'Draft'}
                             </Badge>
+                            <Button
+                                variant={
+                                    bioPage.isPublished ? 'outline' : 'default'
+                                }
+                                className="min-h-11 sm:min-h-9"
+                                disabled={updatingPublication}
+                                aria-busy={updatingPublication}
+                                onClick={togglePublished}
+                            >
+                                {updatingPublication ? (
+                                    <Spinner
+                                        aria-hidden="true"
+                                        data-icon="inline-start"
+                                    />
+                                ) : (
+                                    <Power
+                                        aria-hidden="true"
+                                        data-icon="inline-start"
+                                    />
+                                )}
+                                {updatingPublication
+                                    ? bioPage.isPublished
+                                        ? 'Unpublishing…'
+                                        : 'Publishing…'
+                                    : bioPage.isPublished
+                                      ? 'Unpublish'
+                                      : 'Publish'}
+                            </Button>
                             <Button variant="outline" asChild>
                                 <Link href={index()}>
                                     <ArrowLeft data-icon="inline-start" />

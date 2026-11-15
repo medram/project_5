@@ -1,5 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { Activity, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react';
+import { Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -369,6 +369,7 @@ const triggerOptions = [
     { value: 'button_click', label: 'Button click' },
     { value: 'lead_submit', label: 'Accepted lead submission' },
 ] as const;
+const NO_TARGET = '__linkpilot_no_target__';
 
 function PixelRules({
     pixel,
@@ -475,15 +476,19 @@ function PixelRules({
                     className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
                     onSubmit={addRule}
                 >
-                    <label className="sr-only" htmlFor={`target-${pixel.id}`}>
+                    <FieldLabel
+                        className="sr-only"
+                        htmlFor={`target-${pixel.id}`}
+                    >
                         Public surface
-                    </label>
-                    <select
-                        id={`target-${pixel.id}`}
-                        className="h-10 min-w-0 rounded-md border bg-background px-3 text-sm"
-                        value={targetKey}
-                        onChange={(event) => {
-                            const value = event.target.value;
+                    </FieldLabel>
+                    <Select
+                        value={targetKey || NO_TARGET}
+                        onValueChange={(selectedValue) => {
+                            const value =
+                                selectedValue === NO_TARGET
+                                    ? ''
+                                    : selectedValue;
                             const nextTarget = targets.find(
                                 (item) => `${item.type}:${item.id}` === value,
                             );
@@ -502,44 +507,65 @@ function PixelRules({
                         }}
                         required
                     >
-                        <option value="">Choose a surface</option>
-                        {targets.map((target) => (
-                            <option
-                                key={`${target.type}:${target.id}`}
-                                value={`${target.type}:${target.id}`}
-                            >
-                                {target.name}
-                            </option>
-                        ))}
-                    </select>
-                    <label className="sr-only" htmlFor={`trigger-${pixel.id}`}>
+                        <SelectTrigger
+                            id={`target-${pixel.id}`}
+                            className="h-10 w-full min-w-0"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={NO_TARGET}>
+                                Choose a surface
+                            </SelectItem>
+                            {targets.map((target) => (
+                                <SelectItem
+                                    key={`${target.type}:${target.id}`}
+                                    value={`${target.type}:${target.id}`}
+                                >
+                                    {target.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <FieldLabel
+                        className="sr-only"
+                        htmlFor={`trigger-${pixel.id}`}
+                    >
                         Trigger
-                    </label>
-                    <select
-                        id={`trigger-${pixel.id}`}
-                        className="h-10 min-w-0 rounded-md border bg-background px-3 text-sm"
+                    </FieldLabel>
+                    <Select
                         value={form.data.trigger}
-                        onChange={(event) => {
+                        onValueChange={(value) => {
                             form.setData(
                                 'trigger',
-                                event.target
-                                    .value as (typeof triggerOptions)[number]['value'],
+                                value as (typeof triggerOptions)[number]['value'],
                             );
                             form.clearErrors();
                         }}
                     >
-                        {triggerOptions
-                            .filter(
-                                (item) =>
-                                    item.value !== 'lead_submit' ||
-                                    selectedTarget?.type === 'link_page',
-                            )
-                            .map((item) => (
-                                <option key={item.value} value={item.value}>
-                                    {item.label}
-                                </option>
-                            ))}
-                    </select>
+                        <SelectTrigger
+                            id={`trigger-${pixel.id}`}
+                            className="h-10 w-full min-w-0"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {triggerOptions
+                                .filter(
+                                    (item) =>
+                                        item.value !== 'lead_submit' ||
+                                        selectedTarget?.type === 'link_page',
+                                )
+                                .map((item) => (
+                                    <SelectItem
+                                        key={item.value}
+                                        value={item.value}
+                                    >
+                                        {item.label}
+                                    </SelectItem>
+                                ))}
+                        </SelectContent>
+                    </Select>
                     <Button
                         type="submit"
                         disabled={
@@ -569,11 +595,9 @@ export default function TrackingPixelsIndex({
         <>
             <Head title="Tracking pixels" />
 
-            <div className="flex flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="Tracking pixels"
-                    eyebrow="Consent-gated integrations"
-                    icon={Activity}
                     description="Add fixed Meta Pixel or Google Analytics integrations for LinkPilot-controlled public pages."
                     actions={
                         canManageIntegrations ? (

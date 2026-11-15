@@ -58,7 +58,7 @@ class PublicLinkPageController extends Controller
             'template' => $linkPage->template,
             'items' => $items,
             'pixels' => $this->pixelProjection->forSurface($linkPage, $this->analytics->canTrack($request)),
-            'trackingConsent' => $this->consent->choice($request),
+            'trackingConsent' => $this->consent->effectiveChoice($request),
             'privacyUrl' => $privacyUrl,
             'canGrantConsent' => $this->consent->canGrant(),
         ]);

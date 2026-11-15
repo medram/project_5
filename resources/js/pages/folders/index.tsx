@@ -1,6 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
+    Activity,
     FolderOpen,
+    Link2,
     MousePointerClick,
     Pencil,
     Plus,
@@ -12,12 +14,19 @@ import { ResourceListBulkTray } from '@/components/resource-list/bulk-tray';
 import { ResourceListFilterChips } from '@/components/resource-list/filter-chips';
 import { FolderFormDialog } from '@/components/folders/folder-form-dialog';
 import { ResourceListPagination } from '@/components/resource-list/pagination';
-import { ResourceListSortMenu } from '@/components/resource-list/sort-menu';
 import { ResourceListToolbar } from '@/components/resource-list/toolbar';
 import { ResourceListViewToggle } from '@/components/resource-list/view-toggle';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Field } from '@/components/ui/field';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Card,
     CardContent,
@@ -104,7 +113,7 @@ function DeleteFolderDialog({
             }}
         >
             <DialogTrigger asChild>
-                <Button variant="destructive" size="sm">
+                <Button variant="outline" size="sm">
                     <Trash2 data-icon="inline-start" />
                     Delete
                 </Button>
@@ -175,11 +184,7 @@ function DeleteSelectedFoldersDialog({
             }}
         >
             <DialogTrigger asChild>
-                <Button
-                    type="button"
-                    variant="destructive"
-                    className="min-h-11"
-                >
+                <Button type="button" variant="outline" size="sm">
                     <Trash2 data-icon="inline-start" />
                     Delete selected
                 </Button>
@@ -228,30 +233,18 @@ function FolderCard({
     selected: boolean;
     onToggle: () => void;
 }) {
-    const linksLabel = `${folder.links_count} ${
-        folder.links_count === 1 ? 'link' : 'links'
-    }`;
-    const clicksLabel = `${folder.clicks_count} ${
-        folder.clicks_count === 1 ? 'click' : 'clicks'
-    }`;
-    const eventsLabel = `${folder.analytics_events_count} ${
-        folder.analytics_events_count === 1 ? 'event' : 'events'
-    }`;
-
     return (
         <Card>
             <CardHeader className="gap-3">
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-3">
-                        <label className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center">
-                            <input
-                                type="checkbox"
+                        <div className="inline-flex size-6 shrink-0 items-center justify-center">
+                            <Checkbox
                                 checked={selected}
-                                onChange={onToggle}
+                                onCheckedChange={onToggle}
                                 aria-label={`Select folder ${folder.name}`}
-                                className="size-4 accent-primary focus-visible:ring-2 focus-visible:ring-ring"
                             />
-                        </label>
+                        </div>
                         <div className="min-w-0">
                             <CardTitle className="truncate">
                                 {folder.name}
@@ -261,38 +254,44 @@ function FolderCard({
                             </CardDescription>
                         </div>
                     </div>
-                    <FolderOpen className="size-5 shrink-0 text-primary" />
                 </div>
             </CardHeader>
             <CardContent>
                 <Separator />
                 <dl className="mt-4 grid grid-cols-3 gap-4">
-                    <div>
-                        <dt className="text-sm text-muted-foreground">Links</dt>
-                        <dd className="mt-1 font-medium tabular-nums">
-                            {linksLabel}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt className="text-sm text-muted-foreground">
-                            Clicks
-                        </dt>
-                        <dd className="mt-1 flex items-center gap-1 font-medium tabular-nums">
-                            <MousePointerClick className="size-4 text-muted-foreground" />
-                            {clicksLabel}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt className="text-sm text-muted-foreground">
-                            Events
-                        </dt>
-                        <dd className="mt-1 font-medium tabular-nums">
-                            {eventsLabel}
-                        </dd>
-                    </div>
+                    {[
+                        {
+                            label: 'Links',
+                            icon: Link2,
+                            value: folder.links_count,
+                        },
+                        {
+                            label: 'Clicks',
+                            icon: MousePointerClick,
+                            value: folder.clicks_count,
+                        },
+                        {
+                            label: 'Events',
+                            icon: Activity,
+                            value: folder.analytics_events_count,
+                        },
+                    ].map(({ label, icon: Icon, value }) => (
+                        <div key={label}>
+                            <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Icon
+                                    className="size-4 shrink-0"
+                                    aria-hidden="true"
+                                />
+                                {label}
+                            </dt>
+                            <dd className="mt-1 text-sm tabular-nums">
+                                {value}
+                            </dd>
+                        </div>
+                    ))}
                 </dl>
             </CardContent>
-            <CardFooter className="flex flex-wrap gap-2 [&_button]:min-h-11 [&_button]:min-w-11">
+            <CardFooter className="flex flex-wrap gap-2">
                 <FolderFormDialog folder={folder} listQuery={listQuery}>
                     <Button variant="outline" size="sm">
                         <Pencil data-icon="inline-start" />
@@ -341,14 +340,13 @@ export default function FoldersIndex({
     return (
         <>
             <Head title="Folders" />
-            <div className="flex min-w-0 flex-col gap-6 overflow-x-hidden p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 overflow-x-hidden px-5 pt-4 pb-10">
                 <PageHeader
                     title="Folders"
-                    icon={FolderOpen}
                     description="Keep campaigns and destinations grouped together."
                     actions={
                         <FolderFormDialog listQuery={listQuery}>
-                            <Button className="min-h-11 min-w-11">
+                            <Button>
                                 <Plus data-icon="inline-start" />
                                 New folder
                             </Button>
@@ -358,45 +356,51 @@ export default function FoldersIndex({
                 <ResourceListToolbar
                     key={listQuery}
                     action={index().url}
-                    className="grid min-w-0 gap-3 rounded-lg border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4 [&_button]:min-h-11 [&_button]:min-w-11"
+                    className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border bg-card p-3"
                 >
                     <input type="hidden" name="view" value={filters.view} />
-                    <Field className="sm:col-span-2">
-                        <Input
-                            className="min-h-11 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                            name="search"
-                            defaultValue={filters.search}
-                            placeholder="Search folder names"
-                            aria-label="Search folders"
-                        />
-                    </Field>
-                    <ResourceListSortMenu
-                        value={filters.sort}
-                        options={[
-                            { value: 'created_at', label: 'Created' },
-                            { value: 'name', label: 'Name' },
-                            { value: 'links_count', label: 'Link count' },
-                        ]}
+                    <Input
+                        className="h-9 w-full sm:w-56"
+                        name="search"
+                        defaultValue={filters.search}
+                        placeholder="Search folders"
+                        aria-label="Search folders"
                     />
-                    <label className="flex flex-col gap-1 text-sm">
-                        <span>Direction</span>
-                        <select
-                            name="direction"
-                            defaultValue={filters.direction}
-                            className="min-h-11 rounded-md border bg-background px-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    <Select name="sort" defaultValue={filters.sort}>
+                        <SelectTrigger aria-label="Sort by" className="h-9">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="created_at">
+                                Newest first
+                            </SelectItem>
+                            <SelectItem value="name">Name</SelectItem>
+                            <SelectItem value="links_count">
+                                Link count
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select name="direction" defaultValue={filters.direction}>
+                        <SelectTrigger
+                            aria-label="Sort direction"
+                            className="h-9 w-32"
                         >
-                            <option value="desc">Descending</option>
-                            <option value="asc">Ascending</option>
-                        </select>
-                    </label>
-                    <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
-                        <Button type="submit" variant="outline">
-                            Apply filters
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="desc">Descending</SelectItem>
+                            <SelectItem value="asc">Ascending</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <div className="ml-auto flex items-center gap-1">
+                        <Button type="submit" size="sm" className="h-9">
+                            Apply
                         </Button>
                         <Button
                             variant="ghost"
+                            size="sm"
+                            className="h-9"
                             asChild
-                            className="min-h-11 min-w-11"
                         >
                             <Link href={index()}>Reset</Link>
                         </Button>
@@ -435,24 +439,25 @@ export default function FoldersIndex({
                         )}
                     />
                     {folders.length > 0 && (
-                        <label className="inline-flex min-h-11 items-center gap-2 text-sm">
-                            <input
-                                type="checkbox"
+                        <Field className="min-h-11 flex-row items-center gap-2">
+                            <Checkbox
+                                id="folder-select-all"
                                 checked={allSelected}
-                                onChange={() =>
+                                onCheckedChange={(checked) =>
                                     setSelectedIds(
-                                        allSelected
-                                            ? []
-                                            : folders.map(
-                                                  (folder) => folder.id,
-                                              ),
+                                        checked === true
+                                            ? folders.map((folder) => folder.id)
+                                            : [],
                                     )
                                 }
-                                aria-label="Select all folders on this page"
-                                className="size-4 accent-primary focus-visible:ring-2 focus-visible:ring-ring"
                             />
-                            Select all on this page
-                        </label>
+                            <FieldLabel
+                                htmlFor="folder-select-all"
+                                className="font-normal"
+                            >
+                                Select all on this page
+                            </FieldLabel>
+                        </Field>
                     )}
                 </div>
                 <ResourceListBulkTray
@@ -487,7 +492,7 @@ export default function FoldersIndex({
                         </EmptyHeader>
                         <EmptyContent>
                             <FolderFormDialog listQuery={listQuery}>
-                                <Button className="min-h-11 min-w-11">
+                                <Button>
                                     <Plus data-icon="inline-start" />
                                     Create folder
                                 </Button>
@@ -497,9 +502,12 @@ export default function FoldersIndex({
                 ) : (
                     <>
                         {filters.view === 'table' && (
-                            <div className="hidden min-w-0 overflow-hidden rounded-lg border min-[1100px]:block">
-                                <table className="w-full table-fixed text-left text-sm">
-                                    <thead className="bg-muted/50 text-muted-foreground">
+                            <div className="lp-table-shell hidden min-w-0 min-[1100px]:block">
+                                <table
+                                    data-table-surface="populated"
+                                    className="w-full table-fixed text-left text-sm"
+                                >
+                                    <thead className="bg-surface-secondary text-muted-foreground">
                                         <tr>
                                             <th className="w-[4%] p-3">
                                                 <span className="sr-only">
@@ -533,21 +541,19 @@ export default function FoldersIndex({
                                                 )}
                                             >
                                                 <td className="p-3">
-                                                    <label className="inline-flex min-h-11 min-w-11 items-center justify-center">
-                                                        <input
-                                                            type="checkbox"
+                                                    <div className="inline-flex min-h-11 min-w-11 items-center justify-center">
+                                                        <Checkbox
                                                             checked={selectedIds.includes(
                                                                 folder.id,
                                                             )}
-                                                            onChange={() =>
+                                                            onCheckedChange={() =>
                                                                 toggleSelectedFolder(
                                                                     folder.id,
                                                                 )
                                                             }
                                                             aria-label={`Select folder ${folder.name}`}
-                                                            className="size-4 accent-primary focus-visible:ring-2 focus-visible:ring-ring"
                                                         />
-                                                    </label>
+                                                    </div>
                                                 </td>
                                                 <td className="truncate p-3 font-medium">
                                                     {folder.name}
@@ -614,7 +620,8 @@ export default function FoldersIndex({
                     links={folderPage.links}
                     total={folderPage.total}
                     ariaLabel="Folder pages"
-                    summaryLabel="folders"
+                    singular="folder"
+                    plural="folders"
                 />
             </div>
         </>

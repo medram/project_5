@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
-import { BookOpenText, ExternalLink, Plus, Trash2 } from 'lucide-react';
+import { ExternalLink, Plus, Trash2 } from 'lucide-react';
 import {
     AdminConfirmDialog,
     type AdminConfirmation,
@@ -92,17 +92,10 @@ export default function AdminPagesIndex({
     return (
         <>
             <Head title="Custom pages — Administration" />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <BookOpenText
-                                className="size-4"
-                                aria-hidden="true"
-                            />
-                            <span>Platform administration</span>
-                        </div>
-                        <h1 className="text-2xl font-semibold tracking-tight">
+                        <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
                             Custom pages
                         </h1>
                         <p className="max-w-3xl text-sm text-muted-foreground">
@@ -172,9 +165,14 @@ export default function AdminPagesIndex({
                     </Button>
                 </form>
 
-                <div className="hidden overflow-hidden rounded-lg border lg:block">
-                    <table className="w-full border-collapse text-sm">
-                        <thead className="bg-muted/50 text-left text-xs text-muted-foreground uppercase">
+                <div className="lp-table-shell hidden lg:block">
+                    <table
+                        data-table-surface={
+                            paginator.data.length > 0 ? 'populated' : undefined
+                        }
+                        className="w-full border-collapse text-sm"
+                    >
+                        <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-3 font-medium">Page</th>
                                 <th className="px-4 py-3 font-medium">
@@ -388,7 +386,7 @@ export default function AdminPagesIndex({
                         </Card>
                     ))}
                     {paginator.data.length === 0 && (
-                        <Card>
+                        <Card variant="transparent">
                             <CardContent className="p-8 text-center text-sm text-muted-foreground">
                                 No custom pages match these filters.
                             </CardContent>

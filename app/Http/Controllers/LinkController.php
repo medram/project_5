@@ -6,6 +6,7 @@ use App\Enums\PlanMetric;
 use App\Http\Requests\StoreLinkRequest;
 use App\Http\Requests\UpdateLinkRequest;
 use App\Models\Link;
+use App\Services\Accounts\AccountProfileOptions;
 use App\Services\Billing\EnforcesPlanLimits;
 use App\Services\Links\LinkAttributes;
 use App\Services\Links\LinkRevisionService;
@@ -26,6 +27,7 @@ class LinkController extends Controller
         private readonly WorkspaceContext $workspaceContext,
         private readonly LinkAttributes $linkAttributes,
         private readonly LinkRevisionService $revisions,
+        private readonly AccountProfileOptions $accountProfileOptions,
     ) {}
 
     public function index(Request $request): Response
@@ -50,7 +52,7 @@ class LinkController extends Controller
             'sort' => $filters['sort'] ?? 'created_at',
             'direction' => $filters['direction'] ?? 'desc',
             'page' => (string) ($filters['page'] ?? ''),
-            'view' => $filters['view'] ?? 'cards',
+            'view' => $filters['view'] ?? 'table',
         ];
         $links = $workspace->links()->with(['folder:id,name', 'tags:id,name,slug,color'])
             ->with('customDomain:id,hostname,status')
@@ -103,6 +105,7 @@ class LinkController extends Controller
                 ->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'linkPages' => $workspace->linkPages()
                 ->where('is_published', true)->orderBy('name')->get(['id', 'name', 'slug']),
+            'countries' => $this->accountProfileOptions->countries(),
             'canManageApprovals' => Gate::allows('manageLinkApprovals', $workspace),
             'filters' => $filters,
         ]);

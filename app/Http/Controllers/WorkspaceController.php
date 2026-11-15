@@ -64,7 +64,7 @@ class WorkspaceController
         ]);
     }
 
-    public function store(Request $request, WorkspaceContext $context, WorkspaceUsage $usage): RedirectResponse
+    public function store(Request $request, WorkspaceContext $context): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
@@ -72,14 +72,13 @@ class WorkspaceController
 
         /** @var User $user */
         $user = $request->user();
-        $workspace = DB::transaction(function () use ($user, $validated, $context, $usage): Workspace {
+        $workspace = DB::transaction(function () use ($user, $validated, $context): Workspace {
             $workspace = Workspace::query()->create([
                 'name' => trim($validated['name']),
                 'slug' => mb_substr(Str::slug(trim($validated['name'])) ?: 'workspace', 0, 70).'-'.Str::lower(Str::random(8)),
                 'owner_id' => $user->id,
             ]);
             $workspace->members()->attach($user->id, ['role' => 'owner']);
-            $usage->subscriptionFor($workspace);
             $context->activate($user, $workspace);
 
             return $workspace;

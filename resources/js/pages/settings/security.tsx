@@ -42,7 +42,11 @@ export default function Security(props: Props) {
         <>
             <Head title="Security settings" />
 
-            <h1 className="sr-only">Security settings</h1>
+            <Heading
+                variant="page"
+                title="Security"
+                description="Password, two-factor authentication, passkeys, and active sessions."
+            />
 
             <div className="space-y-6">
                 <Heading

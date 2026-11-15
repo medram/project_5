@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ExternalLink, FilePenLine, Plus, Rocket, Trash2 } from 'lucide-react';
+import { ExternalLink, FilePenLine, Plus, Trash2 } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -285,11 +285,9 @@ export default function LinkPagesIndex({ linkPages }: LinkPageIndexProps) {
         <>
             <Head title="Link pages" />
 
-            <div className="flex flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="Link pages"
-                    eyebrow="Campaign destinations"
-                    icon={Rocket}
                     description="Publish branded, workspace-owned destination pages for launches and campaigns."
                     actions={
                         <CreateLinkPageDialog>

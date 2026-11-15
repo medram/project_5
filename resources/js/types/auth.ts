@@ -30,7 +30,18 @@ export type PlatformBranding = {
         contact: boolean;
         registration: boolean;
     };
-    seo: { title: string | null; description: string | null };
+    seo: {
+        title: string | null;
+        description: string | null;
+        homeTitle: string | null;
+        homeDescription: string | null;
+        pricingTitle: string | null;
+        pricingDescription: string | null;
+        ogImage: string | null;
+    };
+    availableBlocks: string[];
+    capabilities: { targeting: boolean; pixels: boolean; domains: boolean };
+    maintenanceBanner: string | null;
     verification: Record<string, string>;
     gdpr: {
         notice: string | null;
@@ -40,6 +51,7 @@ export type PlatformBranding = {
         termsUrl: string | null;
     };
     analytics: { consentEnabled: boolean; ga4: string | null };
+    captcha: { enabled: boolean; siteKey: string | null };
     ads: {
         provider: string;
         publisherId: string | null;

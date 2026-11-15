@@ -17,6 +17,7 @@ class WorkspaceBackfillTest extends TestCase
     public function test_backfill_assigns_each_legacy_resource_to_a_deterministic_personal_workspace_and_preserves_paid_plan(): void
     {
         $this->createLegacySubscriptionTable();
+        $this->createWorkspaceSubscriptionTable();
         $this->makeWorkspaceIdsNullable();
         $this->makeWorkspaceOwnerIdNullable();
         $owner = User::withoutEvents(fn () => User::factory()->create());
@@ -206,9 +207,11 @@ class WorkspaceBackfillTest extends TestCase
         $this->assertSame(3, DB::table('workspace_user')->count());
         $this->assertSame(3, DB::table('workspace_subscriptions')->count());
     }
+
     public function test_contract_migration_refuses_unassigned_records_without_dropping_legacy_subscriptions(): void
     {
         $this->createLegacySubscriptionTable();
+        $this->createWorkspaceSubscriptionTable();
         $this->makeWorkspaceIdsNullable(['links']);
         $owner = User::factory()->create();
         Link::factory()->for($owner)->create([
@@ -241,12 +244,21 @@ class WorkspaceBackfillTest extends TestCase
     public function test_contract_migration_drops_legacy_subscriptions_and_down_restores_them_exactly(): void
     {
         $this->createLegacySubscriptionTable();
+        $this->createWorkspaceSubscriptionTable();
         $owner = User::factory()->create();
         $workspace = $owner->personalWorkspace()->firstOrFail();
         $link = Link::factory()->for($owner)->create(['slug' => 'contract-link']);
         $proPlanId = DB::table('plans')->where('code', 'pro')->value('id');
         $createdAt = now()->subDays(3)->toDateTimeString();
         $updatedAt = now()->subDay()->toDateTimeString();
+        DB::table('workspace_subscriptions')->insert([
+            'workspace_id' => $workspace->id,
+            'plan_id' => DB::table('plans')->where('code', 'free')->value('id'),
+            'status' => 'active',
+            'source' => 'manual',
+            'created_at' => $createdAt,
+            'updated_at' => $updatedAt,
+        ]);
 
         DB::table('workspace_subscriptions')->where('workspace_id', $workspace->id)->update([
             'plan_id' => $proPlanId,
@@ -302,7 +314,8 @@ class WorkspaceBackfillTest extends TestCase
         $this->assertTrue(Schema::hasTable('workspaces'));
         $this->assertTrue(Schema::hasTable('workspace_user'));
         $this->assertTrue(Schema::hasTable('workspace_invitations'));
-        $this->assertTrue(Schema::hasTable('workspace_subscriptions'));
+        $this->assertFalse(Schema::hasTable('workspace_subscriptions'));
+        $this->assertTrue(Schema::hasTable('workspace_plan_overrides'));
         $this->assertTrue(Schema::hasTable('workspace_audits'));
         $this->assertTrue(Schema::hasColumn('plans', 'member_limit'));
     }
@@ -403,6 +416,23 @@ class WorkspaceBackfillTest extends TestCase
             'role' => 'owner',
         ]);
     }
+
+    private function createWorkspaceSubscriptionTable(): void
+    {
+        if (Schema::hasTable('workspace_subscriptions')) {
+            return;
+        }
+
+        Schema::create('workspace_subscriptions', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('workspace_id')->unique()->constrained()->cascadeOnDelete();
+            $table->foreignId('plan_id')->constrained()->restrictOnDelete();
+            $table->string('status', 20);
+            $table->string('source', 20);
+            $table->timestamps();
+        });
+    }
+
     private function createLegacySubscriptionTable(): void
     {
         Schema::create('user_subscriptions', function (Blueprint $table): void {
@@ -428,7 +458,8 @@ class WorkspaceBackfillTest extends TestCase
         'link_overlays',
         'webhooks',
         'analytics_events',
-    ]): void {
+    ]): void
+    {
         foreach ($tables as $tableName) {
             Schema::table($tableName, function (Blueprint $table): void {
                 $table->foreignId('workspace_id')->nullable()->change();

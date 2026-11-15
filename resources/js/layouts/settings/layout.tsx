@@ -1,6 +1,5 @@
 import { Link } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
-import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
@@ -9,7 +8,15 @@ import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import { index as billingIndex } from '@/routes/billing';
-import { CreditCard, KeyRound, Users } from 'lucide-react';
+import {
+    CreditCard,
+    KeyRound,
+    Palette,
+    ShieldCheck,
+    UserRound,
+    Users,
+    Webhook,
+} from 'lucide-react';
 import { index as webhooksIndex } from '@/routes/webhooks';
 import { index as apiKeysIndex } from '@/routes/api-keys';
 import type { NavItem } from '@/types';
@@ -18,17 +25,17 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Profile',
         href: edit(),
-        icon: null,
+        icon: UserRound,
     },
     {
         title: 'Security',
         href: editSecurity(),
-        icon: null,
+        icon: ShieldCheck,
     },
     {
         title: 'Appearance',
         href: editAppearance(),
-        icon: null,
+        icon: Palette,
     },
     {
         title: 'Billing',
@@ -43,7 +50,7 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Webhooks',
         href: webhooksIndex(),
-        icon: null,
+        icon: Webhook,
     },
     {
         title: 'API keys',
@@ -56,73 +63,70 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
     const isWideSettingsRoute =
         isCurrentOrParentUrl(billingIndex()) ||
-        isCurrentOrParentUrl(apiKeysIndex());
+        isCurrentOrParentUrl(apiKeysIndex()) ||
+        isCurrentOrParentUrl(webhooksIndex()) ||
+        isCurrentOrParentUrl('/account-settings/workspaces');
 
     return (
-        <div className="px-4 py-6">
-            <Heading
-                title="Settings"
-                description="Manage your profile and account settings"
-            />
+        <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-6 px-5 pt-4 pb-10 lg:flex-row lg:gap-10">
+            <aside className="w-full min-w-0 lg:w-52 lg:shrink-0">
+                <nav
+                    className="flex gap-1 overflow-x-auto lg:flex-col"
+                    aria-label="Settings"
+                >
+                    {sidebarNavItems.map((item, index) => {
+                        const active = isCurrentOrParentUrl(item.href);
+                        const current = active && isCurrentUrl(item.href);
 
-            <div className="flex flex-col lg:flex-row lg:space-x-12">
-                <aside className="w-full max-w-xl lg:w-48">
-                    <nav
-                        className="flex flex-col space-y-1 space-x-0"
-                        aria-label="Settings"
-                    >
-                        {sidebarNavItems.map((item, index) => {
-                            const active = isCurrentOrParentUrl(item.href);
-                            const current = active && isCurrentUrl(item.href);
-
-                            return (
-                                <Button
-                                    key={`${toUrl(item.href)}-${index}`}
-                                    size="sm"
-                                    variant="ghost"
-                                    asChild
-                                    className={cn('w-full justify-start', {
-                                        'bg-muted': active,
-                                    })}
+                        return (
+                            <Button
+                                key={`${toUrl(item.href)}-${index}`}
+                                size="sm"
+                                variant="ghost"
+                                asChild
+                                className={cn(
+                                    'h-10 shrink-0 justify-start rounded-lg px-2.5 text-muted-foreground lg:w-full',
+                                    active &&
+                                        'bg-sidebar-accent font-medium text-foreground hover:bg-sidebar-accent',
+                                )}
+                            >
+                                <Link
+                                    href={item.href}
+                                    aria-current={
+                                        active
+                                            ? current
+                                                ? 'page'
+                                                : 'location'
+                                            : undefined
+                                    }
                                 >
-                                    <Link
-                                        href={item.href}
-                                        aria-current={
-                                            active
-                                                ? current
-                                                    ? 'page'
-                                                    : 'location'
-                                                : undefined
-                                        }
-                                    >
-                                        {item.icon && (
-                                            <item.icon className="h-4 w-4" />
-                                        )}
-                                        {item.title}
-                                    </Link>
-                                </Button>
-                            );
-                        })}
-                    </nav>
-                </aside>
+                                    {item.icon && (
+                                        <item.icon className="h-4 w-4" />
+                                    )}
+                                    {item.title}
+                                </Link>
+                            </Button>
+                        );
+                    })}
+                </nav>
+            </aside>
 
-                <Separator className="my-6 lg:hidden" />
+            <Separator className="lg:hidden" />
 
-                <div
+            <div
+                className={cn(
+                    'min-w-0 flex-1',
+                    !isWideSettingsRoute && 'max-w-2xl',
+                )}
+            >
+                <section
                     className={cn(
-                        'flex-1 md:max-w-2xl',
-                        isWideSettingsRoute && 'md:max-w-none',
+                        'space-y-8',
+                        isWideSettingsRoute ? 'max-w-none' : 'max-w-xl',
                     )}
                 >
-                    <section
-                        className={cn(
-                            'space-y-12',
-                            isWideSettingsRoute ? 'max-w-none' : 'max-w-xl',
-                        )}
-                    >
-                        {children}
-                    </section>
-                </div>
+                    {children}
+                </section>
             </div>
         </div>
     );

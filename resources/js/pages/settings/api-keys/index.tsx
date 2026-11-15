@@ -127,12 +127,15 @@ function ApiKeyTable({ keys }: { keys: ApiKey[] }) {
     }
 
     return (
-        <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[680px] text-left text-sm">
+        <div className="lp-table-shell overflow-x-auto">
+            <table
+                data-table-surface="populated"
+                className="w-full min-w-[680px] text-left text-sm"
+            >
                 <caption className="sr-only">
                     Workspace API keys and their lifecycle details
                 </caption>
-                <thead className="bg-muted/60 text-muted-foreground">
+                <thead className="bg-surface-secondary text-muted-foreground">
                     <tr>
                         <th scope="col" className="px-4 py-3 font-medium">
                             Name
@@ -269,11 +272,10 @@ export default function ApiKeysIndex({
     return (
         <>
             <Head title="API keys" />
-            <h1 className="sr-only">API keys</h1>
 
             <div className="space-y-6">
                 <Heading
-                    variant="small"
+                    variant="page"
                     title="API keys"
                     description="Create and revoke workspace-bound credentials for integrations."
                 />

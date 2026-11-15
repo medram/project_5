@@ -154,20 +154,17 @@ export function GlobalSearch() {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-11 min-w-11 sm:min-w-0"
+                    variant="secondary"
+                    size="icon"
+                    className="size-9 shrink-0 rounded-full"
+                    title="Search (Ctrl/⌘ K)"
                     aria-label={
                         canSearchPlatform
                             ? 'Search platform accounts and plans (Ctrl+K or Command+K)'
                             : 'Search this workspace (Ctrl+K or Command+K)'
                     }
                 >
-                    <Search data-icon="inline-start" aria-hidden="true" />
-                    <span className="hidden sm:inline">Search</span>
-                    <kbd className="ml-2 hidden rounded border px-1.5 py-0.5 font-mono text-xs text-muted-foreground sm:inline">
-                        Ctrl/⌘ K
-                    </kbd>
+                    <Search aria-hidden="true" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-xl">

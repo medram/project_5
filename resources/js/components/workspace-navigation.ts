@@ -27,7 +27,7 @@ export type WorkspaceNavSection = {
 
 export const workspaceNavSections: WorkspaceNavSection[] = [
     {
-        title: 'Primary',
+        title: 'Workspace',
         items: [
             { title: 'Short links', href: linksIndex(), icon: Link2 },
             { title: 'QR codes', href: qrCodesIndex(), icon: QrCode },
@@ -58,3 +58,31 @@ export const workspaceNavSections: WorkspaceNavSection[] = [
         ],
     },
 ];
+
+export function filteredWorkspaceNavSections(capabilities?: {
+    pixels?: boolean;
+    domains?: boolean;
+}): WorkspaceNavSection[] {
+    return workspaceNavSections
+        .map((section) => ({
+            ...section,
+            items: section.items.filter((item) => {
+                if (
+                    capabilities?.pixels === false &&
+                    item.title === 'Tracking pixels'
+                ) {
+                    return false;
+                }
+
+                if (
+                    capabilities?.domains === false &&
+                    item.title === 'Custom domains'
+                ) {
+                    return false;
+                }
+
+                return true;
+            }),
+        }))
+        .filter((section) => section.items.length > 0);
+}

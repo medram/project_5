@@ -35,8 +35,7 @@ class AdminUserIndexController extends Controller
                 'avatarMedia:id,public_id',
                 'platformRoles:id,code,name',
                 'personalWorkspace' => fn ($workspace) => $workspace
-                    ->withCount(['links', 'bioPages', 'members', 'customDomains'])
-                    ->with('legacySubscription.plan:id,code,name'),
+                    ->withCount(['links', 'bioPages', 'members', 'customDomains']),
             ])
             ->withCount('workspaces');
 
@@ -77,19 +76,50 @@ class AdminUserIndexController extends Controller
 
         if ($planCode !== null) {
             $plan = Plan::query()->where('code', $planCode)->where('is_active', true)->sole();
-            $query->whereHas('personalWorkspace', function (Builder $workspace) use ($plan): void {
-                $workspace->where(function (Builder $matches) use ($plan): void {
-                    $matches
-                        ->whereHas('legacySubscription.plan', fn (Builder $legacy) => $legacy->whereKey($plan->id))
-                        ->orWhereHas('planOverrides', fn (Builder $override) => $override
-                            ->whereNull('revoked_at')
-                            ->where('plan_id', $plan->id))
-                        ->orWhereHas('subscriptions', fn (Builder $subscription) => $subscription
-                            ->whereIn('stripe_price', array_filter([
-                                $plan->stripe_monthly_price_id,
-                                $plan->stripe_yearly_price_id,
-                            ])));
-                });
+            $paidPlans = Plan::query()
+                ->where('is_active', true)
+                ->where('code', '!=', 'free')
+                ->get(['id', 'stripe_monthly_price_id', 'stripe_yearly_price_id']);
+            $paidPrices = $paidPlans
+                ->flatMap(fn (Plan $paid): array => [$paid->stripe_monthly_price_id, $paid->stripe_yearly_price_id])
+                ->filter(fn (mixed $price): bool => is_string($price) && $price !== '')
+                ->unique()
+                ->values()
+                ->all();
+            $activeOverride = fn (Builder $override): Builder => $override
+                ->whereNull('revoked_at')
+                ->where(fn (Builder $started) => $started
+                    ->whereNull('starts_at')
+                    ->orWhere('starts_at', '<=', now()))
+                ->where(fn (Builder $expires) => $expires
+                    ->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now()));
+            $validSubscription = fn (Builder $subscription): Builder => $subscription
+                ->where(fn (Builder $state) => $state
+                    ->whereIn('stripe_status', ['active', 'trialing'])
+                    ->orWhere(fn (Builder $grace) => $grace
+                        ->whereNotNull('ends_at')
+                        ->where('ends_at', '>', now())));
+
+            $query->whereHas('personalWorkspace', function (Builder $workspace) use ($plan, $paidPrices, $activeOverride, $validSubscription): void {
+                if ($plan->code === 'free') {
+                    $workspace->where(fn (Builder $matches) => $matches
+                        ->whereHas('planOverrides', fn (Builder $override) => $activeOverride($override)->where('plan_id', $plan->id))
+                        ->orWhere(fn (Builder $withoutOverride) => $withoutOverride
+                            ->whereDoesntHave('planOverrides', $activeOverride)
+                            ->whereDoesntHave('subscriptions', fn (Builder $subscription) => $validSubscription($subscription)->whereIn('stripe_price', $paidPrices))));
+
+                    return;
+                }
+
+                $workspace->where(fn (Builder $matches) => $matches
+                    ->whereHas('planOverrides', fn (Builder $override) => $activeOverride($override)->where('plan_id', $plan->id))
+                    ->orWhere(fn (Builder $withoutOverride) => $withoutOverride
+                        ->whereDoesntHave('planOverrides', $activeOverride)
+                        ->whereHas('subscriptions', fn (Builder $subscription) => $validSubscription($subscription)->whereIn('stripe_price', array_filter([
+                            $plan->stripe_monthly_price_id,
+                            $plan->stripe_yearly_price_id,
+                        ])))));
             });
         }
 

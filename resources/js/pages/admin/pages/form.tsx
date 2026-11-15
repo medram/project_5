@@ -55,7 +55,7 @@ export default function AdminPageForm({ page }: AdminPageFormProps) {
             <Head
                 title={`${page ? 'Edit' : 'New'} custom page — Administration`}
             />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <Button
@@ -69,7 +69,7 @@ export default function AdminPageForm({ page }: AdminPageFormProps) {
                                 Custom pages
                             </Link>
                         </Button>
-                        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+                        <h1 className="mt-2 text-2xl leading-8 font-semibold tracking-[-0.02em]">
                             {page ? 'Edit custom page' : 'New custom page'}
                         </h1>
                         <p className="text-sm text-muted-foreground">

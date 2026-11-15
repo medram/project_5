@@ -1,11 +1,26 @@
 import { useForm } from '@inertiajs/react';
-import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
+import {
+    CalendarClock,
+    Link2,
+    LockKeyhole,
+    Palette,
+    QrCode,
+    Share2,
+    type LucideIcon,
+} from 'lucide-react';
+import {
+    type FormEvent,
+    type ReactNode,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
+import { FormErrorSummary } from '@/components/forms/form-error-summary';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -14,7 +29,6 @@ import {
     Field,
     FieldDescription,
     FieldError,
-    FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -25,77 +39,216 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 import { draftPreview, preview, store, update } from '@/routes/qr-codes';
 import type {
     QrCodeCampaign,
     QrCodeIndexProps,
     QrCodeLinkOption,
 } from '@/types/qr-codes';
+import {
+    type QrCodeFormData,
+    qrCodeFormData,
+    toServerDate,
+} from './qr-code-form-data';
+import {
+    QrCodeSettingsDialogs,
+    type QrSettingsPanel,
+} from './qr-code-settings-dialogs';
 
-type FormData = {
-    target_type: 'url' | 'link';
-    link_id: string;
-    destination_url: string;
-    title: string;
-    share_title: string;
-    share_description: string;
-    is_active: boolean;
-    available_from: string;
-    expires_at: string;
-    max_scans: string;
-    access_code: string;
-    remove_access_code: boolean;
-    foreground_color: string;
-    background_color: string;
-    error_correction: 'low' | 'medium' | 'quartile' | 'high';
-    margin: string;
-    size: string;
-    logo: File | null;
-    logo_alt: string;
-    clear_logo: boolean;
-    _method?: 'PATCH';
+type ErrorTarget = {
+    panel?: QrSettingsPanel;
+    id?: string;
 };
 
-function localDateTime(value: string | null): string {
-    if (!value) return '';
-    const date = new Date(value);
-    return new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
-        .toISOString()
-        .slice(0, 16);
+const styleTargets: Record<string, string> = {
+    foreground_color: 'qr-foreground',
+    background_color: 'qr-background',
+    error_correction: 'qr-correction',
+    margin: 'qr-margin',
+    size: 'qr-size',
+    logo: 'qr-logo',
+    logo_alt: 'qr-logo-alt',
+    clear_logo: 'qr-logo',
+};
+
+function errorTarget(key: string): ErrorTarget {
+    if (key === 'destination_url') return { id: 'qr-destination-url' };
+    if (key === 'link_id') return { id: 'qr-link-id' };
+    if (key === 'title') return { id: 'qr-title' };
+    if (key === 'is_active') return { id: 'qr-active' };
+    if (key === 'share_title') {
+        return { panel: 'sharing', id: 'qr-share-title' };
+    }
+    if (key === 'share_description') {
+        return { panel: 'sharing', id: 'qr-share-description' };
+    }
+    if (styleTargets[key]) {
+        return { panel: 'style', id: styleTargets[key] };
+    }
+    if (key === 'access_code') {
+        return { panel: 'access', id: 'qr-access-code' };
+    }
+    if (key === 'remove_access_code') {
+        return { panel: 'access', id: 'qr-remove-access-code' };
+    }
+    if (
+        key === 'available_from' ||
+        key === 'expires_at' ||
+        key === 'max_scans'
+    ) {
+        return {
+            panel: 'schedule',
+            id: `qr-${key.replaceAll('_', '-')}`,
+        };
+    }
+
+    return {};
 }
 
-function initialData(campaign?: QrCodeCampaign): FormData {
-    return {
-        target_type: campaign?.link_id ? 'link' : 'url',
-        link_id: campaign?.link_id ? String(campaign.link_id) : '',
-        destination_url: campaign?.destination_url ?? '',
-        title: campaign?.title ?? '',
-        share_title: campaign?.share_title ?? '',
-        share_description: campaign?.share_description ?? '',
-        is_active: campaign?.is_active ?? true,
-        available_from: localDateTime(campaign?.available_from ?? null),
-        expires_at: localDateTime(campaign?.expires_at ?? null),
-        max_scans: campaign?.max_scans ? String(campaign.max_scans) : '',
-        access_code: '',
-        remove_access_code: false,
-        foreground_color: campaign?.foreground_color ?? '#000000',
-        background_color: campaign?.background_color ?? '#FFFFFF',
-        error_correction: campaign?.error_correction ?? 'medium',
-        margin: String(campaign?.margin ?? 4),
-        size: String(campaign?.size ?? 320),
-        logo: null,
-        logo_alt: campaign?.logo_alt ?? '',
-        clear_logo: false,
-    };
+function errorLabel(key: string): string {
+    if (key === 'destination_url') return 'Destination URL';
+    if (key === 'link_id') return 'Short link';
+    if (key === 'title') return 'Title';
+    if (key === 'is_active') return 'Status';
+    if (key === 'share_title' || key === 'share_description') return 'Sharing';
+    if (styleTargets[key]) return 'Style';
+    if (key === 'access_code' || key === 'remove_access_code') return 'Access';
+    if (
+        key === 'available_from' ||
+        key === 'expires_at' ||
+        key === 'max_scans'
+    ) {
+        return 'Schedule';
+    }
+
+    return key
+        .replaceAll('_', ' ')
+        .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-function toServerDate(value: string): string | null {
-    return value === '' ? null : new Date(value).toISOString();
+function FieldMessage({
+    id,
+    children,
+}: {
+    id: string;
+    children: string | undefined;
+}) {
+    return children ? <FieldError id={id}>{children}</FieldError> : null;
 }
 
-function FieldMessage({ children }: { children: string | undefined }) {
-    return children ? <FieldError>{children}</FieldError> : null;
+function QrPreviewPanel({
+    src,
+    logoUrl,
+    logoAlt,
+    title,
+    previewSize,
+    previewMargin,
+    isSaved,
+    code,
+    active,
+    onActiveChange,
+    disabled,
+    activeError,
+}: {
+    src: string;
+    logoUrl: string | null;
+    logoAlt: string | null;
+    title: string;
+    previewSize: number;
+    previewMargin: number;
+    isSaved: boolean;
+    code: string | null;
+    active: boolean;
+    onActiveChange: (active: boolean) => void;
+    disabled: boolean;
+    activeError: string | undefined;
+}) {
+    const alt = [
+        `QR code preview for ${title || 'this campaign'}`,
+        logoAlt ? `Includes logo: ${logoAlt}` : null,
+    ]
+        .filter(Boolean)
+        .join('. ');
+
+    return (
+        <div className="grid min-w-0 content-start gap-4">
+            <div className="grid gap-3">
+                <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium">QR code preview</p>
+                    <span className="text-xs text-muted-foreground">
+                        {isSaved ? 'Saved' : 'Draft'}
+                    </span>
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-surface-secondary p-3">
+                    <div className="relative mx-auto aspect-square w-full max-w-40 sm:max-w-48">
+                        <img
+                            src={src}
+                            alt={alt}
+                            className="size-full object-contain"
+                        />
+                        {logoUrl && (
+                            <img
+                                src={logoUrl}
+                                alt=""
+                                aria-hidden="true"
+                                className="absolute top-1/2 left-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rounded bg-white object-contain p-1"
+                                style={{
+                                    width: `${(Math.min(128, Math.floor(previewSize / 4)) / previewSize) * 100}%`,
+                                }}
+                            />
+                        )}
+                    </div>
+                </div>
+                <p className="text-xs leading-5 text-muted-foreground">
+                    {isSaved && code
+                        ? `Encodes the saved /q/${code} campaign URL. Download formats are on the campaign card.`
+                        : 'This draft is not scannable. Save to create a scan-ready QR code.'}
+                </p>
+            </div>
+
+            <div className="rounded-xl border border-border/70 p-3">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="grid gap-0.5">
+                        <FieldLabel htmlFor="qr-active" className="text-sm">
+                            Active
+                        </FieldLabel>
+                        <p
+                            id="qr-active-help"
+                            className="text-xs text-muted-foreground"
+                        >
+                            Paused codes reject scans without counting them.
+                        </p>
+                    </div>
+                    <Switch
+                        id="qr-active"
+                        checked={active}
+                        onCheckedChange={onActiveChange}
+                        disabled={disabled}
+                        aria-describedby="qr-active-help"
+                        aria-invalid={Boolean(activeError)}
+                    />
+                </div>
+                {activeError && (
+                    <FieldError className="mt-2">{activeError}</FieldError>
+                )}
+            </div>
+
+            {previewMargin < 2 && (
+                <p className="rounded-lg bg-warning-soft px-3 py-2 text-xs leading-5 text-warning-soft-foreground">
+                    A quiet-zone margin below 2 can make the code harder to
+                    scan.
+                </p>
+            )}
+            {previewSize < 160 && (
+                <p className="rounded-lg bg-warning-soft px-3 py-2 text-xs leading-5 text-warning-soft-foreground">
+                    Small downloads may be hard to scan at print size.
+                </p>
+            )}
+        </div>
+    );
 }
 
 export function QrCodeFormDialog({
@@ -108,8 +261,32 @@ export function QrCodeFormDialog({
     availableLinks: QrCodeLinkOption[];
 }) {
     const [open, setOpen] = useState(false);
-    const form = useForm<FormData>(initialData(campaign));
+    const [settingsPanel, setSettingsPanel] = useState<QrSettingsPanel | null>(
+        null,
+    );
+    const form = useForm<QrCodeFormData>(qrCodeFormData(campaign));
+    const settingsTriggerRef = useRef<HTMLButtonElement | null>(null);
+    const errorSummaryRef = useRef<HTMLDivElement | null>(null);
+    const errors = form.errors as Record<string, string | undefined>;
+    const errorEntries = Object.entries(errors).filter(
+        (entry): entry is [string, string] => Boolean(entry[1]),
+    );
+    const [errorFocusKey, setErrorFocusKey] = useState(0);
     const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (errorFocusKey === 0 || errorEntries.length === 0) {
+            return;
+        }
+
+        const timeout = window.setTimeout(
+            () => errorSummaryRef.current?.focus(),
+            100,
+        );
+
+        return () => window.clearTimeout(timeout);
+    }, [errorFocusKey, errorEntries.length]);
+
     useEffect(() => {
         const file = form.data.logo;
         if (!file) {
@@ -122,6 +299,7 @@ export function QrCodeFormDialog({
 
         return () => URL.revokeObjectURL(objectUrl);
     }, [form.data.logo]);
+
     const parsedPreviewSize = Number(form.data.size);
     const previewSize =
         Number.isInteger(parsedPreviewSize) &&
@@ -150,8 +328,156 @@ export function QrCodeFormDialog({
         },
     }).url;
     const linkedQr = campaign?.source === 'linked';
-    const planError = (form.errors as typeof form.errors & { plan?: string })
-        .plan;
+    const previewSrc = campaign ? preview(campaign.id).url : draftPreviewUrl;
+    const previewLogoAlt =
+        form.data.logo_alt ||
+        (campaign?.has_logo && !form.data.clear_logo
+            ? campaign.logo_alt
+            : null);
+    const title = form.data.title || campaign?.title || 'QR campaign';
+
+    const sharingConfigured =
+        form.data.share_title.trim() !== '' ||
+        form.data.share_description.trim() !== '';
+    const styleConfigured =
+        Boolean(form.data.logo) ||
+        (Boolean(campaign?.has_logo) && !form.data.clear_logo) ||
+        form.data.foreground_color.toUpperCase() !== '#000000' ||
+        form.data.background_color.toUpperCase() !== '#FFFFFF' ||
+        form.data.error_correction !== 'medium' ||
+        form.data.margin !== '4' ||
+        form.data.size !== '320';
+    const accessConfigured =
+        form.data.access_code !== '' ||
+        Boolean(campaign?.has_access_code && !form.data.remove_access_code);
+    const scheduleConfigured =
+        form.data.available_from !== '' ||
+        form.data.expires_at !== '' ||
+        form.data.max_scans !== '';
+    const settingsActions: Array<{
+        panel: QrSettingsPanel;
+        label: string;
+        icon: LucideIcon;
+        configured: boolean;
+    }> = [
+        {
+            panel: 'sharing',
+            label: 'Sharing',
+            icon: Share2,
+            configured: sharingConfigured,
+        },
+        {
+            panel: 'style',
+            label: 'Style',
+            icon: Palette,
+            configured: styleConfigured,
+        },
+        {
+            panel: 'access',
+            label: 'Access',
+            icon: LockKeyhole,
+            configured: accessConfigured,
+        },
+        {
+            panel: 'schedule',
+            label: 'Schedule',
+            icon: CalendarClock,
+            configured: scheduleConfigured,
+        },
+    ];
+
+    function handleOpenChange(nextOpen: boolean) {
+        if (form.processing) {
+            return;
+        }
+
+        setOpen(nextOpen);
+
+        if (nextOpen) {
+            form.resetAndClearErrors();
+            setSettingsPanel(null);
+        }
+    }
+
+    function openSettings(panel: QrSettingsPanel, focusId?: string) {
+        settingsTriggerRef.current = document.querySelector<HTMLButtonElement>(
+            `[data-settings-panel="${panel}"]`,
+        );
+        setSettingsPanel(panel);
+
+        if (focusId) {
+            window.setTimeout(
+                () => document.getElementById(focusId)?.focus(),
+                0,
+            );
+        }
+    }
+
+    function handleErrorEntry(key: string) {
+        const target = errorTarget(key);
+
+        if (target.panel) {
+            openSettings(target.panel, target.id);
+        } else if (target.id) {
+            document.getElementById(target.id)?.focus();
+        }
+    }
+
+    function commitSharing(
+        next: Pick<QrCodeFormData, 'share_title' | 'share_description'>,
+    ) {
+        form.setData({ ...form.data, ...next });
+        form.clearErrors('share_title');
+        form.clearErrors('share_description');
+        setSettingsPanel(null);
+    }
+
+    function commitStyle(
+        next: Pick<
+            QrCodeFormData,
+            | 'foreground_color'
+            | 'background_color'
+            | 'error_correction'
+            | 'margin'
+            | 'size'
+            | 'logo'
+            | 'logo_alt'
+            | 'clear_logo'
+        >,
+    ) {
+        form.setData({ ...form.data, ...next });
+        form.clearErrors('foreground_color');
+        form.clearErrors('background_color');
+        form.clearErrors('error_correction');
+        form.clearErrors('margin');
+        form.clearErrors('size');
+        form.clearErrors('logo');
+        form.clearErrors('logo_alt');
+        form.clearErrors('clear_logo');
+        setSettingsPanel(null);
+    }
+
+    function commitAccess(
+        next: Pick<QrCodeFormData, 'access_code' | 'remove_access_code'>,
+    ) {
+        form.setData({ ...form.data, ...next });
+        form.clearErrors('access_code');
+        form.clearErrors('remove_access_code');
+        setSettingsPanel(null);
+    }
+
+    function commitSchedule(
+        next: Pick<
+            QrCodeFormData,
+            'available_from' | 'expires_at' | 'max_scans'
+        >,
+    ) {
+        form.setData({ ...form.data, ...next });
+        form.clearErrors('available_from');
+        form.clearErrors('expires_at');
+        form.clearErrors('max_scans');
+        setSettingsPanel(null);
+    }
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -196,627 +522,388 @@ export function QrCodeFormDialog({
                       ).campaigns.find((item) => item.id === campaign.id) ??
                       campaign)
                     : undefined;
-                form.setDefaults(initialData(savedCampaign));
+                form.setDefaults(qrCodeFormData(savedCampaign));
                 form.reset();
                 setOpen(false);
+            },
+            onError: () => {
+                setErrorFocusKey((key) => key + 1);
             },
         });
     }
 
     return (
-        <Dialog
-            open={open}
-            onOpenChange={(nextOpen) => {
-                if (nextOpen) form.resetAndClearErrors();
-                setOpen(nextOpen);
-            }}
-        >
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>
-                        {campaign ? 'Edit QR campaign' : 'Create QR campaign'}
+            <DialogContent
+                className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[52rem]"
+                onOpenAutoFocus={(event) => {
+                    event.preventDefault();
+
+                    if (window.matchMedia('(max-width: 640px)').matches) {
+                        document
+                            .getElementById('qr-form-dialog-title')
+                            ?.focus();
+
+                        return;
+                    }
+
+                    const target =
+                        form.data.target_type === 'url'
+                            ? 'qr-destination-url'
+                            : 'qr-link-id';
+                    document.getElementById(target)?.focus();
+                }}
+            >
+                <DialogHeader className="shrink-0 px-6 pt-6 pr-14 pb-4">
+                    <DialogTitle
+                        id="qr-form-dialog-title"
+                        tabIndex={-1}
+                        className="flex items-center gap-2"
+                    >
+                        <QrCode className="size-4" aria-hidden="true" />
+                        {campaign ? 'Edit QR code' : 'Create QR code'}
                     </DialogTitle>
-                    <DialogDescription>
-                        Campaign scans are counted separately from short-link
-                        clicks. The encoded QR URL stays stable when campaign
-                        settings change.
+                    <DialogDescription className="sr-only">
+                        Set a destination, then configure optional sharing,
+                        style, access, and schedule controls.
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={submit} className="space-y-6">
-                    <FieldGroup>
-                        {!linkedQr && (
-                            <Field
-                                data-invalid={Boolean(
-                                    form.errors.destination_url ||
-                                    form.errors.link_id,
-                                )}
-                            >
-                                <FieldLabel htmlFor="qr-target-type">
-                                    Destination type
-                                </FieldLabel>
-                                <Select
-                                    value={form.data.target_type}
-                                    onValueChange={(value: 'url' | 'link') =>
-                                        form.setData('target_type', value)
-                                    }
-                                    disabled={form.processing}
-                                >
-                                    <SelectTrigger id="qr-target-type">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="url">
-                                            Direct URL
-                                        </SelectItem>
-                                        <SelectItem value="link">
-                                            Workspace short link
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                {form.data.target_type === 'url' ? (
-                                    <>
-                                        <FieldLabel htmlFor="qr-destination-url">
-                                            Destination URL
+                <FormErrorSummary
+                    summaryRef={errorSummaryRef}
+                    titleId="qr-form-errors-title"
+                    entries={errorEntries.map(([key, message]) => {
+                        const target = errorTarget(key);
+
+                        return {
+                            key,
+                            label: errorLabel(key),
+                            message,
+                            interactive: Boolean(target.panel || target.id),
+                        };
+                    })}
+                    onSelect={handleErrorEntry}
+                />
+
+                <form
+                    onSubmit={submit}
+                    className="flex min-h-0 flex-1 flex-col"
+                >
+                    <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                        <div className="grid min-w-0 gap-6 md:grid-cols-[minmax(0,1fr)_17rem]">
+                            <div className="flex min-w-0 flex-col gap-5">
+                                {linkedQr ? (
+                                    <Field>
+                                        <FieldLabel>
+                                            Short-link target
                                         </FieldLabel>
-                                        <Input
-                                            id="qr-destination-url"
-                                            type="url"
-                                            value={form.data.destination_url}
-                                            onChange={(event) =>
-                                                form.setData(
-                                                    'destination_url',
-                                                    event.target.value,
-                                                )
-                                            }
-                                            placeholder="https://example.com/menu"
-                                            maxLength={2048}
-                                            disabled={form.processing}
-                                            aria-invalid={Boolean(
-                                                form.errors.destination_url,
-                                            )}
-                                        />
-                                    </>
+                                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/30 px-3 py-3 text-sm">
+                                            <Link2
+                                                className="size-4 shrink-0 text-muted-foreground"
+                                                aria-hidden="true"
+                                            />
+                                            <span className="min-w-0 truncate">
+                                                /{campaign?.link?.slug}
+                                            </span>
+                                        </div>
+                                        <FieldDescription>
+                                            This QR stays attached to the short
+                                            link. Change its destination from
+                                            the link settings.
+                                        </FieldDescription>
+                                    </Field>
                                 ) : (
                                     <>
-                                        <FieldLabel htmlFor="qr-link-id">
-                                            Short link
-                                        </FieldLabel>
-                                        <Select
-                                            value={form.data.link_id}
-                                            onValueChange={(value) =>
-                                                form.setData('link_id', value)
-                                            }
-                                            disabled={
-                                                form.processing ||
-                                                availableLinks.length === 0
-                                            }
+                                        <Field
+                                            data-invalid={Boolean(
+                                                errors.destination_url ||
+                                                errors.link_id,
+                                            )}
                                         >
-                                            <SelectTrigger
-                                                id="qr-link-id"
-                                                aria-invalid={Boolean(
-                                                    form.errors.link_id,
+                                            <FieldLabel htmlFor="qr-target-type">
+                                                Destination type
+                                            </FieldLabel>
+                                            <Select
+                                                value={form.data.target_type}
+                                                onValueChange={(
+                                                    value: 'url' | 'link',
+                                                ) => {
+                                                    form.setData(
+                                                        'target_type',
+                                                        value,
+                                                    );
+                                                    form.clearErrors(
+                                                        'destination_url',
+                                                    );
+                                                    form.clearErrors('link_id');
+                                                }}
+                                                disabled={form.processing}
+                                            >
+                                                <SelectTrigger
+                                                    id="qr-target-type"
+                                                    className="h-10 w-full"
+                                                >
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="url">
+                                                        Direct URL
+                                                    </SelectItem>
+                                                    <SelectItem value="link">
+                                                        Workspace short link
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </Field>
+
+                                        {form.data.target_type === 'url' ? (
+                                            <Field
+                                                data-invalid={Boolean(
+                                                    errors.destination_url,
                                                 )}
                                             >
-                                                <SelectValue placeholder="Select a workspace link" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {availableLinks.map((link) => (
-                                                    <SelectItem
-                                                        key={link.id}
-                                                        value={String(link.id)}
+                                                <FieldLabel htmlFor="qr-destination-url">
+                                                    Destination URL
+                                                </FieldLabel>
+                                                <Input
+                                                    id="qr-destination-url"
+                                                    type="url"
+                                                    value={
+                                                        form.data
+                                                            .destination_url
+                                                    }
+                                                    onChange={(event) =>
+                                                        form.setData(
+                                                            'destination_url',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="https://example.com/menu"
+                                                    maxLength={2048}
+                                                    autoComplete="url"
+                                                    disabled={form.processing}
+                                                    required
+                                                    aria-invalid={Boolean(
+                                                        errors.destination_url,
+                                                    )}
+                                                    aria-describedby={
+                                                        errors.destination_url
+                                                            ? 'qr-destination-url-error'
+                                                            : 'qr-destination-help'
+                                                    }
+                                                />
+                                                <FieldDescription id="qr-destination-help">
+                                                    Use an HTTP or HTTPS URL.
+                                                    The destination cannot
+                                                    target this application.
+                                                </FieldDescription>
+                                                <FieldMessage id="qr-destination-url-error">
+                                                    {errors.destination_url}
+                                                </FieldMessage>
+                                            </Field>
+                                        ) : (
+                                            <Field
+                                                data-invalid={Boolean(
+                                                    errors.link_id,
+                                                )}
+                                            >
+                                                <FieldLabel htmlFor="qr-link-id">
+                                                    Short link
+                                                </FieldLabel>
+                                                <Select
+                                                    value={form.data.link_id}
+                                                    onValueChange={(value) =>
+                                                        form.setData(
+                                                            'link_id',
+                                                            value,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        form.processing ||
+                                                        availableLinks.length ===
+                                                            0
+                                                    }
+                                                >
+                                                    <SelectTrigger
+                                                        id="qr-link-id"
+                                                        className="h-10 w-full"
+                                                        aria-invalid={Boolean(
+                                                            errors.link_id,
+                                                        )}
+                                                        aria-describedby={
+                                                            errors.link_id
+                                                                ? 'qr-link-id-error'
+                                                                : undefined
+                                                        }
                                                     >
-                                                        {link.title ||
-                                                            `/${link.slug}`}{' '}
-                                                        — /{link.slug}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {availableLinks.length === 0 && (
-                                            <FieldDescription>
-                                                Create a short link in this
-                                                workspace first.
-                                            </FieldDescription>
+                                                        <SelectValue placeholder="Select a workspace link" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {availableLinks.map(
+                                                            (link) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        link.id
+                                                                    }
+                                                                    value={String(
+                                                                        link.id,
+                                                                    )}
+                                                                >
+                                                                    {link.title ||
+                                                                        `/${link.slug}`}{' '}
+                                                                    — /
+                                                                    {link.slug}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                {availableLinks.length ===
+                                                    0 && (
+                                                    <FieldDescription>
+                                                        Create a short link in
+                                                        this workspace first.
+                                                    </FieldDescription>
+                                                )}
+                                                <FieldMessage id="qr-link-id-error">
+                                                    {errors.link_id}
+                                                </FieldMessage>
+                                            </Field>
                                         )}
                                     </>
                                 )}
-                                <FieldDescription>
-                                    Direct URLs must use HTTP or HTTPS and
-                                    cannot target this LinkPilot application.
-                                </FieldDescription>
-                                <FieldMessage>
-                                    {form.errors.destination_url}
-                                </FieldMessage>
-                                <FieldMessage>
-                                    {form.errors.link_id}
-                                </FieldMessage>
-                            </Field>
-                        )}
 
-                        {linkedQr && (
-                            <Field>
-                                <FieldLabel>Short-link target</FieldLabel>
-                                <FieldDescription>
-                                    This QR remains attached to /
-                                    {campaign.link?.slug}. Change the short
-                                    link's destination from its link settings.
-                                </FieldDescription>
-                            </Field>
-                        )}
-
-                        <Field data-invalid={Boolean(form.errors.title)}>
-                            <FieldLabel htmlFor="qr-title">
-                                Campaign name
-                            </FieldLabel>
-                            <Input
-                                id="qr-title"
-                                value={form.data.title}
-                                onChange={(event) =>
-                                    form.setData('title', event.target.value)
-                                }
-                                maxLength={160}
-                                disabled={form.processing}
-                            />
-                            <FieldMessage>{form.errors.title}</FieldMessage>
-                        </Field>
-
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <Field
-                                data-invalid={Boolean(form.errors.share_title)}
-                            >
-                                <FieldLabel htmlFor="qr-share-title">
-                                    Sharing title
-                                </FieldLabel>
-                                <Input
-                                    id="qr-share-title"
-                                    value={form.data.share_title}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'share_title',
-                                            event.target.value,
-                                        )
-                                    }
-                                    maxLength={160}
-                                    disabled={form.processing}
-                                />
-                                <FieldMessage>
-                                    {form.errors.share_title}
-                                </FieldMessage>
-                            </Field>
-                            <Field
-                                data-invalid={Boolean(form.errors.max_scans)}
-                            >
-                                <FieldLabel htmlFor="qr-max-scans">
-                                    Maximum scans
-                                </FieldLabel>
-                                <Input
-                                    id="qr-max-scans"
-                                    type="number"
-                                    min={1}
-                                    step={1}
-                                    value={form.data.max_scans}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'max_scans',
-                                            event.target.value,
-                                        )
-                                    }
-                                    placeholder="Unlimited"
-                                    disabled={form.processing}
-                                />
-                                <FieldMessage>
-                                    {form.errors.max_scans}
-                                </FieldMessage>
-                            </Field>
-                        </div>
-
-                        <Field
-                            data-invalid={Boolean(
-                                form.errors.share_description,
-                            )}
-                        >
-                            <FieldLabel htmlFor="qr-share-description">
-                                Sharing description
-                            </FieldLabel>
-                            <Textarea
-                                id="qr-share-description"
-                                value={form.data.share_description}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'share_description',
-                                        event.target.value,
-                                    )
-                                }
-                                maxLength={2000}
-                                rows={3}
-                                disabled={form.processing}
-                            />
-                            <FieldMessage>
-                                {form.errors.share_description}
-                            </FieldMessage>
-                        </Field>
-
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <Field
-                                data-invalid={Boolean(
-                                    form.errors.available_from,
-                                )}
-                            >
-                                <FieldLabel htmlFor="qr-available-from">
-                                    Available from
-                                </FieldLabel>
-                                <Input
-                                    id="qr-available-from"
-                                    type="datetime-local"
-                                    value={form.data.available_from}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'available_from',
-                                            event.target.value,
-                                        )
-                                    }
-                                    disabled={form.processing}
-                                />
-                                <FieldMessage>
-                                    {form.errors.available_from}
-                                </FieldMessage>
-                            </Field>
-                            <Field
-                                data-invalid={Boolean(form.errors.expires_at)}
-                            >
-                                <FieldLabel htmlFor="qr-expires-at">
-                                    Expires at
-                                </FieldLabel>
-                                <Input
-                                    id="qr-expires-at"
-                                    type="datetime-local"
-                                    value={form.data.expires_at}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'expires_at',
-                                            event.target.value,
-                                        )
-                                    }
-                                    disabled={form.processing}
-                                />
-                                <FieldMessage>
-                                    {form.errors.expires_at}
-                                </FieldMessage>
-                            </Field>
-                        </div>
-
-                        <Field data-invalid={Boolean(form.errors.access_code)}>
-                            <FieldLabel htmlFor="qr-access-code">
-                                {campaign?.has_access_code
-                                    ? 'Replace access code'
-                                    : 'Access code'}
-                            </FieldLabel>
-                            <Input
-                                id="qr-access-code"
-                                type="password"
-                                value={form.data.access_code}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'access_code',
-                                        event.target.value,
-                                    )
-                                }
-                                autoComplete="new-password"
-                                maxLength={255}
-                                placeholder={
-                                    campaign?.has_access_code
-                                        ? 'Leave blank to keep current'
-                                        : 'Optional'
-                                }
-                                disabled={form.processing}
-                            />
-                            <FieldDescription>
-                                Visitors must unlock this QR before a scan is
-                                counted.
-                            </FieldDescription>
-                            {campaign?.has_access_code && (
-                                <label className="flex items-center gap-2 text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={form.data.remove_access_code}
+                                <Field data-invalid={Boolean(errors.title)}>
+                                    <FieldLabel htmlFor="qr-title">
+                                        Title{' '}
+                                        <span className="font-normal text-muted-foreground">
+                                            (optional)
+                                        </span>
+                                    </FieldLabel>
+                                    <Input
+                                        id="qr-title"
+                                        value={form.data.title}
                                         onChange={(event) =>
                                             form.setData(
-                                                'remove_access_code',
-                                                event.target.checked,
+                                                'title',
+                                                event.target.value,
                                             )
                                         }
+                                        placeholder="e.g. Spring menu"
+                                        maxLength={160}
                                         disabled={form.processing}
+                                        aria-invalid={Boolean(errors.title)}
+                                        aria-describedby={
+                                            errors.title
+                                                ? 'qr-title-error'
+                                                : undefined
+                                        }
                                     />
-                                    Remove the current access code
-                                </label>
-                            )}
-                            <FieldMessage>
-                                {form.errors.access_code}
-                            </FieldMessage>
-                        </Field>
+                                    <FieldDescription>
+                                        Helps you identify this campaign in the
+                                        QR list.
+                                    </FieldDescription>
+                                    <FieldMessage id="qr-title-error">
+                                        {errors.title}
+                                    </FieldMessage>
+                                </Field>
+                            </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <Field
-                                data-invalid={Boolean(
-                                    form.errors.foreground_color,
-                                )}
-                            >
-                                <FieldLabel htmlFor="qr-foreground">
-                                    Foreground
-                                </FieldLabel>
-                                <Input
-                                    id="qr-foreground"
-                                    type="color"
-                                    value={form.data.foreground_color}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'foreground_color',
-                                            event.target.value,
-                                        )
-                                    }
-                                    disabled={form.processing}
-                                />
-                                <FieldMessage>
-                                    {form.errors.foreground_color}
-                                </FieldMessage>
-                            </Field>
-                            <Field
-                                data-invalid={Boolean(
-                                    form.errors.background_color,
-                                )}
-                            >
-                                <FieldLabel htmlFor="qr-background">
-                                    Background
-                                </FieldLabel>
-                                <Input
-                                    id="qr-background"
-                                    type="color"
-                                    value={form.data.background_color}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'background_color',
-                                            event.target.value,
-                                        )
-                                    }
-                                    disabled={form.processing}
-                                />
-                                <FieldMessage>
-                                    {form.errors.background_color}
-                                </FieldMessage>
-                            </Field>
-                            <Field
-                                data-invalid={Boolean(
-                                    form.errors.error_correction,
-                                )}
-                            >
-                                <FieldLabel htmlFor="qr-correction">
-                                    Error correction
-                                </FieldLabel>
-                                <Select
-                                    value={form.data.error_correction}
-                                    onValueChange={(
-                                        value: FormData['error_correction'],
-                                    ) =>
-                                        form.setData('error_correction', value)
-                                    }
-                                    disabled={form.processing}
-                                >
-                                    <SelectTrigger id="qr-correction">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="low">Low</SelectItem>
-                                        <SelectItem value="medium">
-                                            Medium
-                                        </SelectItem>
-                                        <SelectItem value="quartile">
-                                            Quartile
-                                        </SelectItem>
-                                        <SelectItem value="high">
-                                            High
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FieldMessage>
-                                    {form.errors.error_correction}
-                                </FieldMessage>
-                            </Field>
-                            <Field data-invalid={Boolean(form.errors.size)}>
-                                <FieldLabel htmlFor="qr-size">
-                                    Size (pixels)
-                                </FieldLabel>
-                                <Input
-                                    id="qr-size"
-                                    type="number"
-                                    min={128}
-                                    max={1024}
-                                    value={form.data.size}
-                                    onChange={(event) =>
-                                        form.setData('size', event.target.value)
-                                    }
-                                    disabled={form.processing}
-                                />
-                                <FieldMessage>{form.errors.size}</FieldMessage>
-                            </Field>
-                            <Field data-invalid={Boolean(form.errors.margin)}>
-                                <FieldLabel htmlFor="qr-margin">
-                                    Quiet-zone margin
-                                </FieldLabel>
-                                <Input
-                                    id="qr-margin"
-                                    type="number"
-                                    min={0}
-                                    max={20}
-                                    value={form.data.margin}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'margin',
-                                            event.target.value,
-                                        )
-                                    }
-                                    disabled={form.processing}
-                                />
-                                <FieldMessage>
-                                    {form.errors.margin}
-                                </FieldMessage>
-                            </Field>
+                            <QrPreviewPanel
+                                src={previewSrc}
+                                logoUrl={logoPreviewUrl}
+                                logoAlt={previewLogoAlt}
+                                title={title}
+                                previewSize={previewSize}
+                                previewMargin={previewMargin}
+                                isSaved={Boolean(campaign)}
+                                code={campaign?.code ?? null}
+                                active={form.data.is_active}
+                                onActiveChange={(active) =>
+                                    form.setData('is_active', active)
+                                }
+                                disabled={form.processing}
+                                activeError={errors.is_active}
+                            />
                         </div>
+                    </div>
 
-                        <Field
-                            data-invalid={Boolean(
-                                form.errors.logo || form.errors.logo_alt,
-                            )}
-                        >
-                            <FieldLabel htmlFor="qr-logo">
-                                Logo image
-                            </FieldLabel>
-                            <Input
-                                id="qr-logo"
-                                type="file"
-                                accept="image/png,image/jpeg,image/webp"
-                                onChange={(event) =>
-                                    form.setData(
-                                        'logo',
-                                        event.target.files?.[0] ?? null,
-                                    )
-                                }
+                    <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                                {settingsActions.map(
+                                    ({
+                                        panel,
+                                        label,
+                                        icon: Icon,
+                                        configured,
+                                    }) => {
+                                        const hasError = errorEntries.some(
+                                            ([key]) =>
+                                                errorTarget(key).panel ===
+                                                panel,
+                                        );
+
+                                        return (
+                                            <Button
+                                                key={panel}
+                                                ref={settingsTriggerRef}
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                data-settings-panel={panel}
+                                                className={cn(
+                                                    'h-10 justify-start sm:h-9',
+                                                    configured &&
+                                                        'border-primary/20 bg-primary-soft text-primary-soft-foreground hover:bg-primary-soft/80',
+                                                    hasError &&
+                                                        'border-danger/40',
+                                                )}
+                                                aria-haspopup="dialog"
+                                                aria-label={`${label}${configured ? ', configured' : ''}${hasError ? ', has an error' : ''}`}
+                                                onClick={(event) => {
+                                                    settingsTriggerRef.current =
+                                                        event.currentTarget;
+                                                    openSettings(panel);
+                                                }}
+                                                disabled={form.processing}
+                                            >
+                                                <Icon aria-hidden="true" />
+                                                {label}
+                                            </Button>
+                                        );
+                                    },
+                                )}
+                            </div>
+                            <Button
+                                type="submit"
+                                className="h-10 w-full sm:w-auto"
                                 disabled={form.processing}
-                            />
-                            <FieldDescription>
-                                Optional PNG, JPEG, or WebP image; up to 2 MB
-                                and 1024 × 1024 pixels. Stored on the private
-                                workspace disk and embedded in downloads.
-                            </FieldDescription>
-                            {campaign?.has_logo && (
-                                <label className="flex items-center gap-2 text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={form.data.clear_logo}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'clear_logo',
-                                                event.target.checked,
-                                            )
-                                        }
-                                        disabled={form.processing}
-                                    />
-                                    Remove current logo
-                                </label>
-                            )}
-                            <FieldLabel htmlFor="qr-logo-alt">
-                                Logo description
-                            </FieldLabel>
-                            <Input
-                                id="qr-logo-alt"
-                                value={form.data.logo_alt}
-                                onChange={(event) =>
-                                    form.setData('logo_alt', event.target.value)
-                                }
-                                maxLength={160}
-                                disabled={form.processing}
-                            />
-                            <FieldMessage>{form.errors.logo}</FieldMessage>
-                            <FieldMessage>{form.errors.logo_alt}</FieldMessage>
-                        </Field>
-
-                        <label className="flex items-start gap-3 rounded-md border p-3 text-sm">
-                            <input
-                                type="checkbox"
-                                checked={form.data.is_active}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'is_active',
-                                        event.target.checked,
-                                    )
-                                }
-                                disabled={form.processing}
-                                className="mt-0.5"
-                            />
-                            <span>
-                                <span className="block font-medium">
-                                    Active
-                                </span>
-                                <span className="text-muted-foreground">
-                                    Paused QR codes reject scans without
-                                    incrementing analytics.
-                                </span>
-                            </span>
-                        </label>
-                    </FieldGroup>
-
-                    {planError && (
-                        <p role="alert" className="text-sm text-destructive">
-                            {planError}
-                        </p>
-                    )}
-
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={form.processing}>
-                            {form.processing
-                                ? 'Saving…'
-                                : campaign
-                                  ? 'Save changes'
-                                  : 'Create QR campaign'}
-                        </Button>
-                    </DialogFooter>
+                            >
+                                {form.processing && (
+                                    <Spinner data-icon="inline-start" />
+                                )}
+                                {campaign ? 'Save changes' : 'Create QR code'}
+                            </Button>
+                        </div>
+                    </div>
                 </form>
 
-                {campaign ? (
-                    <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-center">
-                        <img
-                            src={preview(campaign.id).url}
-                            alt={[
-                                `QR code preview for ${campaign.title || 'campaign'}`,
-                                campaign.logo_alt
-                                    ? `Includes logo: ${campaign.logo_alt}`
-                                    : null,
-                            ]
-                                .filter(Boolean)
-                                .join('. ')}
-                            className="mx-auto aspect-square size-36 rounded-md border"
-                        />
-                        <p className="text-sm text-muted-foreground">
-                            This preview encodes the stable campaign URL /q/
-                            {campaign.code}. Download formats are available from
-                            the campaign card.
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-center">
-                        <div className="relative mx-auto size-36">
-                            <img
-                                src={draftPreviewUrl}
-                                alt="QR style preview"
-                                className="aspect-square size-36 rounded-md border"
-                            />
-                            {logoPreviewUrl && (
-                                <img
-                                    src={logoPreviewUrl}
-                                    alt={form.data.logo_alt || 'Selected logo'}
-                                    className="absolute top-1/2 left-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rounded bg-white object-contain p-1"
-                                    style={{
-                                        width: `${(Math.min(128, Math.floor(previewSize / 4)) / previewSize) * 100}%`,
-                                    }}
-                                />
-                            )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                            This draft image encodes a non-live preview URL; it
-                            cannot open a campaign. Save first, then use the
-                            campaign preview or a download to get a scan-ready
-                            QR.
-                        </p>
-                    </div>
-                )}
+                <QrCodeSettingsDialogs
+                    activePanel={settingsPanel}
+                    onActivePanelChange={setSettingsPanel}
+                    settingsTriggerRef={settingsTriggerRef}
+                    data={form.data}
+                    errors={errors}
+                    processing={form.processing}
+                    hasExistingAccessCode={campaign?.has_access_code ?? false}
+                    hasExistingLogo={campaign?.has_logo ?? false}
+                    onCommitSharing={commitSharing}
+                    onCommitStyle={commitStyle}
+                    onCommitAccess={commitAccess}
+                    onCommitSchedule={commitSchedule}
+                />
             </DialogContent>
         </Dialog>
     );

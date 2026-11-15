@@ -73,12 +73,6 @@ class Plan extends Model
         ];
     }
 
-    /** @return HasMany<WorkspaceSubscription, $this> */
-    public function workspaceSubscriptions(): HasMany
-    {
-        return $this->hasMany(WorkspaceSubscription::class);
-    }
-
     /** @return HasMany<WorkspacePlanOverride, $this> */
     public function overrides(): HasMany
     {

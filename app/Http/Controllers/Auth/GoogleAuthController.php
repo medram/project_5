@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\SocialAccount;
 use App\Models\User;
 use App\Services\Accounts\GoogleConnection;
+use App\Services\Accounts\RegistrationPolicy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Laravel\Fortify\Features;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Throwable;
@@ -70,8 +71,20 @@ class GoogleAuthController extends Controller
             ]);
         }
 
-        if (! Features::enabled(Features::registration())) {
+        $policy = app(RegistrationPolicy::class);
+
+        if (! $policy->enabled()) {
             return redirect()->route('login')->withErrors(['google' => 'Account registration is disabled.']);
+        }
+
+        if ($policy->googleRequiresExisting()) {
+            return redirect()->route('login')->withErrors(['google' => 'Google sign-in is limited to existing accounts.']);
+        }
+
+        try {
+            $policy->assertEmailAllowed($email);
+        } catch (ValidationException) {
+            return redirect()->route('login')->withErrors(['google' => 'This email address cannot be used to register.']);
         }
 
         $user = User::query()->create([

@@ -27,7 +27,6 @@ class AdminUserShowController extends Controller
         $workspaces = $account->workspaces()
             ->withPivot('role')
             ->withCount(['members', 'links', 'bioPages', 'customDomains'])
-            ->with('legacySubscription.plan:id,code,name')
             ->orderBy('id')
             ->get()
             ->map(function (Workspace $workspace) use ($account): array {

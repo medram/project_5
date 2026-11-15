@@ -3,7 +3,7 @@
 return [
 
     'api' => [
-        'rate_limit_per_minute' => max(1, (int) env('API_RATE_LIMIT_PER_MINUTE', 60)),
+        'rate_limit_per_minute' => 60,
     ],
     'default_hosts' => array_values(array_filter(array_map(
         'trim',
@@ -62,10 +62,10 @@ return [
     ],
 
     'billing' => [
-        'promotion_codes' => (bool) env('BILLING_PROMOTION_CODES', false),
+        'promotion_codes' => false,
     ],
 
     'auth' => [
-        'google_enabled' => (bool) env('GOOGLE_AUTH_ENABLED', false),
+        'google_enabled' => false,
     ],
 ];

@@ -1,13 +1,16 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     Activity,
+    Archive,
     BarChart3,
     CalendarClock,
     Download,
     ExternalLink,
     Folder,
+    Globe,
+    History,
     KeyRound,
-    Link2,
+    MoreHorizontal,
     MousePointerClick,
     Pause,
     Pencil,
@@ -23,20 +26,19 @@ import { ResourceListFilterChips } from '@/components/resource-list/filter-chips
 import { CreateLinkTagDialog } from '@/components/links/create-link-tag-dialog';
 import { LinkFormDialog } from '@/components/links/link-form-dialog';
 import { ResourceListPagination } from '@/components/resource-list/pagination';
-import { ResourceListSortMenu } from '@/components/resource-list/sort-menu';
 import { ResourceListToolbar } from '@/components/resource-list/toolbar';
 import { ResourceListViewToggle } from '@/components/resource-list/view-toggle';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Field } from '@/components/ui/field';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Dialog,
     DialogClose,
@@ -56,12 +58,19 @@ import {
     EmptyTitle,
 } from '@/components/ui/empty';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { destroy, index, insights } from '@/routes/links';
 import type { CustomDomainOption } from '@/types/custom-domains';
 import type { FolderOption } from '@/types/folders';
 import {
+    type CountryOption,
     type LinkIndexProps,
     type LinkListItem,
     type LinkTagOption,
@@ -70,6 +79,7 @@ import {
 } from '@/types/links';
 import type { LinkOverlayOption } from '@/types/overlays';
 
+const FILTER_ALL = '__linkpilot_all__';
 function withListQuery(url: string, listQuery: string): string {
     return listQuery === '' ? url : `${url}?${listQuery}`;
 }
@@ -99,18 +109,21 @@ function withListView(
 function DeleteLinkDialog({
     link,
     listQuery,
+    open,
+    onOpenChange,
 }: {
     link: LinkListItem;
     listQuery: string;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
 }) {
-    const [open, setOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
 
     function deleteLink() {
         router.delete(withListQuery(destroy(link.id).url, listQuery), {
             preserveScroll: true,
             onStart: () => setProcessing(true),
-            onSuccess: () => setOpen(false),
+            onSuccess: () => onOpenChange(false),
             onFinish: () => setProcessing(false),
         });
     }
@@ -120,16 +133,10 @@ function DeleteLinkDialog({
             open={open}
             onOpenChange={(nextOpen) => {
                 if (!processing) {
-                    setOpen(nextOpen);
+                    onOpenChange(nextOpen);
                 }
             }}
         >
-            <DialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                    <Trash2 data-icon="inline-start" />
-                    Delete
-                </Button>
-            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Delete this short link?</DialogTitle>
@@ -199,11 +206,7 @@ function DeleteSelectedLinksDialog({
             }}
         >
             <DialogTrigger asChild>
-                <Button
-                    type="button"
-                    variant="destructive"
-                    className="min-h-11"
-                >
+                <Button type="button" variant="outline" size="sm">
                     <Trash2 data-icon="inline-start" />
                     Delete selected
                 </Button>
@@ -249,7 +252,9 @@ function LinkActions({
     linkPages,
     canManageApprovals,
     tagOptions,
+    countries,
     listQuery,
+    onRequestDelete,
 }: {
     link: LinkListItem;
     folders: FolderOption[];
@@ -258,26 +263,15 @@ function LinkActions({
     linkPages: LinkPageOption[];
     canManageApprovals: boolean;
     tagOptions: LinkTagOption[];
+    countries: CountryOption[];
     listQuery: string;
+    onRequestDelete: () => void;
 }) {
     const [updatingStatus, setUpdatingStatus] = useState(false);
 
-    function toggleStatus() {
-        router.patch(
-            withListQuery('/dashboard/links/bulk', listQuery),
-            {
-                action: link.isActive ? 'deactivate' : 'activate',
-                ids: [link.id],
-            },
-            {
-                preserveScroll: true,
-                onStart: () => setUpdatingStatus(true),
-                onFinish: () => setUpdatingStatus(false),
-            },
-        );
-    }
-
-    function runBulkAction(action: 'archive' | 'restore') {
+    function runBulkAction(
+        action: 'activate' | 'deactivate' | 'archive' | 'restore',
+    ) {
         router.patch(
             withListQuery('/dashboard/links/bulk', listQuery),
             { action, ids: [link.id] },
@@ -290,7 +284,21 @@ function LinkActions({
     }
 
     return (
-        <div className="flex flex-wrap gap-2 [&_a]:min-h-11 [&_a]:min-w-11 [&_button]:min-h-11 [&_button]:min-w-11">
+        <div className="flex shrink-0 items-center gap-1 md:justify-end">
+            <Button
+                variant="secondary"
+                size="icon"
+                className="size-8 rounded-full"
+                asChild
+            >
+                <Link
+                    href={insights(link.id)}
+                    title="View insights"
+                    aria-label={`View insights for ${link.title || `/${link.slug}`}`}
+                >
+                    <BarChart3 aria-hidden="true" />
+                </Link>
+            </Button>
             <LinkFormDialog
                 link={link}
                 folders={folders}
@@ -299,70 +307,89 @@ function LinkActions({
                 linkPages={linkPages}
                 canManageApprovals={canManageApprovals}
                 tagOptions={tagOptions}
+                countries={countries}
                 listQuery={listQuery}
             >
-                <Button variant="outline" size="sm">
-                    <Pencil data-icon="inline-start" />
-                    Edit
+                <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-8 rounded-full"
+                    title="Edit short link"
+                    aria-label={`Edit ${link.title || `/${link.slug}`}`}
+                >
+                    <Pencil aria-hidden="true" />
                 </Button>
             </LinkFormDialog>
-            {!link.archivedAt ? (
-                <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                     <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={toggleStatus}
-                        disabled={updatingStatus}
+                        variant="secondary"
+                        size="icon"
+                        className="size-8 rounded-full"
+                        title="More actions"
+                        aria-label={`More actions for ${link.title || `/${link.slug}`}`}
                     >
-                        {updatingStatus ? (
-                            <Spinner data-icon="inline-start" />
-                        ) : link.isActive ? (
-                            <Pause data-icon="inline-start" />
-                        ) : (
-                            <Play data-icon="inline-start" />
-                        )}
-                        {link.isActive ? 'Pause' : 'Activate'}
+                        <MoreHorizontal aria-hidden="true" />
                     </Button>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => runBulkAction('archive')}
-                        disabled={updatingStatus}
-                    >
-                        Archive
-                    </Button>
-                </>
-            ) : (
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => runBulkAction('restore')}
-                    disabled={updatingStatus}
-                >
-                    {updatingStatus && <Spinner data-icon="inline-start" />}
-                    Restore
-                </Button>
-            )}
-            <Button variant="outline" size="sm" asChild>
-                <Link href={insights(link.id)}>
-                    <BarChart3 data-icon="inline-start" />
-                    Insights
-                </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-                <Link
-                    href={withListQuery(
-                        `/dashboard/links/${link.id}/revisions`,
-                        listQuery,
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                    {!link.archivedAt ? (
+                        <>
+                            <DropdownMenuItem
+                                disabled={updatingStatus}
+                                onSelect={() =>
+                                    runBulkAction(
+                                        link.isActive
+                                            ? 'deactivate'
+                                            : 'activate',
+                                    )
+                                }
+                            >
+                                {link.isActive ? (
+                                    <Pause aria-hidden="true" />
+                                ) : (
+                                    <Play aria-hidden="true" />
+                                )}
+                                {link.isActive ? 'Pause' : 'Activate'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                disabled={updatingStatus}
+                                onSelect={() => runBulkAction('archive')}
+                            >
+                                <Archive aria-hidden="true" />
+                                Archive
+                            </DropdownMenuItem>
+                        </>
+                    ) : (
+                        <DropdownMenuItem
+                            disabled={updatingStatus}
+                            onSelect={() => runBulkAction('restore')}
+                        >
+                            <Play aria-hidden="true" />
+                            Restore
+                        </DropdownMenuItem>
                     )}
-                >
-                    Revision history
-                </Link>
-            </Button>
-            <DeleteLinkDialog link={link} listQuery={listQuery} />
+                    <DropdownMenuItem asChild>
+                        <Link
+                            href={withListQuery(
+                                `/dashboard/links/${link.id}/revisions`,
+                                listQuery,
+                            )}
+                        >
+                            <History aria-hidden="true" />
+                            Revision history
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        variant="destructive"
+                        onSelect={onRequestDelete}
+                    >
+                        <Trash2 aria-hidden="true" />
+                        Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
     );
 }
@@ -375,6 +402,7 @@ function LinkRow({
     linkPages,
     canManageApprovals,
     tagOptions,
+    countries,
     listQuery,
     selected,
     onToggle,
@@ -386,202 +414,186 @@ function LinkRow({
     linkPages: LinkPageOption[];
     canManageApprovals: boolean;
     tagOptions: LinkTagOption[];
+    countries: CountryOption[];
     listQuery: string;
     selected: boolean;
     onToggle: () => void;
 }) {
+    const [deleteOpen, setDeleteOpen] = useState(false);
     const shortLinkUrl = link.customDomain
         ? `https://${link.customDomain.hostname}/${link.slug}`
         : `/${link.slug}`;
     const shortLinkLabel = link.customDomain
         ? `${link.customDomain.hostname}/${link.slug}`
         : `/${link.slug}`;
-    const statusLabel = link.archivedAt
-        ? 'Archived'
+    const status = link.archivedAt
+        ? { label: 'Archived', dot: 'bg-muted-foreground' }
         : link.approvalStatus === 'pending'
-          ? 'Pending review'
+          ? { label: 'Pending review', dot: 'bg-warning' }
           : link.isActive
-            ? 'Live'
-            : 'Paused';
+            ? { label: 'Live', dot: 'bg-success' }
+            : { label: 'Paused', dot: 'bg-warning' };
     const targetLabel =
         link.deliveryMode === 'link_page'
             ? `Link page: ${link.linkPage?.name ?? 'Unavailable'}`
             : (link.destinationUrl ?? 'No destination');
 
     return (
-        <Card>
-            <CardHeader className="gap-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex min-w-0 flex-1 gap-3">
-                        <label className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center">
-                            <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={onToggle}
-                                aria-label={`Select ${link.title || `/${link.slug}`}`}
-                                className="size-4 accent-primary focus-visible:ring-2 focus-visible:ring-ring"
+        <>
+            <li
+                className="grid gap-3 px-4 py-3.5 transition-colors hover:bg-surface-secondary/60 aria-selected:bg-primary-soft md:grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_5.5rem_8.5rem] md:items-center md:gap-4 md:py-3"
+                aria-selected={selected}
+            >
+                <div className="flex min-w-0 items-start gap-3">
+                    <div className="inline-flex size-6 shrink-0 items-center justify-center">
+                        <Checkbox
+                            checked={selected}
+                            onCheckedChange={onToggle}
+                            aria-label={`Select ${link.title || `/${link.slug}`}`}
+                        />
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+                            <span className="truncate text-sm font-medium">
+                                {link.title || 'Untitled route'}
+                            </span>
+                            <span className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                                <span
+                                    aria-hidden="true"
+                                    className={`size-1.5 rounded-full ${status.dot}`}
+                                />
+                                {status.label}
+                            </span>
+                            {!link.archivedAt &&
+                                link.approvalStatus === 'approved' &&
+                                link.hasPendingRevision && (
+                                    <span className="text-xs text-muted-foreground">
+                                        Pending changes
+                                    </span>
+                                )}
+                        </div>
+                        <a
+                            href={shortLinkUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            title={shortLinkLabel}
+                            className="inline-flex w-fit max-w-full min-w-0 items-center gap-1.5 rounded-md border border-border bg-surface-secondary px-2 py-0.5 font-mono text-[11px] text-foreground transition-colors hover:border-primary/40 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        >
+                            <span className="truncate">{shortLinkLabel}</span>
+                            <ExternalLink
+                                className="size-3 shrink-0 text-muted-foreground"
+                                aria-hidden="true"
                             />
-                        </label>
-                        <div className="flex min-w-0 flex-col gap-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <CardTitle>
-                                    {link.title || 'Untitled route'}
-                                </CardTitle>
-                                <Badge
-                                    variant={
-                                        link.archivedAt ||
-                                        (!link.isActive &&
-                                            link.approvalStatus !== 'pending')
-                                            ? 'outline'
-                                            : link.approvalStatus === 'pending'
-                                              ? 'secondary'
-                                              : 'default'
-                                    }
-                                >
-                                    {statusLabel}
-                                </Badge>
-                                {!link.archivedAt &&
-                                    link.approvalStatus === 'approved' &&
-                                    link.hasPendingRevision && (
-                                        <Badge variant="secondary">
-                                            Pending changes
-                                        </Badge>
-                                    )}
+                            <span className="sr-only">Open short link</span>
+                        </a>
+                        {link.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
                                 {link.tags.map((tag) => (
-                                    <Badge
-                                        key={tag.id}
-                                        variant="outline"
-                                        style={
-                                            tag.color
-                                                ? { borderColor: tag.color }
-                                                : undefined
-                                        }
-                                    >
+                                    <Badge key={tag.id} variant="outline">
                                         {tag.name}
                                     </Badge>
                                 ))}
                             </div>
-                            <CardDescription className="truncate">
-                                {targetLabel}
-                            </CardDescription>
-                        </div>
+                        )}
                     </div>
-                    <a
-                        href={shortLinkUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex min-h-11 max-w-full min-w-0 items-center gap-1 truncate text-sm font-medium text-primary underline-offset-4 hover:underline"
-                    >
-                        {shortLinkLabel}
-                        <ExternalLink aria-hidden="true" />
-                        <span className="sr-only">Open short link</span>
-                    </a>
                 </div>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-                <Separator />
-                <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="flex min-w-0 flex-col gap-1">
-                        <dt className="text-sm text-muted-foreground">
-                            Destination
-                        </dt>
-                        <dd className="min-w-0 truncate text-sm font-medium">
-                            {link.deliveryMode === 'link_page' ? (
-                                (link.linkPage?.name ?? 'Unavailable page')
-                            ) : link.destinationUrl ? (
-                                <a
-                                    href={link.destinationUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex min-h-11 max-w-full min-w-0 items-center underline-offset-4 hover:underline"
-                                >
-                                    <span className="min-w-0 truncate">
-                                        {link.destinationUrl}
-                                    </span>
-                                </a>
-                            ) : (
-                                'No destination'
-                            )}
-                        </dd>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <dt className="text-sm text-muted-foreground">
-                            Clicks
-                        </dt>
-                        <dd className="flex items-center gap-2 text-sm font-medium tabular-nums">
-                            <MousePointerClick aria-hidden="true" />
-                            {link.clickCount}
-                            {link.maxClicks !== null &&
-                                ` / ${link.maxClicks}`}{' '}
-                            {link.clickCount === 1 ? 'click' : 'clicks'}
-                        </dd>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <dt className="text-sm text-muted-foreground">
-                            Folder
-                        </dt>
-                        <dd className="flex items-center gap-2 text-sm font-medium">
-                            <Folder aria-hidden="true" />
+
+                <div className="grid min-w-0 gap-1 pl-9 text-sm text-muted-foreground md:pl-0">
+                    <span
+                        className="flex min-w-0 items-center gap-2"
+                        title={targetLabel}
+                    >
+                        <Globe className="size-4 shrink-0" aria-hidden="true" />
+                        <span className="truncate">{targetLabel}</span>
+                    </span>
+                    <span className="flex min-w-0 items-center gap-2 text-xs">
+                        <Folder
+                            className="size-4 shrink-0"
+                            aria-hidden="true"
+                        />
+                        <span className="truncate">
                             {link.folder?.name ?? 'No folder'}
-                        </dd>
-                    </div>
-                    {(link.availableFrom || link.expiresAt) && (
-                        <div className="flex flex-col gap-1">
-                            <dt className="text-sm text-muted-foreground">
-                                Availability
-                            </dt>
-                            <dd className="flex items-start gap-2 text-sm font-medium">
+                        </span>
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-2 pl-9 md:justify-end md:pl-0">
+                    <MousePointerClick
+                        className="size-4 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                    />
+                    <span className="text-sm tabular-nums">
+                        {link.clickCount}
+                        {link.maxClicks !== null && (
+                            <span className="text-muted-foreground">
+                                {' '}
+                                / {link.maxClicks}
+                            </span>
+                        )}
+                    </span>
+                    <span className="sr-only">
+                        {link.clickCount === 1 ? 'click' : 'clicks'}
+                    </span>
+                </div>
+
+                <div className="pl-9 md:pl-0">
+                    <LinkActions
+                        link={link}
+                        folders={folders}
+                        customDomains={customDomains}
+                        linkOverlays={linkOverlays}
+                        linkPages={linkPages}
+                        canManageApprovals={canManageApprovals}
+                        tagOptions={tagOptions}
+                        countries={countries}
+                        listQuery={listQuery}
+                        onRequestDelete={() => setDeleteOpen(true)}
+                    />
+                </div>
+
+                {(link.availableFrom ||
+                    link.expiresAt ||
+                    link.hasAccessCode) && (
+                    <div className="col-span-full flex flex-wrap gap-x-4 gap-y-1 pl-9 text-xs text-muted-foreground md:pl-0">
+                        {link.availableFrom && (
+                            <span className="inline-flex items-center gap-1.5">
                                 <CalendarClock
-                                    className="mt-0.5 shrink-0"
+                                    className="size-4"
                                     aria-hidden="true"
                                 />
-                                <span>
-                                    {link.availableFrom && (
-                                        <span className="block">
-                                            Starts{' '}
-                                            {new Date(
-                                                link.availableFrom,
-                                            ).toLocaleString()}
-                                        </span>
-                                    )}
-                                    {link.expiresAt && (
-                                        <span className="block">
-                                            Expires{' '}
-                                            {new Date(
-                                                link.expiresAt,
-                                            ).toLocaleString()}
-                                        </span>
-                                    )}
-                                </span>
-                            </dd>
-                        </div>
-                    )}
-                    {link.hasAccessCode && (
-                        <div className="flex flex-col gap-1">
-                            <dt className="text-sm text-muted-foreground">
-                                Access
-                            </dt>
-                            <dd className="flex items-center gap-2 text-sm font-medium">
-                                <KeyRound aria-hidden="true" />
+                                Starts{' '}
+                                {new Date(link.availableFrom).toLocaleString()}
+                            </span>
+                        )}
+                        {link.expiresAt && (
+                            <span className="inline-flex items-center gap-1.5">
+                                <CalendarClock
+                                    className="size-4"
+                                    aria-hidden="true"
+                                />
+                                Expires{' '}
+                                {new Date(link.expiresAt).toLocaleString()}
+                            </span>
+                        )}
+                        {link.hasAccessCode && (
+                            <span className="inline-flex items-center gap-1.5">
+                                <KeyRound
+                                    className="size-4"
+                                    aria-hidden="true"
+                                />
                                 Access code required
-                            </dd>
-                        </div>
-                    )}
-                </dl>
-            </CardContent>
-            <CardFooter className="flex-wrap gap-2">
-                <LinkActions
-                    link={link}
-                    folders={folders}
-                    customDomains={customDomains}
-                    linkOverlays={linkOverlays}
-                    linkPages={linkPages}
-                    canManageApprovals={canManageApprovals}
-                    tagOptions={tagOptions}
-                    listQuery={listQuery}
-                />
-            </CardFooter>
-        </Card>
+                            </span>
+                        )}
+                    </div>
+                )}
+            </li>
+            <DeleteLinkDialog
+                link={link}
+                listQuery={listQuery}
+                open={deleteOpen}
+                onOpenChange={setDeleteOpen}
+            />
+        </>
     );
 }
 
@@ -593,6 +605,95 @@ function listStateQuery(filters: LinkIndexProps['filters']): string {
     return query.toString();
 }
 
+function ImportLinksDialog({ listQuery }: { listQuery: string }) {
+    const [open, setOpen] = useState(false);
+    const form = useForm<{ file: File | null }>({ file: null });
+
+    return (
+        <Dialog
+            open={open}
+            onOpenChange={(nextOpen) => {
+                setOpen(nextOpen);
+                if (!nextOpen) {
+                    form.reset();
+                    form.clearErrors();
+                }
+            }}
+        >
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <Upload data-icon="inline-start" />
+                    Import
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Import short links</DialogTitle>
+                    <DialogDescription>
+                        CSV, up to 1 MB. Exported files never include access
+                        codes.
+                    </DialogDescription>
+                </DialogHeader>
+                <form
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        form.post(
+                            withListQuery('/dashboard/links/import', listQuery),
+                            {
+                                forceFormData: true,
+                                onSuccess: () => setOpen(false),
+                            },
+                        );
+                    }}
+                    className="grid gap-3"
+                >
+                    <label htmlFor="short-link-csv" className="grid gap-1.5">
+                        <span className="text-sm font-medium">CSV file</span>
+                        <Input
+                            id="short-link-csv"
+                            type="file"
+                            accept=".csv,text/csv"
+                            aria-invalid={Boolean(form.errors.file)}
+                            onChange={(event) =>
+                                form.setData(
+                                    'file',
+                                    event.currentTarget.files?.[0] ?? null,
+                                )
+                            }
+                        />
+                        {form.errors.file && (
+                            <span
+                                role="alert"
+                                className="text-sm text-destructive"
+                            >
+                                {form.errors.file}
+                            </span>
+                        )}
+                    </label>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button
+                            type="submit"
+                            disabled={!form.data.file || form.processing}
+                        >
+                            {form.processing ? (
+                                <Spinner data-icon="inline-start" />
+                            ) : (
+                                <Upload data-icon="inline-start" />
+                            )}
+                            Import CSV
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export default function ShortLinks({
     links: linkPage,
     folders,
@@ -600,12 +701,15 @@ export default function ShortLinks({
     linkOverlays,
     linkPages,
     tagOptions,
+    countries,
     canManageApprovals,
     filters,
 }: LinkIndexProps) {
     const links = linkPage.data.map(toLinkListItem);
     const listQuery = listStateQuery(filters);
-    const importForm = useForm<{ file: File | null }>({ file: null });
+    const [folderFilter, setFolderFilter] = useState(filters.folder ?? '');
+    const [tagFilter, setTagFilter] = useState(filters.tag ?? '');
+    const [statusFilter, setStatusFilter] = useState(filters.status ?? '');
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     useEffect(() => {
         const visibleIds = new Set(linkPage.data.map((link) => link.id));
@@ -640,19 +744,14 @@ export default function ShortLinks({
         <>
             <Head title="Short links" />
 
-            <section className="flex max-w-full min-w-0 flex-1 flex-col gap-6 overflow-x-hidden p-4 md:p-6">
+            <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 overflow-x-hidden px-5 pt-4 pb-10">
                 <PageHeader
                     title="Short links"
-                    eyebrow="Routing desk"
-                    icon={Link2}
                     description="Create compact routes, control when they resolve, and inspect the traffic they receive."
                     actions={
                         <div className="flex flex-wrap gap-2">
-                            <Button
-                                variant="outline"
-                                className="min-h-11 min-w-11"
-                                asChild
-                            >
+                            <ImportLinksDialog listQuery={listQuery} />
+                            <Button variant="outline" asChild>
                                 <a
                                     href={withListQuery(
                                         '/dashboard/links/export',
@@ -660,30 +759,20 @@ export default function ShortLinks({
                                     )}
                                 >
                                     <Download data-icon="inline-start" />
-                                    Export CSV
+                                    Export
                                 </a>
                             </Button>
-                            <CreateLinkTagDialog
-                                tags={tagOptions}
-                                listQuery={listQuery}
-                            >
-                                <Button
-                                    variant="outline"
-                                    className="min-h-11 min-w-11"
-                                >
-                                    Create tag
-                                </Button>
-                            </CreateLinkTagDialog>
                             <LinkFormDialog
                                 folders={folders}
                                 customDomains={customDomains}
                                 linkPages={linkPages}
                                 linkOverlays={linkOverlays}
                                 tagOptions={tagOptions}
+                                countries={countries}
                                 canManageApprovals={canManageApprovals}
                                 listQuery={listQuery}
                             >
-                                <Button className="min-h-11 min-w-11">
+                                <Button>
                                     <Plus data-icon="inline-start" />
                                     Create short link
                                 </Button>
@@ -691,162 +780,153 @@ export default function ShortLinks({
                         </div>
                     }
                 />
+
                 <ResourceListToolbar
                     key={listQuery}
                     action={index().url}
-                    className="grid min-w-0 gap-3 rounded-lg border bg-card p-4 sm:grid-cols-2 xl:grid-cols-7 [&_button]:min-h-11 [&_button]:min-w-11"
+                    className="flex min-w-0 flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-surface)]"
                 >
                     <input type="hidden" name="view" value={filters.view} />
-                    <Field className="sm:col-span-2">
-                        <Input
-                            className="min-h-11 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                            name="search"
-                            defaultValue={filters.search}
-                            placeholder="Search title or short code"
-                            aria-label="Search short links"
-                        />
-                    </Field>
-                    <label className="flex flex-col gap-1 text-sm">
-                        <span>Folder</span>
-                        <select
-                            name="folder"
-                            defaultValue={filters.folder}
-                            className="min-h-11 rounded-md border bg-background px-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                        >
-                            <option value="">All folders</option>
-                            {folders.map((folder) => (
-                                <option key={folder.id} value={folder.id}>
-                                    {folder.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm">
-                        <span>Tag</span>
-                        <select
-                            name="tag"
-                            defaultValue={filters.tag}
-                            className="min-h-11 rounded-md border bg-background px-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                        >
-                            <option value="">All tags</option>
-                            {tagOptions.map((tag) => (
-                                <option key={tag.id} value={tag.id}>
-                                    {tag.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm">
-                        <span>Status</span>
-                        <select
-                            name="status"
-                            defaultValue={filters.status}
-                            className="min-h-11 rounded-md border bg-background px-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                        >
-                            <option value="">All statuses</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="archived">Archived</option>
-                            <option value="pending">Pending review</option>
-                        </select>
-                    </label>
-                    <ResourceListSortMenu
-                        value={filters.sort}
-                        options={[
-                            { value: 'created_at', label: 'Created' },
-                            { value: 'title', label: 'Title' },
-                            { value: 'clicks_count', label: 'Clicks' },
-                        ]}
+                    <Input
+                        className="h-9 w-full sm:w-48"
+                        name="search"
+                        defaultValue={filters.search}
+                        placeholder="Search routes"
+                        aria-label="Search short links"
                     />
-                    <label className="flex flex-col gap-1 text-sm">
-                        <span>Direction</span>
-                        <select
-                            name="direction"
-                            defaultValue={filters.direction}
-                            className="min-h-11 rounded-md border bg-background px-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    <input type="hidden" name="folder" value={folderFilter} />
+                    <Select
+                        value={folderFilter || FILTER_ALL}
+                        onValueChange={(value) =>
+                            setFolderFilter(value === FILTER_ALL ? '' : value)
+                        }
+                    >
+                        <SelectTrigger
+                            aria-label="Folder"
+                            className="h-9 max-w-44"
                         >
-                            <option value="desc">Descending</option>
-                            <option value="asc">Ascending</option>
-                        </select>
-                    </label>
-                    <div className="flex items-end gap-2 sm:col-span-2 xl:col-span-7">
-                        <Button type="submit" variant="outline">
-                            Apply filters
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={FILTER_ALL}>
+                                All folders
+                            </SelectItem>
+                            {folders.map((folder) => (
+                                <SelectItem
+                                    key={folder.id}
+                                    value={String(folder.id)}
+                                >
+                                    {folder.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-1">
+                        <input type="hidden" name="tag" value={tagFilter} />
+                        <Select
+                            value={tagFilter || FILTER_ALL}
+                            onValueChange={(value) =>
+                                setTagFilter(value === FILTER_ALL ? '' : value)
+                            }
+                        >
+                            <SelectTrigger
+                                aria-label="Tag"
+                                className="h-9 max-w-40"
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={FILTER_ALL}>
+                                    All tags
+                                </SelectItem>
+                                {tagOptions.map((tag) => (
+                                    <SelectItem
+                                        key={tag.id}
+                                        value={String(tag.id)}
+                                    >
+                                        {tag.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <CreateLinkTagDialog
+                            tags={tagOptions}
+                            listQuery={listQuery}
+                        >
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-9"
+                                aria-label="Create tag"
+                                title="Create tag"
+                            >
+                                <Plus aria-hidden="true" />
+                                Tag
+                            </Button>
+                        </CreateLinkTagDialog>
+                    </div>
+                    <input type="hidden" name="status" value={statusFilter} />
+                    <Select
+                        value={statusFilter || FILTER_ALL}
+                        onValueChange={(value) =>
+                            setStatusFilter(value === FILTER_ALL ? '' : value)
+                        }
+                    >
+                        <SelectTrigger aria-label="Status" className="h-9">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={FILTER_ALL}>
+                                All statuses
+                            </SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                            <SelectItem value="archived">Archived</SelectItem>
+                            <SelectItem value="pending">
+                                Pending review
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select name="sort" defaultValue={filters.sort}>
+                        <SelectTrigger aria-label="Sort by" className="h-9">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="created_at">
+                                Newest first
+                            </SelectItem>
+                            <SelectItem value="title">Title</SelectItem>
+                            <SelectItem value="clicks_count">Clicks</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select name="direction" defaultValue={filters.direction}>
+                        <SelectTrigger
+                            aria-label="Sort direction"
+                            className="h-9 w-32"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="desc">Descending</SelectItem>
+                            <SelectItem value="asc">Ascending</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <div className="ml-auto flex items-center gap-1">
+                        <Button type="submit" size="sm" className="h-9">
+                            Apply
                         </Button>
                         <Button
                             variant="ghost"
+                            size="sm"
+                            className="h-9"
                             asChild
-                            className="min-h-11 min-w-11"
                         >
                             <Link href={index()}>Reset</Link>
                         </Button>
                     </div>
                 </ResourceListToolbar>
-                <form
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        const query = new URLSearchParams(listQuery);
-                        importForm.post(
-                            withListQuery(
-                                '/dashboard/links/import',
-                                query.toString(),
-                            ),
-                            { forceFormData: true },
-                        );
-                    }}
-                    className="grid min-w-0 gap-3 rounded-lg border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
-                >
-                    <label
-                        htmlFor="short-link-csv"
-                        className="flex min-w-0 flex-col gap-1 text-sm"
-                    >
-                        <span className="font-medium">Import short links</span>
-                        <span
-                            id="short-link-csv-description"
-                            className="text-muted-foreground"
-                        >
-                            CSV only, up to 1 MB. Exported files never include
-                            access codes.
-                        </span>
-                        <Input
-                            id="short-link-csv"
-                            type="file"
-                            accept=".csv,text/csv"
-                            className="min-h-11 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                            aria-invalid={Boolean(importForm.errors.file)}
-                            aria-describedby={`short-link-csv-description${importForm.errors.file ? ' short-link-csv-error' : ''}`}
-                            onChange={(event) =>
-                                importForm.setData(
-                                    'file',
-                                    event.currentTarget.files?.[0] ?? null,
-                                )
-                            }
-                        />
-                        {importForm.errors.file && (
-                            <span
-                                id="short-link-csv-error"
-                                role="alert"
-                                className="text-sm text-destructive"
-                            >
-                                {importForm.errors.file}
-                            </span>
-                        )}
-                    </label>
-                    <Button
-                        type="submit"
-                        disabled={
-                            !importForm.data.file || importForm.processing
-                        }
-                        className="min-h-11"
-                    >
-                        {importForm.processing ? (
-                            <Spinner data-icon="inline-start" />
-                        ) : (
-                            <Upload data-icon="inline-start" />
-                        )}
-                        Import CSV
-                    </Button>
-                </form>
+
                 <ResourceListFilterChips
                     filters={[
                         ...(filters.search
@@ -924,82 +1004,99 @@ export default function ShortLinks({
                             : []),
                     ]}
                 />
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <ResourceListViewToggle
-                        value={filters.view}
-                        cardsHref={withListView(
-                            index().url,
-                            listQuery,
-                            'cards',
-                        )}
-                        tableHref={withListView(
-                            index().url,
-                            listQuery,
-                            'table',
-                        )}
-                    />
-                    {links.length > 0 && (
-                        <label className="inline-flex min-h-11 items-center gap-2 text-sm">
-                            <input
-                                type="checkbox"
-                                checked={allSelected}
-                                onChange={() =>
-                                    setSelectedIds(
-                                        allSelected
-                                            ? []
-                                            : links.map((link) => link.id),
-                                    )
-                                }
-                                aria-label="Select all short links on this page"
-                                className="size-4 accent-primary focus-visible:ring-2 focus-visible:ring-ring"
+
+                <div className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <ResourceListViewToggle
+                                value={filters.view}
+                                cardsHref={withListView(
+                                    index().url,
+                                    listQuery,
+                                    'cards',
+                                )}
+                                tableHref={withListView(
+                                    index().url,
+                                    listQuery,
+                                    'table',
+                                )}
                             />
-                            Select all on this page
-                        </label>
-                    )}
+                            <span className="text-sm text-muted-foreground tabular-nums">
+                                {linkPage.total}{' '}
+                                {linkPage.total === 1 ? 'route' : 'routes'}
+                            </span>
+                        </div>
+                        {links.length > 0 && (
+                            <Field className="min-h-11 flex-row items-center gap-2">
+                                <Checkbox
+                                    id="link-select-all"
+                                    checked={allSelected}
+                                    onCheckedChange={(checked) =>
+                                        setSelectedIds(
+                                            checked === true
+                                                ? links.map((link) => link.id)
+                                                : [],
+                                        )
+                                    }
+                                />
+                                <FieldLabel
+                                    htmlFor="link-select-all"
+                                    className="font-normal"
+                                >
+                                    Select all
+                                </FieldLabel>
+                            </Field>
+                        )}
+                    </div>
+
+                    <ResourceListBulkTray
+                        count={selectedLinks.length}
+                        singular="short link"
+                        plural="short links"
+                        onClear={() => setSelectedIds([])}
+                    >
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => bulkAction('archive')}
+                        >
+                            Archive
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => bulkAction('restore')}
+                        >
+                            Restore
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => bulkAction('activate')}
+                        >
+                            Activate
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => bulkAction('deactivate')}
+                        >
+                            Pause
+                        </Button>
+                        <DeleteSelectedLinksDialog
+                            linkIds={selectedLinks.map((link) => link.id)}
+                            listQuery={listQuery}
+                            onDeleted={() => setSelectedIds([])}
+                        />
+                    </ResourceListBulkTray>
                 </div>
-                <ResourceListBulkTray
-                    count={selectedLinks.length}
-                    singular="short link"
-                    plural="short links"
-                    onClear={() => setSelectedIds([])}
-                >
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => bulkAction('archive')}
-                    >
-                        Archive
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => bulkAction('restore')}
-                    >
-                        Restore
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => bulkAction('activate')}
-                    >
-                        Activate
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => bulkAction('deactivate')}
-                    >
-                        Deactivate
-                    </Button>
-                    <DeleteSelectedLinksDialog
-                        linkIds={selectedLinks.map((link) => link.id)}
-                        listQuery={listQuery}
-                        onDeleted={() => setSelectedIds([])}
-                    />
-                </ResourceListBulkTray>
 
                 {links.length === 0 ? (
-                    <Empty className="bg-muted/30">
+                    <Empty className="border">
                         <EmptyHeader className="w-full">
                             <EmptyMedia variant="icon">
                                 <Activity aria-hidden="true" />
@@ -1027,149 +1124,28 @@ export default function ShortLinks({
                                 canManageApprovals={canManageApprovals}
                                 listQuery={listQuery}
                                 tagOptions={tagOptions}
+                                countries={countries}
                             >
-                                <Button className="min-h-11 min-w-11">
+                                <Button>
                                     <Plus data-icon="inline-start" />
                                     Create a short link
                                 </Button>
                             </LinkFormDialog>
                         </EmptyContent>
                     </Empty>
-                ) : (
-                    <>
-                        {filters.view === 'table' && (
-                            <div className="hidden min-w-0 overflow-hidden rounded-lg border min-[1100px]:block">
-                                <table className="w-full table-fixed text-left text-sm">
-                                    <thead className="bg-muted/50 text-muted-foreground">
-                                        <tr>
-                                            <th className="w-[4%] p-3">
-                                                <span className="sr-only">
-                                                    Select
-                                                </span>
-                                            </th>
-                                            <th className="w-[14%] p-3">
-                                                Link
-                                            </th>
-                                            <th className="w-[19%] p-3">
-                                                Destination
-                                            </th>
-                                            <th className="w-[11%] p-3">
-                                                Folder
-                                            </th>
-                                            <th className="w-[7%] p-3">
-                                                Clicks
-                                            </th>
-                                            <th className="w-[9%] p-3">
-                                                Status
-                                            </th>
-                                            <th className="w-[36%] p-3">
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {links.map((link) => (
-                                            <tr
-                                                key={link.id}
-                                                className="border-t align-top"
-                                                aria-selected={selectedIds.includes(
-                                                    link.id,
-                                                )}
-                                            >
-                                                <td className="p-3">
-                                                    <label className="inline-flex min-h-11 min-w-11 items-center justify-center">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedIds.includes(
-                                                                link.id,
-                                                            )}
-                                                            onChange={() =>
-                                                                toggleSelectedLink(
-                                                                    link.id,
-                                                                )
-                                                            }
-                                                            aria-label={`Select ${link.title || `/${link.slug}`}`}
-                                                            className="size-4 accent-primary focus-visible:ring-2 focus-visible:ring-ring"
-                                                        />
-                                                    </label>
-                                                </td>
-                                                <td className="p-3">
-                                                    <div className="truncate font-medium">
-                                                        {link.title ||
-                                                            'Untitled route'}
-                                                    </div>
-                                                    <div className="truncate text-muted-foreground">
-                                                        /{link.slug}
-                                                    </div>
-                                                </td>
-                                                <td className="p-3">
-                                                    <div className="truncate">
-                                                        {link.deliveryMode ===
-                                                        'link_page'
-                                                            ? `Link page: ${link.linkPage?.name ?? 'Unavailable'}`
-                                                            : (link.destinationUrl ??
-                                                              'No destination')}
-                                                    </div>
-                                                </td>
-                                                <td className="p-3">
-                                                    {link.folder?.name ??
-                                                        'No folder'}
-                                                </td>
-                                                <td className="p-3 tabular-nums">
-                                                    {link.clickCount}
-                                                    {link.maxClicks !== null &&
-                                                        ` / ${link.maxClicks}`}
-                                                </td>
-                                                <td className="p-3">
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <span>
-                                                            {link.archivedAt
-                                                                ? 'Archived'
-                                                                : link.approvalStatus ===
-                                                                    'pending'
-                                                                  ? 'Pending review'
-                                                                  : link.isActive
-                                                                    ? 'Active'
-                                                                    : 'Inactive'}
-                                                        </span>
-                                                        {!link.archivedAt &&
-                                                            link.approvalStatus ===
-                                                                'approved' &&
-                                                            link.hasPendingRevision && (
-                                                                <Badge variant="secondary">
-                                                                    Pending
-                                                                    changes
-                                                                </Badge>
-                                                            )}
-                                                    </div>
-                                                </td>
-                                                <td className="p-3">
-                                                    <LinkActions
-                                                        link={link}
-                                                        folders={folders}
-                                                        customDomains={
-                                                            customDomains
-                                                        }
-                                                        linkOverlays={
-                                                            linkOverlays
-                                                        }
-                                                        canManageApprovals={
-                                                            canManageApprovals
-                                                        }
-                                                        linkPages={linkPages}
-                                                        listQuery={listQuery}
-                                                        tagOptions={tagOptions}
-                                                    />
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                        <section
+                ) : filters.view === 'table' ? (
+                    <div className="lp-table-shell">
+                        <div className="hidden items-center gap-4 bg-surface-secondary px-4 py-3 text-xs font-medium text-muted-foreground md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_5.5rem_8.5rem]">
+                            <span className="pl-9">Route</span>
+                            <span>Destination</span>
+                            <span className="text-right">Clicks</span>
+                            <span className="justify-self-end pr-1">
+                                Actions
+                            </span>
+                        </div>
+                        <ul
                             aria-label="Short links"
-                            className={`min-w-0 flex-col gap-3 ${filters.view === 'cards' ? 'flex' : 'flex min-[1100px]:hidden'}`}
+                            className="divide-y divide-border"
                         >
                             {links.map((link) => (
                                 <LinkRow
@@ -1181,19 +1157,44 @@ export default function ShortLinks({
                                     canManageApprovals={canManageApprovals}
                                     linkPages={linkPages}
                                     tagOptions={tagOptions}
+                                    countries={countries}
                                     listQuery={listQuery}
                                     selected={selectedIds.includes(link.id)}
                                     onToggle={() => toggleSelectedLink(link.id)}
                                 />
                             ))}
-                        </section>
-                    </>
+                        </ul>
+                    </div>
+                ) : (
+                    <ul
+                        aria-label="Short links"
+                        className="grid gap-3 [&>li]:rounded-2xl [&>li]:border [&>li]:border-border [&>li]:bg-card [&>li]:shadow-[var(--shadow-surface)]"
+                    >
+                        {links.map((link) => (
+                            <LinkRow
+                                key={link.id}
+                                link={link}
+                                folders={folders}
+                                customDomains={customDomains}
+                                linkOverlays={linkOverlays}
+                                canManageApprovals={canManageApprovals}
+                                linkPages={linkPages}
+                                tagOptions={tagOptions}
+                                countries={countries}
+                                listQuery={listQuery}
+                                selected={selectedIds.includes(link.id)}
+                                onToggle={() => toggleSelectedLink(link.id)}
+                            />
+                        ))}
+                    </ul>
                 )}
+
                 <ResourceListPagination
                     links={linkPage.links}
                     total={linkPage.total}
                     ariaLabel="Short link pages"
-                    summaryLabel="links"
+                    singular="link"
+                    plural="links"
                 />
             </section>
         </>

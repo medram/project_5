@@ -34,6 +34,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { index, update } from '@/routes/link-pages';
 import {
     destroy as destroyItem,
@@ -83,23 +90,27 @@ function VariantSelectField({
     return (
         <Field data-invalid={Boolean(error)}>
             <FieldLabel htmlFor={id}>Variant</FieldLabel>
-            <select
-                id={id}
-                className="h-11 rounded-md border bg-background px-3"
-                value={value}
+            <Select
+                value={String(value)}
                 disabled={disabled}
-                aria-invalid={Boolean(error)}
-                onChange={(event) =>
-                    onChange(Number(event.currentTarget.value))
-                }
+                onValueChange={(variantId) => onChange(Number(variantId))}
             >
-                {variants.map((variant) => (
-                    <option key={variant.id} value={variant.id}>
-                        {variant.name} · {variant.weight}%
-                        {!variant.isActive ? ' · inactive' : ''}
-                    </option>
-                ))}
-            </select>
+                <SelectTrigger
+                    id={id}
+                    aria-invalid={Boolean(error)}
+                    className="h-11 w-full"
+                >
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    {variants.map((variant) => (
+                        <SelectItem key={variant.id} value={String(variant.id)}>
+                            {variant.name} · {variant.weight}%
+                            {!variant.isActive ? ' · inactive' : ''}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
             {error && <FieldError>{error}</FieldError>}
         </Field>
     );
@@ -434,7 +445,7 @@ export default function LinkPageEditor({
         <>
             <Head title={`Edit ${linkPage.name}`} />
 
-            <div className="flex flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
                         <Button
@@ -449,7 +460,7 @@ export default function LinkPageEditor({
                             </Link>
                         </Button>
                         <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="text-2xl font-semibold tracking-tight">
+                            <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
                                 {linkPage.name}
                             </h1>
                             <Badge
@@ -628,32 +639,37 @@ export default function LinkPageEditor({
                                             <FieldLabel htmlFor="page-template">
                                                 Template
                                             </FieldLabel>
-                                            <select
-                                                id="page-template"
-                                                className="h-11 rounded-md border bg-background px-3"
+                                            <Select
                                                 value={form.data.template}
                                                 disabled={form.processing}
-                                                aria-invalid={Boolean(
-                                                    form.errors.template,
-                                                )}
-                                                onChange={(event) =>
+                                                onValueChange={(value) =>
                                                     form.setData(
                                                         'template',
-                                                        event.target
-                                                            .value as LinkPageTemplate,
+                                                        value as LinkPageTemplate,
                                                     )
                                                 }
                                             >
-                                                <option value="standard">
-                                                    Standard
-                                                </option>
-                                                <option value="profile">
-                                                    Profile
-                                                </option>
-                                                <option value="campaign">
-                                                    Campaign
-                                                </option>
-                                            </select>
+                                                <SelectTrigger
+                                                    id="page-template"
+                                                    aria-invalid={Boolean(
+                                                        form.errors.template,
+                                                    )}
+                                                    className="h-11 w-full"
+                                                >
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="standard">
+                                                        Standard
+                                                    </SelectItem>
+                                                    <SelectItem value="profile">
+                                                        Profile
+                                                    </SelectItem>
+                                                    <SelectItem value="campaign">
+                                                        Campaign
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FieldDescription>
                                                 Change the page layout without
                                                 changing its content.

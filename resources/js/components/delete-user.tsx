@@ -26,19 +26,21 @@ export default function DeleteUser() {
                 variant="small"
                 description="Schedule deletion with a 30-day restore window. Transfer every collaborative workspace and cancel any paid workspace subscription first."
             />
-            <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
-                <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
-                    <p className="font-medium">Warning</p>
-                    <p className="text-sm">
-                        Your account will be permanently deleted after 30 days.
-                        You can restore it by signing in before then.
+            <div className="space-y-4 rounded-xl border bg-card p-5">
+                <div className="space-y-0.5">
+                    <p className="font-medium">
+                        Permanently removed after 30 days
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                        Sign in before the window ends to restore the account.
                     </p>
                 </div>
 
                 <Dialog>
                     <DialogTrigger asChild>
                         <Button
-                            variant="destructive"
+                            variant="outline"
+                            className="text-destructive"
                             data-test="delete-user-button"
                         >
                             Schedule deletion

@@ -409,11 +409,9 @@ export default function BioPages({
         <>
             <Head title="Bio pages" />
 
-            <section className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="Bio pages"
-                    eyebrow="Publishing desk"
-                    icon={PanelsTopLeft}
                     description="Build a focused public profile and direct visitors to the destinations that matter."
                     actions={
                         <CreateBioPageDialog>
@@ -426,7 +424,7 @@ export default function BioPages({
                 />
 
                 {bioPages.length === 0 ? (
-                    <Empty className="bg-muted/30">
+                    <Empty>
                         <EmptyHeader>
                             <EmptyMedia variant="icon">
                                 <PanelsTopLeft aria-hidden="true" />

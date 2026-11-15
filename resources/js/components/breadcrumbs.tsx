@@ -33,7 +33,7 @@ export function Breadcrumbs({
                                         }
                                     >
                                         {isLast ? (
-                                            <BreadcrumbPage>
+                                            <BreadcrumbPage className="truncate">
                                                 {item.title}
                                             </BreadcrumbPage>
                                         ) : (

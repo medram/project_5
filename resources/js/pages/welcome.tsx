@@ -1,16 +1,31 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import { TrackingConsent } from '@/components/analytics/tracking-consent';
+import PublicAdSlot from '@/components/platform/public-ad-slot';
+import MaintenanceBanner from '@/components/platform/maintenance-banner';
+import { useTranslation } from '@/hooks/use-translation';
 import { dashboard, login } from '@/routes';
 import { register } from '@/routes';
 
 export default function Welcome() {
     const { auth, platform } = usePage().props;
+    const { trackingConsent, privacyUrl, canGrantConsent } = usePage<{
+        trackingConsent: 'granted' | 'denied' | null;
+        privacyUrl: string | null;
+        canGrantConsent: boolean;
+    }>().props;
+    const t = useTranslation();
 
     return (
         <>
-            <Head title="Welcome" />
+            <Head
+                title={
+                    platform?.seo.homeTitle ?? platform?.seo.title ?? 'Welcome'
+                }
+            />
             <div className="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] lg:justify-center lg:p-8 dark:bg-[#0a0a0a]">
+                <MaintenanceBanner />
                 <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
-                    <nav className="flex items-center justify-end gap-4">
+                    <nav className="flex flex-wrap items-center justify-end gap-4">
                         {auth.user ? (
                             <Link
                                 href={dashboard()}
@@ -18,35 +33,35 @@ export default function Welcome() {
                             >
                                 Dashboard
                             </Link>
-                        ) : (
+                        ) : null}
+                        {(platform?.menus.header ?? []).map((item) => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
+                            >
+                                {item.label}
+                            </Link>
+                        ))}
+                        {!platform && !auth.user ? (
                             <>
-                                <Link
-                                    href={login()}
-                                    className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
-                                >
-                                    Log in
-                                </Link>
-                                {(platform?.visibility.registration ??
-                                    true) && (
-                                    <Link
-                                        href={register()}
-                                        className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
-                                    >
-                                        Register
-                                    </Link>
-                                )}
+                                <Link href={login()}>Log in</Link>
+                                <Link href={register()}>Register</Link>
                             </>
-                        )}
+                        ) : null}
                     </nav>
                 </header>
+                <div className="w-full max-w-[335px] lg:max-w-4xl">
+                    <PublicAdSlot slot="header" consent={trackingConsent} />
+                </div>
                 <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
                     <main className="flex w-full max-w-[335px] flex-col-reverse lg:max-w-4xl lg:flex-row">
                         <div className="flex-1 rounded-br-lg rounded-bl-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">
                             <h1 className="mb-1 font-medium">
-                                Let's get started
+                                {t("Let's get started")}
                             </h1>
                             <p className="mb-2 text-[#706f6c] dark:text-[#A1A09A]">
-                                Laravel has an incredibly rich ecosystem.
+                                {t('Laravel has an incredibly rich ecosystem.')}
                                 <br />
                                 We suggest starting with the following.
                             </p>
@@ -385,7 +400,31 @@ export default function Welcome() {
                         </div>
                     </main>
                 </div>
+                <footer className="mt-6 flex w-full max-w-[335px] flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground lg:max-w-4xl">
+                    {(platform?.menus.footer ?? []).map((item) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className="hover:underline"
+                        >
+                            {item.label}
+                        </Link>
+                    ))}
+                    {platform?.supportEmail && platform.visibility.contact ? (
+                        <a
+                            href={'mailto:' + platform.supportEmail}
+                            className="hover:underline"
+                        >
+                            {platform.supportEmail}
+                        </a>
+                    ) : null}
+                </footer>
                 <div className="hidden h-14.5 lg:block"></div>
+                <TrackingConsent
+                    consent={trackingConsent}
+                    privacyUrl={privacyUrl}
+                    canGrantConsent={canGrantConsent}
+                />
             </div>
         </>
     );

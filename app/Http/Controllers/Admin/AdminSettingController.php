@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PlatformPermission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminSettingsUpdateRequest;
+use App\Models\User;
+use App\Services\Platform\PlatformAuthorization;
 use App\Services\Settings\PlatformSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +25,8 @@ class AdminSettingController extends Controller
         return Inertia::render('admin/settings/section', [
             'section' => $schema,
             'navigation' => $this->settings->navigation(),
+            'canManage' => $request->user() instanceof User
+                && app(PlatformAuthorization::class)->allows($request->user(), PlatformPermission::AdminSettingsManage),
         ]);
     }
 

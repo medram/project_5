@@ -34,7 +34,7 @@ export default function ContentShow({
             </Head>
             <main className="min-h-screen bg-background text-foreground">
                 {preview && (
-                    <div className="border-b bg-amber-500/10 px-4 py-3 text-center text-sm">
+                    <div className="border-b border-warning/30 bg-warning-soft px-4 py-3 text-center text-sm text-warning-soft-foreground">
                         <PenLine
                             className="mr-2 inline size-4"
                             aria-hidden="true"

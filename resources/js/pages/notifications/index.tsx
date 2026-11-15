@@ -72,11 +72,9 @@ export default function NotificationCenter({
     return (
         <>
             <Head title="Notifications" />
-            <section className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="Notifications"
-                    eyebrow="Your account"
-                    icon={Bell}
                     description="Review workspace activity and choose which categories may also reach you by email."
                     actions={
                         <Button

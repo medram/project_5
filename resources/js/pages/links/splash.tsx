@@ -1,20 +1,36 @@
 import { Head, router } from '@inertiajs/react';
 import { ArrowRight, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
 type PublicLinkSplashProps = {
     slug: string;
     title: string | null;
+    seconds: number;
 };
 
 export default function PublicLinkSplash({
     slug,
     title,
+    seconds,
 }: PublicLinkSplashProps) {
     const [processing, setProcessing] = useState(false);
+    const [remaining, setRemaining] = useState(Math.max(0, seconds));
     const heading = title || 'Continue to your destination';
+
+    useEffect(() => {
+        if (remaining <= 0) {
+            return;
+        }
+
+        const timer = window.setTimeout(
+            () => setRemaining((current) => Math.max(0, current - 1)),
+            1000,
+        );
+
+        return () => window.clearTimeout(timer);
+    }, [remaining]);
 
     function continueToDestination() {
         router.post(
@@ -50,13 +66,18 @@ export default function PublicLinkSplash({
                     <Button
                         size="lg"
                         onClick={continueToDestination}
-                        disabled={processing}
+                        disabled={processing || remaining > 0}
                         className="w-full sm:w-auto"
                     >
                         {processing && <Spinner data-icon="inline-start" />}
-                        Continue
+                        {remaining > 0 ? `Continue in ${remaining}s` : 'Continue'}
                         <ArrowRight data-icon="inline-end" />
                     </Button>
+                    <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+                        {remaining > 0
+                            ? `The continue button unlocks in ${remaining} seconds.`
+                            : 'You can continue to the destination now.'}
+                    </p>
                 </div>
             </main>
         </>

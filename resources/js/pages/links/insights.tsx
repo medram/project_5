@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, BarChart3, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { AnalyticsDashboard } from '@/components/analytics/analytics-dashboard';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,7 @@ export default function LinkInsights({
         <>
             <Head title={`Insights for /${link.slug}`} />
 
-            <section className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <section className="flex flex-col gap-4">
                     <Button
                         variant="outline"
@@ -55,8 +55,6 @@ export default function LinkInsights({
                     </Button>
                     <PageHeader
                         title={`/${link.slug}`}
-                        eyebrow="Route activity"
-                        icon={BarChart3}
                         description="Aggregate click history and consented analytics for this short link in the selected UTC window."
                     />
                 </section>

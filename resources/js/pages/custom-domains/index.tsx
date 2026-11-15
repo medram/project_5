@@ -219,7 +219,7 @@ function DomainCard({
                         </CardDescription>
                     </div>
                     {domain.status === 'active' && (
-                        <span className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                        <span className="flex items-center gap-2 text-sm font-medium text-success-soft-foreground">
                             <CheckCircle2
                                 className="size-4"
                                 aria-hidden="true"
@@ -317,11 +317,9 @@ export default function CustomDomains({
     return (
         <>
             <Head title="Custom domains" />
-            <div className="flex flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="Custom domains"
-                    eyebrow="Publishing"
-                    icon={Globe2}
                     description="Verify a domain before assigning it to a short link. LinkPilot checks an exact DNS TXT record and a no-redirect HTTPS challenge before delivery starts."
                 />
                 <div className="flex justify-end">
@@ -412,7 +410,7 @@ export default function CustomDomains({
                 </div>
 
                 {domains.length === 0 ? (
-                    <Empty className="border bg-muted/20">
+                    <Empty className="border">
                         <EmptyHeader>
                             <EmptyMedia variant="icon">
                                 <Globe2 aria-hidden="true" />

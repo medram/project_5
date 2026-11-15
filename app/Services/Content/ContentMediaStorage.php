@@ -155,6 +155,136 @@ class ContentMediaStorage
         }
     }
 
+    public function storePlatformAsset(UploadedFile $file, ?User $actor): ContentMedia
+    {
+        if (! $file->isValid() || ! is_string($file->getRealPath())) {
+            $this->rejectFile();
+        }
+
+        $size = $file->getSize();
+        $mimeType = (new finfo(FILEINFO_MIME_TYPE))->file($file->getRealPath());
+
+        if (! is_int($size) || $size < 1 || ! is_string($mimeType)) {
+            $this->rejectFile();
+        }
+
+        $originalExtension = strtolower(pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION));
+
+        if (
+            $size > $this->softLimitBytes('max_image_mb', self::MAX_IMAGE_BYTES)
+            || ! isset(self::IMAGE_EXTENSIONS[$mimeType])
+            || ! in_array($originalExtension, self::IMAGE_EXTENSIONS[$mimeType], true)
+        ) {
+            $this->rejectFile();
+        }
+
+        $temporaryPath = $this->reencodeImage($file->getRealPath(), $mimeType);
+
+        try {
+            $hash = hash_file('sha256', $temporaryPath);
+            $storedSize = filesize($temporaryPath);
+
+            if (! is_string($hash) || ! is_int($storedSize) || $storedSize < 1) {
+                throw new RuntimeException('Unable to calculate content media metadata.');
+            }
+
+            $diskName = $this->diskName();
+            $publicId = (string) Str::uuid();
+            $extension = $mimeType === 'image/jpeg' ? 'jpg' : substr($mimeType, 6);
+            $path = "platform-assets/{$publicId}.{$extension}";
+            $disk = Storage::disk($diskName);
+
+            try {
+                $storedPath = $disk->putFileAs('platform-assets', $temporaryPath, basename($path), ['visibility' => 'private']);
+
+                if (! is_string($storedPath)) {
+                    throw new RuntimeException('Unable to store platform asset.');
+                }
+
+                return ContentMedia::query()->create([
+                    'workspace_id' => null,
+                    'uploaded_by' => $actor?->getKey(),
+                    'public_id' => $publicId,
+                    'disk' => $diskName,
+                    'path' => $storedPath,
+                    'original_name' => $this->safeOriginalName($file),
+                    'mime_type' => $mimeType,
+                    'byte_size' => $storedSize,
+                    'sha256' => $hash,
+                    'visibility' => 'private',
+                    'scan_state' => 'not_required',
+                    'purpose' => MediaPurpose::PlatformAsset,
+                    'expires_at' => null,
+                ]);
+            } catch (Throwable $exception) {
+                if ($disk->exists($path)) {
+                    $disk->delete($path);
+                }
+
+                throw $exception;
+            }
+        } finally {
+            if (is_file($temporaryPath)) {
+                unlink($temporaryPath);
+            }
+        }
+    }
+
+    public function copyToPlatformAsset(ContentMedia $source, ?User $actor = null): ContentMedia
+    {
+        $disk = Storage::disk($source->disk);
+
+        if (! $disk->exists($source->path)) {
+            throw new RuntimeException('The legacy media object is unavailable.');
+        }
+
+        $stream = $disk->readStream($source->path);
+
+        if (! is_resource($stream)) {
+            throw new RuntimeException('The legacy media object is unreadable.');
+        }
+
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'linkpilot-asset-');
+
+        if (! is_string($temporaryPath)) {
+            fclose($stream);
+            throw new RuntimeException('Unable to prepare the legacy media copy.');
+        }
+
+        try {
+            $target = fopen($temporaryPath, 'wb');
+
+            if (! is_resource($target)) {
+                throw new RuntimeException('Unable to prepare the legacy media copy.');
+            }
+
+            try {
+                $copied = stream_copy_to_stream($stream, $target);
+            } finally {
+                fclose($target);
+            }
+
+            if (! is_int($copied) || $copied < 1) {
+                throw new RuntimeException('Unable to copy the legacy media object.');
+            }
+
+            $upload = new UploadedFile($temporaryPath, $source->original_name, $source->mime_type, null, true);
+
+            return $this->storePlatformAsset($upload, $actor);
+        } finally {
+            fclose($stream);
+            if (is_file($temporaryPath)) {
+                unlink($temporaryPath);
+            }
+        }
+    }
+
+    public function purge(ContentMedia $media): void
+    {
+        Storage::disk($media->disk)->delete($media->path);
+        $media->forceDelete();
+    }
+
     public function delete(ContentMedia $media): void
     {
         if (! $media->trashed()) {
@@ -280,6 +410,10 @@ class ContentMediaStorage
         if ($this->settings->hasStored('uploading', 'disk')) {
             $configured = $this->settings->resolved()['uploading']['disk'] ?? null;
             if (is_string($configured) && config('filesystems.disks.'.$configured) !== null) {
+                if (! $this->isPrivateDisk($configured)) {
+                    throw new RuntimeException('Content media storage must use a private disk.');
+                }
+
                 return $configured;
             }
         }
@@ -297,7 +431,30 @@ class ContentMediaStorage
             throw new RuntimeException('Content media storage disk is not configured.');
         }
 
+        if (! $this->isPrivateDisk($disk)) {
+            throw new RuntimeException('Content media storage must use a private disk.');
+        }
+
         return $disk;
+    }
+
+    private function isPrivateDisk(string $disk): bool
+    {
+        $configuration = config('filesystems.disks.'.$disk);
+
+        if (! is_array($config = $configuration)) {
+            return false;
+        }
+
+        if (! in_array($config['driver'] ?? null, ['local', 's3'], true) || ($config['visibility'] ?? null) === 'public') {
+            return false;
+        }
+
+        $root = $config['root'] ?? null;
+
+        return ! (is_string($root)
+            && realpath($root) !== false
+            && str_starts_with((string) realpath($root), (string) realpath(public_path())));
     }
 
     private function softLimitBytes(string $key, int $hardLimit): int

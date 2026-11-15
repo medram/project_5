@@ -6,6 +6,7 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Billing\WorkspaceUsage;
+use App\Services\Settings\PlatformSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -162,6 +163,17 @@ class BillingSurfaceTest extends TestCase
 
     private function configureStripe(): void
     {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'subscriptions', [
+            'billing_enabled' => true,
+            'stripe_publishable_key' => 'pk_test_surface',
+            'stripe_secret' => 'sk_test_surface',
+            'stripe_webhook_secret' => 'whsec_surface',
+            'currency' => 'usd',
+            'tax_policy_acknowledged' => true,
+        ], $settings->version('subscriptions'));
+
         config([
             'cashier.key' => 'pk_test_surface',
             'cashier.secret' => 'sk_test_surface',

@@ -3,12 +3,12 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\AnalyticsEvent;
+use App\Models\BioPage;
 use App\Models\Link;
 use App\Models\User;
 use App\Services\Accounts\GoogleConnection;
 use App\Services\Settings\PlatformSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -133,6 +133,7 @@ class PlatformSettingsBehaviorTest extends TestCase
             'provider' => 'turnstile',
             'site_key' => 'site-key',
             'secret' => 'secret-key',
+            'on_registration' => true,
         ], $settings->version('captcha'));
 
         $payload = [
@@ -184,8 +185,8 @@ class PlatformSettingsBehaviorTest extends TestCase
         $settings->updateSection($administrator, 'links', [
             'targeting_enabled' => false,
             'domains_enabled' => false,
-            'domain_blocklist' => "blocked.test",
-            'keyword_blocklist' => "casino",
+            'domain_blocklist' => 'blocked.test',
+            'keyword_blocklist' => 'casino',
             'slug_min' => 10,
             'slug_charset' => 'alphanumeric',
         ], $settings->version('links'));
@@ -224,18 +225,81 @@ class PlatformSettingsBehaviorTest extends TestCase
         ])->assertSessionHasErrors('slug');
     }
 
+    public function test_splash_seconds_and_maintenance_banner_are_projected_to_public_surfaces(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'links', [
+            'splash_seconds' => 9,
+        ], $settings->version('links'));
+        $settings->updateSection($administrator, 'system', [
+            'maintenance_banner' => 'Scheduled maintenance tonight.',
+        ], $settings->version('system'));
+
+        $link = Link::factory()->create([
+            'slug' => 'splash-countdown',
+            'delivery_mode' => 'splash',
+            'is_active' => true,
+            'approval_status' => 'approved',
+        ]);
+
+        $this->withoutVite();
+        $this->get('/'.$link->slug)
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('links/splash')
+                ->where('seconds', 9));
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('platform.maintenanceBanner', 'Scheduled maintenance tonight.'));
+    }
+
+    public function test_bio_allowlist_rejects_disallowed_creations_and_branding_is_opt_in(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'biolinks', [
+            'available_blocks' => ['link', 'text'],
+            'branding_enabled' => false,
+        ], $settings->version('biolinks'));
+
+        $page = BioPage::factory()->create([
+            'handle' => 'allowlist-page',
+            'is_published' => true,
+        ]);
+
+        $this->actingAs($page->user)
+            ->post('/dashboard/biolinks/'.$page->id.'/blocks', [
+                'type' => 'embed',
+                'provider' => 'youtube',
+                'identifier' => 'dQw4w9WgXcQ',
+                'is_active' => true,
+            ])
+            ->assertSessionHasErrors('type');
+
+        $this->assertDatabaseCount('bio_content_blocks', 0);
+
+        $this->withoutVite();
+        $this->get('/bio/allowlist-page')
+            ->assertOk()
+            ->assertInertia(fn (Assert $response) => $response
+                ->where('branding', null));
+    }
+
     public function test_mail_and_analytics_retention_settings_are_consumed(): void
     {
         $administrator = User::factory()->admin()->create();
         $settings = app(PlatformSettings::class);
         $settings->updateSection($administrator, 'email', [
-            'mailer' => 'array',
+            'mailer' => 'log',
             'sender_name' => 'Acme',
             'sender_address' => 'noreply@acme.test',
         ], $settings->version('email'));
 
         $this->get('/');
-        $this->assertSame('array', config('mail.default'));
+        $this->assertSame('log', config('mail.default'));
         $this->assertSame('Acme', config('mail.from.name'));
 
         $settings->updateSection($administrator, 'analytics', [

@@ -2,24 +2,41 @@ import { Badge } from '@/components/ui/badge';
 import type { AdminRoleSummary, AdminUserStatus } from '@/types/admin';
 
 export function AccountStatusBadge({ status }: { status: AdminUserStatus }) {
-    if (status === 'suspended') {
-        return <Badge variant="destructive">Suspended</Badge>;
-    }
+    const meta =
+        status === 'suspended'
+            ? {
+                  label: 'Suspended',
+                  variant: 'destructive' as const,
+                  dot: 'bg-danger',
+              }
+            : status === 'deletion_pending'
+              ? {
+                    label: 'Deletion pending',
+                    variant: 'warning' as const,
+                    dot: 'bg-warning',
+                }
+              : {
+                    label: 'Active',
+                    variant: 'success' as const,
+                    dot: 'bg-success',
+                };
 
-    if (status === 'deletion_pending') {
-        return <Badge variant="outline">Deletion pending</Badge>;
-    }
-
-    return <Badge variant="secondary">Active</Badge>;
+    return (
+        <Badge variant={meta.variant} className="gap-1.5 py-0">
+            <span
+                aria-hidden="true"
+                className={`size-1.5 rounded-full ${meta.dot}`}
+            />
+            {meta.label}
+        </Badge>
+    );
 }
 
 export function VerificationBadge({ verified }: { verified: boolean }) {
-    return verified ? (
-        <Badge variant="outline">Verified</Badge>
-    ) : (
-        <Badge variant="outline" className="text-muted-foreground">
-            Unverified
-        </Badge>
+    return (
+        <span className="text-xs text-muted-foreground">
+            {verified ? 'Verified' : 'Unverified'}
+        </span>
     );
 }
 
@@ -31,7 +48,11 @@ export function RoleBadges({ roles }: { roles: AdminRoleSummary[] }) {
     return (
         <div className="flex flex-wrap gap-1">
             {roles.map((role) => (
-                <Badge key={role.code} variant="outline">
+                <Badge
+                    key={role.code}
+                    variant="outline"
+                    className="text-[11px]"
+                >
                     {role.name}
                 </Badge>
             ))}
@@ -53,14 +74,14 @@ export function PlanBadge({
     }
 
     return (
-        <div className="flex flex-wrap items-center gap-1">
-            <Badge variant="secondary">{plan.name}</Badge>
+        <div className="flex flex-wrap items-baseline gap-1.5">
+            <span className="text-sm font-medium">{plan.name}</span>
             <span className="text-xs text-muted-foreground">
                 {plan.source === 'free'
-                    ? 'Free'
+                    ? 'free'
                     : plan.source === 'stripe'
-                      ? (plan.subscriptionStatus ?? 'Stripe')
-                      : 'Manual override'}
+                      ? (plan.subscriptionStatus ?? 'stripe')
+                      : 'override'}
             </span>
         </div>
     );

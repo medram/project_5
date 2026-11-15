@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Billing\PlanCatalogPresenter;
 use App\Services\Billing\WorkspaceUsage;
+use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -32,6 +33,8 @@ class PricingController extends Controller
             'plans' => $plans->all(),
             'currentPlanCode' => $currentPlanCode,
             'canManageBilling' => $canManageBilling,
+            'annualDisplay' => (bool) (app(PlatformSettings::class)->resolved()['subscriptions']['annual_display'] ?? true),
+            'billingEnabled' => (bool) (app(PlatformSettings::class)->resolved()['subscriptions']['billing_enabled'] ?? true),
             'billingPath' => route('billing.index', absolute: false),
             'loginPath' => route('login', absolute: false),
         ]);

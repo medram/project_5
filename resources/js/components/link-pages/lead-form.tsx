@@ -3,9 +3,16 @@ import { type FormEvent, useId, useRef, useState } from 'react';
 import { usePublicTrackingEvent } from '@/components/analytics/public-tracking-pixels';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FieldError } from '@/components/ui/field';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import type { LinkPageFormField } from '@/types/link-pages';
 
 type LeadFormData = {
@@ -136,10 +143,19 @@ export function LeadForm({
                             'aria-describedby': error ? errorId : undefined,
                             value: form.data.values[field.id] ?? '',
                         };
+                        const options = field.options ?? [];
+                        let emptyValue = `__linkpilot_empty_${prefix}_${field.id}`;
+                        while (options.includes(emptyValue)) emptyValue += '_';
+                        const selectedValue =
+                            form.data.values[field.id] ?? '';
 
                         return (
-                            <div key={field.id} className="grid gap-1.5">
-                                <label
+                            <Field
+                                key={field.id}
+                                className="gap-1.5"
+                                data-invalid={Boolean(error)}
+                            >
+                                <FieldLabel
                                     htmlFor={id}
                                     className="text-sm font-medium"
                                 >
@@ -149,7 +165,7 @@ export function LeadForm({
                                             (required)
                                         </span>
                                     )}
-                                </label>
+                                </FieldLabel>
                                 {field.type === 'textarea' ? (
                                     <Textarea
                                         {...common}
@@ -162,25 +178,53 @@ export function LeadForm({
                                         }
                                     />
                                 ) : field.type === 'select' ? (
-                                    <select
-                                        {...common}
-                                        className="min-h-11 rounded-md border border-input bg-background px-3 py-2 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-                                        onChange={(event) =>
+                                    <Select
+                                        value={
+                                            field.required
+                                                ? selectedValue
+                                                : selectedValue || emptyValue
+                                        }
+                                        onValueChange={(value) =>
                                             setField(
                                                 field.id,
-                                                event.target.value,
+                                                value === emptyValue
+                                                    ? ''
+                                                    : value,
                                             )
                                         }
+                                        disabled={preview || form.processing}
+                                        required={field.required}
                                     >
-                                        <option value="">
-                                            Choose an option
-                                        </option>
-                                        {(field.options ?? []).map((option) => (
-                                            <option key={option} value={option}>
-                                                {option}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        <SelectTrigger
+                                            id={id}
+                                            aria-invalid={Boolean(error)}
+                                            aria-describedby={
+                                                error ? errorId : undefined
+                                            }
+                                            className="min-h-11 w-full"
+                                        >
+                                            <SelectValue placeholder="Choose an option" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {!field.required && (
+                                                <SelectItem value={emptyValue}>
+                                                    Choose an option
+                                                </SelectItem>
+                                            )}
+                                            {options
+                                                .filter(
+                                                    (option) => option !== '',
+                                                )
+                                                .map((option) => (
+                                                    <SelectItem
+                                                        key={option}
+                                                        value={option}
+                                                    >
+                                                        {option}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
                                 ) : (
                                     <Input
                                         {...common}
@@ -206,7 +250,7 @@ export function LeadForm({
                                         {error}
                                     </FieldError>
                                 )}
-                            </div>
+                            </Field>
                         );
                     })}
                 </div>

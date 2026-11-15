@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Domains\PublicLinkHostResolver;
 use App\Services\Links\LinkAccessUnlocks;
 use App\Services\Links\LinkDeliveryService;
+use App\Services\Settings\PlatformSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -46,6 +47,7 @@ class PublicLinkController extends Controller
             return Inertia::render('links/splash', [
                 'slug' => $link->slug,
                 'title' => $link->title,
+                'seconds' => (int) (app(PlatformSettings::class)->resolved()['links']['splash_seconds'] ?? 3),
             ]);
         }
 

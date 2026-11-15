@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AlertError from '@/components/alert-error';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Dialog,
     DialogContent,
@@ -116,11 +117,11 @@ function TwoFactorSetupStep({
                                 </div>
                             ) : (
                                 <>
-                                    <input
+                                    <Input
                                         type="text"
                                         readOnly
                                         value={manualSetupKey}
-                                        className="h-full w-full bg-background p-3 text-foreground outline-none"
+                                        className="h-full w-full rounded-none border-0 bg-card p-3 shadow-none"
                                     />
                                     <button
                                         onClick={() => copy(manualSetupKey)}

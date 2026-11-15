@@ -10,6 +10,14 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Field, FieldLabel } from '@/components/ui/field';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import type {
     LinkPageInsightVariant,
     LinkPageInsightsProps,
@@ -66,7 +74,7 @@ export default function LinkPageInsights({
         <>
             <Head title={`Insights for ${linkPage.name}`} />
 
-            <main className="flex flex-col gap-6 p-4 sm:p-6">
+            <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
                         <Button
@@ -81,7 +89,7 @@ export default function LinkPageInsights({
                             </Link>
                         </Button>
                         <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="text-2xl font-semibold tracking-tight">
+                            <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
                                 {linkPage.name} insights
                             </h1>
                         </div>
@@ -91,26 +99,33 @@ export default function LinkPageInsights({
                         </p>
                     </div>
                     <div className="flex flex-wrap items-end gap-2">
-                        <div className="grid gap-1">
-                            <label
-                                htmlFor="insights-period"
-                                className="text-sm font-medium"
-                            >
+                        <Field className="gap-1">
+                            <FieldLabel htmlFor="insights-period">
                                 Date range
-                            </label>
-                            <select
-                                id="insights-period"
-                                className="h-11 min-w-36 rounded-md border bg-background px-3"
-                                value={insights.days}
-                                onChange={(event) =>
-                                    changePeriod(event.currentTarget.value)
-                                }
+                            </FieldLabel>
+                            <Select
+                                value={String(insights.days)}
+                                onValueChange={changePeriod}
                             >
-                                <option value={7}>Last 7 days</option>
-                                <option value={30}>Last 30 days</option>
-                                <option value={90}>Last 90 days</option>
-                            </select>
-                        </div>
+                                <SelectTrigger
+                                    id="insights-period"
+                                    className="h-11 min-w-36"
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="7">
+                                        Last 7 days
+                                    </SelectItem>
+                                    <SelectItem value="30">
+                                        Last 30 days
+                                    </SelectItem>
+                                    <SelectItem value="90">
+                                        Last 90 days
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </Field>
                         <Button asChild variant="outline">
                             <a
                                 href={linkPage.publicUrl}
@@ -203,33 +218,34 @@ export default function LinkPageInsights({
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {selectedVariant && (
-                            <div className="grid gap-1 sm:max-w-sm">
-                                <label
-                                    htmlFor="daily-variant"
-                                    className="text-sm font-medium"
-                                >
+                            <Field className="gap-1 sm:max-w-sm">
+                                <FieldLabel htmlFor="daily-variant">
                                     Variant
-                                </label>
-                                <select
-                                    id="daily-variant"
-                                    className="h-11 rounded-md border bg-background px-3"
-                                    value={selectedVariant.id}
-                                    onChange={(event) =>
-                                        setSelectedVariantId(
-                                            Number(event.currentTarget.value),
-                                        )
+                                </FieldLabel>
+                                <Select
+                                    value={String(selectedVariant.id)}
+                                    onValueChange={(value) =>
+                                        setSelectedVariantId(Number(value))
                                     }
                                 >
-                                    {insights.variants.map((variant) => (
-                                        <option
-                                            key={variant.id}
-                                            value={variant.id}
-                                        >
-                                            {variant.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                    <SelectTrigger
+                                        id="daily-variant"
+                                        className="h-11 w-full"
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {insights.variants.map((variant) => (
+                                            <SelectItem
+                                                key={variant.id}
+                                                value={String(variant.id)}
+                                            >
+                                                {variant.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </Field>
                         )}
                         {!selectedVariant ||
                         selectedVariant.daily.every(

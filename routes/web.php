@@ -2,16 +2,19 @@
 
 use App\Http\Controllers\AcceptWorkspaceInvitationController;
 use App\Http\Controllers\AccountAnalyticsController;
-use App\Http\Controllers\HomePageController;
 use App\Http\Controllers\Admin\AdminContentController;
 use App\Http\Controllers\Admin\AdminCustomPageController;
 use App\Http\Controllers\Admin\AdminFileController;
 use App\Http\Controllers\Admin\AdminHomeController;
 use App\Http\Controllers\Admin\AdminInsightsController;
+use App\Http\Controllers\Admin\AdminLocalizationController;
 use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\AdminOperationLogController;
 use App\Http\Controllers\Admin\AdminPlanController;
 use App\Http\Controllers\Admin\AdminRoleController;
+use App\Http\Controllers\Admin\AdminSettingActionController;
 use App\Http\Controllers\Admin\AdminSettingController;
+use App\Http\Controllers\Admin\AdminSettingOptionController;
 use App\Http\Controllers\Admin\AdminSubscriptionController;
 use App\Http\Controllers\Admin\AdminUserActionController;
 use App\Http\Controllers\Admin\AdminUserIndexController;
@@ -21,6 +24,7 @@ use App\Http\Controllers\AnalyticsEventDefinitionController;
 use App\Http\Controllers\AnalyticsExportController;
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\Billing\CashierWebhookController;
 use App\Http\Controllers\Billing\CheckoutController;
 use App\Http\Controllers\Billing\CheckoutResultController;
 use App\Http\Controllers\Billing\PortalController;
@@ -35,6 +39,7 @@ use App\Http\Controllers\CustomDomainController;
 use App\Http\Controllers\CustomDomainVerificationController;
 use App\Http\Controllers\DomainChallengeController;
 use App\Http\Controllers\FolderController;
+use App\Http\Controllers\HomePageController;
 use App\Http\Controllers\LinkAccessController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LinkCsvController;
@@ -50,13 +55,13 @@ use App\Http\Controllers\LinkQrCodeController;
 use App\Http\Controllers\LinkRevisionController;
 use App\Http\Controllers\LinkTagController;
 use App\Http\Controllers\NotificationCenterController;
+use App\Http\Controllers\PlatformMediaController;
 use App\Http\Controllers\PricingController;
 use App\Http\Controllers\PublicBioContentBlockController;
 use App\Http\Controllers\PublicBioContentMediaController;
-use App\Http\Controllers\PlatformMediaController;
-use App\Http\Controllers\PublicCustomPageController;
 use App\Http\Controllers\PublicBioLinkController;
 use App\Http\Controllers\PublicBioPageController;
+use App\Http\Controllers\PublicCustomPageController;
 use App\Http\Controllers\PublicLinkController;
 use App\Http\Controllers\PublicLinkOverlayController;
 use App\Http\Controllers\PublicLinkPageController;
@@ -78,11 +83,15 @@ use App\Http\Controllers\WorkspaceInvitationController;
 use App\Http\Controllers\WorkspaceMemberController;
 use App\Http\Controllers\WorkspaceSearchController;
 use App\Http\Controllers\WorkspaceTransferController;
+use App\Http\Middleware\EnsurePricingEnabled;
+use App\Services\Settings\PlatformSettings;
 use Illuminate\Foundation\Events\DiagnosingHealth;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
+use Laravel\Cashier\Http\Controllers\PaymentController as CashierPaymentController;
 
 Route::middleware('guest')->group(function (): void {
     Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
@@ -115,10 +124,16 @@ Route::get('up', function (Request $request) {
 })->name('health');
 
 Route::get('/', HomePageController::class)->name('home');
-Route::get('pricing', PricingController::class)->middleware(\App\Http\Middleware\EnsurePricingEnabled::class)->name('pricing');
+Route::get('stripe/payment/{id}', [CashierPaymentController::class, 'show'])->name('cashier.payment');
+Route::post('stripe/webhook', [CashierWebhookController::class, 'handleWebhook'])->name('cashier.webhook');
+Route::get('pricing', PricingController::class)->middleware(EnsurePricingEnabled::class)->name('pricing');
 
 Route::middleware(['auth', 'verified', 'active-account'])->group(function (): void {
-    Route::get('dashboard', fn () => to_route('links.index'))->name('dashboard');
+    Route::get('dashboard', function (): RedirectResponse {
+        $home = app(PlatformSettings::class)->resolved()['general']['dashboard_home'] ?? 'links';
+
+        return to_route($home === 'analytics' ? 'analytics.index' : 'links.index');
+    })->name('dashboard');
     Route::get('search', WorkspaceSearchController::class)->name('search.index');
     Route::get('notifications', [NotificationCenterController::class, 'index'])
         ->name('notifications.index');
@@ -397,9 +412,54 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
             ->middleware('platform:admin.pages.manage')
             ->name('pages.preview');
 
+        Route::get('logs', [AdminOperationLogController::class, 'index'])
+            ->middleware('platform:admin.logs.view')
+            ->name('logs.index');
+        Route::get('logs/export', [AdminOperationLogController::class, 'export'])
+            ->middleware('platform:admin.logs.export')
+            ->name('logs.export');
+
+        Route::get('localizations', [AdminLocalizationController::class, 'index'])
+            ->middleware('platform:admin.localizations.manage')
+            ->name('localizations.index');
+        Route::post('localizations', [AdminLocalizationController::class, 'storeLocale'])
+            ->middleware('platform:admin.localizations.manage')
+            ->name('localizations.store');
+        Route::patch('localizations/{locale:code}', [AdminLocalizationController::class, 'updateLocale'])
+            ->middleware('platform:admin.localizations.manage')
+            ->name('localizations.update');
+        Route::delete('localizations/{locale:code}', [AdminLocalizationController::class, 'destroyLocale'])
+            ->middleware('platform:admin.localizations.manage')
+            ->name('localizations.destroy');
+        Route::put('localizations/{locale:code}/translations', [AdminLocalizationController::class, 'updateTranslation'])
+            ->middleware('platform:admin.localizations.manage')
+            ->name('localizations.translations.update');
+        Route::post('localizations/{locale:code}/import', [AdminLocalizationController::class, 'import'])
+            ->middleware('platform:admin.localizations.manage')
+            ->name('localizations.import');
+        Route::get('localizations/{locale:code}/export', [AdminLocalizationController::class, 'export'])
+            ->middleware('platform:admin.localizations.manage')
+            ->name('localizations.export');
+
         Route::get('settings', fn () => redirect()->route('admin.settings.show', ['section' => 'general']))
             ->middleware('platform:admin.settings.view')
             ->name('settings.index');
+        Route::get('settings/options/{source}', AdminSettingOptionController::class)
+            ->whereIn('source', ['platform-assets', 'published-pages', 'locales', 'timezones', 'storage-disks'])
+            ->middleware('platform:admin.settings.view')
+            ->name('settings.options');
+        Route::delete('settings/{section}/secrets/{key}', [AdminSettingActionController::class, 'clearSecret'])
+            ->middleware('platform:admin.settings.manage')
+            ->name('settings.secrets.destroy');
+        Route::post('settings/{section}/assets/{key}', [AdminSettingActionController::class, 'uploadAsset'])
+            ->middleware('platform:admin.settings.manage')
+            ->name('settings.assets.store');
+        Route::post('settings/email/test', [AdminSettingActionController::class, 'testEmail'])
+            ->middleware('platform:admin.settings.manage')
+            ->name('settings.email.test');
+        Route::post('settings/subscriptions/test', [AdminSettingActionController::class, 'testStripe'])
+            ->middleware('platform:admin.settings.manage')
+            ->name('settings.subscriptions.test');
         Route::get('settings/{section}', [AdminSettingController::class, 'show'])
             ->middleware('platform:admin.settings.view')
             ->name('settings.show');

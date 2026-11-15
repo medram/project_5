@@ -2,6 +2,7 @@
 
 namespace App\Services\Analytics;
 
+use App\Services\Settings\PlatformSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use InvalidArgumentException;
@@ -15,9 +16,29 @@ class TrackingConsent
 
     public const DENIED = 'denied';
 
+    public function __construct(private readonly PlatformSettings $settings) {}
+
     public function allows(Request $request): bool
     {
+        if (! $this->required()) {
+            return $this->canGrant();
+        }
+
         return $this->choice($request) === self::GRANTED;
+    }
+
+    public function required(): bool
+    {
+        return (bool) ($this->settings->resolved()['analytics']['consent_enabled'] ?? true);
+    }
+
+    public function effectiveChoice(Request $request): ?string
+    {
+        if (! $this->required()) {
+            return $this->canGrant() ? self::GRANTED : null;
+        }
+
+        return $this->choice($request);
     }
 
     /**

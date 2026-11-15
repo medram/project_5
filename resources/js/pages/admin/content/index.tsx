@@ -1,8 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
-import { FileSearch, SlidersHorizontal } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { formatAdminDate } from '@/components/admin/format';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -12,7 +11,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -59,147 +57,104 @@ export default function AdminContentIndex({
     return (
         <>
             <Head title={`${resource.title} — Administration`} />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <header className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <FileSearch className="size-4" aria-hidden="true" />
-                        <span>Platform content metadata</span>
-                    </div>
-                    <h1 className="text-2xl font-semibold tracking-tight">
+                    <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
                         {resource.title}
                     </h1>
                     <p className="max-w-3xl text-sm text-muted-foreground">
-                        {resource.description} This is a read-only cross-owner
-                        view; administrators are not attached to tenant
-                        workspaces.
+                        {resource.description} Read-only across owners.
+                        Administrators are not attached to tenant workspaces.
                     </p>
                 </header>
 
-                <Card>
-                    <CardHeader className="gap-1">
-                        <CardTitle className="flex items-center gap-2">
-                            <SlidersHorizontal
-                                className="size-4"
-                                aria-hidden="true"
-                            />
-                            Filters
-                        </CardTitle>
-                        <CardDescription>
-                            Search, state, and ordering are stored in the URL.
-                            Only aggregate counts and public identifiers are
-                            returned.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form
-                            onSubmit={apply}
-                            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_auto]"
+                <form
+                    onSubmit={apply}
+                    className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-3"
+                >
+                    <div className="relative min-w-0 flex-1 sm:max-w-sm">
+                        <Search
+                            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+                            aria-hidden="true"
+                        />
+                        <Input
+                            id="content-search"
+                            value={query}
+                            maxLength={100}
+                            placeholder={`Search ${resource.title.toLowerCase()}`}
+                            aria-label={`Search ${resource.title.toLowerCase()}`}
+                            className="h-9 pl-8"
+                            onChange={(event) => setQuery(event.target.value)}
+                        />
+                    </div>
+                    <Select value={state} onValueChange={setState}>
+                        <SelectTrigger
+                            id="content-state"
+                            aria-label="State"
+                            className="h-9 w-auto min-w-32"
                         >
-                            <div className="grid gap-2">
-                                <Label htmlFor="content-search">Search</Label>
-                                <Input
-                                    id="content-search"
-                                    value={query}
-                                    maxLength={100}
-                                    placeholder="Name, public identifier, workspace, or owner"
-                                    onChange={(event) =>
-                                        setQuery(event.target.value)
-                                    }
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="content-state">State</Label>
-                                <Select value={state} onValueChange={setState}>
-                                    <SelectTrigger
-                                        id="content-state"
-                                        className="min-h-9 w-full"
-                                    >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="any">
-                                            Any state
-                                        </SelectItem>
-                                        {resource.stateOptions.map((option) => (
-                                            <SelectItem
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="content-sort">Sort</Label>
-                                <Select value={sort} onValueChange={setSort}>
-                                    <SelectTrigger
-                                        id="content-sort"
-                                        className="min-h-9 w-full"
-                                    >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="updated_at">
-                                            Updated
-                                        </SelectItem>
-                                        <SelectItem value="created_at">
-                                            Created
-                                        </SelectItem>
-                                        <SelectItem value="name">
-                                            Name
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="content-direction">
-                                    Direction
-                                </Label>
-                                <Select
-                                    value={direction}
-                                    onValueChange={setDirection}
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="any">Any state</SelectItem>
+                            {resource.stateOptions.map((option) => (
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value}
                                 >
-                                    <SelectTrigger
-                                        id="content-direction"
-                                        className="min-h-9 w-full"
-                                    >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="desc">
-                                            Descending
-                                        </SelectItem>
-                                        <SelectItem value="asc">
-                                            Ascending
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-end gap-2">
-                                <Button
-                                    type="submit"
-                                    className="min-h-9 flex-1"
-                                >
-                                    Apply
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="min-h-9"
-                                    onClick={reset}
-                                >
-                                    Reset
-                                </Button>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={sort} onValueChange={setSort}>
+                        <SelectTrigger
+                            id="content-sort"
+                            aria-label="Sort by"
+                            className="h-9 w-auto min-w-28"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="updated_at">Updated</SelectItem>
+                            <SelectItem value="created_at">Created</SelectItem>
+                            <SelectItem value="name">Name</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={direction} onValueChange={setDirection}>
+                        <SelectTrigger
+                            id="content-direction"
+                            aria-label="Direction"
+                            className="h-9 w-auto min-w-28"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="desc">Descending</SelectItem>
+                            <SelectItem value="asc">Ascending</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Button type="submit" size="sm" className="ml-auto">
+                        Apply
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={reset}
+                    >
+                        Reset
+                    </Button>
+                </form>
 
-                <div className="hidden overflow-hidden rounded-lg border lg:block">
-                    <table className="w-full border-collapse text-sm">
-                        <thead className="bg-muted/50 text-left text-xs text-muted-foreground uppercase">
+                <div className="lp-table-shell hidden lg:block">
+                    <table
+                        data-table-surface={
+                            rows.data.length > 0 ? 'populated' : undefined
+                        }
+                        className="w-full border-collapse text-sm"
+                    >
+                        <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-3 font-medium">
                                     {resource.identifierLabel
@@ -225,7 +180,7 @@ export default function AdminContentIndex({
                             {rows.data.map((row) => (
                                 <tr
                                     key={`${row.workspace}-${row.name}-${row.identifier}-${row.createdAt}`}
-                                    className="border-t align-top"
+                                    className="border-t transition-colors hover:bg-muted/30"
                                 >
                                     <td className="max-w-72 px-4 py-3">
                                         <p className="truncate font-medium">
@@ -258,9 +213,9 @@ export default function AdminContentIndex({
                                         </p>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <Badge variant="outline">
+                                        <span className="text-xs text-muted-foreground">
                                             {row.state}
-                                        </Badge>
+                                        </span>
                                     </td>
                                     <td className="px-4 py-3">
                                         <p>{row.type}</p>
@@ -280,7 +235,7 @@ export default function AdminContentIndex({
                                                 {row.counts.map((count) => (
                                                     <span key={count.label}>
                                                         {count.label}:{' '}
-                                                        <span className="font-medium tabular-nums">
+                                                        <span className="tabular-nums">
                                                             {count.value.toLocaleString()}
                                                         </span>
                                                     </span>
@@ -320,7 +275,9 @@ export default function AdminContentIndex({
                                             </CardDescription>
                                         )}
                                     </div>
-                                    <Badge variant="outline">{row.state}</Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                        {row.state}
+                                    </span>
                                 </div>
                             </CardHeader>
                             <CardContent className="grid gap-2 text-sm">
@@ -363,7 +320,7 @@ export default function AdminContentIndex({
                         </Card>
                     ))}
                     {rows.data.length === 0 && (
-                        <Card>
+                        <Card variant="transparent">
                             <CardContent className="p-8 text-center text-sm text-muted-foreground">
                                 No {resource.title.toLowerCase()} match these
                                 filters.

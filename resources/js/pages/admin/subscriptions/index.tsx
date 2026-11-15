@@ -1,12 +1,11 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
-import { CreditCard, Plus, ShieldAlert } from 'lucide-react';
+import { Ban, Plus, RotateCcw, Search } from 'lucide-react';
 import {
     AdminConfirmDialog,
     type AdminConfirmation,
 } from '@/components/admin/admin-confirm-dialog';
 import { formatAdminDate, humanizeAdminValue } from '@/components/admin/format';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -120,58 +119,45 @@ export default function AdminSubscriptionsIndex({
     return (
         <>
             <Head title="Subscriptions — Administration" />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <header className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CreditCard className="size-4" aria-hidden="true" />
-                        <span>Platform administration</span>
-                    </div>
-                    <h1 className="text-2xl font-semibold tracking-tight">
+                    <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
                         Subscriptions and overrides
                     </h1>
                     <p className="max-w-3xl text-sm text-muted-foreground">
                         Effective entitlements, local overrides, and
-                        provider-owned Cashier state. Provider cancellation and
-                        resume call Stripe and are disabled while configuration
-                        is incomplete. Payment data and Stripe secrets are never
-                        exposed.
+                        provider-owned billing state. Payment data and provider
+                        secrets are never exposed.
                     </p>
                 </header>
 
                 {!readiness.configured && (
-                    <div className="flex flex-wrap items-center gap-2 rounded-lg border p-4 text-sm">
-                        <ShieldAlert
-                            className="size-4 text-amber-600"
-                            aria-hidden="true"
-                        />
-                        <span>Stripe is not configured.</span>
-                        <code className="text-xs">
-                            Missing: {readiness.missing.join(', ')}
-                        </code>
-                    </div>
+                    <details className="rounded-xl border bg-card px-4 py-3 text-sm">
+                        <summary className="cursor-pointer text-muted-foreground">
+                            Provider billing is not configured — cancellation
+                            and resume are disabled
+                        </summary>
+                        <p className="mt-2 font-mono text-xs text-muted-foreground">
+                            {readiness.missing.join(', ')}
+                        </p>
+                    </details>
                 )}
 
                 <form
                     onSubmit={search}
-                    className="flex flex-col gap-2 sm:flex-row sm:items-end"
+                    className="flex items-center gap-2 rounded-xl border bg-card p-3"
                 >
-                    <div className="grid flex-1 gap-2">
-                        <Label htmlFor="subscription-search">
-                            Search workspaces or owners
-                        </Label>
-                        <Input
-                            id="subscription-search"
-                            value={query}
-                            maxLength={100}
-                            placeholder="Workspace name, owner name, or email"
-                            onChange={(event) => setQuery(event.target.value)}
-                        />
-                    </div>
-                    <Button
-                        type="submit"
-                        variant="outline"
-                        className="min-h-11"
-                    >
+                    <Input
+                        id="subscription-search"
+                        value={query}
+                        maxLength={100}
+                        placeholder="Search workspace, owner, or email"
+                        aria-label="Search subscriptions"
+                        className="h-9 max-w-sm"
+                        onChange={(event) => setQuery(event.target.value)}
+                    />
+                    <Button type="submit" size="sm" className="h-9">
+                        <Search data-icon="inline-start" />
                         Search
                     </Button>
                 </form>
@@ -187,7 +173,7 @@ export default function AdminSubscriptionsIndex({
 
                 <div className="grid gap-4">
                     {workspaces.data.length === 0 && (
-                        <Card>
+                        <Card variant="transparent">
                             <CardContent className="p-8 text-center text-sm text-muted-foreground">
                                 No workspaces match this search.
                             </CardContent>
@@ -208,15 +194,22 @@ export default function AdminSubscriptionsIndex({
                                             {workspace.workspace.owner?.email ??
                                                 '—'}{' '}
                                             · {workspace.workspace.membersCount}{' '}
-                                            members
+                                            {workspace.workspace
+                                                .membersCount === 1
+                                                ? 'member'
+                                                : 'members'}
                                         </CardDescription>
                                     </div>
-                                    <Badge variant="outline">
-                                        {workspace.effectivePlan.name} ·{' '}
-                                        {humanizeAdminValue(
-                                            workspace.effectivePlan.source,
-                                        )}
-                                    </Badge>
+                                    <p className="text-sm">
+                                        {workspace.effectivePlan.name}
+                                        <span className="text-muted-foreground">
+                                            {' '}
+                                            ·{' '}
+                                            {humanizeAdminValue(
+                                                workspace.effectivePlan.source,
+                                            ).toLowerCase()}
+                                        </span>
+                                    </p>
                                 </div>
                             </CardHeader>
                             <CardContent className="grid gap-4">
@@ -268,7 +261,7 @@ export default function AdminSubscriptionsIndex({
                                             type="button"
                                             size="sm"
                                             variant="outline"
-                                            className="min-h-9"
+                                            className="h-9"
                                             disabled={
                                                 !workspace.provider.canCancel
                                             }
@@ -279,6 +272,7 @@ export default function AdminSubscriptionsIndex({
                                                 )
                                             }
                                         >
+                                            <Ban data-icon="inline-start" />
                                             Cancel at period end
                                         </Button>
                                     )}
@@ -287,7 +281,7 @@ export default function AdminSubscriptionsIndex({
                                             type="button"
                                             size="sm"
                                             variant="outline"
-                                            className="min-h-9"
+                                            className="h-9"
                                             disabled={
                                                 !workspace.provider.canResume
                                             }
@@ -298,6 +292,7 @@ export default function AdminSubscriptionsIndex({
                                                 )
                                             }
                                         >
+                                            <RotateCcw data-icon="inline-start" />
                                             Resume
                                         </Button>
                                     )}
@@ -305,12 +300,12 @@ export default function AdminSubscriptionsIndex({
                                         <Button
                                             type="button"
                                             size="sm"
-                                            className="min-h-9"
+                                            className="h-9"
                                             onClick={() =>
                                                 setOverrideTarget(workspace)
                                             }
                                         >
-                                            <Plus aria-hidden="true" />
+                                            <Plus data-icon="inline-start" />
                                             Add override
                                         </Button>
                                     )}

@@ -1,21 +1,17 @@
 import { Link, router } from '@inertiajs/react';
+import { type FormEvent, useEffect, useState } from 'react';
+import { ArrowUpRight, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import {
-    type FormEvent,
-    type KeyboardEvent,
-    useEffect,
-    useId,
-    useRef,
-    useState,
-} from 'react';
-import { BarChart3 } from 'lucide-react';
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+    DailyLineChart,
+    formatChartDay,
+} from '@/components/analytics/daily-line-chart';
+import { TrafficSourcesSection } from '@/components/analytics/traffic-sources';
+import {
+    AnalyticsWindowPicker,
+    analyticsDateWindows,
+} from '@/components/analytics/window-picker';
+import { StatCard } from '@/components/dashboard/stat-card';
 import { Button } from '@/components/ui/button';
-import {
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-    type ChartConfig,
-} from '@/components/ui/chart';
 import {
     Card,
     CardContent,
@@ -23,13 +19,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyMedia,
-    EmptyTitle,
-} from '@/components/ui/empty';
 import {
     Field,
     FieldError,
@@ -45,8 +34,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import type {
-    AnalyticsCount,
     AnalyticsDaily,
     AnalyticsFilters,
     AnalyticsInsightsResult,
@@ -55,110 +44,71 @@ import type {
     AnalyticsWindowDays,
 } from '@/types/analytics';
 
-const dailyChartConfig = {
-    clicks: { label: 'Clicks', color: 'var(--chart-1)' },
-    events: { label: 'Tracked events', color: 'var(--chart-2)' },
-} satisfies ChartConfig;
-
 function DailyChart({
     daily,
     metric,
+    showDailyValues = true,
 }: {
     daily: AnalyticsDaily[];
     metric: AnalyticsMetric;
+    showDailyValues?: boolean;
 }) {
     const dataKey = metric === 'engagements' ? 'clicks' : 'events';
     const label = metric === 'engagements' ? 'clicks' : 'tracked events';
-    const hasData = daily.some((day) => day[dataKey] > 0);
 
     return (
         <div className="grid min-w-0 gap-4">
-            {hasData ? (
-                <ChartContainer
-                    config={dailyChartConfig}
-                    className="h-[260px] w-full min-w-0"
-                    aria-label={`Daily ${label} for the selected UTC window. Exact values are listed below.`}
-                >
-                    <LineChart
-                        data={daily}
-                        margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
+            <DailyLineChart
+                data={daily}
+                dataKey={dataKey}
+                label={metric === 'engagements' ? 'Clicks' : 'Tracked events'}
+                ariaLabel={`Daily ${label} for the selected UTC window.`}
+                emptyTitle={`No ${label} in this window`}
+                emptyDescription="Choose another window or check again after visitors interact."
+            />
+            {showDailyValues && (
+                <details className="rounded-md border">
+                    <summary className="cursor-pointer px-3 py-2 text-xs text-muted-foreground">
+                        Exact daily values
+                    </summary>
+                    <div
+                        data-table-surface={
+                            daily.length > 0 ? 'populated' : undefined
+                        }
+                        className="max-h-64 overflow-y-auto border-t"
                     >
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                            dataKey="date"
-                            axisLine={false}
-                            tickLine={false}
-                            minTickGap={24}
-                            tickMargin={8}
-                            tickFormatter={(value) => formatDay(String(value))}
-                        />
-                        <YAxis
-                            allowDecimals={false}
-                            axisLine={false}
-                            tickLine={false}
-                            width={40}
-                        />
-                        <ChartTooltip
-                            cursor={false}
-                            content={
-                                <ChartTooltipContent
-                                    labelFormatter={(value) =>
-                                        formatDay(String(value))
-                                    }
-                                />
-                            }
-                        />
-                        <Line
-                            dataKey={dataKey}
-                            type="monotone"
-                            stroke={`var(--color-${dataKey})`}
-                            strokeWidth={2}
-                            dot={false}
-                            activeDot={{ r: 4 }}
-                            isAnimationActive={false}
-                        />
-                    </LineChart>
-                </ChartContainer>
-            ) : (
-                <Empty className="bg-muted/30">
-                    <EmptyHeader>
-                        <EmptyMedia variant="icon">
-                            <BarChart3 aria-hidden="true" />
-                        </EmptyMedia>
-                        <EmptyTitle>No {label} in this window</EmptyTitle>
-                        <EmptyDescription>
-                            Choose another window or check again after visitors
-                            interact.
-                        </EmptyDescription>
-                    </EmptyHeader>
-                </Empty>
+                        <table
+                            aria-label={`Daily ${label}`}
+                            className="w-full text-sm"
+                        >
+                            <thead className="sticky top-0 bg-background text-left">
+                                <tr>
+                                    <th className="px-3 py-2 font-medium">
+                                        UTC date
+                                    </th>
+                                    <th className="px-3 py-2 text-right font-medium">
+                                        Count
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {daily.map((day) => (
+                                    <tr key={day.date} className="border-t">
+                                        <td className="px-3 py-2">
+                                            <time dateTime={day.date}>
+                                                {formatChartDay(day.date)}
+                                            </time>
+                                        </td>
+                                        <td className="px-3 py-2 text-right tabular-nums">
+                                            {day[dataKey]}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
             )}
-            <div className="max-h-64 overflow-y-auto rounded-md border">
-                <table aria-label={`Daily ${label}`} className="w-full text-sm">
-                    <thead className="sticky top-0 bg-background text-left">
-                        <tr>
-                            <th className="px-3 py-2 font-medium">UTC date</th>
-                            <th className="px-3 py-2 text-right font-medium">
-                                Count
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {daily.map((day) => (
-                            <tr key={day.date} className="border-t">
-                                <td className="px-3 py-2">
-                                    <time dateTime={day.date}>
-                                        {formatDay(day.date)}
-                                    </time>
-                                </td>
-                                <td className="px-3 py-2 text-right tabular-nums">
-                                    {day[dataKey]}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
         </div>
     );
 }
@@ -180,8 +130,6 @@ type AnalyticsFilterFormState = {
     resource_type: AnalyticsResourceType | 'all';
     resource_id: string;
 } & Record<TextFilterName, string>;
-
-const dateWindows: readonly AnalyticsWindowDays[] = [7, 30, 90];
 
 const resourceTypes: readonly {
     value: AnalyticsResourceType;
@@ -347,17 +295,34 @@ export function AnalyticsFilterForm({
         (field) => formFilters[field.name] !== '',
     ).length;
 
+    const activeFilterCount =
+        (formFilters.resource_type !== 'all' ? 1 : 0) +
+        (formFilters.resource_id !== '' ? 1 : 0) +
+        eventFilters.filter((field) => formFilters[field.name] !== '').length +
+        activeCampaignFilters;
+
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Filter analytics</CardTitle>
-                <CardDescription>
-                    Event, device, country, and UTM filters narrow tracked
-                    events and event records. Click totals use the selected date
-                    range and resource only.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
+        <details className="group rounded-2xl border border-border bg-card shadow-[var(--shadow-surface)]">
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+                <SlidersHorizontal
+                    className="size-4 text-muted-foreground"
+                    aria-hidden="true"
+                />
+                Filters
+                {activeFilterCount > 0 && (
+                    <span className="text-xs font-normal text-muted-foreground tabular-nums">
+                        {activeFilterCount} active
+                    </span>
+                )}
+                <span className="ml-auto text-xs font-normal text-muted-foreground">
+                    Last {formFilters.days} days
+                </span>
+                <ChevronDown
+                    className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
+                    aria-hidden="true"
+                />
+            </summary>
+            <div className="border-t p-4">
                 <form onSubmit={applyFilters}>
                     <FieldGroup className="gap-4">
                         <FieldGroup className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -383,14 +348,16 @@ export function AnalyticsFilterForm({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            {dateWindows.map((days) => (
-                                                <SelectItem
-                                                    key={days}
-                                                    value={String(days)}
-                                                >
-                                                    Last {days} days
-                                                </SelectItem>
-                                            ))}
+                                            {analyticsDateWindows.map(
+                                                (days) => (
+                                                    <SelectItem
+                                                        key={days}
+                                                        value={String(days)}
+                                                    >
+                                                        Last {days} days
+                                                    </SelectItem>
+                                                ),
+                                            )}
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
@@ -509,8 +476,8 @@ export function AnalyticsFilterForm({
                         </div>
                     </FieldGroup>
                 </form>
-            </CardContent>
-        </Card>
+            </div>
+        </details>
     );
 }
 
@@ -533,11 +500,6 @@ export function AnalyticsDashboard(props: AnalyticsDashboardProps) {
     const { analytics } = props;
 
     const [metric, setMetric] = useState<AnalyticsMetric>('engagements');
-    const tabListId = useId();
-    const tabRefs = useRef<Record<AnalyticsMetric, HTMLButtonElement | null>>({
-        engagements: null,
-        events: null,
-    });
 
     useEffect(() => {
         let interval: number | undefined;
@@ -594,38 +556,17 @@ export function AnalyticsDashboard(props: AnalyticsDashboardProps) {
         };
     }, []);
 
-    function handleMetricTabKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-        const metrics: AnalyticsMetric[] = ['engagements', 'events'];
-        const currentIndex = metrics.indexOf(metric);
-        let nextMetric: AnalyticsMetric;
-
-        switch (event.key) {
-            case 'ArrowRight':
-                nextMetric = metrics[(currentIndex + 1) % metrics.length];
-                break;
-            case 'ArrowLeft':
-                nextMetric =
-                    metrics[
-                        (currentIndex - 1 + metrics.length) % metrics.length
-                    ];
-                break;
-            case 'Home':
-                nextMetric = metrics[0];
-                break;
-            case 'End':
-                nextMetric = metrics[metrics.length - 1];
-                break;
-            default:
-                return;
-        }
-
-        event.preventDefault();
-        setMetric(nextMetric);
-        tabRefs.current[nextMetric]?.focus();
-    }
+    const metricTotal =
+        metric === 'engagements'
+            ? analytics.totalClicks
+            : analytics.totalEvents;
+    const clicksPerVisitor =
+        analytics.uniqueVisitors > 0
+            ? analytics.totalClicks / analytics.uniqueVisitors
+            : 0;
 
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-5">
             {props.mode === 'account' && (
                 <AnalyticsFilterForm
                     filters={props.filters}
@@ -633,196 +574,132 @@ export function AnalyticsDashboard(props: AnalyticsDashboardProps) {
                     exportUrl={props.exportUrl}
                 />
             )}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                {props.mode === 'account' ? (
-                    <Button asChild variant="outline">
-                        <Link href={props.eventsUrl}>View event records</Link>
-                    </Button>
-                ) : (
-                    <div
-                        role="group"
-                        aria-label="Date range"
-                        className="flex rounded-md border p-1"
-                    >
-                        {dateWindows.map((days) => (
-                            <Button
-                                key={days}
-                                asChild
-                                size="sm"
-                                variant={
-                                    analytics.days === days
-                                        ? 'default'
-                                        : 'ghost'
-                                }
-                            >
-                                <Link
-                                    href={props.windowUrl(days)}
-                                    aria-current={
-                                        analytics.days === days
-                                            ? 'page'
-                                            : undefined
-                                    }
-                                >
-                                    {days} days
-                                </Link>
-                            </Button>
-                        ))}
-                    </div>
-                )}
-                <div
-                    id={tabListId}
-                    role="tablist"
-                    aria-label="Analytics metric"
-                    onKeyDown={handleMetricTabKeyDown}
-                    className="flex rounded-md border p-1"
-                >
-                    {(['engagements', 'events'] as const).map((value) => (
-                        <button
-                            key={value}
-                            id={`${tabListId}-${value}`}
-                            ref={(element) => {
-                                tabRefs.current[value] = element;
-                            }}
-                            type="button"
-                            role="tab"
-                            aria-selected={metric === value}
-                            aria-controls={`${tabListId}-panel`}
-                            tabIndex={metric === value ? 0 : -1}
-                            onClick={() => setMetric(value)}
-                            className="min-h-9 rounded px-3 text-sm font-medium capitalize aria-selected:bg-primary aria-selected:text-primary-foreground"
-                        >
-                            {value === 'events'
-                                ? 'Tracked events'
-                                : 'Engagements'}
-                        </button>
-                    ))}
-                </div>
-            </div>
+            {props.mode !== 'account' && (
+                <AnalyticsWindowPicker
+                    days={analytics.days}
+                    windowUrl={props.windowUrl}
+                />
+            )}
 
             <section
                 aria-label="Analytics totals"
-                className="grid gap-4 sm:grid-cols-3"
+                className="grid grid-cols-2 gap-3 xl:grid-cols-4"
             >
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Clicks</CardTitle>
-                        <CardDescription>
-                            All successful short-link deliveries.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-4xl font-semibold tabular-nums">
-                        {analytics.totalClicks.toLocaleString()}
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Unique visitors</CardTitle>
-                        <CardDescription>
-                            Distinct consented visitor hashes.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-4xl font-semibold tabular-nums">
-                        {analytics.uniqueVisitors.toLocaleString()}
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Tracked events</CardTitle>
-                        <CardDescription>
-                            Consented activity across public surfaces.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-4xl font-semibold tabular-nums">
-                        {analytics.totalEvents.toLocaleString()}
-                    </CardContent>
-                </Card>
+                <StatCard
+                    label="Clicks"
+                    value={analytics.totalClicks.toLocaleString()}
+                    note={`${analytics.days} days`}
+                    sparkline={analytics.daily.map((day) => day.clicks)}
+                    sparklineColor="var(--chart-2)"
+                />
+                <StatCard
+                    label="Unique visitors"
+                    value={analytics.uniqueVisitors.toLocaleString()}
+                    note={`${analytics.days} days`}
+                />
+                <StatCard
+                    label="Tracked events"
+                    value={analytics.totalEvents.toLocaleString()}
+                    note={`${analytics.days} days`}
+                    sparkline={analytics.daily.map((day) => day.events)}
+                    sparklineColor="var(--chart-4)"
+                />
+                <StatCard
+                    label="Clicks per visitor"
+                    value={clicksPerVisitor.toFixed(1)}
+                    note={`${analytics.days} days`}
+                />
             </section>
 
-            <div
-                id={`${tabListId}-panel`}
-                role="tabpanel"
-                aria-labelledby={`${tabListId}-${metric}`}
-                tabIndex={0}
-                className="grid min-w-0 gap-6"
-            >
+            <div className="grid min-w-0 gap-5">
                 <Card className="min-w-0">
-                    <CardHeader>
-                        <CardTitle>
-                            {metric === 'engagements'
-                                ? 'Daily clicks'
-                                : 'Daily tracked events'}
-                        </CardTitle>
-                        <CardDescription>
-                            {analytics.days} UTC calendar days, including today.
-                        </CardDescription>
+                    <CardHeader className="gap-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="grid gap-1">
+                                <CardTitle as="h2">
+                                    {metric === 'engagements'
+                                        ? 'Engagement over time'
+                                        : 'Tracked events over time'}
+                                </CardTitle>
+                                <CardDescription>
+                                    Daily{' '}
+                                    {metric === 'engagements'
+                                        ? 'clicks'
+                                        : 'consented events'}{' '}
+                                    in UTC.
+                                </CardDescription>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <SegmentedControl
+                                    value={metric}
+                                    onValueChange={setMetric}
+                                    ariaLabel="Analytics metric"
+                                    options={[
+                                        {
+                                            value: 'engagements',
+                                            label: 'Engagements',
+                                        },
+                                        {
+                                            value: 'events',
+                                            label: 'Tracked events',
+                                        },
+                                    ]}
+                                />
+                                {props.mode === 'account' && (
+                                    <Button asChild variant="ghost" size="sm">
+                                        <Link href={props.eventsUrl}>
+                                            Event records
+                                            <ArrowUpRight aria-hidden="true" />
+                                        </Link>
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap items-end justify-between gap-4">
+                            <div className="grid gap-0.5">
+                                <span className="text-2xl leading-7 font-semibold tracking-[-0.02em] tabular-nums">
+                                    {metricTotal.toLocaleString()}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                    {metric === 'engagements'
+                                        ? 'Clicks'
+                                        : 'Tracked events'}{' '}
+                                    · last {analytics.days} days
+                                </span>
+                            </div>
+                            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <span
+                                    className="size-2.5 rounded-full"
+                                    style={{
+                                        backgroundColor:
+                                            metric === 'engagements'
+                                                ? 'var(--chart-2)'
+                                                : 'var(--chart-4)',
+                                    }}
+                                    aria-hidden="true"
+                                />
+                                {metric === 'engagements'
+                                    ? 'Clicks'
+                                    : 'Tracked events'}
+                            </span>
+                        </div>
                     </CardHeader>
                     <CardContent className="min-w-0">
-                        <DailyChart daily={analytics.daily} metric={metric} />
+                        <DailyChart
+                            daily={analytics.daily}
+                            metric={metric}
+                            showDailyValues={props.mode === 'account'}
+                        />
                     </CardContent>
                 </Card>
 
-                {metric === 'events' && (
-                    <section
-                        aria-label="Tracked event dimensions"
-                        className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
-                    >
-                        <CountList
-                            title="Events by name"
-                            rows={analytics.eventsByName}
-                        />
-                        <CountList
-                            title="Top referrers"
-                            rows={analytics.topReferrers}
-                        />
-                        <CountList
-                            title="Top browsers"
-                            rows={analytics.topBrowsers}
-                        />
-                        <CountList
-                            title="Top platforms"
-                            rows={analytics.topPlatforms}
-                        />
-                    </section>
-                )}
+                <TrafficSourcesSection
+                    referrers={analytics.topReferrers}
+                    countries={analytics.topCountries}
+                    browsers={analytics.topBrowsers}
+                    platforms={analytics.topPlatforms}
+                />
             </div>
         </div>
-    );
-}
-
-function formatDay(date: string): string {
-    return new Intl.DateTimeFormat(undefined, {
-        month: 'short',
-        day: 'numeric',
-    }).format(new Date(`${date}T12:00:00Z`));
-}
-
-function CountList({ title, rows }: { title: string; rows: AnalyticsCount[] }) {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-                {rows.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        No consented data in this window.
-                    </p>
-                ) : (
-                    <ol className="grid gap-2">
-                        {rows.map((row) => (
-                            <li
-                                key={row.name}
-                                className="flex items-center justify-between gap-3 text-sm"
-                            >
-                                <span className="truncate">{row.name}</span>
-                                <span className="font-medium tabular-nums">
-                                    {row.count.toLocaleString()}
-                                </span>
-                            </li>
-                        ))}
-                    </ol>
-                )}
-            </CardContent>
-        </Card>
     );
 }

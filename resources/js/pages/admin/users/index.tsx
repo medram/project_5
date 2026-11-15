@@ -1,6 +1,6 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
-import { Megaphone, Search, SlidersHorizontal, Users } from 'lucide-react';
+import { ExternalLink, Megaphone, Search } from 'lucide-react';
 import {
     AccountStatusBadge,
     PlanBadge,
@@ -8,14 +8,11 @@ import {
     VerificationBadge,
 } from '@/components/admin/admin-badges';
 import { formatAdminDate } from '@/components/admin/format';
+import { StatCard } from '@/components/dashboard/stat-card';
+import { PageHeader } from '@/components/page-header';
+import { UserAvatar } from '@/components/user-avatar';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -52,10 +49,10 @@ const emptyFilters: AdminUserFilters = {
 
 function paginationLabel(label: string): string {
     return label
+        .replace('&laquo; Previous', 'Previous')
+        .replace('Next &raquo;', 'Next')
         .replace('&laquo;', '‹')
-        .replace('&raquo;', '›')
-        .replace('Previous', 'Previous')
-        .replace('Next', 'Next');
+        .replace('&raquo;', '›');
 }
 
 export default function AdminUsersIndex({
@@ -120,194 +117,168 @@ export default function AdminUsersIndex({
     return (
         <>
             <Head title="Users — Administration" />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Users className="size-4" aria-hidden="true" />
-                            <span>Platform administration</span>
-                        </div>
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            Users
-                        </h1>
-                        <p className="max-w-2xl text-sm text-muted-foreground">
-                            Review account metadata, platform roles, workspace
-                            counts, and entitlement sources. Private content and
-                            visitor data are never exposed here.
-                        </p>
-                    </div>
-                    {canBroadcast && (
-                        <Button
-                            type="button"
-                            className="min-h-11 self-start"
-                            onClick={() => setBroadcastOpen(true)}
-                        >
-                            <Megaphone aria-hidden="true" />
-                            Broadcast announcement
-                        </Button>
-                    )}
-                </header>
+            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-5 pt-4 pb-10">
+                <PageHeader
+                    title="Users"
+                    description="Account status, platform roles, workspace counts, and entitlement source. Content and visitor data are never exposed here."
+                    actions={
+                        canBroadcast ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setBroadcastOpen(true)}
+                            >
+                                <Megaphone aria-hidden="true" />
+                                Broadcast announcement
+                            </Button>
+                        ) : undefined
+                    }
+                />
 
-                <section className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+                <section
+                    aria-label="User totals"
+                    className="grid grid-cols-2 gap-3 lg:grid-cols-5"
+                >
                     {[
                         ['Accounts', overview.accounts],
                         ['Administrators', overview.administrators],
                         ['Suspended', overview.suspended],
                         ['Deletion pending', overview.deletionPending],
                         ['Short links', overview.shortLinks],
-                    ].map(([label, value]) => (
-                        <Card key={String(label)}>
-                            <CardHeader className="gap-1 pb-2">
-                                <CardDescription>{label}</CardDescription>
-                                <CardTitle className="text-2xl tabular-nums">
-                                    {Number(value).toLocaleString()}
-                                </CardTitle>
-                            </CardHeader>
-                        </Card>
+                    ].map(([label, value], index, stats) => (
+                        <StatCard
+                            key={String(label)}
+                            label={String(label)}
+                            value={Number(value).toLocaleString()}
+                            className={
+                                index === stats.length - 1
+                                    ? 'col-span-2 lg:col-span-1'
+                                    : undefined
+                            }
+                        />
                     ))}
                 </section>
 
-                <Card>
-                    <CardHeader className="gap-1">
-                        <CardTitle className="flex items-center gap-2">
-                            <SlidersHorizontal
-                                className="size-4"
-                                aria-hidden="true"
-                            />
-                            Filters
-                        </CardTitle>
-                        <CardDescription>
-                            Filters are stored in the URL so links and mutation
-                            redirects preserve the current view.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form
-                            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto]"
-                            onSubmit={applyFilters}
-                        >
-                            <div className="grid gap-2">
-                                <Label htmlFor="admin-user-search">
-                                    Search
-                                </Label>
-                                <div className="relative">
-                                    <Search
-                                        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                                        aria-hidden="true"
-                                    />
-                                    <Input
-                                        id="admin-user-search"
-                                        value={filterState.q}
-                                        maxLength={100}
-                                        placeholder="Name or email"
-                                        className="pl-9"
-                                        onChange={(event) =>
-                                            setFilterState((current) => ({
-                                                ...current,
-                                                q: event.target.value,
-                                            }))
-                                        }
-                                    />
-                                </div>
-                            </div>
-                            <FilterSelect
-                                id="admin-user-status"
-                                label="Status"
-                                value={filterState.status}
-                                placeholder="Any status"
-                                onChange={(value) =>
-                                    setFilterState((current) => ({
-                                        ...current,
-                                        status: value,
-                                    }))
-                                }
-                                options={[
-                                    ['active', 'Active'],
-                                    ['suspended', 'Suspended'],
-                                    ['deletion_pending', 'Deletion pending'],
-                                ]}
-                            />
-                            <FilterSelect
-                                id="admin-user-verification"
-                                label="Verification"
-                                value={filterState.verification}
-                                placeholder="Any verification"
-                                onChange={(value) =>
-                                    setFilterState((current) => ({
-                                        ...current,
-                                        verification: value,
-                                    }))
-                                }
-                                options={[
-                                    ['verified', 'Verified'],
-                                    ['unverified', 'Unverified'],
-                                ]}
-                            />
-                            <FilterSelect
-                                id="admin-user-role"
-                                label="Role"
-                                value={filterState.role}
-                                placeholder="Any role"
-                                onChange={(value) =>
-                                    setFilterState((current) => ({
-                                        ...current,
-                                        role: value,
-                                    }))
-                                }
-                                options={[
-                                    ...roles.map(
-                                        (role) =>
-                                            [role.code, role.name] as [
-                                                string,
-                                                string,
-                                            ],
-                                    ),
-                                    ['none', 'No platform role'],
-                                ]}
-                            />
-                            <FilterSelect
-                                id="admin-user-plan"
-                                label="Plan"
-                                value={filterState.plan}
-                                placeholder="Any plan"
-                                onChange={(value) =>
-                                    setFilterState((current) => ({
-                                        ...current,
-                                        plan: value,
-                                    }))
-                                }
-                                options={plans.map(
-                                    (plan) =>
-                                        [plan.code, plan.name] as [
-                                            string,
-                                            string,
-                                        ],
-                                )}
-                            />
-                            <div className="flex items-end gap-2">
-                                <Button
-                                    type="submit"
-                                    className="min-h-11 flex-1"
-                                >
-                                    Apply
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="min-h-11"
-                                    disabled={activeFilterCount === 0}
-                                    onClick={resetFilters}
-                                >
-                                    Reset
-                                </Button>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
+                <form
+                    className="grid grid-cols-2 items-center gap-2 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-surface)] sm:flex sm:flex-wrap"
+                    onSubmit={applyFilters}
+                >
+                    <div className="relative col-span-2 min-w-0 sm:max-w-xs sm:flex-1">
+                        <Search
+                            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+                            aria-hidden="true"
+                        />
+                        <Input
+                            id="admin-user-search"
+                            value={filterState.q}
+                            maxLength={100}
+                            placeholder="Search name or email"
+                            aria-label="Search users"
+                            className="h-9 pl-8"
+                            onChange={(event) =>
+                                setFilterState((current) => ({
+                                    ...current,
+                                    q: event.target.value,
+                                }))
+                            }
+                        />
+                    </div>
+                    <FilterSelect
+                        id="admin-user-status"
+                        label="Status"
+                        value={filterState.status}
+                        placeholder="Any status"
+                        onChange={(value) =>
+                            setFilterState((current) => ({
+                                ...current,
+                                status: value,
+                            }))
+                        }
+                        options={[
+                            ['active', 'Active'],
+                            ['suspended', 'Suspended'],
+                            ['deletion_pending', 'Deletion pending'],
+                        ]}
+                    />
+                    <FilterSelect
+                        id="admin-user-verification"
+                        label="Verification"
+                        value={filterState.verification}
+                        placeholder="Any verification"
+                        onChange={(value) =>
+                            setFilterState((current) => ({
+                                ...current,
+                                verification: value,
+                            }))
+                        }
+                        options={[
+                            ['verified', 'Verified'],
+                            ['unverified', 'Unverified'],
+                        ]}
+                    />
+                    <FilterSelect
+                        id="admin-user-role"
+                        label="Role"
+                        value={filterState.role}
+                        placeholder="Any role"
+                        onChange={(value) =>
+                            setFilterState((current) => ({
+                                ...current,
+                                role: value,
+                            }))
+                        }
+                        options={[
+                            ...roles.map(
+                                (role) =>
+                                    [role.code, role.name] as [string, string],
+                            ),
+                            ['none', 'No platform role'],
+                        ]}
+                    />
+                    <FilterSelect
+                        id="admin-user-plan"
+                        label="Plan"
+                        value={filterState.plan}
+                        placeholder="Any plan"
+                        onChange={(value) =>
+                            setFilterState((current) => ({
+                                ...current,
+                                plan: value,
+                            }))
+                        }
+                        options={plans.map(
+                            (plan) =>
+                                [plan.code, plan.name] as [string, string],
+                        )}
+                    />
+                    <Button
+                        type="submit"
+                        size="sm"
+                        className="h-9 w-full sm:w-auto"
+                    >
+                        Apply
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 w-full sm:w-auto"
+                        disabled={activeFilterCount === 0}
+                        onClick={resetFilters}
+                    >
+                        Reset
+                    </Button>
+                </form>
 
-                <div className="hidden overflow-hidden rounded-lg border lg:block">
-                    <table className="w-full border-collapse text-sm">
-                        <thead className="bg-muted/50 text-left text-xs text-muted-foreground uppercase">
+                <div className="lp-table-shell hidden lg:block">
+                    <table
+                        data-table-surface={
+                            paginator.data.length > 0 ? 'populated' : undefined
+                        }
+                        className="w-full border-collapse text-sm"
+                        aria-label="Users"
+                    >
+                        <thead className="bg-surface-secondary text-left text-xs text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-3 font-medium">
                                     Account
@@ -332,12 +303,12 @@ export default function AdminUsersIndex({
                             {paginator.data.map((account) => (
                                 <tr
                                     key={account.id}
-                                    className="border-t align-top"
+                                    className="h-14 border-t border-separator"
                                 >
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-2.5">
                                         <AccountIdentity account={account} />
                                     </td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-2.5">
                                         <div className="flex flex-col items-start gap-1">
                                             <AccountStatusBadge
                                                 status={account.status}
@@ -347,38 +318,40 @@ export default function AdminUsersIndex({
                                             />
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-2.5">
                                         <RoleBadges roles={account.roles} />
                                     </td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-2.5">
                                         <p className="font-medium tabular-nums">
                                             {account.workspacesCount}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
                                             {account.personalWorkspace
-                                                ? `${account.personalWorkspace.membersCount} members`
+                                                ? `${account.personalWorkspace.membersCount} ${account.personalWorkspace.membersCount === 1 ? 'member' : 'members'}`
                                                 : 'No personal workspace'}
                                         </p>
                                     </td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-2.5">
                                         <PlanBadge plan={account.plan} />
                                     </td>
-                                    <td className="px-4 py-3 text-muted-foreground">
+                                    <td className="px-4 py-2.5 text-muted-foreground">
                                         {formatAdminDate(account.lastSeenAt)}
                                     </td>
-                                    <td className="px-4 py-3 text-right">
+                                    <td className="px-4 py-2.5 text-right">
                                         <Button
                                             asChild
-                                            size="sm"
-                                            variant="outline"
-                                            className="min-h-9"
+                                            size="icon"
+                                            variant="secondary"
+                                            className="size-8 rounded-full"
+                                            title="Open account"
                                         >
                                             <Link
                                                 href={
                                                     users.show(account.id).url
                                                 }
+                                                aria-label={`Open ${account.name}`}
                                             >
-                                                Open
+                                                <ExternalLink aria-hidden="true" />
                                             </Link>
                                         </Button>
                                     </td>
@@ -398,7 +371,7 @@ export default function AdminUsersIndex({
                         <AccountCard key={account.id} account={account} />
                     ))}
                     {paginator.data.length === 0 && (
-                        <Card>
+                        <Card variant="transparent">
                             <CardContent className="p-8 text-center text-sm text-muted-foreground">
                                 No accounts match these filters.
                             </CardContent>
@@ -420,7 +393,7 @@ export default function AdminUsersIndex({
                                 link.url === null ? (
                                     <span
                                         key={link.label}
-                                        className="rounded-md border px-3 py-2 opacity-50"
+                                        className="rounded-md border border-border px-3 py-2 text-muted-foreground/50"
                                     >
                                         {paginationLabel(link.label)}
                                     </span>
@@ -429,7 +402,7 @@ export default function AdminUsersIndex({
                                         key={link.label}
                                         href={link.url}
                                         preserveScroll
-                                        className={`min-h-9 rounded-md border px-3 py-2 ${
+                                        className={`inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2.5 ${
                                             link.active
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'hover:bg-muted'
@@ -543,25 +516,26 @@ function FilterSelect({
     onChange: (value: string | null) => void;
 }) {
     return (
-        <div className="grid gap-2">
-            <Label htmlFor={id}>{label}</Label>
-            <Select
-                value={value ?? 'any'}
-                onValueChange={(next) => onChange(next === 'any' ? null : next)}
+        <Select
+            value={value ?? 'any'}
+            onValueChange={(next) => onChange(next === 'any' ? null : next)}
+        >
+            <SelectTrigger
+                id={id}
+                aria-label={label}
+                className="h-9 w-full min-w-36 sm:w-auto"
             >
-                <SelectTrigger id={id} className="min-h-9 w-full">
-                    <SelectValue placeholder={placeholder} />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="any">{placeholder}</SelectItem>
-                    {options.map(([option, optionLabel]) => (
-                        <SelectItem key={option} value={option}>
-                            {optionLabel}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        </div>
+                <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="any">{placeholder}</SelectItem>
+                {options.map(([option, optionLabel]) => (
+                    <SelectItem key={option} value={option}>
+                        {optionLabel}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
     );
 }
 
@@ -585,23 +559,13 @@ function AccountIdentity({ account }: { account: AdminUserListItem }) {
 }
 
 function AccountAvatar({ account }: { account: AdminUserListItem }) {
-    if (account.avatarUrl) {
-        return (
-            <img
-                src={account.avatarUrl}
-                alt=""
-                className="size-9 shrink-0 rounded-full border object-cover"
-            />
-        );
-    }
-
     return (
-        <span
-            className="flex size-9 shrink-0 items-center justify-center rounded-full border bg-muted text-xs font-medium uppercase"
-            aria-hidden="true"
-        >
-            {account.name.slice(0, 2)}
-        </span>
+        <UserAvatar
+            name={account.name}
+            src={account.avatarUrl}
+            seed={account.id}
+            className="size-9 shrink-0"
+        />
     );
 }
 
@@ -633,7 +597,7 @@ function AccountCard({ account }: { account: AdminUserListItem }) {
                         <dd className="tabular-nums">
                             {account.workspacesCount}
                             {account.personalWorkspace
-                                ? ` · ${account.personalWorkspace.membersCount} members`
+                                ? ` · ${account.personalWorkspace.membersCount} ${account.personalWorkspace.membersCount === 1 ? 'member' : 'members'}`
                                 : ''}
                         </dd>
                     </div>

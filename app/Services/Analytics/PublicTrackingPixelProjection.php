@@ -6,9 +6,12 @@ use App\Models\BioPage;
 use App\Models\LinkOverlay;
 use App\Models\LinkPage;
 use App\Models\TrackingPixel;
+use App\Services\Settings\PlatformSettings;
 
 class PublicTrackingPixelProjection
 {
+    public function __construct(private readonly PlatformSettings $settings) {}
+
     /**
      * @return array{
      *     page_view: list<array{provider: string, identifier: string}>,
@@ -25,6 +28,15 @@ class PublicTrackingPixelProjection
         ];
 
         if (! $consented) {
+            return $groups;
+        }
+
+        $ga4 = $this->settings->resolved()['analytics']['ga4_measurement_id'] ?? null;
+        if (is_string($ga4) && preg_match('/\AG-[A-Z0-9]{4,20}\z/', $ga4) === 1) {
+            $groups['page_view'][] = ['provider' => 'google_analytics', 'identifier' => $ga4];
+        }
+
+        if (! (bool) ($this->settings->resolved()['links']['pixels_enabled'] ?? true)) {
             return $groups;
         }
 

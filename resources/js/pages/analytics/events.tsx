@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, ListFilter } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { AnalyticsFilterForm } from '@/components/analytics/analytics-dashboard';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,11 +43,9 @@ export default function AnalyticsEvents({
         <>
             <Head title="Analytics events" />
 
-            <section className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="Analytics events"
-                    eyebrow="Privacy-first insights"
-                    icon={ListFilter}
                     description="Consented event records for the selected window. Visitor hashes and raw IP addresses are not included."
                     actions={
                         <div className="flex flex-wrap items-center gap-2">
@@ -70,9 +68,18 @@ export default function AnalyticsEvents({
                     exportUrl={exportMethod({ query: filters }).url}
                 />
 
-                <Card>
+                <Card
+                    variant={
+                        events.data.length === 0 ? 'transparent' : 'default'
+                    }
+                >
                     <CardContent className="p-0">
-                        <div className="overflow-x-auto">
+                        <div
+                            data-table-surface={
+                                events.data.length > 0 ? 'populated' : undefined
+                            }
+                            className="overflow-x-auto rounded-md border"
+                        >
                             <table className="w-full min-w-[900px] text-left text-sm">
                                 <thead className="bg-muted/50 text-muted-foreground">
                                     <tr>

@@ -14,7 +14,10 @@ use App\Models\User;
 
 class LinkRevisionService
 {
-    public function __construct(private readonly FirstPartyDestinationGuard $destinations) {}
+    public function __construct(
+        private readonly FirstPartyDestinationGuard $destinations,
+        private readonly LinkPolicy $policy,
+    ) {}
 
     /** @var array<int, string> */
     private const SNAPSHOT_FIELDS = [
@@ -206,12 +209,20 @@ class LinkRevisionService
     private function referencesStillValid(Link $link, array $snapshot): bool
     {
         if (($snapshot['delivery_mode'] ?? null) !== 'link_page'
-            && ! $this->isExternalDestinationValid($snapshot['destination_url'] ?? null)) {
+            && ! $this->isExternalDestinationValid(
+                $snapshot['destination_url'] ?? null,
+                $snapshot['slug'] ?? null,
+                $snapshot['title'] ?? null,
+            )) {
             return false;
         }
 
         foreach ($snapshot['routing_rules'] ?? [] as $rule) {
-            if (! is_array($rule) || ! $this->isExternalDestinationValid($rule['target_url'] ?? null)) {
+            if (! is_array($rule) || ! $this->isExternalDestinationValid(
+                $rule['target_url'] ?? null,
+                $snapshot['slug'] ?? null,
+                $snapshot['title'] ?? null,
+            )) {
                 return false;
             }
         }
@@ -264,12 +275,17 @@ class LinkRevisionService
         return $pageId === null;
     }
 
-    private function isExternalDestinationValid(mixed $destination): bool
+    private function isExternalDestinationValid(mixed $destination, mixed $slug = null, mixed $title = null): bool
     {
         return is_string($destination)
             && in_array(strtolower((string) parse_url($destination, PHP_URL_SCHEME)), ['http', 'https'], true)
             && is_string(parse_url($destination, PHP_URL_HOST))
-            && ! $this->destinations->rejects($destination);
+            && ! $this->destinations->rejects($destination)
+            && $this->policy->rejection(
+                $destination,
+                is_string($slug) ? $slug : null,
+                is_string($title) ? $title : null,
+            ) === null;
     }
 
     /** @param array<int, int> $tagIds @param array<int, array<string, mixed>> $routingRules */

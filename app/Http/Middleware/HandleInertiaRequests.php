@@ -7,6 +7,7 @@ use App\Services\Accounts\GoogleConnection;
 use App\Services\Billing\WorkspaceUsage;
 use App\Services\Notifications\NotificationVisibility;
 use App\Services\Platform\PlatformAuthorization;
+use App\Services\Localization\TranslationRepository;
 use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\Request;
@@ -66,6 +67,13 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'platform' => fn (): array => app(PlatformSettings::class)->publicPayload(),
+            'locale' => fn (): array => [
+                'code' => app()->getLocale(),
+                'direction' => $request->attributes->get('locale_model')?->direction ?? 'ltr',
+            ],
+            'translations' => fn (): array => $request->attributes->get('locale_model') === null
+                ? []
+                : app(TranslationRepository::class)->dictionary($request->attributes->get('locale_model')),
             'auth' => [
                 'user' => $request->user(),
                 'isAdmin' => $request->user() !== null && app(PlatformAuthorization::class)->canAccessAdmin($request->user()),

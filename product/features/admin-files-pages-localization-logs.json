@@ -21,13 +21,13 @@
             "id": "AOPS-3",
             "text": "Database locales and JSON translations support fallback English, direction, publication, and import/export without executable language files.",
             "priority": "P1",
-            "status": "planned"
+            "status": "in_progress"
         },
         {
             "id": "AOPS-4",
             "text": "System logs contain application-owned queue, scheduler, and mail lifecycle records with filters, retention, and CSV export.",
             "priority": "P1",
-            "status": "planned"
+            "status": "verified"
         }
     ],
     "routes": [
@@ -120,6 +120,30 @@
             "description": "Managed Chromium rendered the files list, custom-page list, restricted TipTap editor, and a published public page at 1440x1000 and 390x844 without horizontal overflow or page errors. A draft was created through the editor, published, and served at /content/about-linkpilot.",
             "reference": "product/verification/parity/admin-files-desktop.png; product/verification/parity/admin-pages-desktop.png; product/verification/parity/admin-page-editor-desktop.png; product/verification/parity/admin-pages-mobile.png; product/verification/parity/admin-page-editor-mobile.png; product/verification/parity/custom-page-public-desktop.png; product/verification/parity/custom-page-public-mobile.png",
             "verifiedAt": "2026-11-12T16:22:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Localization suite passed 5 tests and 56 assertions: permission boundaries, locale creation/publication, flat translation writes, user preference over cookie and Accept-Language primary-language fallback, language-tag normalization, English fallback, RTL document direction, protected English deletion, nested-map and invalid-UTF-8 rejection, deterministic export, and audit records.",
+            "reference": "tests/Feature/Admin/LocalizationTest.php",
+            "verifiedAt": "2026-11-12T15:53:45Z"
+        },
+        {
+            "type": "test",
+            "description": "Operational logs suite passed 4 tests and 30 assertions: permission separation for read/export, level/channel/search filters, context redaction, append-only records, retention pruning, and CSV export without secrets.",
+            "reference": "tests/Feature/Admin/OperationLogsTest.php",
+            "verifiedAt": "2026-11-12T15:53:45Z"
+        },
+        {
+            "type": "test",
+            "description": "Full application suite passed 561 tests and 18,420 assertions after localization, operational logs, and legacy RBAC/billing contraction.",
+            "reference": "php -d memory_limit=1G vendor/bin/phpunit",
+            "verifiedAt": "2026-11-12T15:53:45Z"
+        },
+        {
+            "type": "browser",
+            "description": "Managed Chromium rendered /admin/localizations and /admin/logs at 1440x1000 and 390x844 with zero horizontal overflow and no page errors. A redacted operational log row was visible; the public welcome rendered French through the database dictionary and Arabic with html dir=\"rtl\".",
+            "reference": "product/verification/parity/admin-localizations-desktop.png; product/verification/parity/admin-localizations-mobile.png; product/verification/parity/admin-logs-desktop.png; product/verification/parity/admin-logs-mobile.png; product/verification/parity/welcome-fr.png; product/verification/parity/welcome-ar-rtl.png",
+            "verifiedAt": "2026-11-12T15:53:45Z"
         }
     ]
 }

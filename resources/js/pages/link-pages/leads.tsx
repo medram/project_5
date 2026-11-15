@@ -26,7 +26,7 @@ export default function LinkPageLeads({
         <>
             <Head title={`Lead responses for ${linkPage.name}`} />
 
-            <main className="flex flex-col gap-6 p-4 sm:p-6">
+            <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
                         <Button
@@ -40,7 +40,7 @@ export default function LinkPageLeads({
                                 Link page
                             </Link>
                         </Button>
-                        <h1 className="text-2xl font-semibold tracking-tight">
+                        <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
                             Lead responses
                         </h1>
                         <p className="max-w-2xl text-sm text-muted-foreground">
@@ -58,7 +58,7 @@ export default function LinkPageLeads({
                 </header>
 
                 {leads.data.length === 0 ? (
-                    <Card>
+                    <Card variant="transparent">
                         <CardContent className="py-10 text-center">
                             <h2 className="font-medium">No responses yet</h2>
                             <p className="mt-2 text-sm text-muted-foreground">

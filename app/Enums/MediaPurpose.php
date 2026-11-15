@@ -7,6 +7,7 @@ enum MediaPurpose: string
     case Image = 'image';
     case File = 'file';
     case AccountAvatar = 'account_avatar';
+    case PlatformAsset = 'platform_asset';
 
     public function label(): string
     {
@@ -14,11 +15,12 @@ enum MediaPurpose: string
             self::Image => 'Image',
             self::File => 'PDF file',
             self::AccountAvatar => 'Account avatar',
+            self::PlatformAsset => 'Platform asset',
         };
     }
 
     public function retainsIndefinitely(): bool
     {
-        return $this === self::AccountAvatar;
+        return in_array($this, [self::AccountAvatar, self::PlatformAsset], true);
     }
 }

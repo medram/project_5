@@ -1,8 +1,10 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, BarChart3, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { ChartLegend } from '@/components/admin/insights/chart-legend';
 import { DimensionPanel } from '@/components/admin/insights/dimension-panel';
 import { InsightDailyChart } from '@/components/admin/insights/daily-chart';
 import { InsightsRangePicker } from '@/components/admin/insights/range-picker';
+import { StatCard } from '@/components/dashboard/stat-card';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -12,8 +14,10 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { countryName } from '@/lib/countries';
 import insights from '@/routes/admin/insights';
 import type {
+    AdminDimension,
     AdminVisitorDaily,
     AdminVisitorInsightsPageProps,
 } from '@/types/admin-insights';
@@ -28,6 +32,23 @@ const visitorSeries = [
     { key: 'pageViews', label: 'Page views', color: 'var(--chart-3)' },
 ];
 
+function collapseEventSeries(rows: AdminDimension[]): AdminDimension[] {
+    const visible = rows.slice(0, 8);
+    const hidden = rows.slice(8);
+
+    if (hidden.length === 0) {
+        return visible;
+    }
+
+    return [
+        ...visible,
+        {
+            name: 'Other events',
+            count: hidden.reduce((total, row) => total + row.count, 0),
+        },
+    ];
+}
+
 function number(value: number): string {
     return value.toLocaleString();
 }
@@ -35,10 +56,24 @@ function number(value: number): string {
 export default function AdminVisitorInsights({
     insights: data,
 }: AdminVisitorInsightsPageProps) {
+    const resolvedCountryEvents = data.dimensions.countries.reduce(
+        (total, row) => total + row.count,
+        0,
+    );
+    const unresolvedCountryEvents = Math.max(
+        data.totals.events - resolvedCountryEvents,
+        0,
+    );
+    const countryFooter =
+        unresolvedCountryEvents > 0
+            ? `${unresolvedCountryEvents.toLocaleString()} of ${data.totals.events.toLocaleString()} events have no resolved country.`
+            : undefined;
+    const eventRows = collapseEventSeries(data.eventSeries);
+
     return (
         <>
             <Head title="Visitor insights — Administration" />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <header className="flex flex-col gap-3">
                     <Button
                         asChild
@@ -52,11 +87,7 @@ export default function AdminVisitorInsights({
                         </Link>
                     </Button>
                     <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <BarChart3 className="size-4" aria-hidden="true" />
-                            <span>Privacy-safe visitor totals</span>
-                        </div>
-                        <h1 className="text-2xl font-semibold tracking-tight">
+                        <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
                             Visitor insights
                         </h1>
                         <p className="max-w-3xl text-sm text-muted-foreground">
@@ -72,24 +103,31 @@ export default function AdminVisitorInsights({
                     url={insights.visitors().url}
                 />
 
-                <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-                    <VisitorStat
+                <section
+                    aria-label="Visitor totals"
+                    className="grid grid-cols-2 gap-3 xl:grid-cols-5"
+                >
+                    <StatCard
                         label="Tracked events"
                         value={number(data.totals.events)}
+                        sparkline={data.daily.map((day) => day.events)}
+                        sparklineColor="var(--chart-2)"
                     />
-                    <VisitorStat
+                    <StatCard
                         label="Unique visitors"
                         value={number(data.totals.uniqueVisitors)}
+                        sparkline={data.daily.map((day) => day.uniqueVisitors)}
+                        sparklineColor="var(--chart-4)"
                     />
-                    <VisitorStat
+                    <StatCard
                         label="Page views"
                         value={number(data.totals.pageViews)}
                     />
-                    <VisitorStat
+                    <StatCard
                         label="Clicks"
                         value={number(data.totals.clicks)}
                     />
-                    <VisitorStat
+                    <StatCard
                         label="QR scans"
                         value={number(data.totals.scans)}
                     />
@@ -97,7 +135,7 @@ export default function AdminVisitorInsights({
 
                 <Card className="min-w-0">
                     <CardHeader className="gap-1">
-                        <CardTitle>Daily aggregate series</CardTitle>
+                        <CardTitle as="h2">Daily aggregate series</CardTitle>
                         <CardDescription>
                             Unique visitors are counted per day from keyed
                             hashes and only the aggregate count leaves the
@@ -105,6 +143,14 @@ export default function AdminVisitorInsights({
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="grid min-w-0 gap-4">
+                        <ChartLegend
+                            series={visitorSeries}
+                            values={{
+                                events: data.totals.events,
+                                uniqueVisitors: data.totals.uniqueVisitors,
+                                pageViews: data.totals.pageViews,
+                            }}
+                        />
                         <InsightDailyChart
                             data={data.daily}
                             series={visitorSeries}
@@ -119,55 +165,23 @@ export default function AdminVisitorInsights({
                     </CardContent>
                 </Card>
 
-                <section className="grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-                    <Card>
-                        <CardHeader className="gap-1">
-                            <CardTitle>Event series</CardTitle>
-                            <CardDescription>
-                                Aggregate event names only; no workspace,
-                                resource, or destination identifiers.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {data.eventSeries.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">
-                                    No consenting events in this window.
-                                </p>
-                            ) : (
-                                <table className="w-full text-sm">
-                                    <thead className="text-left text-xs text-muted-foreground uppercase">
-                                        <tr>
-                                            <th className="py-2 font-medium">
-                                                Event
-                                            </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Count
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {data.eventSeries.map((event) => (
-                                            <tr
-                                                key={event.name}
-                                                className="border-t"
-                                            >
-                                                <td className="py-2">
-                                                    {event.name}
-                                                </td>
-                                                <td className="py-2 text-right tabular-nums">
-                                                    {event.count.toLocaleString()}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </CardContent>
-                    </Card>
+                <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+                    <DimensionPanel
+                        title="Event series"
+                        description="Top event names by volume. The remainder is grouped as Other events; no workspace, resource, or destination identifiers."
+                        rows={eventRows}
+                        emptyMessage="No consenting events in this window."
+                        cardVariant={
+                            eventRows.length === 0 ? 'transparent' : 'default'
+                        }
+                    />
 
                     <Card>
                         <CardHeader className="gap-1">
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle
+                                className="flex items-center gap-2"
+                                as="h2"
+                            >
                                 <ShieldCheck
                                     className="size-4"
                                     aria-hidden="true"
@@ -183,6 +197,10 @@ export default function AdminVisitorInsights({
                             <p>
                                 Buckets with fewer than{' '}
                                 {data.kAnonymityThreshold} events become Other.
+                            </p>
+                            <p>
+                                Dimension shares cover events with a recorded
+                                value for that dimension.
                             </p>
                             <Separator />
                             <p>
@@ -201,9 +219,11 @@ export default function AdminVisitorInsights({
                 <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     <DimensionPanel
                         title="Countries"
-                        description="Coarse ISO country buckets from consented events."
+                        description="Country buckets from consented events. Shares cover events with a resolved country."
                         rows={data.dimensions.countries}
                         threshold={data.kAnonymityThreshold}
+                        nameFormatter={countryName}
+                        footer={countryFooter}
                     />
                     <DimensionPanel
                         title="Browsers"
@@ -222,6 +242,8 @@ export default function AdminVisitorInsights({
                         description="Mobile, desktop, or other coarse classes."
                         rows={data.dimensions.devices}
                         threshold={data.kAnonymityThreshold}
+                        visual="donut"
+                        totalLabel="events"
                     />
                     <DimensionPanel
                         title="Referrers"
@@ -235,22 +257,14 @@ export default function AdminVisitorInsights({
     );
 }
 
-function VisitorStat({ label, value }: { label: string; value: string }) {
-    return (
-        <Card>
-            <CardHeader className="gap-1">
-                <CardDescription>{label}</CardDescription>
-                <CardTitle className="text-2xl tabular-nums">{value}</CardTitle>
-            </CardHeader>
-        </Card>
-    );
-}
-
 function ExactVisitorTable({ data }: { data: AdminVisitorDaily[] }) {
     return (
         <div className="mt-2 max-h-64 overflow-auto rounded-md border">
-            <table className="w-full text-xs">
-                <thead className="sticky top-0 bg-muted text-left uppercase">
+            <table
+                data-table-surface={data.length > 0 ? 'populated' : undefined}
+                className="w-full text-xs"
+            >
+                <thead className="sticky top-0 bg-muted text-left text-xs text-muted-foreground">
                     <tr>
                         <th className="px-2 py-1 font-medium">Date</th>
                         <th className="px-2 py-1 text-right font-medium">

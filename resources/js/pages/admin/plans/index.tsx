@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
-import { CreditCard, LockKeyhole, ShieldAlert } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { LockKeyhole, Save } from 'lucide-react';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -20,10 +20,13 @@ import type {
 } from '@/types/admin-billing';
 
 function money(cents: number, currency: string): string {
+    const amount = cents / 100;
+
     return new Intl.NumberFormat(undefined, {
         style: 'currency',
         currency: currency.toUpperCase(),
-    }).format(cents / 100);
+        maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    }).format(amount);
 }
 
 function limitLabel(value: number | null): string {
@@ -37,39 +40,27 @@ export default function AdminPlansIndex({
     return (
         <>
             <Head title="Plans — Administration" />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <header className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CreditCard className="size-4" aria-hidden="true" />
-                        <span>Platform administration</span>
-                    </div>
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Plans
-                    </h1>
-                    <p className="max-w-3xl text-sm text-muted-foreground">
-                        Exact catalog prices and quotas are locked to the
-                        product contract in this release. Administrators may
-                        edit display metadata, active state, and Stripe price
-                        mappings only.
-                    </p>
-                </header>
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
+                <PageHeader
+                    title="Plans"
+                    description="Catalog prices and quotas are fixed in this release. Display metadata, active state, and Stripe price mappings are editable."
+                />
 
-                <div className="flex flex-wrap items-center gap-2 rounded-lg border p-4 text-sm">
+                <div className="rounded-xl border bg-card px-4 py-3 text-sm">
                     {readiness.checkoutReady ? (
-                        <Badge variant="outline">Stripe checkout ready</Badge>
+                        <p className="text-muted-foreground">
+                            Stripe checkout is configured
+                        </p>
                     ) : (
-                        <>
-                            <ShieldAlert
-                                className="size-4 text-amber-600"
-                                aria-hidden="true"
-                            />
-                            <span>
-                                Provider checkout is disabled until configured:
-                            </span>
-                            <code className="text-xs">
+                        <details>
+                            <summary className="cursor-pointer text-muted-foreground">
+                                Checkout is disabled — provider keys are not
+                                configured
+                            </summary>
+                            <p className="mt-2 font-mono text-xs text-muted-foreground">
                                 {readiness.missing.join(', ')}
-                            </code>
-                        </>
+                            </p>
+                        </details>
                     )}
                 </div>
 
@@ -105,15 +96,15 @@ function PlanEditor({ plan }: { plan: AdminPlanRecord }) {
                             {plan.currency.toUpperCase()}
                         </CardDescription>
                     </div>
-                    <div className="flex flex-wrap gap-1">
-                        <Badge
-                            variant={plan.isActive ? 'secondary' : 'outline'}
-                        >
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                            <span
+                                aria-hidden="true"
+                                className={`size-1.5 rounded-full ${plan.isActive ? 'bg-success' : 'bg-muted-foreground/50'}`}
+                            />
                             {plan.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                        {plan.featured && (
-                            <Badge variant="outline">Featured</Badge>
-                        )}
+                        </span>
+                        {plan.featured && <span>Featured</span>}
                     </div>
                 </div>
             </CardHeader>
@@ -286,10 +277,24 @@ function PlanEditor({ plan }: { plan: AdminPlanRecord }) {
                         <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted-foreground sm:grid-cols-3">
                             {Object.entries(plan.limits).map(([key, value]) => (
                                 <div key={key}>
-                                    <span className="capitalize">
-                                        {key.replaceAll('_', ' ')}
+                                    <span>
+                                        {
+                                            {
+                                                links: 'Short links',
+                                                folders: 'Folders',
+                                                qr_campaigns: 'QR campaigns',
+                                                bio_pages: 'Bio pages',
+                                                domains: 'Domains',
+                                                pixels: 'Pixels',
+                                                members: 'Members',
+                                                webhooks: 'Webhooks',
+                                                link_pages: 'Link pages',
+                                                api_keys: 'API keys',
+                                                storage_bytes: 'Storage',
+                                            }[key as keyof typeof plan.limits]
+                                        }
                                     </span>
-                                    <span className="block font-medium text-foreground">
+                                    <span className="block font-medium text-foreground tabular-nums">
                                         {value === null
                                             ? 'Unlimited'
                                             : key === 'storage_bytes'
@@ -303,9 +308,10 @@ function PlanEditor({ plan }: { plan: AdminPlanRecord }) {
 
                     <Button
                         type="submit"
-                        className="min-h-11 w-full sm:w-fit"
+                        className="w-full sm:w-fit"
                         disabled={form.processing}
                     >
+                        <Save data-icon="inline-start" />
                         {form.processing ? 'Saving…' : 'Save plan'}
                     </Button>
                 </form>

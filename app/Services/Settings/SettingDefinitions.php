@@ -3,6 +3,7 @@
 namespace App\Services\Settings;
 
 use App\Models\CustomPage;
+use App\Rules\PlatformAssetRule;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -48,6 +49,14 @@ class SettingDefinitions
 
         /** @var array<string, array<string, mixed>> $fields */
         $fields = $definition['fields'];
+        /** @var array<string, string> $controls */
+        $controls = config('platform-settings.controls', []);
+
+        foreach ($fields as &$field) {
+            $type = (string) ($field['type'] ?? 'string');
+            $field['control'] ??= $controls[$type] ?? 'input';
+        }
+        unset($field);
 
         return $fields;
     }
@@ -73,13 +82,22 @@ class SettingDefinitions
         }
 
         foreach ($fields as $key => $field) {
-            if (($field['env'] ?? null) !== null && config((string) $field['env']) !== null) {
+            if (! array_key_exists($key, $values)) {
+                continue;
+            }
+
+            if (($field['secret'] ?? false) === true
+                && ($values[$key] === null || (is_string($values[$key]) && trim($values[$key]) === ''))) {
                 unset($values[$key]);
 
                 continue;
             }
 
             $rules = $field['rules'] ?? [];
+
+            if (($field['asset'] ?? false) === true) {
+                $rules[] = new PlatformAssetRule;
+            }
 
             if (($field['type'] ?? null) === 'list') {
                 $fullKey = 'values.'.$key;
@@ -128,10 +146,6 @@ class SettingDefinitions
                 continue;
             }
 
-            if (! array_key_exists($key, $values)) {
-                $values[$key] = $field['default'] ?? null;
-            }
-
             $fullKey = 'values.'.$key;
             $validator = Validator::make(
                 ['values' => [$key => $values[$key]]],
@@ -153,7 +167,73 @@ class SettingDefinitions
             }
         }
 
+        if ($section === 'uploading' && isset($values['disk'])) {
+            $diskName = (string) $values['disk'];
+            $disk = config('filesystems.disks.'.$diskName);
+            $driver = is_array($disk) ? ($disk['driver'] ?? null) : null;
+            $visibility = is_array($disk) ? ($disk['visibility'] ?? null) : null;
+            $root = is_array($disk) ? ($disk['root'] ?? null) : null;
+            $publicRoot = is_string($root)
+                && realpath($root) !== false
+                && str_starts_with((string) realpath($root), (string) realpath(public_path()));
+
+            if (! is_array($disk) || ! in_array($driver, ['local', 's3'], true) || $visibility === 'public' || $publicRoot) {
+                throw ValidationException::withMessages([
+                    'values.disk' => 'Choose a configured private storage disk.',
+                ]);
+            }
+        }
+
         return $values;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    public function assertCrossField(string $section, array $values): void
+    {
+        if ($section === 'email' && ($values['mailer'] ?? null) === 'smtp') {
+            $errors = [];
+
+            if (! is_string($values['smtp_host'] ?? null) || trim((string) $values['smtp_host']) === '') {
+                $errors['values.smtp_host'] = 'SMTP host is required.';
+            }
+
+            $hasUsername = is_string($values['smtp_username'] ?? null) && $values['smtp_username'] !== '';
+            $hasPassword = is_string($values['smtp_password'] ?? null) && $values['smtp_password'] !== '';
+
+            if ($hasUsername !== $hasPassword) {
+                $errors['values.smtp_password'] = 'SMTP username and password must be provided together.';
+            }
+
+            if ($errors !== []) {
+                throw ValidationException::withMessages($errors);
+            }
+        }
+
+        if ($section === 'captcha'
+            && ($values['provider'] ?? 'none') === 'turnstile'
+            && (bool) ($values['on_registration'] ?? false)) {
+            if (! is_string($values['site_key'] ?? null) || trim($values['site_key']) === '') {
+                throw ValidationException::withMessages([
+                    'values.site_key' => 'A Turnstile site key is required when registration protection is enabled.',
+                ]);
+            }
+
+            if (! is_string($values['secret'] ?? null) || trim($values['secret']) === '') {
+                throw ValidationException::withMessages([
+                    'values.secret' => 'A Turnstile secret is required when registration protection is enabled.',
+                ]);
+            }
+        }
+
+        if ($section === 'system'
+            && isset($values['webhook_connect_timeout_seconds'], $values['webhook_timeout_seconds'])
+            && (int) $values['webhook_timeout_seconds'] < (int) $values['webhook_connect_timeout_seconds']) {
+            throw ValidationException::withMessages([
+                'values.webhook_timeout_seconds' => 'The response timeout must not be shorter than the connect timeout.',
+            ]);
+        }
     }
 
     public function isSecret(string $section, string $key): bool

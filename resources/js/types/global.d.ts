@@ -7,11 +7,19 @@ declare module 'react' {
     }
 }
 
+declare global {
+    interface Window {
+        adsbygoogle?: unknown[];
+    }
+}
+
 declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
             platform?: PlatformBranding;
+            locale: { code: string; direction: string };
+            translations: Record<string, string>;
             auth: Auth;
             notificationUnreadCount: number;
             notificationPreview: NotificationPreview[];

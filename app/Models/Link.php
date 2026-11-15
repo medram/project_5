@@ -181,9 +181,7 @@ class Link extends Model
 
     public function routingRules(): HasMany
     {
-        return $this->hasMany(LinkRoutingRule::class)
-            ->where('workspace_id', $this->workspace_id)
-            ->orderBy('position');
+        return $this->hasMany(LinkRoutingRule::class)->orderBy('position');
     }
 
     public function qrCode(): HasOne

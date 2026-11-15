@@ -21,6 +21,11 @@ export type LinkTagOption = {
     color: string | null;
 };
 
+export type CountryOption = {
+    code: string;
+    name: string;
+};
+
 export type LinkRoutingRule = {
     id: number;
     workspace_id: number;
@@ -104,6 +109,7 @@ export type LinkIndexProps = {
     linkOverlays: LinkOverlayOption[];
     linkPages: LinkPageOption[];
     tagOptions: LinkTagOption[];
+    countries: CountryOption[];
     canManageApprovals: boolean;
     filters: {
         search: string;

@@ -13,3 +13,4 @@ Schedule::command('linkpilot:prune-analytics')->daily();
 Schedule::command('linkpilot:prune-content-media')->daily();
 Schedule::command('linkpilot:prune-link-page-leads')->daily();
 Schedule::command('linkpilot:purge-deleted-accounts')->daily();
+Schedule::command('linkpilot:prune-operation-logs')->daily();

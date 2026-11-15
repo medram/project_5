@@ -1,8 +1,25 @@
-import { router, useForm } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { router, useForm, usePage } from '@inertiajs/react';
+import {
+    ArrowDown,
+    ArrowUp,
+    AtSign,
+    Code2,
+    Eye,
+    EyeOff,
+    Image as ImageIcon,
+    Link2,
+    MoreHorizontal,
+    Palette,
+    Pencil,
+    Pin,
+    Plus,
+    Trash2,
+    Type as TypeIcon,
+} from 'lucide-react';
+import { type FormEvent, useEffect, useId, useState } from 'react';
+import { AppearanceEditor } from '@/components/bio-pages/appearance-editor';
+import { BioPageInsightsPanel } from '@/components/bio-pages/insights-panel';
 import { LivePreview } from '@/components/bio-pages/live-preview';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -13,9 +30,28 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FieldError } from '@/components/ui/field';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
     insights as bioPageInsightsRoute,
     update as updateBioPage,
@@ -31,6 +67,7 @@ import {
     update as updateBioBlock,
 } from '@/routes/bio-pages/blocks';
 import { reorder as reorderBioContent } from '@/routes/bio-pages/content';
+import { cn } from '@/lib/utils';
 import type {
     BioContentBlockPayload,
     BioLinkPayload,
@@ -73,6 +110,52 @@ const initialBlock = (): BlockForm => ({
     ends_at: '',
     image: null,
 });
+
+function ItemTypeIcon({ type }: { type: BioPageItem['type'] }) {
+    switch (type) {
+        case 'link':
+            return <Link2 aria-hidden="true" className="size-4" />;
+        case 'text':
+            return <TypeIcon aria-hidden="true" className="size-4" />;
+        case 'image':
+            return <ImageIcon aria-hidden="true" className="size-4" />;
+        case 'social':
+            return <AtSign aria-hidden="true" className="size-4" />;
+        case 'embed':
+            return <Code2 aria-hidden="true" className="size-4" />;
+    }
+}
+
+function compactUrl(value: string) {
+    return value.replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
+
+function itemSummary(item: BioPageItem) {
+    switch (item.type) {
+        case 'link':
+            return { title: item.title, meta: compactUrl(item.url) };
+        case 'text':
+            return {
+                title: item.text.trim() || 'Text block',
+                meta: 'Text block',
+            };
+        case 'image':
+            return {
+                title: item.altText.trim() || 'Image block',
+                meta: 'Image block',
+            };
+        case 'social':
+            return {
+                title: item.identifier || 'Social block',
+                meta: `Social block · ${item.provider}`,
+            };
+        case 'embed':
+            return {
+                title: item.identifier || 'Embed block',
+                meta: `Embed block · ${item.provider}`,
+            };
+    }
+}
 
 function localDate(value: string | null) {
     if (!value) return '';
@@ -125,9 +208,9 @@ function scheduleFields(
             </div>
             <label className="grid gap-1 text-sm">
                 Starts at
-                <input
+                <Input
                     aria-invalid={Boolean(errors.starts_at)}
-                    className="h-10 rounded-md border bg-background px-3"
+                    className="h-10"
                     type="datetime-local"
                     value={localDate(value.starts_at || null)}
                     onChange={(event) =>
@@ -140,9 +223,9 @@ function scheduleFields(
             </label>
             <label className="grid gap-1 text-sm">
                 Ends at
-                <input
+                <Input
                     aria-invalid={Boolean(errors.ends_at)}
-                    className="h-10 rounded-md border bg-background px-3"
+                    className="h-10"
                     type="datetime-local"
                     value={localDate(value.ends_at || null)}
                     onChange={(event) =>
@@ -165,8 +248,23 @@ function BlockFormEditor({
     block?: BioContentBlockPayload;
     onClose: () => void;
 }) {
+    const fieldPrefix = useId();
+    const platform = usePage().props.platform;
+    const allowedBlocks: string[] = platform?.availableBlocks ?? [
+        'link',
+        'text',
+        'image',
+        'social',
+        'embed',
+    ];
+    const blockOptions = (['text', 'image', 'social', 'embed'] as const).filter(
+        (option) => allowedBlocks.includes(option) || block?.type === option,
+    );
+    const initialType: BlockForm['type'] =
+        block?.type ?? blockOptions[0] ?? 'text';
     const [value, setValue] = useState<BlockForm>(() => ({
         ...initialBlock(),
+        type: initialType,
         ...(block
             ? {
                   type: block.type,
@@ -259,16 +357,16 @@ function BlockFormEditor({
     return (
         <form
             onSubmit={submit}
-            className="grid gap-3 rounded-lg border bg-muted/20 p-4"
+            className="grid gap-3 rounded-xl border bg-surface-secondary/40 p-4"
         >
-            <label className="grid gap-1 text-sm">
-                Content type
-                <select
-                    aria-invalid={Boolean(validationErrors.type)}
-                    className="h-11 rounded-md border bg-background px-3"
+            <Field data-invalid={Boolean(validationErrors.type)}>
+                <FieldLabel htmlFor={`${fieldPrefix}-content-type`}>
+                    Content type
+                </FieldLabel>
+                <Select
                     value={value.type}
-                    onChange={(event) => {
-                        const type = event.target.value as BlockForm['type'];
+                    onValueChange={(selectedType) => {
+                        const type = selectedType as BlockForm['type'];
                         setValidationErrors({});
                         setValue((current) => ({
                             ...current,
@@ -279,22 +377,39 @@ function BlockFormEditor({
                         }));
                     }}
                 >
-                    {['text', 'image', 'social', 'embed'].map((option) => (
-                        <option key={option}>{option}</option>
-                    ))}
-                </select>
+                    <SelectTrigger
+                        id={`${fieldPrefix}-content-type`}
+                        aria-invalid={Boolean(validationErrors.type)}
+                        className="h-11 w-full"
+                    >
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {blockOptions.map((option) => (
+                            <SelectItem key={option} value={option}>
+                                {option}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
                 {validationErrors.type && (
                     <FieldError role="alert">
                         {validationErrors.type}
                     </FieldError>
                 )}
-            </label>
+            </Field>
             {value.type === 'text' && (
-                <label className="grid gap-1 text-sm">
-                    Text
-                    <textarea
+                <Field
+                    className="gap-1"
+                    data-invalid={Boolean(validationErrors.text)}
+                >
+                    <FieldLabel htmlFor={`${fieldPrefix}-text`}>
+                        Text
+                    </FieldLabel>
+                    <Textarea
+                        id={`${fieldPrefix}-text`}
                         aria-invalid={Boolean(validationErrors.text)}
-                        className="min-h-24 rounded-md border bg-background p-3"
+                        className="min-h-24 p-3"
                         maxLength={5000}
                         value={value.text}
                         onChange={(event) => set('text', event.target.value)}
@@ -304,13 +419,16 @@ function BlockFormEditor({
                             {validationErrors.text}
                         </FieldError>
                     )}
-                </label>
+                </Field>
             )}
             {value.type === 'image' && (
                 <>
-                    <label className="grid gap-1 text-sm">
-                        Choose image
-                        <input
+                    <Field data-invalid={Boolean(validationErrors.image)}>
+                        <FieldLabel htmlFor={`${fieldPrefix}-image`}>
+                            Choose image
+                        </FieldLabel>
+                        <Input
+                            id={`${fieldPrefix}-image`}
                             aria-invalid={Boolean(validationErrors.image)}
                             type="file"
                             accept="image/*"
@@ -323,7 +441,7 @@ function BlockFormEditor({
                                 {validationErrors.image}
                             </FieldError>
                         )}
-                    </label>
+                    </Field>
                     <label className="grid gap-1 text-sm">
                         Alt text
                         <Input
@@ -344,37 +462,53 @@ function BlockFormEditor({
             )}
             {(value.type === 'social' || value.type === 'embed') && (
                 <>
-                    <label className="grid gap-1 text-sm">
-                        Provider
-                        <select
-                            aria-invalid={Boolean(validationErrors.provider)}
-                            className="h-11 rounded-md border bg-background px-3"
+                    <Field
+                        className="gap-1"
+                        data-invalid={Boolean(validationErrors.provider)}
+                    >
+                        <FieldLabel htmlFor={`${fieldPrefix}-provider`}>
+                            Provider
+                        </FieldLabel>
+                        <Select
                             value={value.provider}
-                            onChange={(event) =>
-                                set('provider', event.target.value)
+                            onValueChange={(provider) =>
+                                set('provider', provider)
                             }
                         >
-                            {(value.type === 'social'
-                                ? [
-                                      'instagram',
-                                      'x',
-                                      'tiktok',
-                                      'youtube',
-                                      'linkedin',
-                                      'github',
-                                  ]
-                                : [
-                                      'youtube',
-                                      'soundcloud',
-                                      'vimeo',
-                                      'spotify',
-                                      'twitch',
-                                      'tiktok',
-                                  ]
-                            ).map((provider) => (
-                                <option key={provider}>{provider}</option>
-                            ))}
-                        </select>
+                            <SelectTrigger
+                                id={`${fieldPrefix}-provider`}
+                                aria-invalid={Boolean(
+                                    validationErrors.provider,
+                                )}
+                                className="h-11 w-full"
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {(value.type === 'social'
+                                    ? [
+                                          'instagram',
+                                          'x',
+                                          'tiktok',
+                                          'youtube',
+                                          'linkedin',
+                                          'github',
+                                      ]
+                                    : [
+                                          'youtube',
+                                          'soundcloud',
+                                          'vimeo',
+                                          'spotify',
+                                          'twitch',
+                                          'tiktok',
+                                      ]
+                                ).map((provider) => (
+                                    <SelectItem key={provider} value={provider}>
+                                        {provider}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         {validationErrors.provider && (
                             <FieldError role="alert">
                                 {validationErrors.provider}
@@ -389,7 +523,7 @@ function BlockFormEditor({
                                     {validationErrors.provider_type}
                                 </FieldError>
                             )}
-                    </label>
+                    </Field>
                     <label className="grid gap-1 text-sm">
                         {value.type === 'social' ? 'Handle' : 'Content ID'}
                         <Input
@@ -407,34 +541,52 @@ function BlockFormEditor({
                         )}
                     </label>
                     {value.type === 'embed' && value.provider === 'spotify' && (
-                        <label className="grid gap-1 text-sm">
-                            Spotify content type
-                            <select
-                                aria-invalid={Boolean(
-                                    validationErrors.provider_type,
-                                )}
-                                className="h-11 rounded-md border bg-background px-3"
+                        <Field
+                            className="gap-1"
+                            data-invalid={Boolean(
+                                validationErrors.provider_type,
+                            )}
+                        >
+                            <FieldLabel
+                                htmlFor={`${fieldPrefix}-provider-type`}
+                            >
+                                Spotify content type
+                            </FieldLabel>
+                            <Select
                                 value={value.provider_type}
-                                onChange={(event) =>
-                                    set('provider_type', event.target.value)
+                                onValueChange={(providerType) =>
+                                    set('provider_type', providerType)
                                 }
                             >
-                                {[
-                                    'track',
-                                    'album',
-                                    'playlist',
-                                    'episode',
-                                    'show',
-                                ].map((type) => (
-                                    <option key={type}>{type}</option>
-                                ))}
-                            </select>
+                                <SelectTrigger
+                                    id={`${fieldPrefix}-provider-type`}
+                                    aria-invalid={Boolean(
+                                        validationErrors.provider_type,
+                                    )}
+                                    className="h-11 w-full"
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {[
+                                        'track',
+                                        'album',
+                                        'playlist',
+                                        'episode',
+                                        'show',
+                                    ].map((type) => (
+                                        <SelectItem key={type} value={type}>
+                                            {type}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             {validationErrors.provider_type && (
                                 <FieldError role="alert">
                                     {validationErrors.provider_type}
                                 </FieldError>
                             )}
-                        </label>
+                        </Field>
                     )}
                 </>
             )}
@@ -502,7 +654,10 @@ function LinkForm({
         else router.post(storeBioLink(page.id).url, data, options);
     }
     return (
-        <form onSubmit={submit} className="grid gap-3 rounded-lg border p-4">
+        <form
+            onSubmit={submit}
+            className="grid gap-3 rounded-xl border bg-surface-secondary/40 p-4"
+        >
             <label className="grid gap-1 text-sm">
                 Button label
                 <Input
@@ -571,6 +726,16 @@ export function BioPageEditor({
     insights,
 }: BioPageEditorProps) {
     const page = toBioPage(payload);
+    const platform = usePage().props.platform;
+    const linkAllowed = (
+        platform?.availableBlocks ?? [
+            'link',
+            'text',
+            'image',
+            'social',
+            'embed',
+        ]
+    ).includes('link');
     const [tab, setTab] = useState<'content' | 'appearance' | 'insights'>(
         insights ? 'insights' : 'content',
     );
@@ -583,6 +748,10 @@ export function BioPageEditor({
         is_published: page.isPublished,
         appearance: page.appearance,
     });
+    useEffect(() => {
+        form.setData('is_published', page.isPublished);
+        form.setDefaults('is_published', page.isPublished);
+    }, [form.setData, form.setDefaults, page.isPublished]);
     const items: BioPageItem[] = [
         ...bioLinks.map((link) => ({
             type: 'link' as const,
@@ -635,7 +804,14 @@ export function BioPageEditor({
         items,
     };
     return (
-        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,28rem)] xl:items-start">
+        <div
+            className={cn(
+                'grid min-w-0 gap-6 xl:items-start',
+                tab === 'insights'
+                    ? 'xl:grid-cols-1'
+                    : 'xl:grid-cols-[minmax(0,1fr)_minmax(20rem,28rem)]',
+            )}
+        >
             <div className="min-w-0">
                 <div
                     className="mb-5 flex gap-1 border-b"
@@ -649,7 +825,12 @@ export function BioPageEditor({
                                 type="button"
                                 role="tab"
                                 aria-selected={tab === choice}
-                                className="min-h-11 border-b-2 px-4 text-sm font-medium capitalize focus-visible:outline-2 focus-visible:outline-ring"
+                                className={cn(
+                                    'min-h-11 border-b-2 px-4 text-sm font-medium capitalize transition-colors focus-visible:outline-2 focus-visible:outline-ring',
+                                    tab === choice
+                                        ? 'border-primary text-foreground'
+                                        : 'border-transparent text-muted-foreground hover:text-foreground',
+                                )}
                                 onClick={() => {
                                     setTab(choice);
                                     if (choice === 'insights' && !insights) {
@@ -673,7 +854,19 @@ export function BioPageEditor({
                     <form onSubmit={save}>
                         <Card className="overflow-hidden">
                             <CardHeader>
-                                <CardTitle>
+                                <CardTitle
+                                    className={
+                                        tab === 'appearance'
+                                            ? 'flex items-center gap-2'
+                                            : undefined
+                                    }
+                                >
+                                    {tab === 'appearance' && (
+                                        <Palette
+                                            className="size-4 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                    )}
                                     {tab === 'content'
                                         ? 'Your page'
                                         : 'Appearance'}
@@ -681,7 +874,7 @@ export function BioPageEditor({
                                 <CardDescription>
                                     {tab === 'content'
                                         ? 'Set your profile details and publication state.'
-                                        : 'Choose the colors and type that fit your page.'}
+                                        : 'Style the page, typography, accent, and background. The preview updates as you choose.'}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="grid gap-4">
@@ -771,542 +964,491 @@ export function BioPageEditor({
                                         </label>
                                     </>
                                 ) : (
-                                    (
-                                        [
-                                            'theme',
-                                            'typography',
-                                            'color',
-                                            'background',
-                                        ] as const
-                                    ).map((key) => {
-                                        const options =
-                                            key === 'theme'
-                                                ? ['light', 'dark', 'soft']
-                                                : key === 'typography'
-                                                  ? ['sans', 'serif']
-                                                  : key === 'color'
-                                                    ? [
-                                                          'blue',
-                                                          'violet',
-                                                          'green',
-                                                          'amber',
-                                                          'rose',
-                                                      ]
-                                                    : [
-                                                          'plain',
-                                                          'sand',
-                                                          'lavender',
-                                                          'midnight',
-                                                      ];
-                                        return (
-                                            <label
-                                                key={key}
-                                                className="grid gap-1 text-sm capitalize"
-                                            >
-                                                {key}
-                                                <select
-                                                    className="h-11 rounded-md border bg-background px-3"
-                                                    value={
-                                                        form.data.appearance[
-                                                            key
-                                                        ]
-                                                    }
-                                                    onChange={(event) =>
-                                                        form.setData(
-                                                            'appearance',
-                                                            {
-                                                                ...form.data
-                                                                    .appearance,
-                                                                [key]: event
-                                                                    .target
-                                                                    .value,
-                                                            } as BioPage['appearance'],
-                                                        )
-                                                    }
-                                                >
-                                                    {options.map((option) => (
-                                                        <option key={option}>
-                                                            {option}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </label>
-                                        );
-                                    })
+                                    <AppearanceEditor
+                                        value={form.data.appearance}
+                                        onChange={(appearance) =>
+                                            form.setData(
+                                                'appearance',
+                                                appearance,
+                                            )
+                                        }
+                                    />
                                 )}
                             </CardContent>
-                            <CardFooter>
+                            <CardFooter className="flex flex-wrap items-center gap-3">
                                 <Button
                                     type="submit"
                                     disabled={form.processing}
                                 >
-                                    Save changes
+                                    {tab === 'appearance'
+                                        ? 'Save appearance'
+                                        : 'Save changes'}
                                 </Button>
+                                {form.isDirty && (
+                                    <span className="text-xs text-muted-foreground">
+                                        Unsaved changes
+                                    </span>
+                                )}
                             </CardFooter>
                         </Card>
                     </form>
                 )}
-                {tab === 'insights' && (
-                    <section className="mt-6" aria-labelledby="insights-title">
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                                <h2
-                                    id="insights-title"
-                                    className="text-lg font-semibold"
-                                >
-                                    Insights
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                    Consented page views and button or social
-                                    clicks, grouped by UTC date.
-                                </p>
-                            </div>
-                            <label className="grid gap-1 text-sm">
-                                Reporting window
-                                <select
-                                    aria-label="Insights window"
-                                    className="h-11 rounded-md border bg-background px-3"
-                                    disabled={!insights}
-                                    value={insights?.days ?? 30}
-                                    onChange={(event) => {
-                                        const days = Number(event.target.value);
-                                        if (
-                                            days === 7 ||
-                                            days === 30 ||
-                                            days === 90
-                                        ) {
-                                            router.get(
-                                                bioPageInsightsRoute(page.id)
-                                                    .url,
-                                                { days },
-                                                {
-                                                    preserveState: true,
-                                                    preserveScroll: true,
-                                                },
-                                            );
-                                        }
-                                    }}
-                                >
-                                    <option value={7}>7 days</option>
-                                    <option value={30}>30 days</option>
-                                    <option value={90}>90 days</option>
-                                </select>
-                            </label>
-                        </div>
-                        {insights ? (
-                            <>
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <Card>
-                                        <CardHeader className="pb-2">
-                                            <CardDescription>
-                                                Consented page views
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-3xl font-semibold tabular-nums">
-                                                {insights.totalViews}
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader className="pb-2">
-                                            <CardDescription>
-                                                Button and social clicks
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-3xl font-semibold tabular-nums">
-                                                {insights.totalClicks}
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                                <Card className="mt-4">
-                                    <CardHeader>
-                                        <CardTitle>Daily activity</CardTitle>
-                                        <CardDescription>
-                                            {insights.startDate} through{' '}
-                                            {insights.endDate} UTC
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="max-h-72 overflow-y-auto rounded-md border">
-                                            <table className="w-full text-sm">
-                                                <thead className="sticky top-0 bg-background text-left">
-                                                    <tr>
-                                                        <th className="px-3 py-2 font-medium">
-                                                            UTC date
-                                                        </th>
-                                                        <th className="px-3 py-2 text-right font-medium">
-                                                            Views
-                                                        </th>
-                                                        <th className="px-3 py-2 text-right font-medium">
-                                                            Clicks
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {insights.daily.map(
-                                                        (day) => (
-                                                            <tr
-                                                                key={day.date}
-                                                                className="border-t"
-                                                            >
-                                                                <td className="px-3 py-2">
-                                                                    <time
-                                                                        dateTime={
-                                                                            day.date
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            day.date
-                                                                        }
-                                                                    </time>
-                                                                </td>
-                                                                <td className="px-3 py-2 text-right tabular-nums">
-                                                                    {day.views}
-                                                                </td>
-                                                                <td className="px-3 py-2 text-right tabular-nums">
-                                                                    {day.clicks}
-                                                                </td>
-                                                            </tr>
-                                                        ),
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </>
-                        ) : (
-                            <p
-                                role="status"
-                                className="text-sm text-muted-foreground"
-                            >
-                                Loading insights…
-                            </p>
-                        )}
-                    </section>
+                {tab === 'insights' && insights && (
+                    <BioPageInsightsPanel
+                        insights={insights}
+                        onWindowChange={(days) =>
+                            router.get(
+                                bioPageInsightsRoute(page.id).url,
+                                { days },
+                                {
+                                    preserveState: true,
+                                    preserveScroll: true,
+                                },
+                            )
+                        }
+                    />
+                )}
+                {tab === 'insights' && !insights && (
+                    <p role="status" className="text-sm text-muted-foreground">
+                        Loading insights…
+                    </p>
                 )}
                 {tab === 'content' && (
                     <section className="mt-6" aria-labelledby="content-title">
-                        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                                <h2
-                                    id="content-title"
-                                    className="text-lg font-semibold"
-                                >
-                                    Page content
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                    Use the move controls or Alt + arrow keys to
-                                    change order.
-                                </p>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() =>
-                                        setAdding(
-                                            adding === 'link' ? null : 'link',
-                                        )
-                                    }
-                                >
-                                    Add button
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={() =>
-                                        setAdding(
-                                            adding === 'block' ? null : 'block',
-                                        )
-                                    }
-                                >
-                                    <Plus />
-                                    Add content
-                                </Button>
-                            </div>
-                        </div>
-                        {adding === 'block' && (
-                            <BlockFormEditor
-                                page={page}
-                                onClose={() => setAdding(null)}
-                            />
-                        )}
-                        {adding === 'link' && (
-                            <LinkForm
-                                page={page}
-                                onClose={() => setAdding(null)}
-                            />
-                        )}
-                        <ol className="mt-3 grid gap-3">
-                            {items.map((item, index) => {
-                                const block =
-                                    item.type === 'link'
-                                        ? undefined
-                                        : contentBlocks.find(
-                                              (candidate) =>
-                                                  candidate.id === item.id,
-                                          );
-                                const link =
-                                    item.type === 'link'
-                                        ? bioLinks.find(
-                                              (candidate) =>
-                                                  candidate.id === item.id,
-                                          )
-                                        : undefined;
-                                const editKey = link ? -link.id : block?.id;
-                                return (
-                                    <li
-                                        key={`${item.type}-${item.id}`}
-                                        className="rounded-lg border bg-background p-4"
-                                        onKeyDown={(event) => {
-                                            if (
-                                                event.altKey &&
-                                                event.key === 'ArrowUp' &&
-                                                canMove(index, index - 1)
-                                            ) {
-                                                event.preventDefault();
-                                                move(index, index - 1);
+                        <Card className="overflow-hidden">
+                            <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0">
+                                    <CardTitle as="h2" id="content-title">
+                                        Page content
+                                    </CardTitle>
+                                    <CardDescription className="mt-1">
+                                        Buttons and blocks appear in this order.
+                                        Use the arrow buttons or Alt + arrow
+                                        keys to reorder.
+                                    </CardDescription>
+                                </div>
+                                <div className="flex shrink-0 flex-wrap gap-2">
+                                    {linkAllowed ? (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            aria-expanded={adding === 'link'}
+                                            aria-controls="page-content-add-form"
+                                            onClick={() =>
+                                                setAdding(
+                                                    adding === 'link'
+                                                        ? null
+                                                        : 'link',
+                                                )
                                             }
-                                            if (
-                                                event.altKey &&
-                                                event.key === 'ArrowDown' &&
-                                                canMove(index, index + 1)
-                                            ) {
-                                                event.preventDefault();
-                                                move(index, index + 1);
-                                            }
-                                        }}
+                                        >
+                                            <Link2 data-icon="inline-start" />
+                                            Add button
+                                        </Button>
+                                    ) : null}
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        aria-expanded={adding === 'block'}
+                                        aria-controls="page-content-add-form"
+                                        onClick={() =>
+                                            setAdding(
+                                                adding === 'block'
+                                                    ? null
+                                                    : 'block',
+                                            )
+                                        }
                                     >
-                                        <div className="flex flex-wrap items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <div className="flex flex-wrap gap-2">
-                                                    <Badge variant="outline">
-                                                        {item.type}
-                                                    </Badge>
-                                                    {item.isPinned && (
-                                                        <Badge>Pinned</Badge>
-                                                    )}
-                                                    {!item.isActive && (
-                                                        <Badge variant="outline">
-                                                            Hidden
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                                <p className="mt-2 font-medium break-words">
-                                                    {item.type === 'link'
-                                                        ? item.title
-                                                        : item.type === 'text'
-                                                          ? item.text
-                                                          : item.type ===
-                                                              'image'
-                                                            ? item.altText ||
-                                                              'Image'
-                                                            : `${item.provider}: ${item.identifier}`}
-                                                </p>
-                                            </div>
-                                            <span className="text-sm text-muted-foreground">
-                                                {index + 1}
-                                            </span>
-                                        </div>
-                                        <div className="mt-3 flex flex-wrap gap-2">
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                aria-label="Move item up"
-                                                disabled={
-                                                    !canMove(index, index - 1)
-                                                }
-                                                onClick={() =>
-                                                    move(index, index - 1)
-                                                }
-                                            >
-                                                <ArrowUp />
-                                                Move up
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                aria-label="Move item down"
-                                                disabled={
-                                                    !canMove(index, index + 1)
-                                                }
-                                                onClick={() =>
-                                                    move(index, index + 1)
-                                                }
-                                            >
-                                                <ArrowDown />
-                                                Move down
-                                            </Button>
-                                            {link && (
-                                                <>
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            setEditing(
-                                                                editing ===
-                                                                    editKey
-                                                                    ? null
-                                                                    : (editKey ??
-                                                                          null),
-                                                            )
-                                                        }
-                                                    >
-                                                        Edit button
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            router.patch(
-                                                                updateBioLink({
-                                                                    bioPage:
-                                                                        page.id,
-                                                                    bioLink:
-                                                                        link.id,
-                                                                }).url,
-                                                                {
-                                                                    is_active:
-                                                                        !link.is_active,
-                                                                },
-                                                                {
-                                                                    preserveScroll: true,
-                                                                },
-                                                            )
-                                                        }
-                                                    >
-                                                        {link.is_active
-                                                            ? 'Disable'
-                                                            : 'Enable'}
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            if (
-                                                                window.confirm(
-                                                                    'Delete this button?',
-                                                                )
-                                                            )
-                                                                router.delete(
-                                                                    destroyBioLink(
-                                                                        {
-                                                                            bioPage:
-                                                                                page.id,
-                                                                            bioLink:
-                                                                                link.id,
-                                                                        },
-                                                                    ).url,
-                                                                    {
-                                                                        preserveScroll: true,
-                                                                    },
-                                                                );
-                                                        }}
-                                                    >
-                                                        <Trash2 />
-                                                        Delete
-                                                    </Button>
-                                                </>
-                                            )}
-                                            {block && (
-                                                <>
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            setEditing(
-                                                                editing ===
-                                                                    editKey
-                                                                    ? null
-                                                                    : (editKey ??
-                                                                          null),
-                                                            )
-                                                        }
-                                                    >
-                                                        Edit
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            if (
-                                                                window.confirm(
-                                                                    'Delete this content block?',
-                                                                )
-                                                            )
-                                                                router.delete(
-                                                                    destroyBioBlock(
-                                                                        {
-                                                                            bioPage:
-                                                                                page.id,
-                                                                            bioBlock:
-                                                                                block.id,
-                                                                        },
-                                                                    ).url,
-                                                                    {
-                                                                        preserveScroll: true,
-                                                                    },
-                                                                );
-                                                        }}
-                                                    >
-                                                        <Trash2 />
-                                                        Delete
-                                                    </Button>
-                                                </>
-                                            )}
-                                        </div>
-                                        {link && editing === editKey && (
-                                            <div className="mt-3">
-                                                <LinkForm
-                                                    page={page}
-                                                    link={link}
-                                                    onClose={() =>
-                                                        setEditing(null)
-                                                    }
-                                                />
-                                            </div>
+                                        <Plus data-icon="inline-start" />
+                                        Add content
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="px-0">
+                                {(adding === 'block' || adding === 'link') && (
+                                    <div
+                                        id="page-content-add-form"
+                                        className="border-t px-4 py-4"
+                                    >
+                                        {adding === 'block' && (
+                                            <BlockFormEditor
+                                                page={page}
+                                                onClose={() => setAdding(null)}
+                                            />
                                         )}
-                                        {block && editing === editKey && (
-                                            <div className="mt-3">
-                                                <BlockFormEditor
-                                                    page={page}
-                                                    block={block}
-                                                    onClose={() =>
-                                                        setEditing(null)
-                                                    }
-                                                />
-                                            </div>
+                                        {adding === 'link' && (
+                                            <LinkForm
+                                                page={page}
+                                                onClose={() => setAdding(null)}
+                                            />
                                         )}
-                                    </li>
-                                );
-                            })}
-                        </ol>
-                        {items.length === 0 && (
-                            <p className="mt-3 rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
-                                Add a button or content block to start your
-                                page.
-                            </p>
-                        )}
+                                    </div>
+                                )}
+                                {items.length === 0 ? (
+                                    <p className="border-t px-4 py-8 text-sm text-muted-foreground">
+                                        Add a button or content block to start
+                                        your page.
+                                    </p>
+                                ) : (
+                                    <ol className="divide-y border-t">
+                                        {items.map((item, index) => {
+                                            const block =
+                                                item.type === 'link'
+                                                    ? undefined
+                                                    : contentBlocks.find(
+                                                          (candidate) =>
+                                                              candidate.id ===
+                                                              item.id,
+                                                      );
+                                            const link =
+                                                item.type === 'link'
+                                                    ? bioLinks.find(
+                                                          (candidate) =>
+                                                              candidate.id ===
+                                                              item.id,
+                                                      )
+                                                    : undefined;
+                                            const editKey = link
+                                                ? -link.id
+                                                : block?.id;
+                                            const summary = itemSummary(item);
+                                            const toggleEditing = () =>
+                                                setEditing(
+                                                    editing === editKey
+                                                        ? null
+                                                        : (editKey ?? null),
+                                                );
+                                            const toggleVisibility = () => {
+                                                if (!link) return;
+                                                router.patch(
+                                                    updateBioLink({
+                                                        bioPage: page.id,
+                                                        bioLink: link.id,
+                                                    }).url,
+                                                    {
+                                                        is_active:
+                                                            !link.is_active,
+                                                    },
+                                                    { preserveScroll: true },
+                                                );
+                                            };
+                                            const deleteItem = () => {
+                                                const message = link
+                                                    ? 'Delete this button?'
+                                                    : 'Delete this content block?';
+                                                if (!window.confirm(message)) {
+                                                    return;
+                                                }
+                                                if (link) {
+                                                    router.delete(
+                                                        destroyBioLink({
+                                                            bioPage: page.id,
+                                                            bioLink: link.id,
+                                                        }).url,
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    );
+                                                } else if (block) {
+                                                    router.delete(
+                                                        destroyBioBlock({
+                                                            bioPage: page.id,
+                                                            bioBlock: block.id,
+                                                        }).url,
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    );
+                                                }
+                                            };
+
+                                            return (
+                                                <li
+                                                    key={`${item.type}-${item.id}`}
+                                                    onKeyDown={(event) => {
+                                                        if (
+                                                            event.altKey &&
+                                                            event.key ===
+                                                                'ArrowUp' &&
+                                                            canMove(
+                                                                index,
+                                                                index - 1,
+                                                            )
+                                                        ) {
+                                                            event.preventDefault();
+                                                            move(
+                                                                index,
+                                                                index - 1,
+                                                            );
+                                                        }
+                                                        if (
+                                                            event.altKey &&
+                                                            event.key ===
+                                                                'ArrowDown' &&
+                                                            canMove(
+                                                                index,
+                                                                index + 1,
+                                                            )
+                                                        ) {
+                                                            event.preventDefault();
+                                                            move(
+                                                                index,
+                                                                index + 1,
+                                                            );
+                                                        }
+                                                    }}
+                                                >
+                                                    <div className="flex flex-wrap items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-secondary/50">
+                                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-secondary text-muted-foreground">
+                                                            <ItemTypeIcon
+                                                                type={item.type}
+                                                            />
+                                                        </span>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex min-w-0 items-center gap-1.5">
+                                                                <p className="truncate text-sm font-medium">
+                                                                    {
+                                                                        summary.title
+                                                                    }
+                                                                </p>
+                                                                {item.isPinned && (
+                                                                    <span
+                                                                        title="Pinned"
+                                                                        className="shrink-0 text-muted-foreground"
+                                                                    >
+                                                                        <Pin
+                                                                            aria-hidden="true"
+                                                                            className="size-3.5"
+                                                                        />
+                                                                        <span className="sr-only">
+                                                                            Pinned
+                                                                        </span>
+                                                                    </span>
+                                                                )}
+                                                                {!item.isActive && (
+                                                                    <span className="shrink-0 text-xs text-muted-foreground">
+                                                                        Hidden
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p
+                                                                className="truncate text-xs text-muted-foreground"
+                                                                title={
+                                                                    item.type ===
+                                                                    'link'
+                                                                        ? item.url
+                                                                        : summary.meta
+                                                                }
+                                                            >
+                                                                {summary.meta}
+                                                            </p>
+                                                        </div>
+                                                        <div className="ml-auto flex shrink-0 items-center gap-0.5">
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="size-8 rounded-full text-muted-foreground"
+                                                                        aria-label={`Move ${summary.title} up`}
+                                                                        disabled={
+                                                                            !canMove(
+                                                                                index,
+                                                                                index -
+                                                                                    1,
+                                                                            )
+                                                                        }
+                                                                        onClick={() =>
+                                                                            move(
+                                                                                index,
+                                                                                index -
+                                                                                    1,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <ArrowUp />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    Move up
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="size-8 rounded-full text-muted-foreground"
+                                                                        aria-label={`Move ${summary.title} down`}
+                                                                        disabled={
+                                                                            !canMove(
+                                                                                index,
+                                                                                index +
+                                                                                    1,
+                                                                            )
+                                                                        }
+                                                                        onClick={() =>
+                                                                            move(
+                                                                                index,
+                                                                                index +
+                                                                                    1,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <ArrowDown />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    Move down
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                            {(link ||
+                                                                block) && (
+                                                                <Tooltip>
+                                                                    <TooltipTrigger
+                                                                        asChild
+                                                                    >
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="hidden size-8 rounded-full text-muted-foreground sm:inline-flex"
+                                                                            aria-label={`Edit ${summary.title}`}
+                                                                            aria-expanded={
+                                                                                editing ===
+                                                                                editKey
+                                                                            }
+                                                                            onClick={
+                                                                                toggleEditing
+                                                                            }
+                                                                        >
+                                                                            <Pencil />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        Edit
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            )}
+                                                            {(link ||
+                                                                block) && (
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger
+                                                                        asChild
+                                                                    >
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="size-8 rounded-full text-muted-foreground"
+                                                                            aria-label={`More actions for ${summary.title}`}
+                                                                            title="More actions"
+                                                                        >
+                                                                            <MoreHorizontal />
+                                                                        </Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent
+                                                                        align="end"
+                                                                        className="w-44"
+                                                                    >
+                                                                        <DropdownMenuItem
+                                                                            className="sm:hidden"
+                                                                            onSelect={
+                                                                                toggleEditing
+                                                                            }
+                                                                        >
+                                                                            <Pencil />
+                                                                            Edit
+                                                                        </DropdownMenuItem>
+                                                                        {link && (
+                                                                            <>
+                                                                                <DropdownMenuItem
+                                                                                    onSelect={
+                                                                                        toggleVisibility
+                                                                                    }
+                                                                                >
+                                                                                    {link.is_active ? (
+                                                                                        <EyeOff />
+                                                                                    ) : (
+                                                                                        <Eye />
+                                                                                    )}
+                                                                                    {link.is_active
+                                                                                        ? 'Hide from page'
+                                                                                        : 'Show on page'}
+                                                                                </DropdownMenuItem>
+                                                                                <DropdownMenuSeparator />
+                                                                            </>
+                                                                        )}
+                                                                        <DropdownMenuItem
+                                                                            variant="destructive"
+                                                                            onSelect={
+                                                                                deleteItem
+                                                                            }
+                                                                        >
+                                                                            <Trash2 />
+                                                                            Delete
+                                                                        </DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {link &&
+                                                        editing === editKey && (
+                                                            <div className="px-4 pb-4">
+                                                                <LinkForm
+                                                                    page={page}
+                                                                    link={link}
+                                                                    onClose={() =>
+                                                                        setEditing(
+                                                                            null,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    {block &&
+                                                        editing === editKey && (
+                                                            <div className="px-4 pb-4">
+                                                                <BlockFormEditor
+                                                                    page={page}
+                                                                    block={
+                                                                        block
+                                                                    }
+                                                                    onClose={() =>
+                                                                        setEditing(
+                                                                            null,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        )}
+                                                </li>
+                                            );
+                                        })}
+                                    </ol>
+                                )}
+                            </CardContent>
+                        </Card>
                     </section>
                 )}
             </div>
-            <aside className="xl:sticky xl:top-6">
-                <LivePreview
-                    presentation={presentation}
-                    isPublished={page.isPublished}
-                    previewAt={previewAt}
-                />
-            </aside>
+            {tab !== 'insights' && (
+                <aside className="xl:sticky xl:top-6">
+                    <LivePreview
+                        presentation={presentation}
+                        isPublished={page.isPublished}
+                        previewAt={previewAt}
+                    />
+                </aside>
+            )}
         </div>
     );
 }

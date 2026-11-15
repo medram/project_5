@@ -2,12 +2,19 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\AdminAuditLog;
 use App\Models\PlatformSetting;
 use App\Models\User;
+use App\Services\Analytics\TrackingConsent;
 use App\Services\Settings\PlatformSettings;
 use App\Services\Settings\SettingDefinitions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -29,7 +36,7 @@ class AdminSettingsTest extends TestCase
                 ->component('admin/settings/section')
                 ->where('section.key', 'general')
                 ->has('navigation', 18)
-                ->has('section.fields'));
+                ->has('section.groups'));
 
         $this->actingAs($administrator)
             ->get('/admin/settings/not-a-section')
@@ -62,7 +69,7 @@ class AdminSettingsTest extends TestCase
                     'domains_enabled' => true,
                     'splash_seconds' => 7,
                     'keyword_blocklist' => "spam\nabuse",
-                    'domain_blocklist' => "bad.test",
+                    'domain_blocklist' => 'bad.test',
                 ],
             ]);
         $response->assertRedirect();
@@ -93,11 +100,11 @@ class AdminSettingsTest extends TestCase
             ->assertSessionHasErrors('values');
     }
 
-    public function test_secret_values_are_encrypted_blank_preserves_and_ui_hides_value(): void
+    public function test_secret_values_are_encrypted_exactly_addressable_never_cached_and_clearable(): void
     {
+        config()->set('services.turnstile.secret', 'environment-secret');
         $administrator = User::factory()->admin()->create();
-        $section = app(PlatformSettings::class)->schema('captcha');
-        $this->assertNotNull($section);
+        $settings = app(PlatformSettings::class);
 
         $this->actingAs($administrator)
             ->patch('/admin/settings/captcha', [
@@ -107,7 +114,6 @@ class AdminSettingsTest extends TestCase
                     'site_key' => 'site-key-public',
                     'secret' => 'super-secret-value',
                     'on_registration' => true,
-                    'on_public_actions' => false,
                 ],
             ])
             ->assertRedirect();
@@ -119,11 +125,20 @@ class AdminSettingsTest extends TestCase
         $this->assertTrue($row->is_secret);
         $this->assertStringNotContainsString('super-secret-value', (string) $row->value);
         $this->assertSame('super-secret-value', json_decode(Crypt::decryptString((string) $row->value), true));
+        $this->assertSame('super-secret-value', $settings->secret('captcha', 'secret'));
+        $this->assertArrayNotHasKey('secret', $settings->resolved()['captcha']);
+        $this->assertStringNotContainsString('super-secret-value', json_encode(Cache::get('platform-settings.resolved'), JSON_THROW_ON_ERROR));
 
-        $schema = app(PlatformSettings::class)->schema('captcha');
-        $secret = collect($schema['fields'])->firstWhere('key', 'secret');
+        $schema = $settings->schema('captcha');
+        $this->assertSame('access', $schema['category']);
+        $this->assertArrayNotHasKey('fields', $schema);
+        $secret = collect($schema['groups'])
+            ->flatMap(fn (array $group): array => $group['fields'])
+            ->firstWhere('key', 'secret');
         $this->assertTrue($secret['configured']);
         $this->assertNull($secret['value']);
+        $this->assertArrayNotHasKey('source', $secret);
+        $this->assertArrayNotHasKey('readOnly', $secret);
 
         $this->actingAs($administrator)
             ->patch('/admin/settings/captcha', [
@@ -132,38 +147,161 @@ class AdminSettingsTest extends TestCase
             ])
             ->assertRedirect();
 
+        $this->assertSame(1, $settings->version('captcha'));
+        $this->assertSame('super-secret-value', $settings->secret('captcha', 'secret'));
+
+        $settings->clearSecret($administrator, 'captcha', 'secret', 1);
+
+        $this->assertSame(2, $settings->version('captcha'));
+        $this->assertNull($settings->secret('captcha', 'secret'));
+        $this->assertNull(json_decode(Crypt::decryptString((string) $row->refresh()->value), true));
+        $clearedSecret = collect($settings->schema('captcha')['groups'])
+            ->flatMap(fn (array $group): array => $group['fields'])
+            ->firstWhere('key', 'secret');
+        $this->assertFalse($clearedSecret['configured']);
         $this->assertSame(
-            'super-secret-value',
-            json_decode(Crypt::decryptString((string) $row->refresh()->value), true),
+            ['section' => 'captcha', 'key' => 'secret'],
+            AdminAuditLog::query()->where('action', 'clear_platform_setting_secret')->sole()->changes,
+        );
+
+        $this->expectException(ValidationException::class);
+        $settings->clearSecret($administrator, 'captcha', 'site_key', 2);
+    }
+
+    public function test_durable_section_revisions_increment_once_only_when_values_change(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+
+        $this->assertDatabaseCount('platform_setting_sections', 18);
+        $this->assertDatabaseHas('platform_setting_sections', [
+            'section' => 'general',
+            'revision' => 0,
+        ]);
+        $this->assertFalse(Schema::hasColumn('platform_settings', 'version'));
+
+        $settings->updateSection($administrator, 'general', ['site_name' => 'Acme'], 0);
+
+        $this->assertSame(1, $settings->version('general'));
+        $this->assertSame(
+            ['section' => 'general', 'keys' => ['site_name']],
+            AdminAuditLog::query()->where('action', 'update_platform_settings')->sole()->changes,
+        );
+
+        $settings->updateSection($administrator, 'general', ['site_name' => 'Acme'], 1);
+
+        $this->assertSame(1, $settings->version('general'));
+        $this->assertSame(1, AdminAuditLog::query()->where('action', 'update_platform_settings')->count());
+
+        $settings->updateSection($administrator, 'general', ['support_email' => 'support@acme.test'], 1);
+
+        $this->assertSame(2, $settings->version('general'));
+        $this->assertSame(
+            ['section' => 'general', 'keys' => ['support_email']],
+            AdminAuditLog::query()->where('action', 'update_platform_settings')->latest('id')->firstOrFail()->changes,
         );
     }
 
-    public function test_environment_values_win_and_are_read_only(): void
+    public function test_process_revision_changes_when_two_writes_share_a_timestamp(): void
     {
-        config()->set('services.turnstile.secret', 'environment-secret');
+        Carbon::setTestNow('2026-11-13 12:00:00');
+
+        try {
+            $administrator = User::factory()->admin()->create();
+            $settings = app(PlatformSettings::class);
+
+            $settings->updateSection($administrator, 'general', ['site_name' => 'First'], 0);
+            $this->assertSame('First', $settings->resolved()['general']['site_name']);
+            $firstRevision = Cache::get('platform-settings.resolved')['revision'];
+
+            $settings->updateSection($administrator, 'general', ['site_name' => 'Second'], 1);
+            $this->assertSame('Second', $settings->resolved()['general']['site_name']);
+            $secondRevision = Cache::get('platform-settings.resolved')['revision'];
+
+            $this->assertNotSame($firstRevision, $secondRevision);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_uploading_rejects_unknown_or_public_disks(): void
+    {
+        $administrator = User::factory()->admin()->create();
+
+        foreach (['public', 'not-configured'] as $disk) {
+            $this->actingAs($administrator)
+                ->patch('/admin/settings/uploading', [
+                    'version' => 0,
+                    'values' => ['disk' => $disk],
+                ])
+                ->assertSessionHasErrors('values.disk');
+        }
+
+        $this->assertSame('local', app(PlatformSettings::class)->resolved()['uploading']['disk']);
+    }
+
+    public function test_partial_smtp_updates_are_checked_against_stored_values(): void
+    {
         $administrator = User::factory()->admin()->create();
         $settings = app(PlatformSettings::class);
-        $schema = $settings->schema('captcha');
-        $secret = collect($schema['fields'])->firstWhere('key', 'secret');
+        $settings->updateSection($administrator, 'email', [
+            'mailer' => 'smtp',
+            'smtp_host' => 'mailpit',
+            'smtp_port' => 1025,
+            'smtp_security' => 'none',
+        ], $settings->version('email'));
 
-        $this->assertSame('environment', $secret['source']);
-        $this->assertTrue($secret['readOnly']);
-        $this->assertTrue($secret['configured']);
-        $this->assertNull($secret['value']);
-        $this->assertSame('environment-secret', $settings->resolved()['captcha']['secret']);
+        $this->actingAs($administrator)
+            ->patch('/admin/settings/email', [
+                'version' => 1,
+                'values' => ['smtp_host' => ''],
+            ])
+            ->assertSessionHasErrors('values.smtp_host');
+
+        $this->assertSame('mailpit', $settings->resolved()['email']['smtp_host']);
+    }
+
+    public function test_turnstile_protection_requires_complete_credentials(): void
+    {
+        $administrator = User::factory()->admin()->create();
 
         $this->actingAs($administrator)
             ->patch('/admin/settings/captcha', [
                 'version' => 0,
-                'values' => ['secret' => 'database-secret'],
+                'values' => [
+                    'provider' => 'turnstile',
+                    'on_registration' => true,
+                ],
             ])
-            ->assertRedirect();
+            ->assertSessionHasErrors('values.site_key');
+    }
 
-        $this->assertDatabaseMissing('platform_settings', [
-            'section' => 'captcha',
-            'key' => 'secret',
-        ]);
-        $this->assertSame('environment-secret', $settings->resolved()['captcha']['secret']);
+    public function test_disabled_consent_permits_tracking_only_with_complete_privacy_configuration(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'analytics', [
+            'consent_enabled' => false,
+            'visitor_hash_key' => str_repeat('a', 32),
+            'visitor_hash_version' => 'v1',
+        ], $settings->version('analytics'));
+        $settings->updateSection($administrator, 'gdpr', [
+            'privacy_url' => 'https://example.test/privacy',
+        ], $settings->version('gdpr'));
+        $settings->applyRuntime();
+
+        $consent = app(TrackingConsent::class);
+        $this->assertTrue($consent->allows(Request::create('/')));
+
+        $settings->clearSecret($administrator, 'analytics', 'visitor_hash_key', $settings->version('analytics'));
+        $settings->applyRuntime();
+
+        $this->assertFalse($this->consent()->allows(Request::create('/')));
+    }
+
+    private function consent(): TrackingConsent
+    {
+        return app(TrackingConsent::class);
     }
 
     public function test_stale_versions_and_invalid_bounds_are_rejected_without_writes(): void

@@ -1,5 +1,11 @@
 import { router, useForm, usePage } from '@inertiajs/react';
-import { Check, ChevronsUpDown, Plus } from 'lucide-react';
+import {
+    Building2,
+    Check,
+    ChevronsUpDown,
+    Plus,
+    Settings2,
+} from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +16,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { WorkspaceContext } from '@/types/workspaces';
@@ -44,40 +58,57 @@ export function WorkspaceSwitcher() {
 
     return (
         <>
-            <div className="space-y-2 px-2">
-                <label htmlFor="workspace-switch" className="sr-only">
-                    Current workspace
-                </label>
-                <div className="flex min-w-0 items-center gap-1">
-                    <select
-                        id="workspace-switch"
-                        aria-label="Switch workspace"
-                        value={workspace.current.id}
-                        onChange={(event) =>
-                            switchWorkspace(Number(event.target.value))
-                        }
-                        className="h-11 min-w-0 flex-1 rounded-md border border-sidebar-border bg-sidebar px-2 text-sm font-medium text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            <div className="px-1 group-data-[collapsible=icon]:hidden">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button
+                            type="button"
+                            title={workspace.current.name}
+                            className="flex h-8 w-full min-w-0 items-center gap-2 rounded-lg px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring/40 focus-visible:outline-none"
+                        >
+                            <Building2
+                                className="size-3.5 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <span className="truncate">Switch workspace</span>
+                            <ChevronsUpDown
+                                className="ml-auto size-3.5 shrink-0"
+                                aria-hidden="true"
+                            />
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        align="start"
+                        side="bottom"
+                        className="w-60 rounded-xl"
                     >
+                        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                            Workspace
+                        </DropdownMenuLabel>
                         {workspace.memberships.map((membership) => (
-                            <option key={membership.id} value={membership.id}>
-                                {membership.name} · {membership.role}
-                            </option>
+                            <DropdownMenuItem
+                                key={membership.id}
+                                className="gap-2"
+                                onSelect={() => switchWorkspace(membership.id)}
+                            >
+                                <span className="min-w-0 flex-1 truncate">
+                                    {membership.name}
+                                </span>
+                                {membership.id === workspace.current.id && (
+                                    <Check
+                                        className="size-4 shrink-0"
+                                        aria-label="Current workspace"
+                                    />
+                                )}
+                            </DropdownMenuItem>
                         ))}
-                    </select>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="size-11 shrink-0"
-                        aria-label="Manage workspaces"
-                        onClick={() => setOpen(true)}
-                    >
-                        <ChevronsUpDown className="size-4" />
-                    </Button>
-                </div>
-                <p className="truncate px-1 text-xs text-muted-foreground">
-                    {workspace.current.role} access
-                </p>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={() => setOpen(true)}>
+                            <Settings2 aria-hidden="true" />
+                            Manage workspaces
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-md">

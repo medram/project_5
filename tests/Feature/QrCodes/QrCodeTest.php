@@ -8,6 +8,7 @@ use App\Models\Plan;
 use App\Models\QrCode;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Analytics\GeoIpCountryResolver;
 use App\Services\Billing\WorkspaceUsage;
 use App\Services\QrCodes\QrScanRecorder;
 use App\Services\Workspaces\WorkspaceContext;
@@ -148,7 +149,99 @@ class QrCodeTest extends TestCase
         $this->assertDatabaseCount('qr_scans', 1);
         $scan = DB::table('qr_scans')->where('qr_code_id', $qrCode->id)->sole();
         $this->assertNotNull($scan->scanned_at);
-        $this->assertSame(['id', 'qr_code_id', 'scanned_at'], Schema::getColumnListing('qr_scans'));
+        $this->assertSame(
+            ['id', 'qr_code_id', 'scanned_at', 'country_code', 'browser', 'platform', 'referrer_host'],
+            Schema::getColumnListing('qr_scans'),
+        );
+    }
+
+    public function test_public_qr_scan_records_coarse_request_dimensions_without_raw_identity(): void
+    {
+        $owner = User::factory()->create();
+        $qrCode = QrCode::query()->create([
+            'workspace_id' => $owner->currentWorkspace->id,
+            'source' => 'campaign',
+            'destination_url' => 'https://example.com/dimensions',
+        ]);
+        $this->app->instance(GeoIpCountryResolver::class, new class extends GeoIpCountryResolver
+        {
+            public function countryCode(string $ip): ?string
+            {
+                return 'US';
+            }
+        });
+
+        $this->withHeader(
+            'User-Agent',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36',
+        )->withHeader('Referer', 'https://news.example/articles/qr')->get("/q/{$qrCode->code}")
+            ->assertRedirect('https://example.com/dimensions');
+
+        $scan = DB::table('qr_scans')->where('qr_code_id', $qrCode->id)->sole();
+        $this->assertSame('US', $scan->country_code);
+        $this->assertSame('Chrome', $scan->browser);
+        $this->assertSame('Windows', $scan->platform);
+        $this->assertSame('news.example', $scan->referrer_host);
+        $this->assertFalse(Schema::hasColumn('qr_scans', 'ip_address'));
+        $this->assertFalse(Schema::hasColumn('qr_scans', 'visitor_hash'));
+    }
+
+    public function test_qr_analytics_summarizes_scan_dimensions_and_devices(): void
+    {
+        $owner = User::factory()->create();
+        $qrCode = QrCode::query()->create([
+            'workspace_id' => $owner->currentWorkspace->id,
+            'source' => 'campaign',
+            'destination_url' => 'https://example.com/dimension-totals',
+        ]);
+        $foreignQr = QrCode::query()->create([
+            'workspace_id' => User::factory()->create()->currentWorkspace->id,
+            'source' => 'campaign',
+            'destination_url' => 'https://example.net/foreign-dimensions',
+        ]);
+
+        foreach ([
+            ['country_code' => 'US', 'browser' => 'Chrome', 'platform' => 'Windows', 'referrer_host' => 'google.com'],
+            ['country_code' => 'US', 'browser' => 'Chrome', 'platform' => 'Windows', 'referrer_host' => 'google.com'],
+            ['country_code' => 'CA', 'browser' => 'Safari', 'platform' => 'iOS'],
+            ['country_code' => 'DE', 'browser' => 'Firefox', 'platform' => 'Android', 'referrer_host' => 'news.example'],
+            [],
+        ] as $dimensions) {
+            $qrCode->scans()->create(['scanned_at' => now(), ...$dimensions]);
+        }
+        $foreignQr->scans()->create([
+            'scanned_at' => now(),
+            'country_code' => 'FR',
+            'browser' => 'Chrome',
+            'platform' => 'Windows',
+        ]);
+        $this->withoutVite();
+
+        $this->actingAs($owner)->get('/dashboard/qr-codes/insights?days=7')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('analytics.totalScans', 5)
+                ->where('analytics.countryCount', 3)
+                ->where('analytics.browserCount', 3)
+                ->where('analytics.deviceCount', 2)
+                ->has('analytics.topCountries', 3)
+                ->where('analytics.topCountries.0.name', 'US')
+                ->where('analytics.topCountries.0.count', 2)
+                ->where('analytics.topBrowsers.0.name', 'Chrome')
+                ->where('analytics.topBrowsers.0.count', 2)
+                ->where('analytics.topPlatforms.0.name', 'Windows')
+                ->where('analytics.topPlatforms.0.count', 2)
+                ->where('analytics.topDevices.0.name', 'Desktop')
+                ->where('analytics.topDevices.0.count', 2)
+                ->where('analytics.topReferrers.0.name', 'google.com')
+                ->where('analytics.topReferrers.0.count', 2));
+
+        $this->get("/dashboard/qr-codes/{$qrCode->id}/insights?days=7")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('analytics.totalScans', 5)
+                ->where('analytics.topDevices.1.name', 'Mobile')
+                ->where('analytics.topDevices.1.count', 2));
     }
 
     public function test_linked_campaign_scan_redirects_to_the_canonical_link_without_recording_a_link_click(): void

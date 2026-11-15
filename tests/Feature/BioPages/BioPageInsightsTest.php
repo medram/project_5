@@ -32,7 +32,9 @@ class BioPageInsightsTest extends TestCase
         $selectedPage = BioPage::factory()->for($owner)->create();
         $otherPage = BioPage::factory()->for($owner)->create();
         $foreignPage = BioPage::factory()->create();
-        $selectedLink = BioLink::factory()->for($selectedPage)->create();
+        $selectedLink = BioLink::factory()->for($selectedPage)->create([
+            'title' => 'Portfolio',
+        ]);
         $otherLink = BioLink::factory()->for($otherPage)->create();
         $windowStart = Carbon::parse('2026-10-13 00:00:00', 'UTC');
 
@@ -96,6 +98,13 @@ class BioPageInsightsTest extends TestCase
                         ['date' => '2026-10-18', 'views' => 0, 'clicks' => 2],
                         ['date' => '2026-10-19', 'views' => 0, 'clicks' => 0],
                     ],
+                    'topLinks' => [
+                        ['name' => 'Portfolio', 'count' => 2],
+                    ],
+                    'topReferrers' => [],
+                    'topCountries' => [],
+                    'topBrowsers' => [],
+                    'topPlatforms' => [],
                 ]));
 
         $this->actingAs($owner)
@@ -103,11 +112,85 @@ class BioPageInsightsTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_bio_insights_include_ranked_links_referrers_countries_and_platforms(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-19 12:00:00', 'UTC'));
+
+        $owner = User::factory()->create();
+        $page = BioPage::factory()->for($owner)->create();
+        $portfolio = BioLink::factory()->for($page)->create([
+            'title' => 'Portfolio',
+        ]);
+        $newsletter = BioLink::factory()->for($page)->create([
+            'title' => 'Newsletter',
+        ]);
+        $at = Carbon::parse('2026-10-19 10:00:00', 'UTC');
+
+        $this->eventFor($page, $at, 'bio_page.view', null, [
+            'referrer_host' => 'news.example',
+            'country_code' => 'US',
+            'browser' => 'Chrome',
+            'platform' => 'macOS',
+        ]);
+        $this->eventFor($page, $at, 'bio_page.view', null, [
+            'referrer_host' => 'news.example',
+            'country_code' => 'US',
+            'browser' => 'Chrome',
+            'platform' => 'macOS',
+        ]);
+        $this->eventFor($page, $at, 'bio_page.clicked', $portfolio, [
+            'referrer_host' => 'news.example',
+            'country_code' => 'US',
+            'browser' => 'Chrome',
+            'platform' => 'macOS',
+        ]);
+        $this->eventFor($page, $at, 'bio_page.clicked', $portfolio, [
+            'referrer_host' => 'direct.example',
+            'country_code' => 'CA',
+            'browser' => 'Firefox',
+            'platform' => 'Windows',
+        ]);
+        $this->eventFor($page, $at, 'bio_page.clicked', $newsletter, [
+            'referrer_host' => 'direct.example',
+            'country_code' => 'CA',
+            'browser' => 'Firefox',
+            'platform' => 'Windows',
+        ]);
+
+        $this->withoutVite();
+
+        $this->actingAs($owner)
+            ->get("/dashboard/biolinks/{$page->id}/insights?days=7")
+            ->assertOk()
+            ->assertInertia(fn (Assert $response) => $response
+                ->where('insights.topLinks', [
+                    ['name' => 'Portfolio', 'count' => 2],
+                    ['name' => 'Newsletter', 'count' => 1],
+                ])
+                ->where('insights.topReferrers', [
+                    ['name' => 'news.example', 'count' => 3],
+                    ['name' => 'direct.example', 'count' => 2],
+                ])
+                ->where('insights.topCountries', [
+                    ['name' => 'US', 'count' => 3],
+                    ['name' => 'CA', 'count' => 2],
+                ])
+                ->where('insights.topBrowsers', [
+                    ['name' => 'Chrome', 'count' => 3],
+                    ['name' => 'Firefox', 'count' => 2],
+                ])
+                ->where('insights.topPlatforms', [
+                    ['name' => 'macOS', 'count' => 3],
+                    ['name' => 'Windows', 'count' => 2],
+                ]));
+    }
+
     private function eventFor(
         BioPage $page,
         \DateTimeInterface $occurredAt,
         string $eventName,
         ?BioLink $bioLink = null,
+        array $metadata = [],
     ): AnalyticsEvent {
         return AnalyticsEvent::query()->create([
             'uuid' => (string) Str::uuid(),
@@ -119,6 +202,7 @@ class BioPageInsightsTest extends TestCase
             'occurred_at' => $occurredAt,
             'visitor_hash' => hash('sha256', Str::random()),
             'visitor_key_version' => 'test-v1',
+            ...$metadata,
         ]);
     }
 }

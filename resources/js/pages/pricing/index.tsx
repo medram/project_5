@@ -16,6 +16,8 @@ type Props = {
     plans: BillingPlan[];
     currentPlanCode: string | null;
     canManageBilling: boolean;
+    annualDisplay: boolean;
+    billingEnabled: boolean;
     billingPath: string;
     loginPath: string;
 };
@@ -36,6 +38,8 @@ export default function Pricing({
     plans,
     currentPlanCode,
     canManageBilling,
+    annualDisplay,
+    billingEnabled,
     billingPath,
     loginPath,
 }: Props) {
@@ -93,8 +97,9 @@ export default function Pricing({
                                             </span>
                                         </p>
                                         <p className="text-muted-foreground">
-                                            {amount(plan, plan.annualPrice)} /
-                                            year
+                                            {annualDisplay
+                                                ? `${amount(plan, plan.annualPrice)} / year`
+                                                : 'Annual billing hidden'}
                                         </p>
                                     </div>
 
@@ -145,6 +150,10 @@ export default function Pricing({
                                     {active ? (
                                         <Badge variant="secondary">
                                             Current plan
+                                        </Badge>
+                                    ) : !billingEnabled ? (
+                                        <Badge variant="outline">
+                                            Billing unavailable
                                         </Badge>
                                     ) : canManageBilling ? (
                                         <Button asChild variant="outline">

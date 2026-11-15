@@ -14,16 +14,28 @@ class TurnstileVerifier
         $captcha = $this->settings->resolved()['captcha'] ?? [];
 
         return ($captcha['provider'] ?? 'none') === 'turnstile'
+            && (bool) ($captcha['on_registration'] ?? false)
             && is_string($captcha['site_key'] ?? null)
             && $captcha['site_key'] !== ''
-            && is_string($captcha['secret'] ?? null)
-            && $captcha['secret'] !== '';
+            && $this->settings->secret('captcha', 'secret') !== null;
+    }
+
+    public function required(): bool
+    {
+        $captcha = $this->settings->resolved()['captcha'] ?? [];
+
+        return ($captcha['provider'] ?? 'none') === 'turnstile'
+            && (bool) ($captcha['on_registration'] ?? false);
     }
 
     public function verify(?string $token, ?string $ip): bool
     {
-        if (! $this->enabled()) {
+        if (! $this->required()) {
             return true;
+        }
+
+        if (! $this->enabled()) {
+            return false;
         }
 
         if (! is_string($token) || $token === '') {
@@ -35,7 +47,7 @@ class TurnstileVerifier
         $response = Http::timeout(5)->asForm()->post(
             (string) config('services.turnstile.verify_url', 'https://challenges.cloudflare.com/turnstile/v0/siteverify'),
             [
-                'secret' => $captcha['secret'],
+                'secret' => $this->settings->secret('captcha', 'secret'),
                 'response' => $token,
                 'remoteip' => $ip,
             ],

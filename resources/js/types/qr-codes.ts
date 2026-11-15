@@ -1,3 +1,5 @@
+import type { AnalyticsCount, AnalyticsWindowDays } from '@/types/analytics';
+
 export type QrCodeLinkOption = {
     id: number;
     slug: string;
@@ -37,9 +39,17 @@ export type QrCodeIndexProps = {
 };
 
 export type QrCodeAnalytics = {
-    days: 7 | 30 | 90;
+    days: AnalyticsWindowDays;
     totalScans: number;
+    countryCount: number;
+    browserCount: number;
+    deviceCount: number;
     daily: { date: string; scans: number }[];
+    topReferrers: AnalyticsCount[];
+    topCountries: AnalyticsCount[];
+    topBrowsers: AnalyticsCount[];
+    topPlatforms: AnalyticsCount[];
+    topDevices: AnalyticsCount[];
 };
 
 export type QrCodeInsightsProps = {

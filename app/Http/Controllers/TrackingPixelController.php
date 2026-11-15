@@ -11,6 +11,7 @@ use App\Models\LinkPage;
 use App\Models\TrackingPixel;
 use App\Models\TrackingPixelRule;
 use App\Services\Billing\EnforcesPlanLimits;
+use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -62,6 +63,7 @@ class TrackingPixelController extends Controller
 
     public function storeRule(StoreTrackingPixelRuleRequest $request, TrackingPixel $trackingPixel): RedirectResponse
     {
+        abort_unless((bool) (app(PlatformSettings::class)->resolved()['links']['pixels_enabled'] ?? true), 403);
         $this->ensureInCurrentWorkspace($request, $trackingPixel);
         Gate::authorize('update', $trackingPixel);
 
@@ -141,6 +143,7 @@ class TrackingPixelController extends Controller
     {
         $workspace = $this->workspaces->currentFor($request->user());
         Gate::authorize('manageIntegrations', $workspace);
+        abort_unless((bool) (app(PlatformSettings::class)->resolved()['links']['pixels_enabled'] ?? true), 403);
         $this->planLimits->create($workspace, PlanMetric::Pixels, fn ($workspace): TrackingPixel => $workspace->trackingPixels()->create([...$request->validated(), 'user_id' => $request->user()->id])
         );
 

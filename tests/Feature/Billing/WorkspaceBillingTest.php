@@ -23,11 +23,10 @@ class WorkspaceBillingTest extends TestCase
     {
         $user = User::factory()->create();
         $workspace = $user->personalWorkspace()->sole();
-        $subscription = app(WorkspaceUsage::class)->subscriptionFor($workspace)->load('plan');
+        $effective = app(WorkspaceUsage::class)->effectivePlanFor($workspace);
 
-        $this->assertSame('active', $subscription->status);
-        $this->assertSame('manual', $subscription->source);
-        $this->assertSame('free', $subscription->plan->code);
+        $this->assertSame('free', $effective['plan']->code);
+        $this->assertSame('free', $effective['source']);
 
         $this->withoutVite();
         $this->actingAs($user)
@@ -165,7 +164,7 @@ class WorkspaceBillingTest extends TestCase
                 ->assertOk()
                 ->assertInertia(fn (Assert $page) => $page
                     ->where('effectivePlan.code', 'pro')
-                    ->where('effectiveSource', 'legacy_manual')
+                    ->where('effectiveSource', 'manual')
                     ->where('canManageBilling', false),
                 );
 
@@ -178,7 +177,7 @@ class WorkspaceBillingTest extends TestCase
             ->patch('/account-settings/billing/plan', ['plan' => 'free'])
             ->assertRedirect('/account-settings/billing');
 
-        $this->assertSame('free', $workspace->legacySubscription()->with('plan')->firstOrFail()->plan->code);
+        $this->assertSame('free', app(WorkspaceUsage::class)->planFor($workspace)->code);
     }
 
     /**

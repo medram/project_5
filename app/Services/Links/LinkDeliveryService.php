@@ -4,6 +4,7 @@ namespace App\Services\Links;
 
 use App\Models\Link;
 use App\Services\Analytics\AnalyticsTracker;
+use App\Services\Settings\PlatformSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -15,6 +16,7 @@ class LinkDeliveryService
         private readonly AnalyticsTracker $analytics,
         private readonly LinkRoutingResolver $routing,
         private readonly FirstPartyDestinationGuard $destinations,
+        private readonly PlatformSettings $settings,
     ) {}
 
     public function assertAvailable(Link $link): void
@@ -80,7 +82,9 @@ class LinkDeliveryService
 
     private function destination(Request $request, Link $link): string
     {
-        $routingTarget = $this->routing->target($request, $link);
+        $routingTarget = (bool) ($this->settings->resolved()['links']['targeting_enabled'] ?? true)
+            ? $this->routing->target($request, $link)
+            : null;
         $usesInternalPageRoute = false;
 
         if ($routingTarget !== null) {

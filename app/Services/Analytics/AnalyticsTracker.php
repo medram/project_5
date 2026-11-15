@@ -33,7 +33,7 @@ class AnalyticsTracker
 
     public function __construct(
         private readonly TrackingConsent $consent,
-        private readonly GeoIpCountryResolver $geoIp,
+        private readonly RequestDimensions $dimensions,
         private readonly WebhookDispatcher $webhooks,
     ) {}
 
@@ -93,10 +93,7 @@ class AnalyticsTracker
             'occurred_at' => now('UTC'),
             'visitor_hash' => $this->visitorHash($request),
             'visitor_key_version' => $this->visitorKeyVersion(),
-            'referrer_host' => $this->referrerHost($request),
-            'browser' => $this->browser($request),
-            'platform' => $this->platform($request),
-            'country_code' => $this->geoIp->countryCode((string) $request->ip()),
+            ...$this->dimensions->forRequest($request),
             ...$this->utmAttributes($request),
             ...$referenceAttributes,
         ]);
@@ -308,46 +305,19 @@ class AnalyticsTracker
 
     private function visitorHashKey(): string
     {
-        return (string) (config('services.linkpilot.analytics.hash_key') ?: config('app.key'));
+        $configured = config('services.linkpilot.analytics.hash_key');
+
+        if (is_string($configured) && $configured !== '') {
+            return $configured;
+        }
+
+        return app()->environment(['local', 'testing'])
+            ? (string) config('app.key')
+            : '';
     }
 
     private function visitorKeyVersion(): string
     {
         return (string) (config('services.linkpilot.analytics.hash_key_version') ?: 'local');
-    }
-
-    private function referrerHost(Request $request): ?string
-    {
-        $referrer = $request->headers->get('Referer');
-        $host = is_string($referrer) ? parse_url($referrer, PHP_URL_HOST) : null;
-
-        return is_string($host) ? Str::lower(Str::limit($host, 253, '')) : null;
-    }
-
-    private function browser(Request $request): string
-    {
-        $userAgent = (string) $request->userAgent();
-
-        return match (true) {
-            str_contains($userAgent, 'Edg/') => 'Edge',
-            str_contains($userAgent, 'Firefox/') => 'Firefox',
-            str_contains($userAgent, 'Chrome/') => 'Chrome',
-            str_contains($userAgent, 'Safari/') => 'Safari',
-            default => 'Other',
-        };
-    }
-
-    private function platform(Request $request): string
-    {
-        $userAgent = (string) $request->userAgent();
-
-        return match (true) {
-            str_contains($userAgent, 'Windows') => 'Windows',
-            str_contains($userAgent, 'Android') => 'Android',
-            str_contains($userAgent, 'iPhone'), str_contains($userAgent, 'iPad') => 'iOS',
-            str_contains($userAgent, 'Macintosh') => 'macOS',
-            str_contains($userAgent, 'Linux') => 'Linux',
-            default => 'Other',
-        };
     }
 }

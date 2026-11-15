@@ -2,10 +2,20 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     ArrowLeft,
+    BadgeCheck,
+    Ban,
+    CalendarClock,
     KeyRound,
-    ShieldCheck,
+    Link2,
+    LogOut,
+    Mail,
+    PanelsTopLeft,
+    RotateCcw,
+    UserMinus,
+    UserPlus,
     UserRoundX,
     Users,
+    type LucideIcon,
 } from 'lucide-react';
 import {
     AccountStatusBadge,
@@ -22,7 +32,7 @@ import {
     formatAdminDay,
     humanizeAdminValue,
 } from '@/components/admin/format';
-import { Badge } from '@/components/ui/badge';
+import { UserAvatar } from '@/components/user-avatar';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -316,7 +326,7 @@ export default function AdminUserShow({
     return (
         <>
             <Head title={`${account.name} — Administration`} />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <header className="space-y-4">
                     <Button asChild variant="ghost" size="sm" className="px-0">
                         <Link href={users.index().url}>
@@ -328,7 +338,7 @@ export default function AdminUserShow({
                         <div className="flex min-w-0 items-center gap-4">
                             <AccountAvatar account={account} />
                             <div className="min-w-0 space-y-1">
-                                <h1 className="truncate text-2xl font-semibold tracking-tight">
+                                <h1 className="truncate text-2xl leading-8 font-semibold tracking-[-0.02em]">
                                     {account.name}
                                 </h1>
                                 <p className="truncate text-sm text-muted-foreground">
@@ -350,12 +360,7 @@ export default function AdminUserShow({
                                 {can('admin.users.manage_status') && (
                                     <Button
                                         type="button"
-                                        variant={
-                                            account.status === 'suspended'
-                                                ? 'outline'
-                                                : 'destructive'
-                                        }
-                                        className="min-h-11"
+                                        variant="outline"
                                         onClick={() =>
                                             setSuspension(
                                                 account.status !== 'suspended',
@@ -373,18 +378,18 @@ export default function AdminUserShow({
                                         <Button
                                             type="button"
                                             variant="outline"
-                                            className="min-h-11"
                                             onClick={restoreAccountDeletion}
                                         >
+                                            <RotateCcw data-icon="inline-start" />
                                             Restore deletion
                                         </Button>
                                     ) : (
                                         <Button
                                             type="button"
                                             variant="outline"
-                                            className="min-h-11"
                                             onClick={scheduleAccountDeletion}
                                         >
+                                            <CalendarClock data-icon="inline-start" />
                                             Schedule deletion
                                         </Button>
                                     ))}
@@ -403,7 +408,7 @@ export default function AdminUserShow({
                 )}
 
                 {account.status === 'deletion_pending' && (
-                    <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
+                    <div className="rounded-xl border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-warning-soft-foreground">
                         Deletion requested{' '}
                         {formatAdminDate(account.deletionRequestedAt)}. Purge is
                         scheduled after {formatAdminDay(account.purgeAfter)}.
@@ -482,7 +487,7 @@ export default function AdminUserShow({
                                         onValueChange={setPlanCode}
                                     >
                                         <SelectTrigger
-                                            className="min-h-11 w-full"
+                                            className="h-9 w-full"
                                             aria-label="Assign plan"
                                         >
                                             <SelectValue placeholder="Select a plan" />
@@ -500,10 +505,11 @@ export default function AdminUserShow({
                                     </Select>
                                     <Button
                                         type="button"
-                                        className="min-h-11"
+                                        className="h-9"
                                         disabled={!planCode}
                                         onClick={assignPlan}
                                     >
+                                        <UserPlus data-icon="inline-start" />
                                         Assign
                                     </Button>
                                 </div>
@@ -514,10 +520,7 @@ export default function AdminUserShow({
 
                 <Card>
                     <CardHeader className="gap-1">
-                        <CardTitle className="flex items-center gap-2">
-                            <Users aria-hidden="true" />
-                            Workspaces
-                        </CardTitle>
+                        <CardTitle>Workspaces</CardTitle>
                         <CardDescription>
                             Membership role, effective entitlement, and resource
                             counts only. Destinations and tenant content are not
@@ -540,20 +543,15 @@ export default function AdminUserShow({
                                             <p className="truncate font-medium">
                                                 {workspace.name}
                                             </p>
-                                            <div className="flex flex-wrap gap-1 pt-1">
-                                                <Badge variant="outline">
-                                                    {humanizeAdminValue(
-                                                        workspace.role,
-                                                    )}
-                                                </Badge>
+                                            <p className="pt-1 text-xs text-muted-foreground">
+                                                {humanizeAdminValue(
+                                                    workspace.role,
+                                                )}
                                                 {workspace.isOwner &&
                                                     workspace.role !==
-                                                        'owner' && (
-                                                        <Badge variant="secondary">
-                                                            Owner
-                                                        </Badge>
-                                                    )}
-                                            </div>
+                                                        'owner' &&
+                                                    ' · owner'}
+                                            </p>
                                         </div>
                                         <div>
                                             <p className="text-xs text-muted-foreground">
@@ -563,14 +561,17 @@ export default function AdminUserShow({
                                         </div>
                                         <Metric
                                             label="Members"
+                                            icon={Users}
                                             value={workspace.membersCount}
                                         />
                                         <Metric
                                             label="Links"
+                                            icon={Link2}
                                             value={workspace.linksCount}
                                         />
                                         <Metric
                                             label="Pages"
+                                            icon={PanelsTopLeft}
                                             value={workspace.bioPagesCount}
                                         />
                                     </div>
@@ -583,10 +584,7 @@ export default function AdminUserShow({
                 <section className="grid gap-4 xl:grid-cols-2">
                     <Card>
                         <CardHeader className="gap-1">
-                            <CardTitle className="flex items-center gap-2">
-                                <ShieldCheck aria-hidden="true" />
-                                Platform roles
-                            </CardTitle>
+                            <CardTitle>Platform roles</CardTitle>
                             <CardDescription>
                                 Immutable seeded roles. Role changes are audited
                                 and cannot be performed on your own account.
@@ -618,12 +616,7 @@ export default function AdminUserShow({
                                                     <Button
                                                         type="button"
                                                         size="sm"
-                                                        variant={
-                                                            assigned
-                                                                ? 'outline'
-                                                                : 'default'
-                                                        }
-                                                        className="min-h-9"
+                                                        variant="outline"
                                                         onClick={() =>
                                                             changeRole(
                                                                 role.code,
@@ -631,9 +624,17 @@ export default function AdminUserShow({
                                                             )
                                                         }
                                                     >
-                                                        {assigned
-                                                            ? 'Remove'
-                                                            : 'Grant'}
+                                                        {assigned ? (
+                                                            <>
+                                                                <UserMinus data-icon="inline-start" />
+                                                                Remove
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <UserPlus data-icon="inline-start" />
+                                                                Grant
+                                                            </>
+                                                        )}
                                                     </Button>
                                                 )}
                                         </div>
@@ -663,10 +664,7 @@ export default function AdminUserShow({
 
                     <Card>
                         <CardHeader className="gap-1">
-                            <CardTitle className="flex items-center gap-2">
-                                <KeyRound aria-hidden="true" />
-                                Security
-                            </CardTitle>
+                            <CardTitle>Security</CardTitle>
                             <CardDescription>
                                 Credential metadata. Secrets and token values
                                 are never shown.
@@ -715,6 +713,7 @@ export default function AdminUserShow({
                                                     setVerification(false)
                                                 }
                                             >
+                                                <Ban data-icon="inline-start" />
                                                 Mark unverified
                                             </Button>
                                         ) : (
@@ -728,6 +727,7 @@ export default function AdminUserShow({
                                                         setVerification(true)
                                                     }
                                                 >
+                                                    <BadgeCheck data-icon="inline-start" />
                                                     Mark verified
                                                 </Button>
                                                 <Button
@@ -737,6 +737,7 @@ export default function AdminUserShow({
                                                     className="min-h-9"
                                                     onClick={resend}
                                                 >
+                                                    <Mail data-icon="inline-start" />
                                                     Resend verification
                                                 </Button>
                                             </>
@@ -750,6 +751,7 @@ export default function AdminUserShow({
                                                 className="min-h-9"
                                                 onClick={revokeAccountSessions}
                                             >
+                                                <LogOut data-icon="inline-start" />
                                                 Revoke sessions
                                             </Button>
                                             <Button
@@ -759,6 +761,7 @@ export default function AdminUserShow({
                                                 className="min-h-9"
                                                 onClick={revokeAccountTokens}
                                             >
+                                                <KeyRound data-icon="inline-start" />
                                                 Revoke tokens
                                             </Button>
                                         </>
@@ -813,23 +816,13 @@ function AccountAvatar({
 }: {
     account: AdminUserDetailProps['account'];
 }) {
-    if (account.avatarUrl) {
-        return (
-            <img
-                src={account.avatarUrl}
-                alt=""
-                className="size-16 shrink-0 rounded-full border object-cover"
-            />
-        );
-    }
-
     return (
-        <span
-            className="flex size-16 shrink-0 items-center justify-center rounded-full border bg-muted text-lg font-medium uppercase"
-            aria-hidden="true"
-        >
-            {account.name.slice(0, 2)}
-        </span>
+        <UserAvatar
+            name={account.name}
+            src={account.avatarUrl}
+            seed={account.id}
+            className="size-16 shrink-0"
+        />
     );
 }
 
@@ -842,11 +835,22 @@ function Field({ label, value }: { label: string; value: string }) {
     );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({
+    label,
+    icon: Icon,
+    value,
+}: {
+    label: string;
+    icon: LucideIcon;
+    value: number;
+}) {
     return (
         <div>
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="font-medium tabular-nums">{value}</p>
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Icon className="size-4 shrink-0" aria-hidden="true" />
+                {label}
+            </p>
+            <p className="text-sm tabular-nums">{value}</p>
         </div>
     );
 }

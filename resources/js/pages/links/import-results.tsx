@@ -41,10 +41,9 @@ export default function LinkImportResults({
     return (
         <>
             <Head title="CSV import results" />
-            <section className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+            <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="CSV import results"
-                    eyebrow="Short links"
                     description={`${summary.created} created · ${summary.failed} failed`}
                     actions={
                         <Button variant="outline" asChild className="min-h-11">

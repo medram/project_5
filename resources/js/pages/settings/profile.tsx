@@ -1,9 +1,13 @@
 import { Form, Head, Link, router, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import { UserAvatar } from '@/components/user-avatar';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import {
     Card,
     CardContent,
@@ -13,6 +17,13 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 import type { Auth } from '@/types';
@@ -44,8 +55,8 @@ type Props = {
     };
 };
 
-const selectClassName =
-    'border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive h-9 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50';
+const PROFILE_DEFAULT = '__linkpilot_profile_default__';
+const COUNTRY_UNSPECIFIED = '__linkpilot_country_unspecified__';
 
 export default function Profile({
     mustVerifyEmail,
@@ -56,16 +67,19 @@ export default function Profile({
     google,
 }: Props) {
     const { auth } = usePage<PageProps>().props;
+    const [regionalValues, setRegionalValues] = useState(() => ({
+        locale: profile.locale ?? '',
+        country_code: profile.countryCode ?? '',
+        timezone: profile.timezone ?? '',
+    }));
 
     return (
         <>
             <Head title="Profile settings" />
 
-            <h1 className="sr-only">Profile settings</h1>
-
             <div className="space-y-6">
                 <Heading
-                    variant="small"
+                    variant="page"
                     title="Profile"
                     description="Update your avatar, identity, and regional preferences"
                 />
@@ -80,24 +94,12 @@ export default function Profile({
                     {({ processing, errors }) => (
                         <>
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                                <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted">
-                                    {avatarUrl ? (
-                                        <img
-                                            src={avatarUrl}
-                                            alt="Your avatar"
-                                            className="size-full object-cover"
-                                        />
-                                    ) : (
-                                        <span
-                                            className="text-lg font-medium text-muted-foreground"
-                                            aria-hidden="true"
-                                        >
-                                            {(auth.user?.name ?? '?')
-                                                .slice(0, 1)
-                                                .toUpperCase()}
-                                        </span>
-                                    )}
-                                </div>
+                                <UserAvatar
+                                    name={auth.user?.name ?? '?'}
+                                    src={avatarUrl}
+                                    seed={auth.user?.email}
+                                    className="size-16"
+                                />
 
                                 <div className="grid flex-1 gap-2">
                                     <Label htmlFor="avatar">Avatar</Label>
@@ -115,15 +117,19 @@ export default function Profile({
                                     <InputError message={errors.avatar} />
 
                                     {avatarUrl && (
-                                        <label className="flex items-center gap-2 text-sm">
-                                            <input
-                                                type="checkbox"
+                                        <Field className="flex-row items-center gap-2">
+                                            <Checkbox
+                                                id="remove-avatar"
                                                 name="remove_avatar"
                                                 value="1"
-                                                className="size-4 rounded border"
                                             />
-                                            Remove current avatar
-                                        </label>
+                                            <FieldLabel
+                                                htmlFor="remove-avatar"
+                                                className="font-normal"
+                                            >
+                                                Remove current avatar
+                                            </FieldLabel>
+                                        </Field>
                                     )}
                                 </div>
                             </div>
@@ -167,76 +173,169 @@ export default function Profile({
                                 />
                             </div>
 
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="locale">Language</Label>
-                                    <select
-                                        id="locale"
+                            <FieldGroup className="grid gap-4 sm:grid-cols-2">
+                                <Field data-invalid={Boolean(errors.locale)}>
+                                    <FieldLabel htmlFor="locale">
+                                        Language
+                                    </FieldLabel>
+                                    <input
+                                        type="hidden"
                                         name="locale"
-                                        defaultValue={profile.locale ?? ''}
-                                        className={selectClassName}
+                                        value={regionalValues.locale}
+                                    />
+                                    <Select
+                                        value={
+                                            regionalValues.locale ||
+                                            PROFILE_DEFAULT
+                                        }
+                                        onValueChange={(value) =>
+                                            setRegionalValues((current) => ({
+                                                ...current,
+                                                locale:
+                                                    value === PROFILE_DEFAULT
+                                                        ? ''
+                                                        : value,
+                                            }))
+                                        }
                                     >
-                                        <option value="">
-                                            Use platform default
-                                        </option>
-                                        {options.locales.map((locale) => (
-                                            <option
-                                                key={locale.code}
-                                                value={locale.code}
-                                            >
-                                                {locale.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        <SelectTrigger
+                                            id="locale"
+                                            aria-invalid={Boolean(
+                                                errors.locale,
+                                            )}
+                                            className="w-full"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value={PROFILE_DEFAULT}>
+                                                Use platform default
+                                            </SelectItem>
+                                            {options.locales.map((locale) => (
+                                                <SelectItem
+                                                    key={locale.code}
+                                                    value={locale.code}
+                                                >
+                                                    {locale.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                     <InputError message={errors.locale} />
-                                </div>
+                                </Field>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="country_code">
+                                <Field
+                                    data-invalid={Boolean(errors.country_code)}
+                                >
+                                    <FieldLabel htmlFor="country_code">
                                         Country
-                                    </Label>
-                                    <select
-                                        id="country_code"
+                                    </FieldLabel>
+                                    <input
+                                        type="hidden"
                                         name="country_code"
-                                        defaultValue={profile.countryCode ?? ''}
-                                        className={selectClassName}
+                                        value={regionalValues.country_code}
+                                    />
+                                    <Select
+                                        value={
+                                            regionalValues.country_code ||
+                                            COUNTRY_UNSPECIFIED
+                                        }
+                                        onValueChange={(value) =>
+                                            setRegionalValues((current) => ({
+                                                ...current,
+                                                country_code:
+                                                    value ===
+                                                    COUNTRY_UNSPECIFIED
+                                                        ? ''
+                                                        : value,
+                                            }))
+                                        }
                                     >
-                                        <option value="">Not specified</option>
-                                        {options.countries.map((country) => (
-                                            <option
-                                                key={country.code}
-                                                value={country.code}
+                                        <SelectTrigger
+                                            id="country_code"
+                                            aria-invalid={Boolean(
+                                                errors.country_code,
+                                            )}
+                                            className="w-full"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem
+                                                value={COUNTRY_UNSPECIFIED}
                                             >
-                                                {country.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                                Not specified
+                                            </SelectItem>
+                                            {options.countries.map(
+                                                (country) => (
+                                                    <SelectItem
+                                                        key={country.code}
+                                                        value={country.code}
+                                                    >
+                                                        {country.name}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectContent>
+                                    </Select>
                                     <InputError message={errors.country_code} />
-                                </div>
+                                </Field>
 
-                                <div className="grid gap-2 sm:col-span-2">
-                                    <Label htmlFor="timezone">Timezone</Label>
-                                    <select
-                                        id="timezone"
+                                <Field
+                                    className="sm:col-span-2"
+                                    data-invalid={Boolean(errors.timezone)}
+                                >
+                                    <FieldLabel htmlFor="timezone">
+                                        Timezone
+                                    </FieldLabel>
+                                    <input
+                                        type="hidden"
                                         name="timezone"
-                                        defaultValue={profile.timezone ?? ''}
-                                        className={selectClassName}
+                                        value={regionalValues.timezone}
+                                    />
+                                    <Select
+                                        value={
+                                            regionalValues.timezone ||
+                                            PROFILE_DEFAULT
+                                        }
+                                        onValueChange={(value) =>
+                                            setRegionalValues((current) => ({
+                                                ...current,
+                                                timezone:
+                                                    value === PROFILE_DEFAULT
+                                                        ? ''
+                                                        : value,
+                                            }))
+                                        }
                                     >
-                                        <option value="">
-                                            Use platform default
-                                        </option>
-                                        {options.timezones.map((timezone) => (
-                                            <option
-                                                key={timezone}
-                                                value={timezone}
-                                            >
-                                                {timezone}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        <SelectTrigger
+                                            id="timezone"
+                                            aria-invalid={Boolean(
+                                                errors.timezone,
+                                            )}
+                                            className="w-full"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value={PROFILE_DEFAULT}>
+                                                Use platform default
+                                            </SelectItem>
+                                            {options.timezones.map(
+                                                (timezone) => (
+                                                    <SelectItem
+                                                        key={timezone}
+                                                        value={timezone}
+                                                    >
+                                                        {timezone}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectContent>
+                                    </Select>
                                     <InputError message={errors.timezone} />
-                                </div>
-                            </div>
+                                </Field>
+                            </FieldGroup>
 
                             {mustVerifyEmail &&
                                 auth.user?.email_verified_at === null && (

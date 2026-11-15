@@ -28,11 +28,8 @@ class WorkspaceScopingTest extends TestCase
             'user_id' => $user->id,
             'role' => 'owner',
         ]);
-        $this->assertDatabaseHas('workspace_subscriptions', [
+        $this->assertDatabaseMissing('workspace_plan_overrides', [
             'workspace_id' => $workspace->id,
-            'plan_id' => DB::table('plans')->where('code', 'free')->value('id'),
-            'status' => 'active',
-            'source' => 'manual',
         ]);
     }
 
@@ -51,11 +48,8 @@ class WorkspaceScopingTest extends TestCase
             'user_id' => $user->id,
             'role' => 'owner',
         ]);
-        $this->assertDatabaseHas('workspace_subscriptions', [
+        $this->assertDatabaseMissing('workspace_plan_overrides', [
             'workspace_id' => $workspace->id,
-            'plan_id' => DB::table('plans')->where('code', 'free')->value('id'),
-            'status' => 'active',
-            'source' => 'manual',
         ]);
     }
 

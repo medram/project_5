@@ -44,3 +44,5 @@ yarn-error.log
 /opencode.jsonc
 /.worktrees
 /.superpowers
+/uploads/GeoLite2-City.mmdb
+/uploads/GeoLite2-City_*/

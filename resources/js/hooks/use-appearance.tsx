@@ -77,16 +77,14 @@ export function initializeTheme(): void {
 
     if (!localStorage.getItem('appearance')) {
         const platformScheme = document.documentElement.dataset.platformScheme;
-        const initialAppearance =
+        currentAppearance =
             platformScheme === 'light' || platformScheme === 'dark'
                 ? platformScheme
                 : 'system';
-
-        localStorage.setItem('appearance', initialAppearance);
-        setCookie('appearance', initialAppearance);
+    } else {
+        currentAppearance = getStoredAppearance();
     }
 
-    currentAppearance = getStoredAppearance();
     applyTheme(currentAppearance);
 
     // Set up system theme change listener

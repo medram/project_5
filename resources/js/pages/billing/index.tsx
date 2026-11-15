@@ -1,7 +1,6 @@
 import { Head, router } from '@inertiajs/react';
-import { Check, CreditCard, Gauge, ShieldAlert } from 'lucide-react';
+import { Check, CreditCard, ExternalLink } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -15,21 +14,27 @@ import type {
     BillingPageProps,
     BillingPlan,
     PlanLimits,
-    UsageMetric,
 } from '@/types/billing';
+import {
+    limitLabel,
+    metricIcons,
+    UsageRow,
+    usageOrder,
+} from '@/components/billing/usage-metrics';
 
-const usageOrder: Array<{ key: keyof PlanLimits; noun: string }> = [
-    { key: 'links', noun: 'links' },
-    { key: 'folders', noun: 'folders' },
-    { key: 'qr_campaigns', noun: 'direct QR campaigns' },
-    { key: 'bio_pages', noun: 'bio pages' },
-    { key: 'domains', noun: 'custom domains' },
-    { key: 'pixels', noun: 'tracking pixels' },
-    { key: 'members', noun: 'members' },
-    { key: 'webhooks', noun: 'webhooks' },
-    { key: 'link_pages', noun: 'link pages' },
-    { key: 'api_keys', noun: 'active API keys' },
-    { key: 'storage_bytes', noun: 'retained media bytes' },
+const planFeatureRows: Array<{
+    key: keyof PlanLimits;
+    singular: string;
+    plural: string;
+}> = [
+    { key: 'links', singular: 'short link', plural: 'short links' },
+    { key: 'link_pages', singular: 'link page', plural: 'link pages' },
+    { key: 'domains', singular: 'custom domain', plural: 'custom domains' },
+    {
+        key: 'storage_bytes',
+        singular: 'of retained media',
+        plural: 'of retained media',
+    },
 ];
 
 function formatAmount(plan: BillingPlan, amount: number): string {
@@ -37,52 +42,13 @@ function formatAmount(plan: BillingPlan, amount: number): string {
         return 'Free';
     }
 
+    const value = amount / 100;
+
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: plan.currency,
-    }).format(amount / 100);
-}
-
-function limitLabel(value: number | null): string {
-    return value === null ? 'Unlimited' : value.toLocaleString();
-}
-
-function sourceLabel(source: string): string {
-    return (
-        {
-            stripe: 'Stripe subscription',
-            free: 'Free plan',
-            support_grant: 'Support override',
-            promotion: 'Promotion override',
-            manual: 'Manual override',
-            legacy_manual: 'Legacy override',
-        }[source] ?? source
-    );
-}
-
-function UsageRow({ metric, noun }: { metric: UsageMetric; noun: string }) {
-    return (
-        <div className="rounded-lg border p-3">
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                    <Gauge
-                        className="size-4 text-muted-foreground"
-                        aria-hidden="true"
-                    />
-                    <span className="font-medium">{metric.label}</span>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                    {metric.used.toLocaleString()} / {limitLabel(metric.limit)}
-                </span>
-            </div>
-            {metric.overLimit && (
-                <p className="mt-2 text-sm text-destructive">
-                    New {noun} are blocked until usage is back within this
-                    plan’s limit.
-                </p>
-            )}
-        </div>
-    );
+        maximumFractionDigits: value % 1 === 0 ? 0 : 2,
+    }).format(value);
 }
 
 export default function BillingIndex({
@@ -109,40 +75,35 @@ export default function BillingIndex({
         <>
             <Head title="Billing & usage" />
 
-            <div className="flex flex-col gap-6 p-4 sm:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="Plan and usage"
-                    eyebrow="Workspace billing"
-                    icon={CreditCard}
-                    description="Stripe is authoritative for paid subscriptions. Missing provider configuration disables checkout instead of pretending success."
+                    description="Your workspace plan, its limits, and what the current billing period includes."
                 />
 
                 <div className="grid gap-4">
                     <Card>
                         <CardHeader>
-                            <div className="flex items-start justify-between gap-3">
-                                <div>
-                                    <CardTitle>Current plan</CardTitle>
-                                    <CardDescription>
-                                        Entitlement for the active workspace.
-                                    </CardDescription>
-                                </div>
-                                <Badge variant="secondary">
-                                    {sourceLabel(effectiveSource)}
-                                </Badge>
-                            </div>
+                            <CardTitle>Current plan</CardTitle>
+                            <CardDescription>
+                                Active workspace entitlement
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div>
-                                <p className="text-2xl font-semibold">
+                            <div className="flex items-baseline justify-between gap-4">
+                                <p className="text-xl font-semibold">
                                     {effectivePlan.name}
                                 </p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-sm tabular-nums">
                                     {formatAmount(
                                         effectivePlan,
                                         effectivePlan.monthlyPrice,
-                                    )}{' '}
-                                    / month
+                                    )}
+                                    {effectivePlan.monthlyPrice > 0 && (
+                                        <span className="text-muted-foreground">
+                                            /mo
+                                        </span>
+                                    )}
                                 </p>
                             </div>
 
@@ -173,22 +134,13 @@ export default function BillingIndex({
                             )}
 
                             {override && (
-                                <div className="rounded-lg border border-dashed p-3 text-sm">
-                                    <p className="font-medium">
-                                        {sourceLabel(override.source)}
-                                    </p>
-                                    <p className="text-muted-foreground">
-                                        {override.reason}
-                                    </p>
-                                    {override.expiresAt && (
-                                        <p className="text-muted-foreground">
-                                            Expires{' '}
-                                            {new Date(
-                                                override.expiresAt,
-                                            ).toLocaleDateString()}
-                                        </p>
-                                    )}
-                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    {override.reason}
+                                    {override.expiresAt &&
+                                        ` · expires ${new Date(
+                                            override.expiresAt,
+                                        ).toLocaleDateString()}`}
+                                </p>
                             )}
 
                             {billing.portalReady && canManageBilling && (
@@ -199,6 +151,7 @@ export default function BillingIndex({
                                         router.get('/billing/portal')
                                     }
                                 >
+                                    <ExternalLink data-icon="inline-start" />
                                     Open Stripe billing portal
                                 </Button>
                             )}
@@ -206,35 +159,15 @@ export default function BillingIndex({
                     </Card>
 
                     {!billing.checkoutReady && canManageBilling && (
-                        <Card className="border-dashed">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <ShieldAlert
-                                        className="size-4"
-                                        aria-hidden="true"
-                                    />
-                                    Billing setup required
-                                </CardTitle>
-                                <CardDescription>
-                                    Checkout stays disabled until every operator
-                                    prerequisite is configured.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <ul className="list-inside list-disc text-sm">
-                                    {billing.missing.map((item) => (
-                                        <li key={item}>{item}</li>
-                                    ))}
-                                </ul>
-                                {providerSubscription === null &&
-                                    effectiveSource !== 'stripe' && (
-                                        <p className="mt-3 text-sm text-muted-foreground">
-                                            No paid subscription is active for
-                                            this workspace.
-                                        </p>
-                                    )}
-                            </CardContent>
-                        </Card>
+                        <div className="rounded-xl border bg-card px-5 py-4">
+                            <p className="text-sm">
+                                Checkout is not available yet
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Payments have not been configured for this
+                                environment. Existing limits still apply.
+                            </p>
+                        </div>
                     )}
 
                     <Card>
@@ -251,6 +184,7 @@ export default function BillingIndex({
                                     key={key}
                                     metric={usage[key]}
                                     noun={noun}
+                                    metricKey={key}
                                 />
                             ))}
                         </CardContent>
@@ -268,20 +202,25 @@ export default function BillingIndex({
                                                 <CardTitle>
                                                     {plan.name}
                                                 </CardTitle>
-                                                <CardDescription>
-                                                    {formatAmount(
-                                                        plan,
-                                                        plan.monthlyPrice,
-                                                    )}{' '}
-                                                    / month ·{' '}
-                                                    {formatAmount(
-                                                        plan,
-                                                        plan.annualPrice,
-                                                    )}{' '}
-                                                    / year
+                                                <CardDescription className="text-xs tabular-nums">
+                                                    {plan.monthlyPrice === 0
+                                                        ? 'No cost'
+                                                        : `${formatAmount(
+                                                              plan,
+                                                              plan.monthlyPrice,
+                                                          )}/mo`}
+                                                    {plan.annualPrice > 0 &&
+                                                        ` · ${formatAmount(
+                                                            plan,
+                                                            plan.annualPrice,
+                                                        )}/yr`}
                                                 </CardDescription>
                                             </div>
-                                            {active && <Badge>Current</Badge>}
+                                            {active && (
+                                                <span className="text-xs text-muted-foreground">
+                                                    Current plan
+                                                </span>
+                                            )}
                                         </div>
                                     </CardHeader>
                                     <CardContent className="flex-1 space-y-2 text-sm">
@@ -290,36 +229,33 @@ export default function BillingIndex({
                                                 {plan.description}
                                             </p>
                                         )}
-                                        <p>
-                                            <span className="font-medium">
-                                                {limitLabel(plan.limits.links)}
-                                            </span>{' '}
-                                            short links
-                                        </p>
-                                        <p>
-                                            <span className="font-medium">
-                                                {limitLabel(
-                                                    plan.limits.link_pages,
-                                                )}
-                                            </span>{' '}
-                                            link pages
-                                        </p>
-                                        <p>
-                                            <span className="font-medium">
-                                                {limitLabel(
-                                                    plan.limits.domains,
-                                                )}
-                                            </span>{' '}
-                                            custom domains
-                                        </p>
-                                        <p>
-                                            <span className="font-medium">
-                                                {limitLabel(
-                                                    plan.limits.storage_bytes,
-                                                )}
-                                            </span>{' '}
-                                            retained media bytes
-                                        </p>
+                                        {planFeatureRows.map(
+                                            ({ key, singular, plural }) => {
+                                                const limit = plan.limits[key];
+                                                const Icon = metricIcons[key];
+
+                                                return (
+                                                    <p
+                                                        key={key}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <Icon
+                                                            className="size-4 shrink-0 text-muted-foreground"
+                                                            aria-hidden="true"
+                                                        />
+                                                        <span className="font-medium tabular-nums">
+                                                            {limitLabel(
+                                                                key,
+                                                                limit,
+                                                            )}
+                                                        </span>{' '}
+                                                        {limit === 1
+                                                            ? singular
+                                                            : plural}
+                                                    </p>
+                                                );
+                                            },
+                                        )}
                                     </CardContent>
                                     <CardFooter className="flex flex-wrap gap-2">
                                         {active ? (
@@ -338,6 +274,7 @@ export default function BillingIndex({
                                                     variant="outline"
                                                     onClick={selectFreePlan}
                                                 >
+                                                    <Check data-icon="inline-start" />
                                                     Select Free
                                                 </Button>
                                             ) : (
@@ -348,6 +285,7 @@ export default function BillingIndex({
                                                 </span>
                                             )
                                         ) : canManageBilling &&
+                                          billing.enabled &&
                                           billing.checkoutReady &&
                                           !providerManaged ? (
                                             <div className="flex flex-wrap gap-2">
@@ -360,22 +298,25 @@ export default function BillingIndex({
                                                             )
                                                         }
                                                     >
+                                                        <CreditCard data-icon="inline-start" />
                                                         Choose monthly
                                                     </Button>
                                                 )}
-                                                {plan.checkout.year && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        onClick={() =>
-                                                            router.get(
-                                                                `/billing/checkout/${plan.code}/year`,
-                                                            )
-                                                        }
-                                                    >
-                                                        Choose yearly
-                                                    </Button>
-                                                )}
+                                                {billing.annualDisplay &&
+                                                    plan.checkout.year && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={() =>
+                                                                router.get(
+                                                                    `/billing/checkout/${plan.code}/year`,
+                                                                )
+                                                            }
+                                                        >
+                                                            <CreditCard data-icon="inline-start" />
+                                                            Choose yearly
+                                                        </Button>
+                                                    )}
                                             </div>
                                         ) : (
                                             <span className="text-sm text-muted-foreground">

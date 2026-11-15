@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { Check, ShieldCheck, Users } from 'lucide-react';
+import { Check, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -15,13 +15,9 @@ export default function AdminRolesIndex({ roles }: AdminRolesPageProps) {
     return (
         <>
             <Head title="Roles — Administration" />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <header className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <ShieldCheck className="size-4" aria-hidden="true" />
-                        <span>Platform administration</span>
-                    </div>
-                    <h1 className="text-2xl font-semibold tracking-tight">
+                    <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
                         Roles and permissions
                     </h1>
                     <p className="max-w-2xl text-sm text-muted-foreground">
@@ -78,7 +74,7 @@ export default function AdminRolesIndex({ roles }: AdminRolesPageProps) {
                                                 className="flex items-start gap-2"
                                             >
                                                 <Check
-                                                    className="mt-0.5 size-4 shrink-0 text-emerald-600"
+                                                    className="mt-0.5 size-4 shrink-0 text-success"
                                                     aria-hidden="true"
                                                 />
                                                 <span>{permission.label}</span>

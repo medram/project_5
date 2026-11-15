@@ -1,4 +1,5 @@
 import * as React from 'react';
+import MaintenanceBanner from '@/components/platform/maintenance-banner';
 import { SidebarInset } from '@/components/ui/sidebar';
 import type { AppVariant } from '@/types';
 
@@ -10,6 +11,7 @@ export function AppContent({ variant = 'sidebar', children, ...props }: Props) {
     if (variant === 'sidebar') {
         return (
             <SidebarInset id="main-content" tabIndex={-1} {...props}>
+                <MaintenanceBanner />
                 {children}
             </SidebarInset>
         );
@@ -20,6 +22,7 @@ export function AppContent({ variant = 'sidebar', children, ...props }: Props) {
             className="mx-auto flex h-full w-full max-w-7xl flex-1 flex-col gap-4 rounded-xl"
             {...props}
         >
+            <MaintenanceBanner />
             {children}
         </main>
     );

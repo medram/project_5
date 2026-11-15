@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Services\Billing\StripeReadiness;
 use App\Services\Billing\WorkspaceUsage;
+use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,14 @@ class CheckoutController extends Controller
         $workspace = $context->currentFor($request->user());
         Gate::authorize('manageBilling', $workspace);
 
+        $subscriptions = app(PlatformSettings::class)->resolved()['subscriptions'] ?? [];
+
+        if (! (bool) ($subscriptions['billing_enabled'] ?? false)) {
+            throw ValidationException::withMessages([
+                'billing' => 'Billing is disabled by the platform administrator.',
+            ]);
+        }
+
         abort_unless(in_array($plan->code, ['pro', 'business'], true) && $plan->is_active, 404);
         abort_unless(in_array($interval, ['month', 'year'], true), 404);
 
@@ -49,6 +58,7 @@ class CheckoutController extends Controller
             'success_url' => route('billing.checkout.success').'?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => route('billing.checkout.cancel'),
             'allow_promotion_codes' => (bool) config('linkpilot.billing.promotion_codes'),
+            'billing_address_collection' => ($subscriptions['billing_address_collection'] ?? 'auto') === 'required' ? 'required' : 'auto',
             'client_reference_id' => (string) $workspace->getKey(),
             'subscription_data' => [
                 'metadata' => ['workspace_id' => (string) $workspace->getKey()],

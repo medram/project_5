@@ -7,13 +7,17 @@ import {
     Link2,
     Pencil,
     Plus,
-    QrCode as QrCodeIcon,
     Trash2,
 } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { toast } from 'sonner';
+import { StatCard } from '@/components/dashboard/stat-card';
 import { PageHeader } from '@/components/page-header';
 import { QrCodeFormDialog } from '@/components/qr-codes/qr-code-form-dialog';
+import {
+    qrCampaignBadgeVariant,
+    qrCampaignState,
+} from '@/components/qr-codes/qr-code-status';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -50,27 +54,6 @@ import {
     publicMethod,
 } from '@/routes/qr-codes';
 import type { QrCodeCampaign, QrCodeIndexProps } from '@/types/qr-codes';
-
-function campaignState(campaign: QrCodeCampaign): string {
-    const now = Date.now();
-    if (!campaign.is_active) return 'Paused';
-    if (
-        campaign.available_from &&
-        new Date(campaign.available_from).getTime() > now
-    ) {
-        return 'Scheduled';
-    }
-    if (campaign.expires_at && new Date(campaign.expires_at).getTime() <= now) {
-        return 'Expired';
-    }
-    if (
-        campaign.max_scans !== null &&
-        campaign.scan_count >= campaign.max_scans
-    ) {
-        return 'Limit reached';
-    }
-    return 'Active';
-}
 
 function DeleteQrCampaignDialog({
     campaign,
@@ -120,7 +103,7 @@ function QrCampaignCard({
     campaign: QrCodeCampaign;
     availableLinks: QrCodeIndexProps['availableLinks'];
 }) {
-    const state = campaignState(campaign);
+    const state = qrCampaignState(campaign);
     const target = campaign.link
         ? `/${campaign.link.slug}`
         : campaign.destination_url || 'Unavailable target';
@@ -157,9 +140,7 @@ function QrCampaignCard({
                     </CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Badge
-                        variant={state === 'Active' ? 'default' : 'secondary'}
-                    >
+                    <Badge variant={qrCampaignBadgeVariant(state)}>
                         {state}
                     </Badge>
                     <Badge variant="outline">
@@ -306,11 +287,9 @@ export default function QrCodes({
     return (
         <>
             <Head title="QR campaigns" />
-            <section className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="QR campaigns"
-                    eyebrow="Shareable routes"
-                    icon={QrCodeIcon}
                     description="Manage short-link QR codes and direct-destination campaigns. QR scans stay separate from short-link clicks."
                     actions={
                         <>
@@ -329,44 +308,31 @@ export default function QrCodes({
                             <QrCodeFormDialog availableLinks={availableLinks}>
                                 <Button>
                                     <Plus data-icon="inline-start" />
-                                    Create QR campaign
+                                    Create QR code
                                 </Button>
                             </QrCodeFormDialog>
                         </>
                     }
                 />
 
-                <div className="grid gap-4 sm:grid-cols-3">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardDescription>QR codes</CardDescription>
-                            <CardTitle className="text-2xl tabular-nums">
-                                {campaigns.length}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardDescription>
-                                Total recorded scans
-                            </CardDescription>
-                            <CardTitle className="text-2xl tabular-nums">
-                                {totalScans}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardDescription>Direct campaigns</CardDescription>
-                            <CardTitle className="text-2xl tabular-nums">
-                                {directCampaigns}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <StatCard
+                        label="QR codes"
+                        value={campaigns.length.toLocaleString()}
+                    />
+                    <StatCard
+                        label="Total recorded scans"
+                        value={totalScans.toLocaleString()}
+                    />
+                    <StatCard
+                        label="Direct campaigns"
+                        value={directCampaigns.toLocaleString()}
+                        className="col-span-2 sm:col-span-1"
+                    />
                 </div>
 
                 {campaigns.length === 0 ? (
-                    <Empty className="bg-muted/30">
+                    <Empty>
                         <EmptyHeader>
                             <EmptyMedia variant="icon">
                                 <Link2 aria-hidden="true" />
@@ -381,7 +347,7 @@ export default function QrCodes({
                         <QrCodeFormDialog availableLinks={availableLinks}>
                             <Button>
                                 <Plus data-icon="inline-start" />
-                                Create QR campaign
+                                Create QR code
                             </Button>
                         </QrCodeFormDialog>
                     </Empty>
