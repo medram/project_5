@@ -1,11 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { CreditCard } from 'lucide-react';
-import { useEffect, useId, useRef, useState } from 'react';
+import { CreditCard, Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Popover,
-    PopoverAnchor,
     PopoverContent,
+    PopoverTrigger,
 } from '@/components/ui/popover';
 import { SidebarMenuButton } from '@/components/ui/sidebar';
 import { UsageRow, usageOrder } from '@/components/billing/usage-metrics';
@@ -56,7 +56,17 @@ export function PlanUsagePanel({
                     variant={role === 'owner' ? 'default' : 'outline'}
                 >
                     <Link href={billingIndex()} onClick={onBillingClick}>
-                        {role === 'owner' ? 'Upgrade plan' : 'Plan details'}
+                        {role === 'owner' ? (
+                            <>
+                                <Sparkles
+                                    aria-hidden="true"
+                                    data-icon="inline-start"
+                                />
+                                Upgrade plan
+                            </>
+                        ) : (
+                            'Plan details'
+                        )}
                     </Link>
                 </Button>
             </div>
@@ -71,13 +81,13 @@ export function SidebarPlanUsage({
     onBillingClick,
 }: SidebarPlanUsageProps) {
     const [open, setOpen] = useState(false);
-    const panelId = useId();
     const closeTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(
         undefined,
     );
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const pointerWithinPanel = useRef(false);
+    const suppressFocusOpen = useRef(false);
 
     function cancelClose() {
         clearTimeout(closeTimeout.current);
@@ -128,23 +138,24 @@ export function SidebarPlanUsage({
             onOpenChange={(nextOpen) => {
                 setOpen(nextOpen);
                 if (!nextOpen) {
+                    suppressFocusOpen.current = true;
                     cancelClose();
+                    window.setTimeout(() => {
+                        suppressFocusOpen.current = false;
+                    }, 250);
                 }
             }}
         >
-            <PopoverAnchor asChild>
+            <PopoverTrigger asChild>
                 <SidebarMenuButton
                     ref={triggerRef}
                     type="button"
                     className="h-10 max-lg:h-11"
                     aria-label={`Show usage for ${plan} plan`}
-                    aria-haspopup="dialog"
-                    aria-expanded={open}
-                    aria-controls={open ? panelId : undefined}
-                    data-state={open ? 'open' : 'closed'}
                     onPointerEnter={(event) => {
                         if (event.pointerType !== 'touch') {
                             pointerWithinPanel.current = true;
+                            suppressFocusOpen.current = false;
                             cancelClose();
                             setOpen(true);
                         }
@@ -156,26 +167,20 @@ export function SidebarPlanUsage({
                         }
                     }}
                     onFocus={() => {
+                        if (suppressFocusOpen.current) {
+                            return;
+                        }
+
                         cancelClose();
                         setOpen(true);
                     }}
                     onBlur={(event) => handleFocusLeave(event.relatedTarget)}
-                    onClick={(event) => {
-                        cancelClose();
-                        setOpen(true);
-                        if (event.detail === 0) {
-                            focusPanelAction();
-                        }
-                    }}
                     onKeyDown={(event) => {
                         if (event.key === 'ArrowDown') {
                             event.preventDefault();
                             cancelClose();
                             setOpen(true);
                             focusPanelAction();
-                        } else if (event.key === 'Escape' && open) {
-                            event.preventDefault();
-                            setOpen(false);
                         }
                     }}
                 >
@@ -185,10 +190,9 @@ export function SidebarPlanUsage({
                         Usage
                     </span>
                 </SidebarMenuButton>
-            </PopoverAnchor>
+            </PopoverTrigger>
             <PopoverContent
                 ref={panelRef}
-                id={panelId}
                 side="right"
                 align="end"
                 sideOffset={8}
@@ -209,12 +213,6 @@ export function SidebarPlanUsage({
                 onFocusCapture={cancelClose}
                 onBlurCapture={(event) => handleFocusLeave(event.relatedTarget)}
                 onOpenAutoFocus={(event) => event.preventDefault()}
-                onCloseAutoFocus={(event) => {
-                    if (panelRef.current?.contains(document.activeElement)) {
-                        event.preventDefault();
-                        triggerRef.current?.focus();
-                    }
-                }}
             >
                 <PlanUsagePanel
                     role={role}
