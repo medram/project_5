@@ -94,6 +94,21 @@ export function SidebarPlanUsage({
         closeTimeout.current = undefined;
     }
 
+    function suppressFocusReopen() {
+        suppressFocusOpen.current = true;
+        window.setTimeout(() => {
+            suppressFocusOpen.current = false;
+        }, 250);
+    }
+
+    function handleBillingAction() {
+        cancelClose();
+        pointerWithinPanel.current = false;
+        suppressFocusReopen();
+        setOpen(false);
+        onBillingClick?.();
+    }
+
     function closeSoon() {
         cancelClose();
         closeTimeout.current = setTimeout(() => {
@@ -138,11 +153,8 @@ export function SidebarPlanUsage({
             onOpenChange={(nextOpen) => {
                 setOpen(nextOpen);
                 if (!nextOpen) {
-                    suppressFocusOpen.current = true;
+                    suppressFocusReopen();
                     cancelClose();
-                    window.setTimeout(() => {
-                        suppressFocusOpen.current = false;
-                    }, 250);
                 }
             }}
         >
@@ -217,7 +229,7 @@ export function SidebarPlanUsage({
                 <PlanUsagePanel
                     role={role}
                     usage={usage}
-                    onBillingClick={onBillingClick}
+                    onBillingClick={handleBillingAction}
                 />
             </PopoverContent>
         </Popover>
