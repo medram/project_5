@@ -16,7 +16,7 @@ class AdminContentAccess
         if (is_array($scope)) {
             $root = $scope['root'];
             $workspace = $scope['workspace'];
-            if (in_array($ability, ['view', 'update'], true) && $root->is($subject)) {
+            if (in_array($ability, ['view', 'update', 'delete'], true) && $root->is($subject)) {
                 return;
             }
             if ($subject instanceof Workspace && $workspace->is($subject)

@@ -2,9 +2,12 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\PlatformPermission;
 use App\Models\Plan;
+use App\Models\PlatformRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class CustomPlanManagementTest extends TestCase
@@ -72,6 +75,134 @@ class CustomPlanManagementTest extends TestCase
             'code' => 'free', 'is_active' => true, 'monthly_price' => 0,
             'stripe_monthly_price_id' => null,
         ]);
+    }
+
+    public function test_unassigned_custom_plan_can_be_deleted_and_cascades_provider_price_history(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin)->post('/admin/plans', $this->payload())->assertSessionHasNoErrors();
+        $plan = Plan::query()->where('code', 'creator')->sole();
+        DB::table('plan_stripe_prices')->insert([
+            'plan_id' => $plan->id,
+            'stripe_price_id' => 'price_custom_delete_cascade',
+            'interval' => 'month',
+            'currency' => 'usd',
+            'unit_amount' => 500,
+            'verified_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->delete('/admin/plans/creator')
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseMissing('plans', ['code' => 'creator']);
+        $this->assertDatabaseMissing('plan_stripe_prices', ['stripe_price_id' => 'price_custom_delete_cascade']);
+        $this->assertDatabaseHas('admin_audit_logs', [
+            'action' => 'delete_plan',
+            'actor_user_id' => $admin->id,
+        ]);
+    }
+
+    public function test_builtin_plans_cannot_be_deleted(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        foreach (['free', 'pro', 'business'] as $code) {
+            $this->actingAs($admin)
+                ->delete("/admin/plans/{$code}")
+                ->assertSessionHasErrors('plan');
+            $this->assertDatabaseHas('plans', ['code' => $code]);
+        }
+    }
+
+    public function test_plan_with_override_history_cannot_be_deleted(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $owner = User::factory()->create();
+        $workspace = $owner->currentWorkspace;
+
+        $this->actingAs($admin)->post('/admin/plans', $this->payload())->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post("/admin/subscriptions/{$workspace->id}/overrides", [
+            'plan' => 'creator',
+            'source' => 'support_grant',
+            'reason' => 'Keep this history',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)
+            ->delete('/admin/plans/creator')
+            ->assertSessionHasErrors('plan');
+        $this->assertDatabaseHas('plans', ['code' => 'creator']);
+    }
+
+    public function test_plan_with_provider_subscription_price_cannot_be_deleted(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $owner = User::factory()->create();
+        $workspace = $owner->currentWorkspace;
+
+        $this->actingAs($admin)->post('/admin/plans', $this->payload())->assertSessionHasNoErrors();
+        $plan = Plan::query()->where('code', 'creator')->sole();
+        DB::table('plan_stripe_prices')->insert([
+            'plan_id' => $plan->id,
+            'stripe_price_id' => 'price_custom_delete_test',
+            'interval' => 'month',
+            'currency' => 'usd',
+            'unit_amount' => 500,
+            'verified_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $subscriptionId = DB::table('subscriptions')->insertGetId([
+            'workspace_id' => $workspace->id,
+            'type' => 'default',
+            'stripe_id' => 'sub_custom_delete_test',
+            'stripe_status' => 'active',
+            'stripe_price' => 'price_custom_delete_test',
+            'quantity' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('subscription_items')->insert([
+            'subscription_id' => $subscriptionId,
+            'stripe_id' => 'si_custom_delete_test',
+            'stripe_product' => 'prod_custom_delete_test',
+            'stripe_price' => 'price_custom_delete_test',
+            'quantity' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->delete('/admin/plans/creator')
+            ->assertSessionHasErrors('plan');
+        $this->assertDatabaseHas('plans', ['code' => 'creator']);
+    }
+
+    public function test_plan_delete_requires_billing_manage(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin)->post('/admin/plans', $this->payload())->assertSessionHasNoErrors();
+
+        $this->actingAs(User::factory()->support()->create())
+            ->delete('/admin/plans/creator')
+            ->assertForbidden();
+        $this->assertDatabaseHas('plans', ['code' => 'creator']);
+
+        $role = PlatformRole::query()->create(['name' => 'Billing viewer', 'code' => 'billing_viewer']);
+        $role->permissionGrants()->createMany([
+            ['permission' => PlatformPermission::AdminAccess->value],
+            ['permission' => PlatformPermission::AdminBillingView->value],
+        ]);
+        $viewer = User::factory()->create();
+        $viewer->platformRoles()->attach($role);
+
+        $this->actingAs($viewer)
+            ->delete('/admin/plans/creator')
+            ->assertForbidden();
+        $this->assertDatabaseHas('plans', ['code' => 'creator']);
     }
 
     public function test_creation_rejects_invalid_codes_and_limits_and_unauthorized_writes(): void

@@ -1,6 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
-import { Pencil, Search } from 'lucide-react';
+import { Pencil, Search, Trash2 } from 'lucide-react';
+import { AdminContentDeleteDialog } from '@/components/admin/admin-content-delete-dialog';
 import { ContentEditorRoutesProvider } from '@/components/admin/content-editor-routes';
 import { CustomDomainEditor } from '@/components/admin/custom-domain-editor';
 import { formatAdminDate } from '@/components/admin/format';
@@ -28,6 +29,40 @@ import {
 } from '@/components/ui/select';
 import { toLinkListItem } from '@/types/links';
 import type { AdminContentPageProps } from '@/types/admin-content';
+
+const singularLabels: Record<string, string> = {
+    links: 'short link',
+    biolinks: 'bio page',
+    'qr-codes': 'QR code',
+    folders: 'folder',
+    'custom-domains': 'custom domain',
+    'link-overlays': 'CTA overlay',
+    'link-pages': 'link page',
+    pixels: 'tracking pixel',
+};
+
+function deleteDescription(key: string, name: string): string {
+    switch (key) {
+        case 'links':
+            return `This permanently removes ${name}, its click history, and its linked QR image. Independent QR campaigns keep their scan history.`;
+        case 'biolinks':
+            return `This permanently removes ${name}, its link buttons, content blocks, and uploaded images.`;
+        case 'qr-codes':
+            return `This removes ${name} and its scan history. The linked short link, if any, remains.`;
+        case 'folders':
+            return `This removes ${name}. Links in it remain and become unfiled.`;
+        case 'custom-domains':
+            return `This disconnects ${name} from every short link. Those links use the default LinkPilot host again.`;
+        case 'link-overlays':
+            return `This removes ${name}. Links that used it remain and no longer show the overlay.`;
+        case 'link-pages':
+            return `This permanently removes ${name}, its blocks, items, variants, form responses, and uploaded files.`;
+        case 'pixels':
+            return `This removes ${name} and its rules. Tracked pages keep working without the pixel.`;
+        default:
+            return `This permanently removes ${name}. This cannot be undone.`;
+    }
+}
 
 export default function AdminContentIndex({
     resource,
@@ -65,6 +100,10 @@ export default function AdminContentIndex({
         return !inlineEditor || listQuery === ''
             ? editUrl
             : `${editUrl}?${listQuery}`;
+    }
+
+    function deleteHref(deleteUrl: string): string {
+        return listQuery === '' ? deleteUrl : `${deleteUrl}?${listQuery}`;
     }
 
     function apply(event: FormEvent) {
@@ -280,29 +319,58 @@ export default function AdminContentIndex({
                                         {formatAdminDate(row.updatedAt)}
                                     </td>
                                     <td className="px-4 py-3 text-right">
-                                        {row.editUrl && (
-                                            <Button
-                                                asChild
-                                                size="icon"
-                                                variant="secondary"
-                                                className="size-8 rounded-full"
-                                                title={`Edit ${row.name}`}
-                                            >
-                                                <Link
-                                                    href={editHref(row.editUrl)}
-                                                    preserveScroll
-                                                    preserveState={inlineEditor}
-                                                    only={
-                                                        inlineEditor
-                                                            ? ['editing']
-                                                            : undefined
-                                                    }
-                                                    aria-label={`Edit ${row.name}`}
+                                        <div className="flex justify-end gap-1">
+                                            {row.editUrl && (
+                                                <Button
+                                                    asChild
+                                                    size="icon"
+                                                    variant="secondary"
+                                                    className="size-8 rounded-full"
+                                                    title={`Edit ${row.name}`}
                                                 >
-                                                    <Pencil aria-hidden="true" />
-                                                </Link>
-                                            </Button>
-                                        )}
+                                                    <Link
+                                                        href={editHref(row.editUrl)}
+                                                        preserveScroll
+                                                        preserveState={inlineEditor}
+                                                        only={
+                                                            inlineEditor
+                                                                ? ['editing']
+                                                                : undefined
+                                                        }
+                                                        aria-label={`Edit ${row.name}`}
+                                                    >
+                                                        <Pencil aria-hidden="true" />
+                                                    </Link>
+                                                </Button>
+                                            )}
+                                            {row.deleteUrl && (
+                                                <AdminContentDeleteDialog
+                                                    deleteUrl={deleteHref(row.deleteUrl)}
+                                                    resourceLabel={
+                                                        singularLabels[resource.key] ?? 'record'
+                                                    }
+                                                    recordName={row.name}
+                                                    description={deleteDescription(
+                                                        resource.key,
+                                                        row.name,
+                                                    )}
+                                                    confirmationValue={
+                                                        row.deleteConfirmation
+                                                    }
+                                                >
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="destructive"
+                                                        className="size-8 rounded-full"
+                                                        title={`Delete ${row.name}`}
+                                                        aria-label={`Delete ${row.name}`}
+                                                    >
+                                                        <Trash2 aria-hidden="true" />
+                                                    </Button>
+                                                </AdminContentDeleteDialog>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -374,24 +442,51 @@ export default function AdminContentIndex({
                                 <p className="text-xs text-muted-foreground">
                                     Updated {formatAdminDate(row.updatedAt)}
                                 </p>
-                                {row.editUrl && (
-                                    <Button asChild variant="outline" size="sm" className="w-fit">
-                                        <Link
-                                            href={editHref(row.editUrl)}
-                                            preserveScroll
-                                            preserveState={inlineEditor}
-                                            only={
-                                                inlineEditor
-                                                    ? ['editing']
-                                                    : undefined
+                                <div className="flex flex-wrap gap-2">
+                                    {row.editUrl && (
+                                        <Button asChild variant="outline" size="sm" className="w-fit">
+                                            <Link
+                                                href={editHref(row.editUrl)}
+                                                preserveScroll
+                                                preserveState={inlineEditor}
+                                                only={
+                                                    inlineEditor
+                                                        ? ['editing']
+                                                        : undefined
+                                                }
+                                                aria-label={`Edit ${row.name}`}
+                                            >
+                                                <Pencil aria-hidden="true" />
+                                                Edit
+                                            </Link>
+                                        </Button>
+                                    )}
+                                    {row.deleteUrl && (
+                                        <AdminContentDeleteDialog
+                                            deleteUrl={deleteHref(row.deleteUrl)}
+                                            resourceLabel={
+                                                singularLabels[resource.key] ?? 'record'
                                             }
-                                            aria-label={`Edit ${row.name}`}
+                                            recordName={row.name}
+                                            description={deleteDescription(
+                                                resource.key,
+                                                row.name,
+                                            )}
+                                            confirmationValue={row.deleteConfirmation}
                                         >
-                                            <Pencil aria-hidden="true" />
-                                            Edit
-                                        </Link>
-                                    </Button>
-                                )}
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="sm"
+                                                className="w-fit"
+                                                aria-label={`Delete ${row.name}`}
+                                            >
+                                                <Trash2 aria-hidden="true" />
+                                                Delete
+                                            </Button>
+                                        </AdminContentDeleteDialog>
+                                    )}
+                                </div>
                             </CardContent>
                         </Card>
                     ))}

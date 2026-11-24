@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateQrCodeRequest;
 use App\Models\QrCode;
 use App\Models\Workspace;
 use App\Services\Billing\EnforcesPlanLimits;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Platform\AdminContentMutation;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
@@ -133,13 +134,18 @@ class QrCampaignController extends Controller
 
     public function destroy(Request $request, QrCode $qrCode): RedirectResponse
     {
-        $workspace = $this->workspaceContext->currentFor($request->user());
+        $workspace = $this->workspaceContext->forContentRequest($request);
         $qrCode = $workspace->qrCodes()
             ->where('source', 'campaign')
             ->findOrFail($qrCode->getKey());
+        app(AdminContentAccess::class)->authorize($request, 'delete', $qrCode);
         $logoPath = $qrCode->logo_path;
         $qrCode->delete();
-        $this->deleteLogo($workspace, $logoPath);
+        if ($request->attributes->get(ScopedAdminContent::ATTRIBUTE)) {
+            DB::afterCommit(fn () => $this->deleteLogo($workspace, $logoPath));
+        } else {
+            $this->deleteLogo($workspace, $logoPath);
+        }
 
         return to_route('qr-codes.index');
     }

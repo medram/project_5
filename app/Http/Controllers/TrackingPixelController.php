@@ -163,7 +163,7 @@ class TrackingPixelController extends Controller
     public function destroy(Request $request, TrackingPixel $trackingPixel): RedirectResponse
     {
         $this->ensureInCurrentWorkspace($request, $trackingPixel);
-        Gate::authorize('delete', $trackingPixel);
+        app(AdminContentAccess::class)->authorize($request, 'delete', $trackingPixel);
         $trackingPixel->delete();
 
         return to_route('tracking-pixels.index');

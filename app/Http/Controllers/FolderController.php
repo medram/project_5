@@ -88,8 +88,8 @@ class FolderController extends Controller
 
     public function destroy(Request $request, Folder $folder): RedirectResponse
     {
-        $folder = $this->workspaceContext->currentFor($request->user())->folders()->findOrFail($folder->getKey());
-        Gate::authorize('delete', $folder);
+        $folder = $this->workspaceContext->forContentRequest($request)->folders()->findOrFail($folder->getKey());
+        app(AdminContentAccess::class)->authorize($request, 'delete', $folder);
         $folder->delete();
 
         return to_route('folders.index', $this->listState($request, resetPage: true));

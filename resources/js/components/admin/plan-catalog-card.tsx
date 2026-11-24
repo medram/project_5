@@ -5,6 +5,7 @@ import {
     Pencil,
     QrCode,
     Star,
+    Trash2,
     Users,
     type LucideIcon,
 } from 'lucide-react';
@@ -70,10 +71,12 @@ export function PlanCatalogCard({
     plan,
     canManage,
     onEdit,
+    onDelete,
 }: {
     plan: AdminPlanRecord;
     canManage: boolean;
     onEdit: () => void;
+    onDelete?: () => void;
 }) {
     const price = planPrice(plan);
     const checkout =
@@ -148,13 +151,20 @@ export function PlanCatalogCard({
             </div>
 
             <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2.5">
-                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span
-                        aria-hidden="true"
-                        className={`size-1.5 rounded-full ${plan.isActive ? 'bg-success' : 'bg-muted-foreground/40'}`}
-                    />
-                    {plan.isActive ? 'Active' : 'Inactive'}
-                </span>
+                <div className="flex flex-col gap-0.5">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span
+                            aria-hidden="true"
+                            className={`size-1.5 rounded-full ${plan.isActive ? 'bg-success' : 'bg-muted-foreground/40'}`}
+                        />
+                        {plan.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                    {plan.deleteBlockedReason !== null && (
+                        <span className="text-xs text-muted-foreground">
+                            {plan.deleteBlockedReason}
+                        </span>
+                    )}
+                </div>
                 <div className="flex items-center gap-1">
                     {plan.featured && (
                         <span className="inline-flex items-center gap-1 pr-1 text-xs text-muted-foreground">
@@ -172,6 +182,26 @@ export function PlanCatalogCard({
                         >
                             <Pencil aria-hidden="true" />
                             Edit
+                        </Button>
+                    )}
+                    {canManage && (
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            disabled={!plan.canDelete}
+                            title={
+                                plan.deleteBlockedReason ??
+                                `Delete ${plan.name} plan`
+                            }
+                            aria-label={
+                                plan.deleteBlockedReason ??
+                                `Delete ${plan.name} plan`
+                            }
+                            onClick={onDelete}
+                        >
+                            <Trash2 aria-hidden="true" />
+                            Delete
                         </Button>
                     )}
                 </div>

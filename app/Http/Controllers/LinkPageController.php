@@ -15,7 +15,6 @@ use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -120,7 +119,7 @@ class LinkPageController extends Controller
     public function destroy(Request $request, LinkPage $linkPage): RedirectResponse
     {
         $this->ensureInCurrentWorkspace($request, $linkPage);
-        Gate::authorize('delete', $linkPage);
+        app(AdminContentAccess::class)->authorize($request, 'delete', $linkPage);
         DB::transaction(function () use ($linkPage): void {
             foreach ($linkPage->blocks()->with('contentMedia')->get() as $block) {
                 if ($block->contentMedia) {

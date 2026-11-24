@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Pencil, Plus, RotateCcw, Save, Upload } from 'lucide-react';
+import { Pencil, Plus, RotateCcw, Save, Trash2, Upload } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import {
     AlertDialog,
@@ -426,6 +426,8 @@ function LocaleEditor({
         is_published: locale.isPublished,
         is_default: locale.isDefault,
     });
+    const deleteForm = useForm<{ locale?: string }>({});
+    const [deletingLocale, setDeletingLocale] = useState(false);
     return (
         <Card>
             <CardHeader>
@@ -517,6 +519,95 @@ function LocaleEditor({
                         Save locale
                     </Button>
                 </form>
+                <div className="mt-4 flex flex-col gap-2 border-t pt-4">
+                    {locale.code !== 'en' && !locale.isDefault ? (
+                        <>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-xs text-muted-foreground">
+                                    Deleting this locale removes every
+                                    translation for it.
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="w-fit"
+                                    onClick={() => setDeletingLocale(true)}
+                                >
+                                    <Trash2 aria-hidden="true" />
+                                    Delete locale
+                                </Button>
+                            </div>
+                            {deleteForm.errors.locale && (
+                                <p
+                                    role="alert"
+                                    className="text-sm text-destructive"
+                                >
+                                    {deleteForm.errors.locale}
+                                </p>
+                            )}
+                        </>
+                    ) : (
+                        <p className="text-xs text-muted-foreground">
+                            English and default locales cannot be deleted.
+                        </p>
+                    )}
+                    <AlertDialog
+                        open={deletingLocale}
+                        onOpenChange={(open) => {
+                            if (!open && !deleteForm.processing) {
+                                setDeletingLocale(false);
+                            }
+                        }}
+                    >
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    Delete {locale.name}?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This permanently removes every translation
+                                    for this locale. English remains the
+                                    fallback.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            {deleteForm.errors.locale && (
+                                <p
+                                    role="alert"
+                                    className="text-sm text-destructive"
+                                >
+                                    {deleteForm.errors.locale}
+                                </p>
+                            )}
+                            <AlertDialogFooter>
+                                <AlertDialogCancel
+                                    disabled={deleteForm.processing}
+                                >
+                                    Cancel
+                                </AlertDialogCancel>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    disabled={deleteForm.processing}
+                                    onClick={() =>
+                                        deleteForm.delete(
+                                            localizations.destroy(locale.code)
+                                                .url,
+                                            {
+                                                preserveScroll: true,
+                                                onSuccess: () =>
+                                                    setDeletingLocale(false),
+                                            },
+                                        )
+                                    }
+                                >
+                                    <Trash2 aria-hidden="true" />
+                                    Delete locale
+                                </Button>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
             </CardContent>
         </Card>
     );

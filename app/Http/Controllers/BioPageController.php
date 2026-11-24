@@ -3,17 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PlanMetric;
+use App\Http\Middleware\ScopedAdminContent;
 use App\Http\Requests\StoreBioPageRequest;
 use App\Http\Requests\UpdateBioPageRequest;
-use App\Http\Middleware\ScopedAdminContent;
 use App\Models\BioPage;
 use App\Services\Billing\EnforcesPlanLimits;
 use App\Services\BioPages\BioPagePresentation;
+use App\Services\Content\ContentMediaStorage;
 use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -22,6 +23,7 @@ class BioPageController extends Controller
     public function __construct(
         private readonly WorkspaceContext $workspaces,
         private readonly EnforcesPlanLimits $planLimits,
+        private readonly ContentMediaStorage $media,
     ) {}
 
     public function index(Request $request): Response
@@ -91,8 +93,18 @@ class BioPageController extends Controller
     public function destroy(Request $request, BioPage $bioPage): RedirectResponse
     {
         $this->ensureInCurrentWorkspace($request, $bioPage);
-        Gate::authorize('delete', $bioPage);
+        app(AdminContentAccess::class)->authorize($request, 'delete', $bioPage);
+        $media = $bioPage->contentBlocks()->with('contentMedia')->get()->pluck('contentMedia')->filter();
+
         $bioPage->delete();
+
+        foreach ($media as $item) {
+            if ($request->attributes->get(ScopedAdminContent::ATTRIBUTE)) {
+                DB::afterCommit(fn () => $this->media->delete($item));
+            } else {
+                $this->media->delete($item);
+            }
+        }
 
         return to_route('bio-pages.index');
     }

@@ -77,6 +77,61 @@ class LocalizationTest extends TestCase
             ->assertSessionHasErrors('locale');
     }
 
+    public function test_non_default_locale_delete_removes_translations_and_audits(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $this->actingAs($administrator)->post('/admin/localizations', [
+            'code' => 'fr',
+            'name' => 'French',
+            'direction' => 'ltr',
+            'is_published' => true,
+        ])->assertRedirect();
+
+        $locale = Locale::query()->where('code', 'fr')->sole();
+        Translation::query()->create([
+            'locale_id' => $locale->id,
+            'key' => 'Welcome',
+            'value' => 'Bienvenue',
+        ]);
+
+        $this->actingAs($administrator)
+            ->delete('/admin/localizations/fr')
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('locales', ['code' => 'fr']);
+        $this->assertDatabaseMissing('translations', ['locale_id' => $locale->id]);
+        $this->assertDatabaseHas('admin_audit_logs', [
+            'action' => 'delete_locale',
+            'actor_user_id' => $administrator->id,
+        ]);
+
+        $this->withoutVite();
+        $this->actingAs($administrator)->get('/admin/localizations')
+            ->assertInertia(fn (Assert $page) => $page->where('selected', 'en'));
+    }
+
+    public function test_locale_delete_rejects_platform_default_even_when_not_flagged(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        Locale::query()->create([
+            'code' => 'fr',
+            'name' => 'French',
+            'direction' => 'ltr',
+            'is_published' => true,
+        ]);
+
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'localization', [
+            'default_locale' => 'fr',
+        ], $settings->version('localization'));
+
+        $this->actingAs($administrator)
+            ->delete('/admin/localizations/fr')
+            ->assertSessionHasErrors('locale');
+
+        $this->assertDatabaseHas('locales', ['code' => 'fr']);
+    }
+
     public function test_user_preference_beats_cookie_and_accept_language(): void
     {
         $administrator = User::factory()->admin()->create();

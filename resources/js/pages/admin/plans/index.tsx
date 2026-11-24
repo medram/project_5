@@ -1,7 +1,8 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowUpRight, CreditCard, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { AdminConfirmDialog } from '@/components/admin/admin-confirm-dialog';
 import { PlanCatalogCard } from '@/components/admin/plan-catalog-card';
 import { PlanFormSheet } from '@/components/admin/plan-form-sheet';
 import { PageHeader } from '@/components/page-header';
@@ -14,8 +15,9 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from '@/components/ui/empty';
+import planRoutes from '@/routes/admin/plans';
 import settings from '@/routes/admin/settings';
-import type { AdminPlansPageProps } from '@/types/admin-billing';
+import type { AdminPlanRecord, AdminPlansPageProps } from '@/types/admin-billing';
 
 const NEW_PLAN = 'new';
 
@@ -42,6 +44,9 @@ export default function AdminPlansIndex({
     const canManage = auth.adminAbilities.includes('admin.billing.manage');
     const canViewSettings = auth.adminAbilities.includes('admin.settings.view');
     const [editingCode, setEditingCode] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState<AdminPlanRecord | null>(null);
+    const [processingDelete, setProcessingDelete] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const freePlan = plans.find((plan) => plan.code === 'free');
     const editingPlan =
@@ -54,6 +59,26 @@ export default function AdminPlansIndex({
     ).length;
     const checkoutReady = readiness.checkoutReady === true;
     const missing = readiness.missing ?? [];
+
+    function confirmDelete() {
+        if (!deleting) {
+            return;
+        }
+
+        setProcessingDelete(true);
+        router.delete(planRoutes.destroy(deleting.code).url, {
+            preserveScroll: true,
+            onSuccess: () => setDeleting(null),
+            onError: (errors) => {
+                setDeleting(null);
+                setDeleteError(
+                    Object.values(errors)[0] ??
+                        'The plan could not be deleted.',
+                );
+            },
+            onFinish: () => setProcessingDelete(false),
+        });
+    }
 
     return (
         <>
@@ -162,6 +187,12 @@ export default function AdminPlansIndex({
                     )}
                 </section>
 
+                {deleteError && (
+                    <p role="alert" className="text-sm text-destructive">
+                        {deleteError}
+                    </p>
+                )}
+
                 {plans.length === 0 ? (
                     <Empty>
                         <EmptyHeader>
@@ -197,6 +228,10 @@ export default function AdminPlansIndex({
                                 plan={plan}
                                 canManage={canManage}
                                 onEdit={() => setEditingCode(plan.code)}
+                                onDelete={() => {
+                                    setDeleteError(null);
+                                    setDeleting(plan);
+                                }}
                             />
                         ))}
                     </section>
@@ -220,6 +255,23 @@ export default function AdminPlansIndex({
                     }}
                 />
             )}
+
+            <AdminConfirmDialog
+                confirmation={
+                    deleting
+                        ? {
+                              title: `Delete ${deleting.name}?`,
+                              description:
+                                  'This removes the plan from the catalog. It cannot be undone.',
+                              confirmLabel: 'Delete plan',
+                              destructive: true,
+                          }
+                        : null
+                }
+                processing={processingDelete}
+                onCancel={() => setDeleting(null)}
+                onConfirm={confirmDelete}
+            />
         </>
     );
 }

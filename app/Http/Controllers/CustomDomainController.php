@@ -7,6 +7,7 @@ use App\Http\Requests\StoreCustomDomainRequest;
 use App\Models\CustomDomain;
 use App\Models\Workspace;
 use App\Services\Billing\EnforcesPlanLimits;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
@@ -86,9 +87,9 @@ class CustomDomainController extends Controller
 
     public function destroy(Request $request, CustomDomain $customDomain): RedirectResponse
     {
-        $workspace = $this->workspaceContext->currentFor($request->user());
+        $workspace = $this->workspaceContext->forContentRequest($request);
         abort_unless((int) $customDomain->workspace_id === (int) $workspace->getKey(), 404);
-        Gate::authorize('delete', $customDomain);
+        app(AdminContentAccess::class)->authorize($request, 'delete', $customDomain);
 
         $request->validate([
             'confirmation' => ['required', 'string', Rule::in([$customDomain->hostname])],

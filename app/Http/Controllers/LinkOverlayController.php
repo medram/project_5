@@ -61,7 +61,7 @@ class LinkOverlayController extends Controller
     public function destroy(Request $request, LinkOverlay $linkOverlay): RedirectResponse
     {
         $this->ensureInCurrentWorkspace($request, $linkOverlay);
-        Gate::authorize('delete', $linkOverlay);
+        app(AdminContentAccess::class)->authorize($request, 'delete', $linkOverlay);
         $linkOverlay->delete();
 
         return to_route('overlays.index');

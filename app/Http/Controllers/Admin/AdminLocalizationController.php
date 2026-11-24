@@ -8,6 +8,7 @@ use App\Models\Locale;
 use App\Models\Translation;
 use App\Services\Localization\TranslationRepository;
 use App\Services\Platform\AdminAudit;
+use App\Services\Settings\PlatformSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -115,11 +116,13 @@ class AdminLocalizationController extends Controller
 
     public function destroyLocale(Request $request, Locale $locale): RedirectResponse
     {
-        if ($locale->code === 'en' || $locale->is_default) {
+        $platformDefault = strtolower((string) (app(PlatformSettings::class)->resolved()['localization']['default_locale'] ?? 'en'));
+        if ($locale->code === 'en' || $locale->is_default || $locale->code === $platformDefault) {
             throw ValidationException::withMessages(['locale' => 'The English/default locale cannot be deleted.']);
         }
 
         $code = $locale->code;
+        $this->translations->flush($locale);
         $locale->delete();
         $actor = $request->user();
         abort_if($actor === null, 403);

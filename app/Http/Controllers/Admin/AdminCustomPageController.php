@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminCustomPageRequest;
 use App\Models\ContentMedia;
 use App\Models\CustomPage;
+use App\Services\Content\ContentMediaStorage;
 use App\Services\Content\CustomPageHtmlSanitizer;
 use App\Services\Platform\AdminAudit;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +25,7 @@ class AdminCustomPageController extends Controller
     public function __construct(
         private readonly CustomPageHtmlSanitizer $sanitizer,
         private readonly AdminAudit $audit,
+        private readonly ContentMediaStorage $storage,
     ) {}
 
     public function assetOptions(Request $request): JsonResponse
@@ -194,11 +196,20 @@ class AdminCustomPageController extends Controller
     {
         $actor = $request->user();
         abort_if($actor === null, 403);
-        $customPage->delete();
+        $mediaId = $customPage->og_media_id === null ? null : (int) $customPage->og_media_id;
 
-        $this->audit->record($actor, PlatformPermission::AdminPagesManage, 'delete_custom_page', $customPage);
+        DB::transaction(function () use ($customPage, $actor): void {
+            $locked = CustomPage::query()->lockForUpdate()->findOrFail($customPage->getKey());
+            /** @var CustomPage $locked */
+            $this->audit->record($actor, PlatformPermission::AdminPagesManage, 'delete_custom_page', $locked);
+            $locked->delete();
+        });
 
-        return to_route('admin.pages.index');
+        if ($mediaId !== null && CustomPage::query()->where('og_media_id', $mediaId)->doesntExist()) {
+            $this->storage->deleteIfUnreferencedPlatformAsset($mediaId);
+        }
+
+        return back(fallback: route('admin.pages.index'));
     }
 
     public function preview(CustomPage $customPage): Response

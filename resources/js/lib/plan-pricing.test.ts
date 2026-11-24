@@ -13,6 +13,9 @@ function plan(overrides: Partial<AdminPlanRecord> = {}): AdminPlanRecord {
         featured: false,
         sortOrder: 1,
         isActive: true,
+        isBuiltIn: false,
+        canDelete: true,
+        deleteBlockedReason: null,
         stripeMonthlyPriceId: 'price_month',
         stripeYearlyPriceId: 'price_year',
         prices: [

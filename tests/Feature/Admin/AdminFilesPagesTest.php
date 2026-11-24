@@ -214,4 +214,94 @@ class AdminFilesPagesTest extends TestCase
             ])
             ->assertSessionHasErrors('og_media_id');
     }
+
+    public function test_deleting_the_last_custom_page_using_an_og_asset_soft_deletes_the_asset(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $media = $this->platformAsset();
+        $page = CustomPage::query()->create([
+            'slug' => 'og-last',
+            'title' => 'OG last',
+            'body' => '<p>Body</p>',
+            'state' => 'draft',
+            'og_media_id' => $media->id,
+        ]);
+
+        $this->actingAs($administrator)
+            ->delete("/admin/custom-pages/{$page->id}")
+            ->assertRedirect('/admin/custom-pages');
+
+        $this->assertDatabaseMissing('custom_pages', ['id' => $page->id]);
+        $this->assertSoftDeleted('content_media', ['id' => $media->id]);
+        $this->assertDatabaseHas('admin_audit_logs', [
+            'action' => 'delete_custom_page',
+            'subject_id' => $page->id,
+        ]);
+    }
+
+    public function test_deleting_one_of_two_custom_pages_sharing_an_og_asset_keeps_the_asset(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $media = $this->platformAsset();
+        $first = CustomPage::query()->create([
+            'slug' => 'og-first',
+            'title' => 'OG first',
+            'body' => '<p>Body</p>',
+            'state' => 'draft',
+            'og_media_id' => $media->id,
+        ]);
+        $second = CustomPage::query()->create([
+            'slug' => 'og-second',
+            'title' => 'OG second',
+            'body' => '<p>Body</p>',
+            'state' => 'draft',
+            'og_media_id' => $media->id,
+        ]);
+
+        $this->actingAs($administrator)
+            ->delete("/admin/custom-pages/{$first->id}")
+            ->assertRedirect('/admin/custom-pages');
+        $this->assertNotSoftDeleted('content_media', ['id' => $media->id]);
+
+        $this->actingAs($administrator)
+            ->delete("/admin/custom-pages/{$second->id}")
+            ->assertRedirect('/admin/custom-pages');
+        $this->assertSoftDeleted('content_media', ['id' => $media->id]);
+    }
+
+    public function test_custom_page_delete_preserves_the_filtered_list(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $page = CustomPage::query()->create([
+            'slug' => 'filtered-terms',
+            'title' => 'Filtered terms',
+            'body' => '<p>Body</p>',
+            'state' => 'draft',
+        ]);
+
+        $this->from('/admin/custom-pages?q=terms')
+            ->actingAs($administrator)
+            ->delete("/admin/custom-pages/{$page->id}")
+            ->assertRedirect('/admin/custom-pages?q=terms');
+        $this->assertDatabaseMissing('custom_pages', ['id' => $page->id]);
+    }
+
+    private function platformAsset(): ContentMedia
+    {
+        return ContentMedia::query()->create([
+            'workspace_id' => null,
+            'uploaded_by' => null,
+            'public_id' => (string) Str::uuid(),
+            'disk' => 'local',
+            'path' => 'platform-assets/'.Str::uuid().'.png',
+            'original_name' => 'og.png',
+            'mime_type' => 'image/png',
+            'byte_size' => 128,
+            'sha256' => hash('sha256', 'og-asset'),
+            'visibility' => 'private',
+            'scan_state' => 'not_required',
+            'purpose' => MediaPurpose::PlatformAsset,
+            'expires_at' => null,
+        ]);
+    }
 }

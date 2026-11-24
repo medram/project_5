@@ -336,28 +336,35 @@ class AdminContentInventory
         $sort = $request->sort();
         $column = $sort === 'name' ? $nameColumn : $sort;
         $direction = $request->direction() === 'asc' ? 'asc' : 'desc';
-        [$managePermission, $editRoute] = match ($key) {
-            'links' => [PlatformPermission::AdminLinksManage, 'admin.content.links.edit'],
-            'biolinks' => [PlatformPermission::AdminBioPagesManage, 'admin.content.biolinks.edit'],
-            'qr-codes' => [PlatformPermission::AdminQrCodesManage, 'admin.content.qr-codes.edit'],
-            'folders' => [PlatformPermission::AdminFoldersManage, 'admin.content.folders.edit'],
-            'custom-domains' => [PlatformPermission::AdminDomainsManage, 'admin.content.domains.edit'],
-            'link-overlays' => [PlatformPermission::AdminOverlaysManage, 'admin.content.overlays.edit'],
-            'link-pages' => [PlatformPermission::AdminLinkPagesManage, 'admin.content.link-pages.edit'],
-            'pixels' => [PlatformPermission::AdminPixelsManage, 'admin.content.pixels.edit'],
+        [$managePermission, $deletePermission, $editRoute, $destroyRoute] = match ($key) {
+            'links' => [PlatformPermission::AdminLinksManage, PlatformPermission::AdminLinksDelete, 'admin.content.links.edit', 'admin.content.links.destroy'],
+            'biolinks' => [PlatformPermission::AdminBioPagesManage, PlatformPermission::AdminBioPagesDelete, 'admin.content.biolinks.edit', 'admin.content.biolinks.destroy'],
+            'qr-codes' => [PlatformPermission::AdminQrCodesManage, PlatformPermission::AdminQrCodesDelete, 'admin.content.qr-codes.edit', 'admin.content.qr-codes.destroy'],
+            'folders' => [PlatformPermission::AdminFoldersManage, PlatformPermission::AdminFoldersDelete, 'admin.content.folders.edit', 'admin.content.folders.destroy'],
+            'custom-domains' => [PlatformPermission::AdminDomainsManage, PlatformPermission::AdminDomainsDelete, 'admin.content.domains.edit', 'admin.content.domains.destroy'],
+            'link-overlays' => [PlatformPermission::AdminOverlaysManage, PlatformPermission::AdminOverlaysDelete, 'admin.content.overlays.edit', 'admin.content.overlays.destroy'],
+            'link-pages' => [PlatformPermission::AdminLinkPagesManage, PlatformPermission::AdminLinkPagesDelete, 'admin.content.link-pages.edit', 'admin.content.link-pages.destroy'],
+            'pixels' => [PlatformPermission::AdminPixelsManage, PlatformPermission::AdminPixelsDelete, 'admin.content.pixels.edit', 'admin.content.pixels.destroy'],
             default => throw new InvalidArgumentException("Unknown admin content inventory [{$key}]."),
         };
         $canEdit = $this->authorization->allows($request->user(), $managePermission);
+        $canDelete = $this->authorization->allows($request->user(), $deletePermission);
 
         $rows = $query
             ->orderBy($column, $direction)
             ->orderBy('id')
             ->paginate(20)
             ->withQueryString()
-            ->through(function (Model $model) use ($map, $canEdit, $editRoute): array {
+            ->through(function (Model $model) use ($map, $canEdit, $canDelete, $editRoute, $destroyRoute): array {
                 $row = $map($model);
                 if ($canEdit) {
                     $row['editUrl'] = route($editRoute, $model, false);
+                }
+                if ($canDelete && (! $model instanceof QrCode || $model->source === 'campaign')) {
+                    $row['deleteUrl'] = route($destroyRoute, $model, false);
+                    if ($model instanceof CustomDomain) {
+                        $row['deleteConfirmation'] = $model->hostname;
+                    }
                 }
 
                 return $row;

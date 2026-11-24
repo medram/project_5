@@ -67,6 +67,8 @@ export type AdminContentRow = {
     updatedAt: string | null;
     extra: Record<string, string | null>;
     editUrl?: string;
+    deleteUrl?: string;
+    deleteConfirmation?: string | null;
 };
 
 export type AdminContentResource = {

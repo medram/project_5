@@ -8,6 +8,9 @@ export type AdminPlanRecord = {
     featured: boolean;
     sortOrder: number;
     isActive: boolean;
+    isBuiltIn: boolean;
+    canDelete: boolean;
+    deleteBlockedReason: string | null;
     stripeMonthlyPriceId: string | null;
     stripeYearlyPriceId: string | null;
     prices: Array<{

@@ -164,8 +164,8 @@ class LinkController extends Controller
 
     public function destroy(Request $request, Link $link): RedirectResponse
     {
-        $link = $this->workspaceContext->currentFor($request->user())->links()->findOrFail($link->getKey());
-        Gate::authorize('delete', $link);
+        $link = $this->workspaceContext->forContentRequest($request)->links()->findOrFail($link->getKey());
+        app(AdminContentAccess::class)->authorize($request, 'delete', $link);
         $link->delete();
 
         return to_route('links.index', $this->listState($request, resetPage: true));

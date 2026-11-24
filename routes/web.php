@@ -464,6 +464,31 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
             Route::delete('pixels/{trackingPixel}/rules/{trackingPixelRule}', [TrackingPixelController::class, 'destroyRule'])->name('content.pixels.rules.destroy');
         });
 
+        Route::delete('links/{link}', [LinkController::class, 'destroy'])
+            ->middleware(['platform:admin.content.links.delete', ScopedAdminContent::class])
+            ->name('content.links.destroy');
+        Route::delete('biolinks/{bioPage}', [BioPageController::class, 'destroy'])
+            ->middleware(['platform:admin.content.biolinks.delete', ScopedAdminContent::class])
+            ->name('content.biolinks.destroy');
+        Route::delete('qr-codes/{qrCode}', [QrCampaignController::class, 'destroy'])
+            ->middleware(['platform:admin.content.qr_codes.delete', ScopedAdminContent::class])
+            ->name('content.qr-codes.destroy');
+        Route::delete('folders/{folder}', [FolderController::class, 'destroy'])
+            ->middleware(['platform:admin.content.folders.delete', ScopedAdminContent::class])
+            ->name('content.folders.destroy');
+        Route::delete('custom-domains/{customDomain}', [CustomDomainController::class, 'destroy'])
+            ->middleware(['platform:admin.content.domains.delete', ScopedAdminContent::class])
+            ->name('content.domains.destroy');
+        Route::delete('link-overlays/{linkOverlay}', [LinkOverlayController::class, 'destroy'])
+            ->middleware(['platform:admin.content.overlays.delete', ScopedAdminContent::class])
+            ->name('content.overlays.destroy');
+        Route::delete('link-pages/{linkPage}', [LinkPageController::class, 'destroy'])
+            ->middleware(['platform:admin.content.link_pages.delete', ScopedAdminContent::class])
+            ->name('content.link-pages.destroy');
+        Route::delete('pixels/{trackingPixel}', [TrackingPixelController::class, 'destroy'])
+            ->middleware(['platform:admin.content.pixels.delete', ScopedAdminContent::class])
+            ->name('content.pixels.destroy');
+
         Route::get('files', [AdminFileController::class, 'index'])
             ->middleware('platform:admin.files.view')
             ->name('files.index');
@@ -572,6 +597,9 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         Route::patch('plans/{plan:code}', [AdminPlanController::class, 'update'])
             ->middleware('platform:admin.billing.manage')
             ->name('plans.update');
+        Route::delete('plans/{plan:code}', [AdminPlanController::class, 'destroy'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('plans.destroy');
         Route::post('plans/{plan:code}/prices/{interval}', [AdminPlanPriceController::class, 'sync'])
             ->whereIn('interval', ['month', 'year'])
             ->middleware('platform:admin.billing.manage')
