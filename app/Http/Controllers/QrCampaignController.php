@@ -135,9 +135,12 @@ class QrCampaignController extends Controller
     public function destroy(Request $request, QrCode $qrCode): RedirectResponse
     {
         $workspace = $this->workspaceContext->forContentRequest($request);
-        $qrCode = $workspace->qrCodes()
-            ->where('source', 'campaign')
-            ->findOrFail($qrCode->getKey());
+        $isAdmin = is_array($request->attributes->get(ScopedAdminContent::ATTRIBUTE));
+        $query = $workspace->qrCodes();
+        if (! $isAdmin) {
+            $query->where('source', 'campaign');
+        }
+        $qrCode = $query->findOrFail($qrCode->getKey());
         app(AdminContentAccess::class)->authorize($request, 'delete', $qrCode);
         $logoPath = $qrCode->logo_path;
         $qrCode->delete();

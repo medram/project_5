@@ -363,7 +363,7 @@ class AdminContentInventory
                         $row['viewUrl'] = route($viewRoute, $model, false);
                     }
                 }
-                if ($canDelete && (! $model instanceof QrCode || $model->source === 'campaign')) {
+                if ($canDelete) {
                     $row['deleteUrl'] = route($destroyRoute, $model, false);
                     if ($model instanceof CustomDomain) {
                         $row['deleteConfirmation'] = $model->hostname;

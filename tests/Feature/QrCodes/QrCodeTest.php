@@ -925,6 +925,22 @@ class QrCodeTest extends TestCase
 
     }
 
+    public function test_workspace_owners_cannot_delete_the_linked_qr_of_their_short_link(): void
+    {
+        $owner = User::factory()->create();
+        $link = Link::factory()->for($owner)->create([
+            'workspace_id' => $owner->currentWorkspace->id,
+        ]);
+        $linked = $link->qrCode()->sole();
+
+        $this->actingAs($owner)
+            ->delete("/dashboard/qr-codes/{$linked->id}")
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('qr_codes', ['id' => $linked->id]);
+        $this->assertDatabaseHas('links', ['id' => $link->id]);
+    }
+
     public function test_client_supplied_logo_paths_are_ignored(): void
     {
         $owner = User::factory()->create();

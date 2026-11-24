@@ -424,13 +424,14 @@ class AdminContentDeletionTest extends TestCase
         $this->actingAs($bareDeleter)->get('/admin/links')->assertForbidden();
     }
 
-    public function test_linked_qr_rows_are_not_deletable_from_the_admin_inventory(): void
+    public function test_admin_deletes_linked_qr_rows_without_deleting_the_short_link(): void
     {
         $owner = User::factory()->create();
         $admin = User::factory()->admin()->create();
         $workspace = $owner->currentWorkspace;
         $link = Link::factory()->for($owner)->create(['workspace_id' => $workspace->id]);
         $linked = $link->qrCode()->sole();
+        $linked->scans()->create(['scanned_at' => now()]);
         $campaign = $workspace->qrCodes()->create([
             'source' => 'campaign',
             'title' => 'Campaign',
@@ -446,15 +447,20 @@ class AdminContentDeletionTest extends TestCase
                     $linkedRow = $rows->firstWhere('identifier', $linked->code);
                     $campaignRow = $rows->firstWhere('identifier', $campaign->code);
                     PHPUnit::assertIsArray($linkedRow);
-                    PHPUnit::assertArrayNotHasKey('deleteUrl', $linkedRow);
+                    PHPUnit::assertArrayHasKey('deleteUrl', $linkedRow);
                     PHPUnit::assertIsArray($campaignRow);
                     PHPUnit::assertArrayHasKey('deleteUrl', $campaignRow);
 
                     return true;
                 }));
 
-        $this->actingAs($admin)->delete("/admin/qr-codes/{$linked->id}")->assertNotFound();
-        $this->assertDatabaseHas('qr_codes', ['id' => $linked->id]);
+        $this->actingAs($admin)
+            ->delete("/admin/qr-codes/{$linked->id}")
+            ->assertRedirect('/admin/qr-codes');
+        $this->assertDatabaseMissing('qr_codes', ['id' => $linked->id]);
+        $this->assertDatabaseMissing('qr_scans', ['qr_code_id' => $linked->id]);
+        $this->assertDatabaseHas('links', ['id' => $link->id]);
+        $this->assertDatabaseHas('qr_codes', ['id' => $campaign->id]);
     }
 
     public function test_domain_delete_requires_the_exact_hostname_confirmation(): void
