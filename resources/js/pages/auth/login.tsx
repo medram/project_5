@@ -1,5 +1,5 @@
 import { Form, Head, usePage } from '@inertiajs/react';
-import InputError from '@/components/input-error';
+import { FieldError } from '@/components/ui/field';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -18,8 +18,7 @@ type Props = {
 };
 
 export default function Login({ status, canResetPassword }: Props) {
-    const { googleAuthEnabled } = usePage<{ googleAuthEnabled: boolean }>()
-        .props;
+    const { googleAuthEnabled } = usePage().props;
 
     return (
         <>
@@ -41,7 +40,9 @@ export default function Login({ status, canResetPassword }: Props) {
                 {({ processing, errors }) => (
                     <>
                         <div className="grid gap-6">
-                            <InputError message={errors.google} />
+                            {errors.google && (
+                                <FieldError>{errors.google}</FieldError>
+                            )}
 
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email address</Label>
@@ -55,7 +56,9 @@ export default function Login({ status, canResetPassword }: Props) {
                                     autoComplete="email"
                                     placeholder="email@example.com"
                                 />
-                                <InputError message={errors.email} />
+                                {errors.email && (
+                                    <FieldError>{errors.email}</FieldError>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -79,7 +82,9 @@ export default function Login({ status, canResetPassword }: Props) {
                                     autoComplete="current-password"
                                     placeholder="Password"
                                 />
-                                <InputError message={errors.password} />
+                                {errors.password && (
+                                    <FieldError>{errors.password}</FieldError>
+                                )}
                             </div>
 
                             <div className="flex items-center space-x-3">
@@ -114,7 +119,7 @@ export default function Login({ status, canResetPassword }: Props) {
             </Form>
 
             {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
+                <div className="mb-4 text-center text-sm font-medium text-success-soft-foreground">
                     {status}
                 </div>
             )}

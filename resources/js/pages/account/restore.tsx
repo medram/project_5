@@ -1,6 +1,6 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import { useRef } from 'react';
-import InputError from '@/components/input-error';
+import { FieldError } from '@/components/ui/field';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -49,7 +49,9 @@ export default function RestoreAccount({ purgeAfter }: Props) {
                                     autoComplete="current-password"
                                     required
                                 />
-                                <InputError message={errors.password} />
+                                {errors.password && (
+                                    <FieldError>{errors.password}</FieldError>
+                                )}
                             </div>
 
                             <Button disabled={processing}>

@@ -9,11 +9,11 @@ use App\Models\LinkOverlay;
 use App\Models\LinkTag;
 use App\Services\Links\FirstPartyDestinationGuard;
 use App\Services\Links\LinkPolicy;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Url;
 
@@ -59,7 +59,7 @@ abstract class LinkRequest extends FormRequest
     /** @return array<string, array<int, mixed>> */
     protected function linkRules(?Link $ignoredLink = null, bool $slugRequired = false): array
     {
-        $workspace = app(WorkspaceContext::class)->currentFor($this->user());
+        $workspace = app(WorkspaceContext::class)->forContentRequest($this);
         $settings = app(PlatformSettings::class)->resolved();
         $slugMin = max(2, (int) ($settings['links']['slug_min'] ?? 4));
         $slugMax = max($slugMin, min(64, (int) ($settings['links']['slug_max'] ?? 32)));
@@ -130,7 +130,7 @@ abstract class LinkRequest extends FormRequest
 
                     return;
                 }
-                Gate::authorize('selectIntegrations', $workspace);
+                app(AdminContentAccess::class)->authorize($this, 'selectIntegrations', $workspace);
                 /** @var CustomDomain|null $domain */
                 $domain = $workspace->customDomains()->whereKey($value)->first();
                 $link = $this->route('link');
@@ -153,7 +153,7 @@ abstract class LinkRequest extends FormRequest
 
                     return;
                 }
-                Gate::authorize('selectIntegrations', $workspace);
+                app(AdminContentAccess::class)->authorize($this, 'selectIntegrations', $workspace);
                 /** @var LinkOverlay|null $overlay */
                 $overlay = $workspace->linkOverlays()->whereKey($value)->first();
                 $link = $this->route('link');
@@ -175,7 +175,7 @@ abstract class LinkRequest extends FormRequest
 
                     return;
                 }
-                Gate::authorize('selectIntegrations', $workspace);
+                app(AdminContentAccess::class)->authorize($this, 'selectIntegrations', $workspace);
                 $page = $workspace->linkPages()->whereKey($value)->first();
                 if ($page === null || ! $page->is_published) {
                     $fail('Choose a published link page in this workspace for link-page delivery.');
@@ -191,7 +191,7 @@ abstract class LinkRequest extends FormRequest
                     return;
                 }
 
-                Gate::authorize('manageLinkApprovals', $workspace);
+                app(AdminContentAccess::class)->authorize($this, 'manageLinkApprovals', $workspace);
             }],
 
             'utm_parameters' => ['nullable', 'array:utm_source,utm_medium,utm_campaign,utm_term,utm_content'],
@@ -211,7 +211,30 @@ abstract class LinkRequest extends FormRequest
             }],
             'custom_parameters.*' => ['nullable', 'string', 'max:512'],
             'routing_rules' => ['sometimes', 'array', 'max:25', function (string $attribute, mixed $value, Closure $fail) use ($settings): void {
-                if (is_array($value) && $value !== [] && ! (bool) ($settings['links']['targeting_enabled'] ?? true)) {
+                if (! is_array($value) || $value === [] || (bool) ($settings['links']['targeting_enabled'] ?? true)) {
+                    return;
+                }
+
+                $link = $this->route('link');
+                $storedRules = $link instanceof Link
+                    ? $link->routingRules()->get(['rule_type', 'match_value', 'target_url'])
+                        ->map(fn ($rule): array => [
+                            'rule_type' => $rule->rule_type,
+                            'match_value' => $rule->match_value,
+                            'target_url' => $rule->target_url,
+                        ])
+                        ->all()
+                    : [];
+                $submittedRules = array_map(
+                    static fn (mixed $rule): mixed => is_array($rule) ? [
+                        'rule_type' => $rule['rule_type'] ?? null,
+                        'match_value' => $rule['match_value'] ?? null,
+                        'target_url' => $rule['target_url'] ?? null,
+                    ] : $rule,
+                    array_values($value),
+                );
+
+                if ($submittedRules !== $storedRules) {
                     $fail('Targeting rules are disabled by platform policy.');
                 }
             }],

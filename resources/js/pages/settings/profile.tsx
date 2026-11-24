@@ -2,12 +2,11 @@ import { Form, Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import { PageHeader } from '@/components/page-header';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { UserAvatar } from '@/components/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import {
     Card,
     CardContent,
@@ -26,13 +25,8 @@ import {
 } from '@/components/ui/select';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
-import type { Auth } from '@/types';
 
 type Option = { code: string; name: string };
-
-type PageProps = {
-    auth: Auth;
-};
 
 type Props = {
     mustVerifyEmail: boolean;
@@ -66,7 +60,7 @@ export default function Profile({
     options,
     google,
 }: Props) {
-    const { auth } = usePage<PageProps>().props;
+    const { auth } = usePage().props;
     const [regionalValues, setRegionalValues] = useState(() => ({
         locale: profile.locale ?? '',
         country_code: profile.countryCode ?? '',
@@ -78,8 +72,7 @@ export default function Profile({
             <Head title="Profile settings" />
 
             <div className="space-y-6">
-                <Heading
-                    variant="page"
+                <PageHeader
                     title="Profile"
                     description="Update your avatar, identity, and regional preferences"
                 />
@@ -114,7 +107,9 @@ export default function Profile({
                                         JPEG, PNG, or WebP up to 5 MB. Images
                                         are re-encoded to remove metadata.
                                     </p>
-                                    <InputError message={errors.avatar} />
+                                    {errors.avatar && (
+                                        <FieldError>{errors.avatar}</FieldError>
+                                    )}
 
                                     {avatarUrl && (
                                         <Field className="flex-row items-center gap-2">
@@ -147,10 +142,11 @@ export default function Profile({
                                     placeholder="Full name"
                                 />
 
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.name}
-                                />
+                                {errors.name && (
+                                    <FieldError className="mt-2">
+                                        {errors.name}
+                                    </FieldError>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -167,10 +163,11 @@ export default function Profile({
                                     placeholder="Email address"
                                 />
 
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.email}
-                                />
+                                {errors.email && (
+                                    <FieldError className="mt-2">
+                                        {errors.email}
+                                    </FieldError>
+                                )}
                             </div>
 
                             <FieldGroup className="grid gap-4 sm:grid-cols-2">
@@ -221,7 +218,9 @@ export default function Profile({
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <InputError message={errors.locale} />
+                                    {errors.locale && (
+                                        <FieldError>{errors.locale}</FieldError>
+                                    )}
                                 </Field>
 
                                 <Field
@@ -278,7 +277,11 @@ export default function Profile({
                                             )}
                                         </SelectContent>
                                     </Select>
-                                    <InputError message={errors.country_code} />
+                                    {errors.country_code && (
+                                        <FieldError>
+                                            {errors.country_code}
+                                        </FieldError>
+                                    )}
                                 </Field>
 
                                 <Field
@@ -333,7 +336,9 @@ export default function Profile({
                                             )}
                                         </SelectContent>
                                     </Select>
-                                    <InputError message={errors.timezone} />
+                                    {errors.timezone && (
+                                        <FieldError>{errors.timezone}</FieldError>
+                                    )}
                                 </Field>
                             </FieldGroup>
 
@@ -354,7 +359,7 @@ export default function Profile({
 
                                         {status ===
                                             'verification-link-sent' && (
-                                            <div className="mt-2 text-sm font-medium text-green-600">
+                                            <div className="mt-2 text-sm font-medium text-success-soft-foreground">
                                                 A new verification link has been
                                                 sent to your email address.
                                             </div>

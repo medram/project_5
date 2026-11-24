@@ -9,6 +9,7 @@ use App\Services\Content\ContentMediaStorage;
 use App\Services\Settings\PlatformSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -45,6 +46,10 @@ class PlatformAssetTest extends TestCase
         $this->assertFalse($media->trashed());
         Storage::disk(self::DISK)->assertExists($media->path);
         $this->assertTrue($media->purpose->retainsIndefinitely());
+
+        Artisan::call('linkpilot:prune-content-media');
+        $this->assertDatabaseHas('content_media', ['id' => $media->id]);
+        Storage::disk(self::DISK)->assertExists($media->path);
     }
 
     public function test_settings_reject_tenant_media_and_accept_platform_assets_only(): void

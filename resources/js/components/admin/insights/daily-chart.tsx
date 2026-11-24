@@ -115,130 +115,22 @@ export function InsightDailyChart({
     );
 }
 
-export function InsightDailySmallMultiples({
-    data,
-    series,
-    values,
-    label,
-}: {
-    data: Array<Record<string, string | number>>;
-    series: InsightSeries[];
-    values: Record<string, number>;
-    label: string;
-}) {
-    return (
-        <div
-            data-slot="daily-small-multiples"
-            className="grid gap-3"
-            role="group"
-            aria-label={label}
-        >
-            {series.map((item, index) => {
-                const total = values[item.key] ?? 0;
-                const max = Math.max(
-                    ...data.map((row) => Number(row[item.key] ?? 0)),
-                    0,
-                );
-                const isLast = index === series.length - 1;
-
-                return (
-                    <div key={item.key} className="grid gap-1.5">
-                        <div className="flex items-baseline justify-between gap-3 text-xs">
-                            <span className="flex items-center gap-2 text-muted-foreground">
-                                <span
-                                    className="size-2 rounded-[2px]"
-                                    style={{ background: item.color }}
-                                    aria-hidden="true"
-                                />
-                                {item.label}
-                            </span>
-                            <span className="text-foreground tabular-nums">
-                                {total.toLocaleString()}
-                            </span>
-                        </div>
-                        <ChartContainer
-                            config={
-                                {
-                                    [item.key]: {
-                                        label: item.label,
-                                        color: item.color,
-                                    },
-                                } satisfies ChartConfig
-                            }
-                            className="h-[80px] w-full min-w-0"
-                            aria-label={`${item.label} per UTC day. Window total ${total.toLocaleString()}, daily peak ${max.toLocaleString()}.`}
-                        >
-                            <LineChart
-                                data={data}
-                                margin={{
-                                    top: 4,
-                                    right: 24,
-                                    bottom: 0,
-                                    left: 0,
-                                }}
-                            >
-                                <XAxis
-                                    dataKey="date"
-                                    hide={!isLast}
-                                    axisLine={false}
-                                    tickLine={false}
-                                    minTickGap={24}
-                                    tickMargin={6}
-                                    tick={axisTick}
-                                    tickFormatter={(value) =>
-                                        formatDay(String(value))
-                                    }
-                                />
-                                <YAxis
-                                    allowDecimals={false}
-                                    axisLine={false}
-                                    tickLine={false}
-                                    width={36}
-                                    domain={[0, max || 1]}
-                                    ticks={max > 0 ? [0, max] : [0]}
-                                    tick={axisTick}
-                                />
-                                <ChartTooltip
-                                    cursor={false}
-                                    content={
-                                        <ChartTooltipContent
-                                            labelFormatter={(value) =>
-                                                formatDayDetailed(String(value))
-                                            }
-                                        />
-                                    }
-                                />
-                                <Line
-                                    dataKey={item.key}
-                                    type="monotone"
-                                    stroke={`var(--color-${item.key})`}
-                                    strokeWidth={2}
-                                    dot={false}
-                                    activeDot={{ r: 3 }}
-                                    isAnimationActive={false}
-                                />
-                            </LineChart>
-                        </ChartContainer>
-                    </div>
-                );
-            })}
-        </div>
-    );
-}
-
 export function InsightDailyBarChart({
     data,
     series,
     label,
+    height = 240,
 }: {
     data: Array<Record<string, string | number>>;
     series: InsightSeries[];
     label: string;
+    height?: number;
 }) {
     return (
         <ChartContainer
             config={seriesConfig(series)}
-            className="h-[240px] w-full min-w-0"
+            className="w-full min-w-0"
+            style={{ height }}
             aria-label={label}
         >
             <BarChart

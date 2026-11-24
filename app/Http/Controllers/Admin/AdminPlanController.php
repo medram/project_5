@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PlanMetric;
 use App\Enums\PlatformPermission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminPlanUpdateRequest;
 use App\Models\Plan;
+use App\Services\Billing\PlanCatalogPresenter;
 use App\Services\Billing\StripeReadiness;
 use App\Services\Platform\AdminAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,21 +20,21 @@ class AdminPlanController extends Controller
 {
     public function __construct(
         private readonly StripeReadiness $readiness,
+        private readonly PlanCatalogPresenter $catalog,
         private readonly AdminAudit $audit,
     ) {}
 
     public function index(): Response
     {
-        $plans = Plan::query()
-            ->orderBy('monthly_price')
-            ->orderBy('id')
-            ->get()
+        $plans = $this->catalog
+            ->ordered(Plan::query()->with('stripePrices')->get())
             ->map(fn (Plan $plan): array => $this->present($plan))
             ->values()
             ->all();
 
         return Inertia::render('admin/plans/index', [
             'plans' => $plans,
+            'subscriptionCurrency' => config('cashier.currency', 'usd'),
             'readiness' => [
                 'checkoutReady' => $this->readiness->checkoutReady(),
                 'missing' => $this->readiness->missing(),
@@ -39,9 +42,42 @@ class AdminPlanController extends Controller
         ]);
     }
 
+    public function store(AdminPlanUpdateRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+        DB::transaction(function () use ($request, $validated): void {
+            $attributes = [
+                'code' => $validated['code'],
+                'name' => trim($validated['name']),
+                'currency' => strtolower((string) config('cashier.currency', 'usd')),
+                'monthly_price' => 0,
+                'annual_price' => 0,
+                'is_active' => (bool) $validated['is_active'],
+                'display_metadata' => [
+                    'description' => $validated['description'] ?? null,
+                    'featured' => (bool) $validated['featured'],
+                    'sort_order' => (int) $validated['sort_order'],
+                ],
+            ];
+            foreach (PlanMetric::cases() as $metric) {
+                $attributes[$metric->planColumn()] = $validated['limits'][$metric->value];
+            }
+            $plan = Plan::query()->create($attributes);
+            $this->audit->record($request->user(), PlatformPermission::AdminBillingManage, 'create_plan', $plan, null, [
+                'code' => $plan->code,
+                'limits' => $validated['limits'],
+            ]);
+        });
+
+        return back(fallback: route('admin.plans.index'));
+    }
+
     public function update(AdminPlanUpdateRequest $request, Plan $plan): RedirectResponse
     {
         $validated = $request->validated();
+        if ($plan->code === 'free' && ! $validated['is_active']) {
+            throw ValidationException::withMessages(['is_active' => 'The free plan must remain active.']);
+        }
         $plan = DB::transaction(function () use ($plan, $validated, $request): Plan {
             $locked = Plan::query()->lockForUpdate()->findOrFail($plan->getKey());
             /** @var Plan $locked */
@@ -50,13 +86,15 @@ class AdminPlanController extends Controller
             $metadata['featured'] = (bool) $validated['featured'];
             $metadata['sort_order'] = (int) $validated['sort_order'];
 
-            $locked->forceFill([
+            $attributes = [
                 'name' => trim($validated['name']),
                 'display_metadata' => $metadata,
                 'is_active' => (bool) $validated['is_active'],
-                'stripe_monthly_price_id' => $validated['stripe_monthly_price_id'] ?: null,
-                'stripe_yearly_price_id' => $validated['stripe_yearly_price_id'] ?: null,
-            ])->save();
+            ];
+            foreach (PlanMetric::cases() as $metric) {
+                $attributes[$metric->planColumn()] = $validated['limits'][$metric->value];
+            }
+            $locked->forceFill($attributes)->save();
 
             $actor = $request->user();
             abort_if($actor === null, 403);
@@ -71,8 +109,7 @@ class AdminPlanController extends Controller
                     'is_active' => $locked->is_active,
                     'featured' => (bool) $metadata['featured'],
                     'sort_order' => (int) $metadata['sort_order'],
-                    'monthly_price_mapped' => $locked->stripe_monthly_price_id !== null,
-                    'yearly_price_mapped' => $locked->stripe_yearly_price_id !== null,
+                    'limits' => $validated['limits'],
                 ],
             );
 
@@ -101,6 +138,13 @@ class AdminPlanController extends Controller
             'isActive' => $plan->is_active,
             'stripeMonthlyPriceId' => $plan->stripe_monthly_price_id,
             'stripeYearlyPriceId' => $plan->stripe_yearly_price_id,
+            'prices' => $plan->stripePrices->map(fn ($price): array => [
+                'id' => $price->stripe_price_id,
+                'interval' => $price->interval,
+                'currency' => $price->currency,
+                'amount' => $price->unit_amount,
+                'verified' => $price->verified_at !== null,
+            ])->values()->all(),
             'checkout' => [
                 'month' => $this->readiness->priceId($plan, 'month') !== null,
                 'year' => $this->readiness->priceId($plan, 'year') !== null,

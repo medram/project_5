@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { LogOut, Settings } from 'lucide-react';
+import { HelpCircle, LogOut, Settings } from 'lucide-react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -15,9 +15,14 @@ import type { User } from '@/types';
 type Props = {
     user: User;
     onNavigate?: () => void;
+    onHelp?: () => void;
 };
 
-export function UserMenuContent({ user, onNavigate }: Props) {
+export function UserMenuContent({
+    user,
+    onNavigate,
+    onHelp,
+}: Props) {
     const cleanup = useMobileNavigation();
 
     const handleNavigation = () => {
@@ -50,6 +55,12 @@ export function UserMenuContent({ user, onNavigate }: Props) {
                         Settings
                     </Link>
                 </DropdownMenuItem>
+                {onHelp ? (
+                    <DropdownMenuItem onSelect={onHelp}>
+                        <HelpCircle aria-hidden="true" />
+                        Help &amp; information
+                    </DropdownMenuItem>
+                ) : null}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

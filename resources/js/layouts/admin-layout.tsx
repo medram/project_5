@@ -1,10 +1,10 @@
 import { Link } from '@inertiajs/react';
-import { HelpCircle, Link2, LogOut } from 'lucide-react';
+import { Link2 } from 'lucide-react';
 import AdminSidebar from '@/components/admin/admin-sidebar';
+import AppLogo from '@/components/app-logo';
 import { AppContent } from '@/components/app-content';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
 import { AppShell } from '@/components/app-shell';
-import { HelpDialog } from '@/components/help-dialog';
 import { SidebarIdentity } from '@/components/sidebar-identity';
 import {
     Sidebar,
@@ -14,7 +14,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { logout } from '@/routes';
 import { index as linksIndex } from '@/routes/links';
 import type { BreadcrumbItem } from '@/types';
 
@@ -28,11 +27,17 @@ export default function AdminLayout({
     return (
         <AppShell variant="sidebar">
             <Sidebar collapsible="icon" variant="sidebar">
-                <SidebarHeader className="p-3 pb-1">
-                    <SidebarIdentity roleLabel="Platform administrator" />
+                <SidebarHeader className="gap-1.5 p-3 pb-1 group-data-[collapsible=icon]:px-2">
+                    <Link
+                        href="/admin/insights"
+                        prefetch
+                        className="flex min-h-10 min-w-0 items-center rounded-md focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none group-data-[collapsible=icon]:justify-center"
+                    >
+                        <AppLogo hideNameWhenCollapsed />
+                    </Link>
                 </SidebarHeader>
                 <AdminSidebar />
-                <SidebarFooter className="gap-1 p-3 pt-1 max-lg:border-t max-lg:border-sidebar-border">
+                <SidebarFooter className="gap-1 p-3 pt-1 max-lg:border-t max-lg:border-sidebar-border group-data-[collapsible=icon]:px-2">
                     <SidebarMenu>
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild tooltip="Workspace app">
@@ -42,28 +47,8 @@ export default function AdminLayout({
                                 </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <HelpDialog>
-                                <SidebarMenuButton>
-                                    <HelpCircle aria-hidden="true" />
-                                    <span>Help &amp; information</span>
-                                </SidebarMenuButton>
-                            </HelpDialog>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton asChild>
-                                <Link
-                                    href={logout()}
-                                    method="post"
-                                    as="button"
-                                    className="w-full"
-                                >
-                                    <LogOut aria-hidden="true" />
-                                    <span>Log out</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
                     </SidebarMenu>
+                    <SidebarIdentity roleLabel="Platform administrator" />
                 </SidebarFooter>
             </Sidebar>
             <AppContent variant="sidebar" className="min-w-0 overflow-x-clip">

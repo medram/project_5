@@ -3,13 +3,13 @@
     "id": "admin-settings",
     "area": "Administration",
     "name": "Platform settings",
-    "status": "in_progress",
+    "status": "verified",
     "requirements": [
         {
             "id": "ADM-6",
             "text": "Platform administration includes roles, global insights, localization, and site, system, SEO, email, auth, GDPR, and analytics settings.",
             "priority": "P3",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "ASET-1",
@@ -21,7 +21,7 @@
             "id": "ASET-2",
             "text": "Settings drive real site, link, bio, subscription, localization, authentication, upload, email, system, analytics, GDPR, captcha, SEO, ads, and safe brand-verification behavior.",
             "priority": "P1",
-            "status": "in_progress"
+            "status": "verified"
         },
         {
             "id": "ASET-3",
@@ -305,10 +305,28 @@
             "verifiedAt": "2026-11-13T00:00:00Z"
         },
         {
-            "type": "behavior",
+            "type": "test",
             "description": "Splash countdown, maintenance banner projection, Bio block allowlist rejection, optional Bio attribution, site/pricing billing display, centralized destination blocklists for web/CSV/API writes, and consent-gated platform GA4/AdSense projections are wired to administrator settings.",
             "reference": "tests/Feature/Admin/PlatformSettingsBehaviorTest.php; tests/Feature/BioPages/BioContentBlockTest.php; tests/Feature/Billing/BillingSurfaceTest.php",
             "verifiedAt": "2026-11-13T00:00:00Z"
+        },
+        {
+            "type": "test",
+            "description": "Full PHPUnit suite passed 616 tests and 19,056 assertions with one skipped test, including settings, revenue, consent, media, and product catalog contracts.",
+            "reference": "php -d memory_limit=512M vendor/bin/phpunit",
+            "verifiedAt": "2026-11-18T14:55:01Z"
+        },
+        {
+            "type": "command",
+            "description": "TypeScript no-emit check passed after scoping Google events to their specific measurement destinations.",
+            "reference": "npm run types:check",
+            "verifiedAt": "2026-11-18T15:04:44Z"
+        },
+        {
+            "type": "browser",
+            "description": "Denied consent loaded no GA4 script or dataLayer; each page_view was scoped to its matching custom or platform measurement ID. The styled pricing page rendered without browser errors.",
+            "reference": "resources/js/components/analytics/public-tracking-pixels.tsx; resources/js/pages/welcome.tsx; /pricing",
+            "verifiedAt": "2026-11-18T15:04:44Z"
         }
     ]
 }

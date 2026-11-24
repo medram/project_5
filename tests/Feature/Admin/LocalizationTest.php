@@ -5,6 +5,8 @@ namespace Tests\Feature\Admin;
 use App\Models\Locale;
 use App\Models\Translation;
 use App\Models\User;
+use App\Services\Localization\TranslationRepository;
+use App\Services\Settings\PlatformSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -41,6 +43,11 @@ class LocalizationTest extends TestCase
         ]);
         $this->assertDatabaseHas('admin_audit_logs', ['action' => 'create_locale']);
         $this->assertDatabaseHas('admin_audit_logs', ['action' => 'update_translation']);
+
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'localization', [
+            'translations_enabled' => true,
+        ], $settings->version('localization'));
 
         $this->withoutVite();
         $this->withCookie('locale', 'fr')->get('/')
@@ -131,5 +138,61 @@ class LocalizationTest extends TestCase
             ->assertOk()
             ->assertSee('"a": "One"', false)
             ->assertSee('"b": "Two"', false);
+    }
+
+    public function test_platform_locale_timezone_and_translation_switch_are_applied(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $locale = Locale::query()->create([
+            'code' => 'fr',
+            'name' => 'French',
+            'direction' => 'ltr',
+            'is_published' => true,
+        ]);
+        Translation::query()->create([
+            'locale_id' => $locale->id,
+            'key' => "Let's get started",
+            'value' => 'Commençons',
+        ]);
+        app(TranslationRepository::class)->flush($locale);
+
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'localization', [
+            'translations_enabled' => true,
+            'default_locale' => 'fr',
+            'timezone' => 'Pacific/Auckland',
+        ], $settings->version('localization'));
+
+        $originalPhpTimezone = date_default_timezone_get();
+        $originalAppTimezone = config('app.timezone');
+
+        try {
+            $this->withoutVite()
+                ->withHeader('Accept-Language', 'zz')
+                ->get('/')
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page
+                    ->where('locale.code', 'fr')
+                    ->where("translations.Let's get started", 'Commençons'));
+
+            $this->assertSame('Pacific/Auckland', config('app.timezone'));
+            $this->assertSame('Pacific/Auckland', date_default_timezone_get());
+
+            $settings->updateSection($administrator, 'localization', [
+                'translations_enabled' => false,
+                'default_locale' => 'fr',
+                'timezone' => 'Pacific/Auckland',
+            ], $settings->version('localization'));
+
+            $this->withHeader('Accept-Language', 'zz')
+                ->get('/')
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page
+                    ->where('locale.code', 'fr')
+                    ->where('translations', []));
+        } finally {
+            date_default_timezone_set($originalPhpTimezone);
+            config(['app.timezone' => $originalAppTimezone]);
+        }
     }
 }

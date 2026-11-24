@@ -2,8 +2,10 @@
 
 namespace App\Services\Workspaces;
 
+use App\Http\Middleware\ScopedAdminContent;
 use App\Models\User;
 use App\Models\Workspace;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -41,6 +43,13 @@ class WorkspaceContext
         $this->activate($user, $personal);
 
         return $personal;
+    }
+
+    public function forContentRequest(Request $request): Workspace
+    {
+        $scope = $request->attributes->get(ScopedAdminContent::ATTRIBUTE);
+
+        return is_array($scope) ? $scope['workspace'] : $this->currentFor($request->user());
     }
 
     public function activate(User $user, Workspace $workspace): Workspace

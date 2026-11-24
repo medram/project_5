@@ -6,11 +6,11 @@ use App\Http\Requests\StoreLinkPageItemRequest;
 use App\Models\LinkPage;
 use App\Models\LinkPageItem;
 use App\Models\LinkPageVariant;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class LinkPageItemController extends Controller
@@ -22,7 +22,7 @@ class LinkPageItemController extends Controller
         LinkPage $linkPage,
     ): RedirectResponse {
         $this->ensureInCurrentWorkspace($request, $linkPage);
-        Gate::authorize('update', $linkPage);
+        app(AdminContentAccess::class)->authorize($request, 'update', $linkPage);
 
         $data = $request->validated();
         $variant = $this->variantForPage(
@@ -49,7 +49,7 @@ class LinkPageItemController extends Controller
         LinkPageItem $linkPageItem,
     ): RedirectResponse {
         $this->ensureInCurrentWorkspace($request, $linkPage);
-        Gate::authorize('update', $linkPage);
+        app(AdminContentAccess::class)->authorize($request, 'update', $linkPage);
         $this->ensureBelongsToPage($linkPage, $linkPageItem);
 
         $data = $request->validated();
@@ -80,7 +80,7 @@ class LinkPageItemController extends Controller
         LinkPageItem $linkPageItem,
     ): RedirectResponse {
         $this->ensureInCurrentWorkspace($request, $linkPage);
-        Gate::authorize('update', $linkPage);
+        app(AdminContentAccess::class)->authorize($request, 'update', $linkPage);
         $this->ensureBelongsToPage($linkPage, $linkPageItem);
 
         $linkPageItem->delete();
@@ -99,7 +99,7 @@ class LinkPageItemController extends Controller
     public function reorder(Request $request, LinkPage $linkPage): RedirectResponse
     {
         $this->ensureInCurrentWorkspace($request, $linkPage);
-        Gate::authorize('update', $linkPage);
+        app(AdminContentAccess::class)->authorize($request, 'update', $linkPage);
 
         $validated = $request->validate([
             'variant_id' => ['sometimes', 'integer', 'min:1'],
@@ -187,7 +187,7 @@ class LinkPageItemController extends Controller
     private function ensureInCurrentWorkspace(Request $request, LinkPage $linkPage): void
     {
         abort_unless(
-            (int) $linkPage->workspace_id === (int) $this->workspaces->currentFor($request->user())->id,
+            (int) $linkPage->workspace_id === (int) $this->workspaces->forContentRequest($request)->id,
             404,
         );
     }

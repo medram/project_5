@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreLinkOverlayRequest;
 use App\Models\LinkOverlay;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,7 +41,7 @@ class LinkOverlayController extends Controller
     public function show(Request $request, LinkOverlay $linkOverlay): Response
     {
         $this->ensureInCurrentWorkspace($request, $linkOverlay);
-        Gate::authorize('view', $linkOverlay);
+        app(AdminContentAccess::class)->authorize($request, 'view', $linkOverlay);
 
         return Inertia::render('overlays/index', [
             'canManageIntegrations' => $request->user()->can('manageIntegrations', $linkOverlay->workspace),
@@ -51,7 +52,7 @@ class LinkOverlayController extends Controller
     public function update(StoreLinkOverlayRequest $request, LinkOverlay $linkOverlay): RedirectResponse
     {
         $this->ensureInCurrentWorkspace($request, $linkOverlay);
-        Gate::authorize('update', $linkOverlay);
+        app(AdminContentAccess::class)->authorize($request, 'update', $linkOverlay);
         $linkOverlay->update($request->validated());
 
         return to_route('overlays.index');
@@ -85,7 +86,7 @@ class LinkOverlayController extends Controller
     private function ensureInCurrentWorkspace(Request $request, LinkOverlay $overlay): void
     {
         abort_unless(
-            (int) $overlay->workspace_id === (int) $this->workspaces->currentFor($request->user())->id,
+            (int) $overlay->workspace_id === (int) $this->workspaces->forContentRequest($request)->id,
             404,
         );
     }

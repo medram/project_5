@@ -40,7 +40,7 @@ class StoreCustomDomainRequest extends FormRequest
                 'required',
                 'string',
                 'max:253',
-                Rule::unique(CustomDomain::class, 'hostname'),
+                Rule::unique(CustomDomain::class, 'hostname')->ignore($this->route('customDomain')),
                 function (string $attribute, mixed $value, Closure $fail): void {
                     if (! is_string($value) || ! $this->isAllowedHostname($value)) {
                         $fail('Enter a publicly routable hostname, without a scheme, path, or port.');

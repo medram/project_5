@@ -6,6 +6,7 @@ use App\Models\Link;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Settings\PlatformSettings;
 use App\Services\Billing\WorkspaceUsage;
 use App\Services\Webhooks\WebhookEndpointValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -321,7 +322,11 @@ class VersionedApiTest extends TestCase
             ->assertJsonPath('error.code', 'validation_failed')
             ->assertJsonStructure(['error' => ['code', 'message', 'details' => ['destination_url']]]);
 
-        config(['linkpilot.api.rate_limit_per_minute' => 1]);
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($owner, 'system', [
+            'api_rate_limit_per_minute' => 1,
+        ], $settings->version('system'));
+        config(['linkpilot.api.rate_limit_per_minute' => 60]);
         $rateToken = $this->token($owner, $workspace, ['links:read']);
         Auth::forgetGuards();
         $this->withToken($rateToken)->getJson('/api/v1/links')->assertOk();

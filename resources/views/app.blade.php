@@ -47,9 +47,6 @@
             <link rel="icon" href="/favicon.svg" type="image/svg+xml">
             <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         @endif
-        @if (is_string($platformSeo['default_description'] ?? null) && $platformSeo['default_description'] !== '')
-            <meta name="description" content="{{ $platformSeo['default_description'] }}">
-        @endif
         @php
             $routeName = request()->route()?->getName();
             $routeSeo = match ($routeName) {
@@ -63,18 +60,23 @@
                 ],
                 default => ['title' => null, 'description' => null],
             };
-            $socialTitle = $routeSeo['title'] ?: ($platformSeo['default_title'] ?? config('app.name'));
-            $socialDescription = $routeSeo['description'] ?: ($platformSeo['default_description'] ?? null);
+            $customPageSeo = request()->attributes->get('custom_page_seo', []);
+            $socialTitle = ($customPageSeo['title'] ?? null) ?: ($routeSeo['title'] ?: ($platformSeo['default_title'] ?? config('app.name')));
+            $socialDescription = ($customPageSeo['description'] ?? null) ?: ($routeSeo['description'] ?: ($platformSeo['default_description'] ?? null));
+            $socialImage = ($customPageSeo['image'] ?? null) ?: (is_numeric($platformSeo['og_media_id'] ?? null) && (int) $platformSeo['og_media_id'] > 0
+                ? route('platform.media', ['media' => (int) $platformSeo['og_media_id']]) : null);
         @endphp
         <meta property="og:title" content="{{ $socialTitle }}">
+        <meta name="twitter:title" content="{{ $socialTitle }}">
         @if (is_string($socialDescription) && $socialDescription !== '')
+            <meta name="description" content="{{ $socialDescription }}">
             <meta property="og:description" content="{{ $socialDescription }}">
             <meta name="twitter:description" content="{{ $socialDescription }}">
         @endif
-        <meta name="twitter:card" content="{{ is_numeric($platformSeo['og_media_id'] ?? null) ? 'summary_large_image' : 'summary' }}">
-        @if (is_numeric($platformSeo['og_media_id'] ?? null) && (int) $platformSeo['og_media_id'] > 0)
-            <meta property="og:image" content="{{ route('platform.media', ['media' => (int) $platformSeo['og_media_id']]) }}">
-            <meta name="twitter:image" content="{{ route('platform.media', ['media' => (int) $platformSeo['og_media_id']]) }}">
+        <meta name="twitter:card" content="{{ $socialImage ? 'summary_large_image' : 'summary' }}">
+        @if ($socialImage)
+            <meta property="og:image" content="{{ $socialImage }}">
+            <meta name="twitter:image" content="{{ $socialImage }}">
         @endif
         @foreach (['google' => 'google-site-verification', 'bing' => 'msvalidate.01', 'pinterest' => 'p:domain_verify'] as $verificationKey => $verificationName)
             @if (is_string($platformVerification[$verificationKey.'_token'] ?? null) && $platformVerification[$verificationKey.'_token'] !== '')

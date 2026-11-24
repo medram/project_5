@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\MediaPurpose;
 use App\Enums\PlatformPermission;
 use App\Http\Controllers\Controller;
-use App\Models\ContentMedia;
 use App\Services\Content\ContentMediaStorage;
 use App\Services\Platform\AdminAudit;
 use App\Services\Settings\PlatformSettings;
@@ -119,16 +117,7 @@ class AdminSettingActionController extends Controller
             throw $exception;
         }
 
-        if (is_int($previous) && $previous !== $candidate->id && ! $this->settings->assetReferenced($previous)) {
-            $old = ContentMedia::query()
-                ->whereKey($previous)
-                ->where('purpose', MediaPurpose::PlatformAsset)
-                ->first();
-
-            if ($old instanceof ContentMedia) {
-                $storage->delete($old);
-            }
-        }
+        $storage->deleteIfUnreferencedPlatformAsset(is_int($previous) ? $previous : null);
 
         return back()->with('success', 'Platform asset updated.');
     }

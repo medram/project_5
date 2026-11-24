@@ -42,10 +42,10 @@ return [
                 'site_name' => ['label' => 'Site name', 'type' => 'string', 'default' => 'LinkPilot', 'rules' => ['required', 'string', 'max:120']],
                 'support_email' => ['label' => 'Support email', 'type' => 'email', 'default' => 'support@example.test', 'rules' => ['required', 'email', 'max:255']],
                 'dashboard_home' => ['label' => 'Dashboard home', 'type' => 'enum', 'default' => 'links', 'options' => ['links' => 'Short links', 'analytics' => 'Analytics'], 'rules' => ['required', 'in:links,analytics']],
-                'logo_light_id' => ['label' => 'Light logo media ID', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
-                'logo_dark_id' => ['label' => 'Dark logo media ID', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
-                'compact_logo_id' => ['label' => 'Compact logo media ID', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
-                'favicon_id' => ['label' => 'Favicon media ID', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
+                'logo_light_id' => ['label' => 'Light logo', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
+                'logo_dark_id' => ['label' => 'Dark logo', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
+                'compact_logo_id' => ['label' => 'Compact logo', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
+                'favicon_id' => ['label' => 'Favicon', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
             ],
         ],
         'links' => [
@@ -100,7 +100,7 @@ return [
             ],
             'fields' => [
                 'branding_enabled' => $yesNo('Bio branding'),
-                'branding_media_id' => ['label' => 'Branding media ID', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
+                'branding_media_id' => ['label' => 'Branding image', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
                 'available_blocks' => ['label' => 'Available blocks', 'type' => 'list', 'default' => ['link', 'text', 'image', 'social', 'embed'], 'options' => ['link' => 'Link', 'text' => 'Text', 'image' => 'Image', 'social' => 'Social links', 'embed' => 'Embed'], 'rules' => ['array'], 'itemRules' => ['in:link,text,image,social,embed']],
             ],
         ],
@@ -163,8 +163,8 @@ return [
             'fields' => [
                 'header_items' => ['label' => 'Header items', 'type' => 'list', 'default' => ['home', 'pricing', 'login', 'register'], 'options' => ['home' => 'Home', 'pricing' => 'Pricing', 'contact' => 'Contact', 'login' => 'Login', 'register' => 'Register'], 'rules' => ['array'], 'itemRules' => ['in:home,pricing,contact,login,register']],
                 'footer_items' => ['label' => 'Footer items', 'type' => 'list', 'default' => ['contact', 'login'], 'options' => ['home' => 'Home', 'pricing' => 'Pricing', 'contact' => 'Contact', 'login' => 'Login', 'register' => 'Register'], 'rules' => ['array'], 'itemRules' => ['in:home,pricing,contact,login,register']],
-                'header_page_ids' => ['label' => 'Header published page IDs', 'type' => 'int_list', 'default' => [], 'rules' => ['array'], 'itemRules' => ['integer', 'exists:custom_pages,id'], 'help' => 'Comma-separated published custom-page IDs.'],
-                'footer_page_ids' => ['label' => 'Footer published page IDs', 'type' => 'int_list', 'default' => [], 'rules' => ['array'], 'itemRules' => ['integer', 'exists:custom_pages,id'], 'help' => 'Comma-separated published custom-page IDs.'],
+                'header_page_ids' => ['label' => 'Header pages', 'type' => 'int_list', 'default' => [], 'rules' => ['array'], 'itemRules' => ['integer', 'exists:custom_pages,id'], 'help' => 'Search published pages, then use the arrows to change their order.'],
+                'footer_page_ids' => ['label' => 'Footer pages', 'type' => 'int_list', 'default' => [], 'rules' => ['array'], 'itemRules' => ['integer', 'exists:custom_pages,id'], 'help' => 'Search published pages, then use the arrows to change their order.'],
             ],
         ],
         'subscriptions' => [
@@ -437,8 +437,8 @@ return [
                 'consent_position' => ['label' => 'Consent position', 'type' => 'enum', 'default' => 'banner', 'options' => ['banner' => 'Banner', 'corner' => 'Corner'], 'rules' => ['required', 'in:banner,corner']],
                 'privacy_url' => ['label' => 'Privacy URL', 'type' => 'url', 'default' => '', 'rules' => ['nullable', 'url', 'max:500']],
                 'terms_url' => ['label' => 'Terms URL', 'type' => 'url', 'default' => '', 'rules' => ['nullable', 'url', 'max:500']],
-                'privacy_page_id' => ['label' => 'Privacy page ID', 'type' => 'media', 'default' => null, 'rules' => ['nullable', 'integer', 'exists:custom_pages,id']],
-                'terms_page_id' => ['label' => 'Terms page ID', 'type' => 'media', 'default' => null, 'rules' => ['nullable', 'integer', 'exists:custom_pages,id']],
+                'privacy_page_id' => ['label' => 'Privacy page', 'type' => 'media', 'default' => null, 'rules' => ['nullable', 'integer', 'exists:custom_pages,id']],
+                'terms_page_id' => ['label' => 'Terms page', 'type' => 'media', 'default' => null, 'rules' => ['nullable', 'integer', 'exists:custom_pages,id']],
             ],
         ],
         'seo' => [
@@ -474,7 +474,7 @@ return [
                 'home_description' => ['label' => 'Home description', 'type' => 'text', 'default' => '', 'rules' => ['nullable', 'string', 'max:320']],
                 'pricing_title' => ['label' => 'Pricing title', 'type' => 'string', 'default' => '', 'rules' => ['nullable', 'string', 'max:160']],
                 'pricing_description' => ['label' => 'Pricing description', 'type' => 'text', 'default' => '', 'rules' => ['nullable', 'string', 'max:320']],
-                'og_media_id' => ['label' => 'Default OG media ID', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
+                'og_media_id' => ['label' => 'Default sharing image', 'type' => 'media', 'asset' => true, 'default' => null, 'rules' => ['nullable', 'integer', 'exists:content_media,id']],
             ],
         ],
         'ads' => [

@@ -2,7 +2,8 @@ import { Form, Head, router } from '@inertiajs/react';
 import { useRef } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import { PageHeader } from '@/components/page-header';
+import { FieldError } from '@/components/ui/field';
 import PasswordInput from '@/components/password-input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,15 +43,13 @@ export default function Security(props: Props) {
         <>
             <Head title="Security settings" />
 
-            <Heading
-                variant="page"
+            <PageHeader
                 title="Security"
                 description="Password, two-factor authentication, passkeys, and active sessions."
             />
 
             <div className="space-y-6">
                 <Heading
-                    variant="small"
                     title="Update password"
                     description="Ensure your account is using a long, random password to stay secure"
                 />
@@ -93,7 +92,11 @@ export default function Security(props: Props) {
                                     placeholder="Current password"
                                 />
 
-                                <InputError message={errors.current_password} />
+                                {errors.current_password && (
+                                    <FieldError>
+                                        {errors.current_password}
+                                    </FieldError>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -109,7 +112,9 @@ export default function Security(props: Props) {
                                     passwordrules={props.passwordRules}
                                 />
 
-                                <InputError message={errors.password} />
+                                {errors.password && (
+                                    <FieldError>{errors.password}</FieldError>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -126,9 +131,11 @@ export default function Security(props: Props) {
                                     passwordrules={props.passwordRules}
                                 />
 
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
+                                {errors.password_confirmation && (
+                                    <FieldError>
+                                        {errors.password_confirmation}
+                                    </FieldError>
+                                )}
                             </div>
 
                             <div className="flex items-center gap-4">

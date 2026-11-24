@@ -1,7 +1,8 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { formatAdminDate, humanizeAdminValue } from '@/components/admin/format';
+import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -57,6 +58,7 @@ export default function AdminFilesIndex({
         mode: 'delete' | 'restore';
         row: AdminFileRow;
     } | null>(null);
+    const [editTarget, setEditTarget] = useState<AdminFileRow | null>(null);
 
     function apply(event: FormEvent) {
         event.preventDefault();
@@ -78,17 +80,10 @@ export default function AdminFilesIndex({
         <>
             <Head title="Files — Administration" />
             <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
-                <header className="space-y-1">
-                    <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
-                        Files
-                    </h1>
-                    <p className="max-w-3xl text-sm text-muted-foreground">
-                        Retained media metadata across workspaces. Disk paths,
-                        previews, downloads, and tenant file contents are never
-                        exposed. Soft deletion is reversible; physical purge
-                        remains retention-driven.
-                    </p>
-                </header>
+                <PageHeader
+                    title="Files"
+                    description="Retained media metadata across workspaces. Disk paths, previews, downloads, and tenant file contents are never exposed. Soft deletion is reversible; physical purge remains retention-driven."
+                />
 
                 <Card>
                     <CardHeader className="gap-1">
@@ -270,40 +265,58 @@ export default function AdminFilesIndex({
                                             </p>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-right">
-                                        {canManage &&
-                                            (row.deletedAt ? (
+                                    <td className="px-4 py-3">
+                                        <div className="flex justify-end gap-2">
+                                            {canManage && !row.deletedAt && (
                                                 <Button
                                                     type="button"
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="min-h-9"
-                                                    onClick={() =>
-                                                        setTarget({
-                                                            mode: 'restore',
-                                                            row,
-                                                        })
-                                                    }
+                                                    size="icon"
+                                                    variant="secondary"
+                                                    className="size-8 rounded-full"
+                                                    title="Edit file"
+                                                    aria-label={`Edit ${row.originalName}`}
+                                                    onClick={() => setEditTarget(row)}
                                                 >
-                                                    Restore
+                                                    <Pencil aria-hidden="true" />
                                                 </Button>
-                                            ) : (
-                                                <Button
-                                                    type="button"
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="min-h-9"
-                                                    onClick={() =>
-                                                        setTarget({
-                                                            mode: 'delete',
-                                                            row,
-                                                        })
-                                                    }
-                                                >
-                                                    <Trash2 aria-hidden="true" />
-                                                    Soft delete
-                                                </Button>
-                                            ))}
+                                            )}
+                                            {canManage &&
+                                                (row.deletedAt ? (
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="secondary"
+                                                        className="size-8 rounded-full"
+                                                        title="Restore file"
+                                                        aria-label={`Restore ${row.originalName}`}
+                                                        onClick={() =>
+                                                            setTarget({
+                                                                mode: 'restore',
+                                                                row,
+                                                            })
+                                                        }
+                                                    >
+                                                        <RotateCcw aria-hidden="true" />
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="destructive"
+                                                        className="size-8 rounded-full"
+                                                        title="Soft delete file"
+                                                        aria-label={`Soft delete ${row.originalName}`}
+                                                        onClick={() =>
+                                                            setTarget({
+                                                                mode: 'delete',
+                                                                row,
+                                                            })
+                                                        }
+                                                    >
+                                                        <Trash2 aria-hidden="true" />
+                                                    </Button>
+                                                ))}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -356,6 +369,12 @@ export default function AdminFilesIndex({
                                         {row.deletionReason}
                                     </p>
                                 )}
+                                {canManage && !row.deletedAt && (
+                                    <Button type="button" variant="outline" className="min-h-11" onClick={() => setEditTarget(row)}>
+                                        <Pencil aria-hidden="true" />
+                                        Edit file
+                                    </Button>
+                                )}
                                 {canManage && (
                                     <Button
                                         type="button"
@@ -393,7 +412,10 @@ export default function AdminFilesIndex({
                         {rows.total.toLocaleString()} files
                     </p>
                     {rows.last_page > 1 && (
-                        <nav className="flex flex-wrap gap-1">
+                        <nav
+                            className="flex flex-wrap gap-1"
+                            aria-label="Files pagination"
+                        >
                             {rows.links.map((link) =>
                                 link.url === null ? (
                                     <span
@@ -427,6 +449,7 @@ export default function AdminFilesIndex({
             </div>
 
             <FileReasonDialog target={target} onClose={() => setTarget(null)} />
+            {editTarget && <FileEditDialog key={editTarget.id} row={editTarget} onClose={() => setEditTarget(null)} />}
         </>
     );
 }
@@ -558,6 +581,62 @@ function FileReasonDialog({
                                   ? 'Soft delete'
                                   : 'Restore'}
                         </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function FileEditDialog({ row, onClose }: { row: AdminFileRow; onClose: () => void }) {
+    const form = useForm({
+        display_name: row.originalName,
+        expires_at: row.expiresAt ? row.expiresAt.slice(0, 16) : '',
+        reason: '',
+    });
+
+    function submit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        form.transform((data) => ({
+            ...data,
+            expires_at: data.expires_at ? `${data.expires_at}:00Z` : '',
+        }));
+        form.patch(`/admin/files/${row.id}`, {
+            preserveScroll: true,
+            onSuccess: onClose,
+        });
+    }
+
+    return (
+        <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit file metadata</DialogTitle>
+                    <DialogDescription>
+                        The original upload name and file contents remain unchanged. Retention expiry can make a file unavailable and eligible for purge.
+                    </DialogDescription>
+                </DialogHeader>
+                <form className="grid gap-3" onSubmit={submit}>
+                    <div className="grid gap-2">
+                        <Label htmlFor="file-display-name">Display name</Label>
+                        <Input id="file-display-name" required maxLength={255} value={form.data.display_name} onChange={(event) => form.setData('display_name', event.target.value)} />
+                        <p className="text-xs text-muted-foreground">Keep the original file extension.</p>
+                        {form.errors.display_name && <p className="text-sm text-destructive">{form.errors.display_name}</p>}
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="file-expiry">Expiry (UTC)</Label>
+                        <Input id="file-expiry" type="datetime-local" disabled={row.retainsIndefinitely} value={form.data.expires_at} onChange={(event) => form.setData('expires_at', event.target.value)} />
+                        <p className="text-xs text-muted-foreground">{row.retainsIndefinitely ? 'This file is retained indefinitely.' : 'Leave blank for no expiry.'}</p>
+                        {form.errors.expires_at && <p className="text-sm text-destructive">{form.errors.expires_at}</p>}
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="file-edit-reason">Reason</Label>
+                        <Textarea id="file-edit-reason" required maxLength={500} rows={3} value={form.data.reason} onChange={(event) => form.setData('reason', event.target.value)} />
+                        {form.errors.reason && <p className="text-sm text-destructive">{form.errors.reason}</p>}
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button type="button" variant="outline" disabled={form.processing} onClick={onClose}>Cancel</Button>
+                        <Button type="submit" disabled={form.processing}>{form.processing ? 'Saving…' : 'Save changes'}</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

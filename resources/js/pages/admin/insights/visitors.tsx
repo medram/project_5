@@ -1,36 +1,26 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
-import { ChartLegend } from '@/components/admin/insights/chart-legend';
-import { DimensionPanel } from '@/components/admin/insights/dimension-panel';
-import { InsightDailyChart } from '@/components/admin/insights/daily-chart';
-import { InsightsRangePicker } from '@/components/admin/insights/range-picker';
-import { StatCard } from '@/components/dashboard/stat-card';
-import { Button } from '@/components/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { countryName } from '@/lib/countries';
+    Activity,
+    ArrowLeft,
+    Compass,
+    Laptop,
+    MonitorSmartphone,
+    Share2,
+    ShieldCheck,
+} from 'lucide-react';
+import { InsightActivityCard } from '@/components/admin/insights/activity-card';
+import { DimensionPanel } from '@/components/admin/insights/dimension-panel';
+import { InsightsRangePicker } from '@/components/admin/insights/range-picker';
+import { RankedBreakdownCard } from '@/components/analytics/ranked-breakdown-card';
+import { TopCountriesCard } from '@/components/analytics/traffic-sources';
+import { StatCard } from '@/components/dashboard/stat-card';
+import { PageHeader } from '@/components/page-header';
+import { Button } from '@/components/ui/button';
 import insights from '@/routes/admin/insights';
 import type {
     AdminDimension,
-    AdminVisitorDaily,
     AdminVisitorInsightsPageProps,
 } from '@/types/admin-insights';
-
-const visitorSeries = [
-    { key: 'events', label: 'Tracked events', color: 'var(--chart-1)' },
-    {
-        key: 'uniqueVisitors',
-        label: 'Aggregate unique visitors',
-        color: 'var(--chart-2)',
-    },
-    { key: 'pageViews', label: 'Page views', color: 'var(--chart-3)' },
-];
 
 function collapseEventSeries(rows: AdminDimension[]): AdminDimension[] {
     const visible = rows.slice(0, 8);
@@ -73,8 +63,8 @@ export default function AdminVisitorInsights({
     return (
         <>
             <Head title="Visitor insights — Administration" />
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-5 pt-4 pb-10">
-                <header className="flex flex-col gap-3">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
+                <div className="flex flex-col gap-3">
                     <Button
                         asChild
                         variant="ghost"
@@ -86,227 +76,152 @@ export default function AdminVisitorInsights({
                             Platform insights
                         </Link>
                     </Button>
-                    <div className="space-y-1">
-                        <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
-                            Visitor insights
-                        </h1>
-                        <p className="max-w-3xl text-sm text-muted-foreground">
-                            Aggregate consented events only. There is no
-                            workspace drill-down, per-link ranking, raw hash, IP
-                            address, city, destination, or full referrer URL.
-                        </p>
-                    </div>
-                </header>
-
-                <InsightsRangePicker
-                    range={data.range}
-                    url={insights.visitors().url}
-                />
+                    <PageHeader
+                        title="Visitor insights"
+                        description="Aggregate consented events only. No workspace drill-down, per-link ranking, raw hash, IP address, city, destination, or full referrer URL."
+                        actions={
+                            <InsightsRangePicker
+                                range={data.range}
+                                url={insights.visitors().url}
+                                variant="inline"
+                            />
+                        }
+                    />
+                </div>
 
                 <section
                     aria-label="Visitor totals"
-                    className="grid grid-cols-2 gap-3 xl:grid-cols-5"
+                    className="grid grid-cols-2 gap-3 lg:grid-cols-5"
                 >
                     <StatCard
                         label="Tracked events"
                         value={number(data.totals.events)}
-                        sparkline={data.daily.map((day) => day.events)}
-                        sparklineColor="var(--chart-2)"
+                        note={`${data.range.days} days`}
                     />
                     <StatCard
                         label="Unique visitors"
                         value={number(data.totals.uniqueVisitors)}
-                        sparkline={data.daily.map((day) => day.uniqueVisitors)}
-                        sparklineColor="var(--chart-4)"
+                        note={`${data.range.days} days`}
                     />
                     <StatCard
                         label="Page views"
                         value={number(data.totals.pageViews)}
+                        note={`${data.range.days} days`}
                     />
                     <StatCard
                         label="Clicks"
                         value={number(data.totals.clicks)}
+                        note={`${data.range.days} days`}
                     />
                     <StatCard
                         label="QR scans"
                         value={number(data.totals.scans)}
+                        note={`${data.range.days} days`}
+                        className="max-lg:col-span-2"
                     />
                 </section>
 
-                <Card className="min-w-0">
-                    <CardHeader className="gap-1">
-                        <CardTitle as="h2">Daily aggregate series</CardTitle>
-                        <CardDescription>
-                            Unique visitors are counted per day from keyed
-                            hashes and only the aggregate count leaves the
-                            server.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid min-w-0 gap-4">
-                        <ChartLegend
-                            series={visitorSeries}
-                            values={{
-                                events: data.totals.events,
-                                uniqueVisitors: data.totals.uniqueVisitors,
-                                pageViews: data.totals.pageViews,
-                            }}
-                        />
-                        <InsightDailyChart
-                            data={data.daily}
-                            series={visitorSeries}
-                            label="Daily tracked events, aggregate unique visitors, and page views. Exact values are listed below."
-                        />
-                        <details>
-                            <summary className="cursor-pointer text-sm text-muted-foreground">
-                                Exact daily values
-                            </summary>
-                            <ExactVisitorTable data={data.daily} />
-                        </details>
-                    </CardContent>
-                </Card>
+                <InsightActivityCard
+                    title="Daily aggregate series"
+                    description="Tracked events, unique visitors, and page views per UTC day."
+                    daily={data.daily}
+                    days={data.range.days}
+                    defaultMetric="events"
+                    options={[
+                        {
+                            value: 'events',
+                            label: 'Tracked events',
+                            shortLabel: 'Events',
+                            total: data.totals.events,
+                        },
+                        {
+                            value: 'uniqueVisitors',
+                            label: 'Unique visitors',
+                            shortLabel: 'Visitors',
+                            total: data.totals.uniqueVisitors,
+                        },
+                        {
+                            value: 'pageViews',
+                            label: 'Page views',
+                            shortLabel: 'Views',
+                            total: data.totals.pageViews,
+                        },
+                    ]}
+                />
 
-                <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-                    <DimensionPanel
+                <TopCountriesCard
+                    rows={data.dimensions.countries}
+                    metric="events"
+                    footer={countryFooter}
+                />
+
+                <section aria-label="Audience breakdown" className="grid gap-3">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <DimensionPanel
+                            title="Top browsers"
+                            description="Consented events by browser family."
+                            rows={data.dimensions.browsers}
+                            visual="donut"
+                            totalLabel="events"
+                            icon={Compass}
+                        />
+                        <DimensionPanel
+                            title="Top platforms"
+                            description="Consented events by operating system."
+                            rows={data.dimensions.platforms}
+                            visual="donut"
+                            totalLabel="events"
+                            icon={MonitorSmartphone}
+                        />
+                        <DimensionPanel
+                            title="Device classes"
+                            description="Consented events by coarse device class."
+                            rows={data.dimensions.devices}
+                            visual="donut"
+                            totalLabel="events"
+                            icon={Laptop}
+                        />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Dimension buckets under {data.kAnonymityThreshold}{' '}
+                        events are grouped as Other. Shares cover events with a
+                        recorded value for that dimension.
+                    </p>
+                </section>
+
+                <section className="grid items-start gap-4 lg:grid-cols-2">
+                    <RankedBreakdownCard
                         title="Event series"
-                        description="Top event names by volume. The remainder is grouped as Other events; no workspace, resource, or destination identifiers."
+                        description="Top event names by volume. The remainder is grouped as Other events."
+                        icon={Activity}
                         rows={eventRows}
-                        emptyMessage="No consenting events in this window."
-                        cardVariant={
-                            eventRows.length === 0 ? 'transparent' : 'default'
-                        }
+                        emptyTitle="No consenting events in this window"
+                        emptyDescription="Choose another window or check again after consented activity arrives."
                     />
-
-                    <Card>
-                        <CardHeader className="gap-1">
-                            <CardTitle
-                                className="flex items-center gap-2"
-                                as="h2"
-                            >
-                                <ShieldCheck
-                                    className="size-4"
-                                    aria-hidden="true"
-                                />
-                                Privacy boundary
-                            </CardTitle>
-                            <CardDescription>
-                                Every dimension below is coarse and collapsed
-                                before serialization.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid gap-3 text-sm text-muted-foreground">
-                            <p>
-                                Buckets with fewer than{' '}
-                                {data.kAnonymityThreshold} events become Other.
-                            </p>
-                            <p>
-                                Dimension shares cover events with a recorded
-                                value for that dimension.
-                            </p>
-                            <Separator />
-                            <p>
-                                Raw visitor hashes, IP addresses, cities,
-                                destinations, link-level rankings, and
-                                per-workspace dimensions are never returned.
-                            </p>
-                            <p>
-                                This page is an aggregate operational view, not
-                                a customer-level analytics export.
-                            </p>
-                        </CardContent>
-                    </Card>
-                </section>
-
-                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    <DimensionPanel
-                        title="Countries"
-                        description="Country buckets from consented events. Shares cover events with a resolved country."
-                        rows={data.dimensions.countries}
-                        threshold={data.kAnonymityThreshold}
-                        nameFormatter={countryName}
-                        footer={countryFooter}
-                    />
-                    <DimensionPanel
-                        title="Browsers"
-                        description="Coarse browser families from consented events."
-                        rows={data.dimensions.browsers}
-                        threshold={data.kAnonymityThreshold}
-                    />
-                    <DimensionPanel
-                        title="Platforms"
-                        description="Operating-system families from consented events."
-                        rows={data.dimensions.platforms}
-                        threshold={data.kAnonymityThreshold}
-                    />
-                    <DimensionPanel
-                        title="Device classes"
-                        description="Mobile, desktop, or other coarse classes."
-                        rows={data.dimensions.devices}
-                        threshold={data.kAnonymityThreshold}
-                        visual="donut"
-                        totalLabel="events"
-                    />
-                    <DimensionPanel
-                        title="Referrers"
-                        description="Referrer hostnames only; full URLs are never retained."
+                    <RankedBreakdownCard
+                        title="Top referrers"
+                        description="Referrer hostnames only. Full URLs are never retained."
+                        icon={Share2}
                         rows={data.dimensions.referrers}
-                        threshold={data.kAnonymityThreshold}
+                        emptyTitle="No referrer data in this window"
+                        emptyDescription="A referrer appears only when the browser sends one."
                     />
                 </section>
+
+                <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-surface)]">
+                    <ShieldCheck
+                        className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                    />
+                    <p className="max-w-5xl text-xs leading-5 text-muted-foreground">
+                        Daily unique visitors are counted per day from keyed
+                        hashes and only aggregate counts leave the server. Raw
+                        visitor hashes, IP addresses, cities, destinations,
+                        link-level rankings, and workspace drill-down are never
+                        returned.
+                    </p>
+                </div>
             </div>
         </>
-    );
-}
-
-function ExactVisitorTable({ data }: { data: AdminVisitorDaily[] }) {
-    return (
-        <div className="mt-2 max-h-64 overflow-auto rounded-md border">
-            <table
-                data-table-surface={data.length > 0 ? 'populated' : undefined}
-                className="w-full text-xs"
-            >
-                <thead className="sticky top-0 bg-muted text-left text-xs text-muted-foreground">
-                    <tr>
-                        <th className="px-2 py-1 font-medium">Date</th>
-                        <th className="px-2 py-1 text-right font-medium">
-                            Events
-                        </th>
-                        <th className="px-2 py-1 text-right font-medium">
-                            Unique
-                        </th>
-                        <th className="px-2 py-1 text-right font-medium">
-                            Page views
-                        </th>
-                        <th className="px-2 py-1 text-right font-medium">
-                            Clicks
-                        </th>
-                        <th className="px-2 py-1 text-right font-medium">
-                            Scans
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {data.map((row) => (
-                        <tr key={row.date} className="border-t">
-                            <td className="px-2 py-1">{row.date}</td>
-                            <td className="px-2 py-1 text-right tabular-nums">
-                                {row.events}
-                            </td>
-                            <td className="px-2 py-1 text-right tabular-nums">
-                                {row.uniqueVisitors}
-                            </td>
-                            <td className="px-2 py-1 text-right tabular-nums">
-                                {row.pageViews}
-                            </td>
-                            <td className="px-2 py-1 text-right tabular-nums">
-                                {row.clicks}
-                            </td>
-                            <td className="px-2 py-1 text-right tabular-nums">
-                                {row.scans}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
     );
 }

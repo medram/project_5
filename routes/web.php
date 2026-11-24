@@ -3,6 +3,8 @@
 use App\Http\Controllers\AcceptWorkspaceInvitationController;
 use App\Http\Controllers\AccountAnalyticsController;
 use App\Http\Controllers\Admin\AdminContentController;
+use App\Http\Controllers\Admin\AdminContentEditController;
+use App\Http\Controllers\Admin\AdminCustomDomainEditController;
 use App\Http\Controllers\Admin\AdminCustomPageController;
 use App\Http\Controllers\Admin\AdminFileController;
 use App\Http\Controllers\Admin\AdminHomeController;
@@ -11,6 +13,7 @@ use App\Http\Controllers\Admin\AdminLocalizationController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminOperationLogController;
 use App\Http\Controllers\Admin\AdminPlanController;
+use App\Http\Controllers\Admin\AdminPlanPriceController;
 use App\Http\Controllers\Admin\AdminRoleController;
 use App\Http\Controllers\Admin\AdminSettingActionController;
 use App\Http\Controllers\Admin\AdminSettingController;
@@ -84,6 +87,7 @@ use App\Http\Controllers\WorkspaceMemberController;
 use App\Http\Controllers\WorkspaceSearchController;
 use App\Http\Controllers\WorkspaceTransferController;
 use App\Http\Middleware\EnsurePricingEnabled;
+use App\Http\Middleware\ScopedAdminContent;
 use App\Services\Settings\PlatformSettings;
 use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Http\RedirectResponse;
@@ -320,6 +324,9 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         Route::get('users/{user}', AdminUserShowController::class)
             ->middleware('platform:admin.users.view')
             ->name('users.show');
+        Route::patch('users/{user}/profile', [AdminUserActionController::class, 'updateProfile'])
+            ->middleware('platform:admin.users.manage_profile')
+            ->name('users.profile.update');
         Route::patch('users/{user}/suspension', [AdminUserActionController::class, 'updateSuspension'])
             ->middleware('platform:admin.users.manage_status')
             ->name('users.suspension.update');
@@ -356,30 +363,113 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
             ->name('insights.visitors');
 
         Route::get('links', [AdminContentController::class, 'links'])
-            ->middleware('platform:admin.content.view_metadata')
+            ->middleware('platform:admin.content.links.view')
             ->name('content.links');
         Route::get('biolinks', [AdminContentController::class, 'bioLinks'])
-            ->middleware('platform:admin.content.view_metadata')
+            ->middleware('platform:admin.content.biolinks.view')
             ->name('content.biolinks');
+        Route::get('qr-codes', [AdminContentController::class, 'qrCodes'])
+            ->middleware('platform:admin.content.qr_codes.view')
+            ->name('content.qr-codes');
         Route::get('folders', [AdminContentController::class, 'folders'])
-            ->middleware('platform:admin.content.view_metadata')
+            ->middleware('platform:admin.content.folders.view')
             ->name('content.folders');
         Route::get('custom-domains', [AdminContentController::class, 'domains'])
-            ->middleware('platform:admin.content.view_metadata')
+            ->middleware('platform:admin.content.domains.view')
             ->name('content.domains');
         Route::get('link-overlays', [AdminContentController::class, 'overlays'])
-            ->middleware('platform:admin.content.view_metadata')
+            ->middleware('platform:admin.content.overlays.view')
             ->name('content.overlays');
         Route::get('link-pages', [AdminContentController::class, 'pages'])
-            ->middleware('platform:admin.content.view_metadata')
+            ->middleware('platform:admin.content.link_pages.view')
             ->name('content.pages');
         Route::get('pixels', [AdminContentController::class, 'pixels'])
-            ->middleware('platform:admin.content.view_metadata')
+            ->middleware('platform:admin.content.pixels.view')
             ->name('content.pixels');
+
+        Route::middleware(['platform:admin.content.links.manage', ScopedAdminContent::class])->group(function (): void {
+            Route::get('links/{link}', [AdminContentEditController::class, 'link'])
+                ->middleware('platform:admin.content.links.view')
+                ->name('content.links.edit');
+            Route::patch('links/{link}', [LinkController::class, 'update'])->name('content.links.update');
+        });
+
+        Route::middleware(['platform:admin.content.biolinks.manage', ScopedAdminContent::class])->group(function (): void {
+            Route::get('biolinks/{bioPage}', [BioPageController::class, 'show'])->name('content.biolinks.edit');
+            Route::patch('biolinks/{bioPage}', [BioPageController::class, 'update'])->name('content.biolinks.update');
+            Route::post('biolinks/{bioPage}/links', [BioLinkController::class, 'store'])->name('content.biolinks.links.store');
+            Route::patch('biolinks/{bioPage}/links/{bioLink}', [BioLinkController::class, 'update'])->name('content.biolinks.links.update');
+            Route::delete('biolinks/{bioPage}/links/{bioLink}', [BioLinkController::class, 'destroy'])->name('content.biolinks.links.destroy');
+            Route::patch('biolinks/{bioPage}/content/reorder', [BioContentBlockController::class, 'reorder'])->name('content.biolinks.content.reorder');
+            Route::post('biolinks/{bioPage}/blocks', [BioContentBlockController::class, 'store'])->name('content.biolinks.blocks.store');
+            Route::patch('biolinks/{bioPage}/blocks/{bioBlock}', [BioContentBlockController::class, 'update'])->name('content.biolinks.blocks.update');
+            Route::delete('biolinks/{bioPage}/blocks/{bioBlock}', [BioContentBlockController::class, 'destroy'])->name('content.biolinks.blocks.destroy');
+            Route::get('biolinks/{bioPage}/blocks/{bioBlock}/image', BioContentMediaPreviewController::class)->name('content.biolinks.blocks.preview-image');
+        });
+
+        Route::middleware(['platform:admin.content.qr_codes.manage', ScopedAdminContent::class])->group(function (): void {
+            Route::get('qr-codes/{qrCode}', [AdminContentEditController::class, 'qrCode'])
+                ->middleware('platform:admin.content.qr_codes.view')
+                ->name('content.qr-codes.edit');
+            Route::patch('qr-codes/{qrCode}', [QrCampaignController::class, 'update'])->name('content.qr-codes.update');
+            Route::get('qr-codes/{qrCode}/preview.svg', [QrCodeAssetController::class, 'preview'])->name('content.qr-codes.preview');
+            Route::get('qr-codes/{qrCode}/draft-preview.svg', [QrCodeAssetController::class, 'draftPreview'])->name('content.qr-codes.draft-preview');
+        });
+
+        Route::middleware(['platform:admin.content.folders.manage', ScopedAdminContent::class])->group(function (): void {
+            Route::get('folders/{folder}', [AdminContentEditController::class, 'folder'])
+                ->middleware('platform:admin.content.folders.view')
+                ->name('content.folders.edit');
+            Route::patch('folders/{folder}', [FolderController::class, 'update'])->name('content.folders.update');
+        });
+
+        Route::middleware(['platform:admin.content.domains.manage', ScopedAdminContent::class])->group(function (): void {
+            Route::get('custom-domains/{customDomain}', [AdminContentEditController::class, 'domain'])
+                ->middleware('platform:admin.content.domains.view')
+                ->name('content.domains.edit');
+            Route::patch('custom-domains/{customDomain}', [AdminCustomDomainEditController::class, 'update'])->name('content.domains.update');
+            Route::post('custom-domains/{customDomain}/verify', [CustomDomainVerificationController::class, 'verify'])->name('content.domains.verify');
+            Route::post('custom-domains/{customDomain}/reissue', [CustomDomainVerificationController::class, 'reissue'])->name('content.domains.reissue');
+        });
+
+        Route::middleware(['platform:admin.content.overlays.manage', ScopedAdminContent::class])->group(function (): void {
+            Route::get('link-overlays/{linkOverlay}', [AdminContentEditController::class, 'overlay'])
+                ->middleware('platform:admin.content.overlays.view')
+                ->name('content.overlays.edit');
+            Route::patch('link-overlays/{linkOverlay}', [LinkOverlayController::class, 'update'])->name('content.overlays.update');
+        });
+
+        Route::middleware(['platform:admin.content.link_pages.manage', ScopedAdminContent::class])->group(function (): void {
+            Route::get('link-pages/{linkPage}', [LinkPageController::class, 'show'])->name('content.link-pages.edit');
+            Route::patch('link-pages/{linkPage}', [LinkPageController::class, 'update'])->name('content.link-pages.update');
+            Route::post('link-pages/{linkPage}/items', [LinkPageItemController::class, 'store'])->name('content.link-pages.items.store');
+            Route::patch('link-pages/{linkPage}/items/reorder', [LinkPageItemController::class, 'reorder'])->name('content.link-pages.items.reorder');
+            Route::patch('link-pages/{linkPage}/items/{linkPageItem}', [LinkPageItemController::class, 'update'])->name('content.link-pages.items.update');
+            Route::delete('link-pages/{linkPage}/items/{linkPageItem}', [LinkPageItemController::class, 'destroy'])->name('content.link-pages.items.destroy');
+            Route::post('link-pages/{linkPage}/blocks', [LinkPageBlockController::class, 'store'])->name('content.link-pages.blocks.store');
+            Route::patch('link-pages/{linkPage}/blocks/{linkPageBlock}', [LinkPageBlockController::class, 'update'])->name('content.link-pages.blocks.update');
+            Route::delete('link-pages/{linkPage}/blocks/{linkPageBlock}', [LinkPageBlockController::class, 'destroy'])->name('content.link-pages.blocks.destroy');
+            Route::get('link-pages/{linkPage}/blocks/{linkPageBlock}/image', [LinkPageBlockController::class, 'imagePreview'])->name('content.link-pages.blocks.preview-image');
+            Route::post('link-pages/{linkPage}/variants', [LinkPageVariantController::class, 'store'])->name('content.link-pages.variants.store');
+            Route::patch('link-pages/{linkPage}/variants/{linkPageVariant}', [LinkPageVariantController::class, 'update'])->name('content.link-pages.variants.update');
+            Route::delete('link-pages/{linkPage}/variants/{linkPageVariant}', [LinkPageVariantController::class, 'destroy'])->name('content.link-pages.variants.destroy');
+        });
+
+        Route::middleware(['platform:admin.content.pixels.manage', ScopedAdminContent::class])->group(function (): void {
+            Route::get('pixels/{trackingPixel}', [AdminContentEditController::class, 'pixel'])
+                ->middleware('platform:admin.content.pixels.view')
+                ->name('content.pixels.edit');
+            Route::patch('pixels/{trackingPixel}', [TrackingPixelController::class, 'update'])->name('content.pixels.update');
+            Route::post('pixels/{trackingPixel}/rules', [TrackingPixelController::class, 'storeRule'])->name('content.pixels.rules.store');
+            Route::delete('pixels/{trackingPixel}/rules/{trackingPixelRule}', [TrackingPixelController::class, 'destroyRule'])->name('content.pixels.rules.destroy');
+        });
 
         Route::get('files', [AdminFileController::class, 'index'])
             ->middleware('platform:admin.files.view')
             ->name('files.index');
+        Route::patch('files/{media}', [AdminFileController::class, 'update'])
+            ->middleware('platform:admin.files.manage')
+            ->name('files.update');
         Route::delete('files/{media}', [AdminFileController::class, 'destroy'])
             ->middleware('platform:admin.files.manage')
             ->name('files.destroy');
@@ -390,6 +480,9 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         Route::get('custom-pages', [AdminCustomPageController::class, 'index'])
             ->middleware('platform:admin.pages.manage')
             ->name('pages.index');
+        Route::get('custom-pages/assets/options', [AdminCustomPageController::class, 'assetOptions'])
+            ->middleware('platform:admin.pages.manage')
+            ->name('pages.assets.options');
         Route::get('custom-pages/create', [AdminCustomPageController::class, 'create'])
             ->middleware('platform:admin.pages.manage')
             ->name('pages.create');
@@ -434,6 +527,9 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         Route::put('localizations/{locale:code}/translations', [AdminLocalizationController::class, 'updateTranslation'])
             ->middleware('platform:admin.localizations.manage')
             ->name('localizations.translations.update');
+        Route::delete('localizations/{locale:code}/translations', [AdminLocalizationController::class, 'resetTranslation'])
+            ->middleware('platform:admin.localizations.manage')
+            ->name('localizations.translations.reset');
         Route::post('localizations/{locale:code}/import', [AdminLocalizationController::class, 'import'])
             ->middleware('platform:admin.localizations.manage')
             ->name('localizations.import');
@@ -470,9 +566,20 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         Route::get('plans', [AdminPlanController::class, 'index'])
             ->middleware('platform:admin.billing.view')
             ->name('plans.index');
+        Route::post('plans', [AdminPlanController::class, 'store'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('plans.store');
         Route::patch('plans/{plan:code}', [AdminPlanController::class, 'update'])
             ->middleware('platform:admin.billing.manage')
             ->name('plans.update');
+        Route::post('plans/{plan:code}/prices/{interval}', [AdminPlanPriceController::class, 'sync'])
+            ->whereIn('interval', ['month', 'year'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('plans.prices.sync');
+        Route::delete('plans/{plan:code}/prices/{interval}', [AdminPlanPriceController::class, 'destroy'])
+            ->whereIn('interval', ['month', 'year'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('plans.prices.destroy');
 
         Route::get('subscriptions', [AdminSubscriptionController::class, 'index'])
             ->middleware('platform:admin.billing.view')
@@ -493,6 +600,15 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         Route::get('roles', AdminRoleController::class)
             ->middleware('platform:admin.users.manage_roles')
             ->name('roles.index');
+        Route::post('roles', [AdminRoleController::class, 'store'])
+            ->middleware('platform:admin.users.manage_roles')
+            ->name('roles.store');
+        Route::patch('roles/{platformRole:code}', [AdminRoleController::class, 'update'])
+            ->middleware('platform:admin.users.manage_roles')
+            ->name('roles.update');
+        Route::delete('roles/{platformRole:code}', [AdminRoleController::class, 'destroy'])
+            ->middleware('platform:admin.users.manage_roles')
+            ->name('roles.destroy');
 
         Route::post('notifications/broadcast', [AdminNotificationController::class, 'store'])
             ->middleware('platform:admin.notifications.broadcast')

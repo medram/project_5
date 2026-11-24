@@ -1,6 +1,6 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
-import InputError from '@/components/input-error';
+import { FieldError } from '@/components/ui/field';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -57,10 +57,11 @@ export default function Register({ passwordRules }: Props) {
                                     name="name"
                                     placeholder="Full name"
                                 />
-                                <InputError
-                                    message={errors.name}
-                                    className="mt-2"
-                                />
+                                {errors.name && (
+                                    <FieldError className="mt-2">
+                                        {errors.name}
+                                    </FieldError>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -74,7 +75,9 @@ export default function Register({ passwordRules }: Props) {
                                     name="email"
                                     placeholder="email@example.com"
                                 />
-                                <InputError message={errors.email} />
+                                {errors.email && (
+                                    <FieldError>{errors.email}</FieldError>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -88,7 +91,9 @@ export default function Register({ passwordRules }: Props) {
                                     placeholder="Password"
                                     passwordrules={passwordRules}
                                 />
-                                <InputError message={errors.password} />
+                                {errors.password && (
+                                    <FieldError>{errors.password}</FieldError>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -104,9 +109,11 @@ export default function Register({ passwordRules }: Props) {
                                     placeholder="Confirm password"
                                     passwordrules={passwordRules}
                                 />
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
+                                {errors.password_confirmation && (
+                                    <FieldError>
+                                        {errors.password_confirmation}
+                                    </FieldError>
+                                )}
                             </div>
 
                             {captcha?.enabled && captcha.siteKey ? (
@@ -117,7 +124,7 @@ export default function Register({ passwordRules }: Props) {
                                 />
                             ) : null}
                             {errors.captcha ? (
-                                <InputError message={errors.captcha} />
+                                <FieldError>{errors.captcha}</FieldError>
                             ) : null}
 
                             <Button

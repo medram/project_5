@@ -10,7 +10,7 @@ use App\Models\CustomDomain;
 use App\Models\Folder;
 use App\Models\Link;
 use App\Models\LinkPage;
-use App\Models\Plan;
+use App\Models\PlanStripePrice;
 use App\Models\QrCode;
 use App\Models\QrScan;
 use App\Models\TrackingPixel;
@@ -118,19 +118,8 @@ class AdminInsights
         /** @var list<array{state: string, count: int}> $states */
         $states = array_values($states);
 
-        $plans = Plan::query()->get();
-        $monthly = [];
-        $yearly = [];
-
-        foreach ($plans as $plan) {
-            if ($plan->stripe_monthly_price_id !== null) {
-                $monthly[$plan->stripe_monthly_price_id] = $plan;
-            }
-
-            if ($plan->stripe_yearly_price_id !== null) {
-                $yearly[$plan->stripe_yearly_price_id] = $plan;
-            }
-        }
+        $pricesById = PlanStripePrice::query()->with('plan')->get()->keyBy('stripe_price_id');
+        $currency = strtolower((string) config('cashier.currency', 'usd'));
 
         $mrr = 0;
         $mapped = 0;
@@ -151,14 +140,14 @@ class AdminInsights
                 ->unique()
                 ->values();
 
-            $monthlyPlan = $prices->map(fn (string $price): ?Plan => $monthly[$price] ?? null)->first(fn (?Plan $plan): bool => $plan !== null);
-            $yearlyPlan = $prices->map(fn (string $price): ?Plan => $yearly[$price] ?? null)->first(fn (?Plan $plan): bool => $plan !== null);
+            $mapping = $prices->map(fn (string $price) => $pricesById[$price] ?? null)->first(fn ($entry) => $entry !== null);
 
-            if ($monthlyPlan !== null) {
-                $mrr += $monthlyPlan->monthly_price;
-                $mapped++;
-            } elseif ($yearlyPlan !== null) {
-                $mrr += (int) round($yearlyPlan->annual_price / 12);
+            if ($mapping !== null && $mapping->verified_at !== null && $mapping->unit_amount !== null
+                && strtolower($mapping->currency) === $currency
+                && strtolower($mapping->plan->currency) === $currency) {
+                $mrr += $mapping->interval === 'year'
+                    ? (int) round($mapping->unit_amount / 12)
+                    : $mapping->unit_amount;
                 $mapped++;
             } else {
                 $unmapped++;

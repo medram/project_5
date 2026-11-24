@@ -14,6 +14,7 @@ export type PlatformBranding = {
     siteName: string;
     supportEmail: string | null;
     homepage: string;
+    defaultDelivery: 'direct' | 'splash';
     logos: {
         light: string | null;
         dark: string | null;

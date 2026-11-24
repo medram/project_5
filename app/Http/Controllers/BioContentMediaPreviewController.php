@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\BioContentBlock;
 use App\Models\BioPage;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -16,9 +16,9 @@ class BioContentMediaPreviewController extends Controller
 
     public function __invoke(Request $request, BioPage $bioPage, BioContentBlock $bioBlock): StreamedResponse
     {
-        $workspace = $this->workspaces->currentFor($request->user());
+        $workspace = $this->workspaces->forContentRequest($request);
         abort_unless((int) $bioPage->workspace_id === (int) $workspace->id, 404);
-        Gate::authorize('view', $bioPage);
+        app(AdminContentAccess::class)->authorize($request, 'view', $bioPage);
         abort_unless($bioBlock->bio_page_id === $bioPage->id && $bioBlock->type === 'image', 404);
 
         $media = $bioBlock->contentMedia()

@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
-import InputError from '@/components/input-error';
+import { FieldError } from '@/components/ui/field';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -20,6 +20,8 @@ export default function AcceptWorkspaceInvitation({
         invitation?: string;
         plan?: string;
     }>({});
+    const acceptError =
+        form.errors.token || form.errors.invitation || form.errors.plan;
     function accept(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         form.post(`/invitations/${encodeURIComponent(token)}/accept`, {
@@ -70,13 +72,9 @@ export default function AcceptWorkspaceInvitation({
                         Accept while signed in with the invited email address.
                     </p>
                     <form onSubmit={accept} className="space-y-3">
-                        <InputError
-                            message={
-                                form.errors.token ||
-                                form.errors.invitation ||
-                                form.errors.plan
-                            }
-                        />
+                        {acceptError && (
+                            <FieldError>{acceptError}</FieldError>
+                        )}
                         <Button
                             type="submit"
                             className="w-full"

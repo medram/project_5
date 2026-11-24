@@ -11,6 +11,7 @@ use App\Models\LinkPage;
 use App\Models\TrackingPixel;
 use App\Models\TrackingPixelRule;
 use App\Services\Billing\EnforcesPlanLimits;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
@@ -65,7 +66,7 @@ class TrackingPixelController extends Controller
     {
         abort_unless((bool) (app(PlatformSettings::class)->resolved()['links']['pixels_enabled'] ?? true), 403);
         $this->ensureInCurrentWorkspace($request, $trackingPixel);
-        Gate::authorize('update', $trackingPixel);
+        app(AdminContentAccess::class)->authorize($request, 'update', $trackingPixel);
 
         if (! $trackingPixel->is_active) {
             throw ValidationException::withMessages([
@@ -73,7 +74,7 @@ class TrackingPixelController extends Controller
             ]);
         }
 
-        $workspace = $this->workspaces->currentFor($request->user());
+        $workspace = $this->workspaces->forContentRequest($request);
         $validated = $request->validated();
         $target = match ($validated['target_type']) {
             'bio_page' => $workspace->bioPages()->find($validated['target_id']),
@@ -126,14 +127,14 @@ class TrackingPixelController extends Controller
         TrackingPixel $trackingPixel,
         TrackingPixelRule $trackingPixelRule,
     ): RedirectResponse {
-        $workspace = $this->workspaces->currentFor($request->user());
+        $workspace = $this->workspaces->forContentRequest($request);
         abort_unless((int) $trackingPixel->workspace_id === (int) $workspace->id, 404);
         abort_unless(
             (int) $trackingPixelRule->workspace_id === (int) $workspace->id
             && (int) $trackingPixelRule->tracking_pixel_id === (int) $trackingPixel->id,
             404,
         );
-        Gate::authorize('update', $trackingPixel);
+        app(AdminContentAccess::class)->authorize($request, 'update', $trackingPixel);
         $trackingPixelRule->delete();
 
         return to_route('tracking-pixels.index');
@@ -153,7 +154,7 @@ class TrackingPixelController extends Controller
     public function update(StoreTrackingPixelRequest $request, TrackingPixel $trackingPixel): RedirectResponse
     {
         $this->ensureInCurrentWorkspace($request, $trackingPixel);
-        Gate::authorize('update', $trackingPixel);
+        app(AdminContentAccess::class)->authorize($request, 'update', $trackingPixel);
         $trackingPixel->update($request->validated());
 
         return to_route('tracking-pixels.index');
@@ -188,7 +189,7 @@ class TrackingPixelController extends Controller
     private function ensureInCurrentWorkspace(Request $request, TrackingPixel $pixel): void
     {
         abort_unless(
-            (int) $pixel->workspace_id === (int) $this->workspaces->currentFor($request->user())->id,
+            (int) $pixel->workspace_id === (int) $this->workspaces->forContentRequest($request)->id,
             404,
         );
     }

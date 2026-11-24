@@ -44,7 +44,7 @@ development Compose bind mount is not a production durability guarantee.
 
 ## Plans, Stripe billing, and workspace usage
 
-Every workspace starts on Free and the effective plan resolves, in order: a current administrator override, a valid Stripe subscription mapped by its configured price, then Free. The catalog (Free/Pro/Business prices and every resource limit) is seeded by the Phase 8 migration, and one locked service enforces count and retained-byte limits.
+Every workspace starts on Free and the effective plan resolves, in order: a current administrator override, a valid Stripe subscription mapped by its price history, then Free. The initial Free/Pro/Business catalog is seeded by the Phase 8 migration; administrators can create plans and adjust their quotas without deleting existing content. One locked service enforces count and retained-byte limits.
 
 Stripe is the only paid path. `/account-settings/billing` shows the effective plan, all usage metrics, provider state, and a setup checklist; `/pricing` is public. Owner-only routes `/billing/checkout/{plan}/{interval}` and `/billing/portal` stay disabled until every prerequisite is configured. Cashier's signed webhook at `/stripe/webhook` is the only source of subscription activation—return URLs never grant a plan, and LinkPilot never edits Stripe status locally.
 
@@ -59,7 +59,7 @@ CASHIER_CURRENCY=usd
 BILLING_PROMOTION_CODES=false
 ```
 
-Set the monthly/yearly Stripe price IDs on the plans (`linkpilot` admin plan screens in Phase 9; direct plan records before then) and point the Stripe webhook endpoint at `/stripe/webhook`. Without test-mode credentials, checkout and portal stay visibly disabled; live provider verification remains an external gate.
+In `/admin/plans`, use **Verify & sync** for each monthly or yearly Stripe price, then point the webhook endpoint at `/stripe/webhook`. A legacy price ID is unverified until synchronized: existing subscriptions keep their entitlements, but its public price and new checkout remain unavailable. Previous verified prices stay mapped to their subscriptions when the current selection changes. Without Stripe credentials, synchronization and checkout stay unavailable; plan metadata and quota edits still work.
 
 Optional Google sign-in is hidden unless `GOOGLE_AUTH_ENABLED=true` and both Google OAuth credentials are set. Existing email addresses are never auto-linked; connect Google from account settings while signed in.
 
@@ -147,10 +147,18 @@ Grant administrator access only to an existing local account:
 docker compose run --rm app php artisan linkpilot:grant-admin user@example.test
 ```
 
-`/admin` exposes account metadata, subscription state, and aggregate ownership
-counts; it never lists private content, destinations, visitor data, or secrets.
-Suspending an account clears its database sessions and remember token while
-leaving its already-public content available.
+The content inventories at `/admin` expose metadata only. A separately granted
+resource-specific manage permission opens the selected record's editor in its
+own workspace; it does not add the administrator as a workspace member.
+Support retains metadata-only access by default. `/admin/roles` can create
+custom roles, but an administrator cannot delegate permissions they do not
+hold. Deploy the role-permission migration and restart every web and queue
+worker before assigning custom roles.
+
+Account email changes require re-verification. File display names can be changed
+without modifying upload provenance or bytes, and localization overrides can be
+reset to their English fallback. Suspending an account clears its database
+sessions and remember token while leaving already-public content available.
 
 ## Webhooks
 

@@ -25,7 +25,7 @@ class QrCodeController extends Controller
                 ->get(),
             'availableLinks' => $workspace->links()
                 ->orderBy('title')
-                ->get(['id', 'slug', 'title', 'destination_url']),
+                ->get(['id', 'slug', 'title']),
         ]);
     }
 }

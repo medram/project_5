@@ -54,7 +54,7 @@ export default function CheckoutResult({
                                 />
                             ) : active ? (
                                 <CheckCircle2
-                                    className="size-5 text-green-600"
+                                    className="size-5 text-success-soft-foreground"
                                     aria-hidden="true"
                                 />
                             ) : (

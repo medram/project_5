@@ -16,6 +16,8 @@ export type AdminPermission = {
 export type AdminRoleDefinition = AdminRoleSummary & {
     permissions: AdminPermission[];
     usersCount?: number;
+    isBuiltIn: boolean;
+    isAssignedToActor: boolean;
     members?: Array<{
         id: number;
         name: string;
@@ -147,4 +149,5 @@ export type AdminUserDetailProps = {
 
 export type AdminRolesPageProps = {
     roles: AdminRoleDefinition[];
+    allPermissions: AdminPermission[];
 };

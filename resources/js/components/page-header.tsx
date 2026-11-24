@@ -9,7 +9,7 @@ type PageHeaderProps = {
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
     return (
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex max-w-3xl min-w-0 flex-col gap-2">
+            <div className="flex max-w-3xl min-w-0 flex-1 flex-col gap-2">
                 <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em] text-balance">
                     {title}
                 </h1>
@@ -20,7 +20,7 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
                 )}
             </div>
             {actions && (
-                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
                     {actions}
                 </div>
             )}

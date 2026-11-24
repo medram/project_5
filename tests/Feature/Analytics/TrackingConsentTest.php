@@ -5,6 +5,7 @@ namespace Tests\Feature\Analytics;
 use App\Models\BioPage;
 use App\Models\User;
 use App\Services\Analytics\TrackingConsent;
+use App\Services\Settings\PlatformSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -74,8 +75,7 @@ class TrackingConsentTest extends TestCase
 
     public function test_consent_surface_data_reports_granting_unavailable_when_privacy_url_is_present_but_analytics_keys_are_incomplete(): void
     {
-        $this->incompletePrivacyConfiguration();
-        config()->set('services.linkpilot.analytics.privacy_url', 'https://privacy.example.test/notice');
+        $this->incompletePrivacyConfiguration('https://privacy.example.test/notice');
         config()->set('app.env', 'testing');
         $this->withoutVite();
 
@@ -131,20 +131,32 @@ class TrackingConsentTest extends TestCase
         $this->assertTrue(app(TrackingConsent::class)->canGrant());
     }
 
-    private function incompletePrivacyConfiguration(): void
+    private function incompletePrivacyConfiguration(?string $privacyUrl = null): void
     {
         config()->set('app.env', 'production');
-        config()->set('services.linkpilot.analytics.privacy_url', null);
-        config()->set('services.linkpilot.analytics.hash_key', null);
-        config()->set('services.linkpilot.analytics.hash_key_version', null);
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'gdpr', [
+            'privacy_url' => $privacyUrl,
+        ], $settings->version('gdpr'));
+        $settings->updateSection($administrator, 'analytics', [
+            'visitor_hash_key' => null,
+            'visitor_hash_version' => null,
+        ], $settings->version('analytics'));
     }
 
     private function completePrivacyConfiguration(): void
     {
         config()->set('app.env', 'production');
-        config()->set('services.linkpilot.analytics.privacy_url', 'https://privacy.example.test/notice');
-        config()->set('services.linkpilot.analytics.hash_key', 'test-analytics-key');
-        config()->set('services.linkpilot.analytics.hash_key_version', 'test-v1');
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'gdpr', [
+            'privacy_url' => 'https://privacy.example.test/notice',
+        ], $settings->version('gdpr'));
+        $settings->updateSection($administrator, 'analytics', [
+            'visitor_hash_key' => str_repeat('k', 32),
+            'visitor_hash_version' => 'test-v1',
+        ], $settings->version('analytics'));
     }
 
     private function assertCookieExpiresInDays(TestResponse $response, int $days): void

@@ -6,14 +6,15 @@ use App\Enums\MediaPurpose;
 use App\Http\Requests\ReorderBioPageItemsRequest;
 use App\Http\Requests\StoreBioContentBlockRequest;
 use App\Http\Requests\UpdateBioContentBlockRequest;
+use App\Http\Middleware\ScopedAdminContent;
 use App\Models\BioContentBlock;
 use App\Models\BioPage;
 use App\Services\Content\ContentMediaStorage;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class BioContentBlockController extends Controller
@@ -42,7 +43,7 @@ class BioContentBlockController extends Controller
             }
         }
 
-        return to_route('bio-pages.show', $bioPage);
+        return redirect($request->attributes->get(ScopedAdminContent::ATTRIBUTE)['editor_url'] ?? route('bio-pages.show', $bioPage));
     }
 
     public function update(UpdateBioContentBlockRequest $request, BioPage $bioPage, BioContentBlock $bioBlock): RedirectResponse
@@ -70,10 +71,14 @@ class BioContentBlockController extends Controller
             throw $exception;
         }
         if ($oldMedia && $oldMedia->id !== $bioBlock->content_media_id) {
-            $this->media->delete($oldMedia);
+            if ($request->attributes->get(ScopedAdminContent::ATTRIBUTE)) {
+                DB::afterCommit(fn () => $this->media->delete($oldMedia));
+            } else {
+                $this->media->delete($oldMedia);
+            }
         }
 
-        return to_route('bio-pages.show', $bioPage);
+        return redirect($request->attributes->get(ScopedAdminContent::ATTRIBUTE)['editor_url'] ?? route('bio-pages.show', $bioPage));
     }
 
     public function destroy(Request $request, BioPage $bioPage, BioContentBlock $bioBlock): RedirectResponse
@@ -81,11 +86,16 @@ class BioContentBlockController extends Controller
         $this->authorizePage($request, $bioPage);
         abort_unless($bioBlock->bio_page_id === $bioPage->id, 404);
         if ($bioBlock->contentMedia) {
-            $this->media->delete($bioBlock->contentMedia);
+            $media = $bioBlock->contentMedia;
+            if ($request->attributes->get(ScopedAdminContent::ATTRIBUTE)) {
+                DB::afterCommit(fn () => $this->media->delete($media));
+            } else {
+                $this->media->delete($media);
+            }
         }
         $bioBlock->delete();
 
-        return to_route('bio-pages.show', $bioPage);
+        return redirect($request->attributes->get(ScopedAdminContent::ATTRIBUTE)['editor_url'] ?? route('bio-pages.show', $bioPage));
     }
 
     public function reorder(ReorderBioPageItemsRequest $request, BioPage $bioPage): RedirectResponse
@@ -119,7 +129,7 @@ class BioContentBlockController extends Controller
             }
         });
 
-        return to_route('bio-pages.show', $bioPage);
+        return redirect($request->attributes->get(ScopedAdminContent::ATTRIBUTE)['editor_url'] ?? route('bio-pages.show', $bioPage));
     }
 
     /**
@@ -141,7 +151,7 @@ class BioContentBlockController extends Controller
 
     private function authorizePage(Request $request, BioPage $bioPage): void
     {
-        abort_unless((int) $bioPage->workspace_id === (int) $this->workspaces->currentFor($request->user())->id, 404);
-        Gate::authorize('update', $bioPage);
+        abort_unless((int) $bioPage->workspace_id === (int) $this->workspaces->forContentRequest($request)->id, 404);
+        app(AdminContentAccess::class)->authorize($request, 'update', $bioPage);
     }
 }

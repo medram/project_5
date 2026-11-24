@@ -1,8 +1,8 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { Check, Copy, KeyRound, Plus, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import { PageHeader } from '@/components/page-header';
+import { FieldError } from '@/components/ui/field';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -274,8 +274,7 @@ export default function ApiKeysIndex({
             <Head title="API keys" />
 
             <div className="space-y-6">
-                <Heading
-                    variant="page"
+                <PageHeader
                     title="API keys"
                     description="Create and revoke workspace-bound credentials for integrations."
                 />
@@ -311,10 +310,11 @@ export default function ApiKeysIndex({
                                             : undefined
                                     }
                                 />
-                                <InputError
-                                    id="api-key-name-error"
-                                    message={form.errors.name}
-                                />
+                                {form.errors.name && (
+                                    <FieldError id="api-key-name-error">
+                                        {form.errors.name}
+                                    </FieldError>
+                                )}
                             </div>
 
                             <fieldset
@@ -358,10 +358,11 @@ export default function ApiKeysIndex({
                                         );
                                     })}
                                 </div>
-                                <InputError
-                                    id="api-key-abilities-error"
-                                    message={abilityError}
-                                />
+                                {abilityError && (
+                                    <FieldError id="api-key-abilities-error">
+                                        {abilityError}
+                                    </FieldError>
+                                )}
                             </fieldset>
 
                             <div className="grid gap-2">
@@ -395,10 +396,11 @@ export default function ApiKeysIndex({
                                     The selected time uses your browser’s local
                                     time zone.
                                 </p>
-                                <InputError
-                                    id="api-key-expiry-error"
-                                    message={form.errors.expires_at}
-                                />
+                                {form.errors.expires_at && (
+                                    <FieldError id="api-key-expiry-error">
+                                        {form.errors.expires_at}
+                                    </FieldError>
+                                )}
                             </div>
 
                             <div>

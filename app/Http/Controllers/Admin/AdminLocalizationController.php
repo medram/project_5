@@ -147,6 +147,27 @@ class AdminLocalizationController extends Controller
         return back();
     }
 
+    public function resetTranslation(Request $request, Locale $locale): RedirectResponse
+    {
+        $validated = $request->validate(['key' => ['required', 'string', 'max:255']]);
+        $key = trim($validated['key']);
+        if ($locale->code === 'en') {
+            throw ValidationException::withMessages(['key' => 'English translations cannot be reset.']);
+        }
+
+        $actor = $request->user();
+        abort_if($actor === null, 403);
+        DB::transaction(function () use ($locale, $key, $actor): void {
+            if (Translation::query()->where('locale_id', $locale->id)->where('key', $key)->delete() === 0) {
+                throw ValidationException::withMessages(['key' => 'This translation has no override to reset.']);
+            }
+            $this->audit->record($actor, PlatformPermission::AdminLocalizationsManage, 'reset_translation', $locale, null, ['key' => $key]);
+        });
+        $this->translations->flush($locale);
+
+        return back();
+    }
+
     public function import(Request $request, Locale $locale): RedirectResponse
     {
         $request->validate(['file' => ['required', 'file', 'max:1024', 'mimetypes:application/json,text/plain']]);

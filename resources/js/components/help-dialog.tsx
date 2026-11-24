@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ArrowUpRight, CreditCard, Settings } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -18,11 +18,24 @@ const shortcuts = [
     { keys: ['Esc'], label: 'Close a dialog or menu' },
 ];
 
-export function HelpDialog({ children }: { children: ReactNode }) {
+export function HelpDialog({
+    children,
+    open,
+    onOpenChange,
+    onCloseAutoFocus,
+}: {
+    children?: ReactNode;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    onCloseAutoFocus?: ComponentProps<typeof DialogContent>['onCloseAutoFocus'];
+}) {
     return (
-        <Dialog>
-            <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            {children && <DialogTrigger asChild>{children}</DialogTrigger>}
+            <DialogContent
+                className="sm:max-w-md"
+                onCloseAutoFocus={onCloseAutoFocus}
+            >
                 <DialogHeader>
                     <DialogTitle>Help and information</DialogTitle>
                     <DialogDescription>

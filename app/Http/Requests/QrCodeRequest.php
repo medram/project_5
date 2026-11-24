@@ -17,7 +17,7 @@ abstract class QrCodeRequest extends FormRequest
     {
         $qrCode = $this->route('qrCode');
         if ($qrCode instanceof QrCode) {
-            $workspace = app(WorkspaceContext::class)->currentFor($this->user());
+            $workspace = app(WorkspaceContext::class)->forContentRequest($this);
             abort_unless($workspace->qrCodes()->whereKey($qrCode->getKey())->exists(), 404);
         }
 
@@ -27,7 +27,7 @@ abstract class QrCodeRequest extends FormRequest
     /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
-        $workspace = app(WorkspaceContext::class)->currentFor($this->user());
+        $workspace = app(WorkspaceContext::class)->forContentRequest($this);
         $targetPresence = $this->isMethod('post')
             ? ['required_without:link_id']
             : ['sometimes'];

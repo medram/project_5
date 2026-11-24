@@ -6,6 +6,7 @@ import {
     type AdminConfirmation,
 } from '@/components/admin/admin-confirm-dialog';
 import { formatAdminDate, humanizeAdminValue } from '@/components/admin/format';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -120,16 +121,10 @@ export default function AdminSubscriptionsIndex({
         <>
             <Head title="Subscriptions — Administration" />
             <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
-                <header className="space-y-1">
-                    <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
-                        Subscriptions and overrides
-                    </h1>
-                    <p className="max-w-3xl text-sm text-muted-foreground">
-                        Effective entitlements, local overrides, and
-                        provider-owned billing state. Payment data and provider
-                        secrets are never exposed.
-                    </p>
-                </header>
+                <PageHeader
+                    title="Subscriptions and overrides"
+                    description="Effective entitlements, local overrides, and provider-owned billing state. Payment data and provider secrets are never exposed."
+                />
 
                 {!readiness.configured && (
                     <details className="rounded-xl border bg-card px-4 py-3 text-sm">
@@ -374,7 +369,10 @@ export default function AdminSubscriptionsIndex({
                         {workspaces.total.toLocaleString()} workspaces
                     </p>
                     {workspaces.last_page > 1 && (
-                        <nav className="flex flex-wrap gap-1">
+                        <nav
+                            className="flex flex-wrap gap-1"
+                            aria-label="Subscriptions pagination"
+                        >
                             {workspaces.links.map((link) =>
                                 link.url === null ? (
                                     <span

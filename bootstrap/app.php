@@ -36,16 +36,17 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: ['stripe/webhook']);
         $middleware->api(prepend: [ApplyPlatformSettings::class]);
 
-        $middleware->web(append: [
-            EnsureAllowedHost::class,
-            ApplyPlatformSettings::class,
-            SetLocale::class,
-            HandleAppearance::class,
-            HandleInertiaRequests::class,
-            EnsureAccountUsable::class,
-            TrackLastSeen::class,
-            AddLinkHeadersForPreloadedAssets::class,
-        ]);
+        $middleware->web(
+            prepend: [EnsureAllowedHost::class, ApplyPlatformSettings::class],
+            append: [
+                SetLocale::class,
+                HandleAppearance::class,
+                HandleInertiaRequests::class,
+                EnsureAccountUsable::class,
+                TrackLastSeen::class,
+                AddLinkHeadersForPreloadedAssets::class,
+            ],
+        );
 
         $middleware->alias([
             'active-account' => EnsureActiveAccount::class,

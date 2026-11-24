@@ -10,6 +10,13 @@ export type AdminPlanRecord = {
     isActive: boolean;
     stripeMonthlyPriceId: string | null;
     stripeYearlyPriceId: string | null;
+    prices: Array<{
+        id: string;
+        interval: 'month' | 'year';
+        currency: string;
+        amount: number | null;
+        verified: boolean;
+    }>;
     checkout: {
         month: boolean;
         year: boolean;
@@ -25,6 +32,7 @@ export type AdminBillingReadiness = {
 
 export type AdminPlansPageProps = {
     plans: AdminPlanRecord[];
+    subscriptionCurrency: string;
     readiness: AdminBillingReadiness;
 };
 

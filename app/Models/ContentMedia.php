@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $disk
  * @property string $path
  * @property string $original_name
+ * @property string|null $display_name
  * @property string $mime_type
  * @property int $byte_size
  * @property string $visibility
@@ -31,6 +32,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'disk',
     'path',
     'original_name',
+    'display_name',
     'mime_type',
     'byte_size',
     'sha256',
@@ -53,6 +55,11 @@ class ContentMedia extends Model
             'purpose' => MediaPurpose::class,
             'expires_at' => 'datetime',
         ];
+    }
+
+    public function displayName(): string
+    {
+        return $this->display_name ?? $this->original_name;
     }
 
     /** @return BelongsTo<Workspace, $this> */

@@ -12,7 +12,7 @@ use Carbon\CarbonImmutable;
 class LinkPagePresentation
 {
     /** @return list<array<string, mixed>> */
-    public function make(LinkPage $page, bool $editor = false, ?LinkPageVariant $variant = null): array
+    public function make(LinkPage $page, bool $editor = false, ?LinkPageVariant $variant = null, ?callable $editorImageUrl = null): array
     {
         $now = CarbonImmutable::now('UTC');
         $linksQuery = $page->items();
@@ -26,7 +26,7 @@ class LinkPagePresentation
             ->map(fn (LinkPageItem $item): array => $this->link($page, $item, $editor));
         $blocks = $blocksQuery->get()
             ->filter(fn (LinkPageBlock $block): bool => $editor || $this->eligible($block, $now))
-            ->map(fn (LinkPageBlock $block): array => $this->block($page, $block, $editor, $now));
+            ->map(fn (LinkPageBlock $block): array => $this->block($page, $block, $editor, $now, $editorImageUrl));
 
         return array_values($links->concat($blocks)->sort(function (array $left, array $right): int {
             return ($left['position'] <=> $right['position'])
@@ -71,7 +71,7 @@ class LinkPagePresentation
     }
 
     /** @return array<string, mixed> */
-    private function block(LinkPage $page, LinkPageBlock $block, bool $editor, CarbonImmutable $now): array
+    private function block(LinkPage $page, LinkPageBlock $block, bool $editor, CarbonImmutable $now, ?callable $editorImageUrl): array
     {
         $data = [
             'type' => $block->type,
@@ -101,7 +101,7 @@ class LinkPagePresentation
             $imageUrl = null;
             if ($media !== null && $this->usableImage($media, $page)) {
                 $imageUrl = $editor
-                    ? "/dashboard/link-pages/{$page->id}/blocks/{$block->id}/image"
+                    ? ($editorImageUrl ? $editorImageUrl($page, $block) : "/dashboard/link-pages/{$page->id}/blocks/{$block->id}/image")
                     : "/content-media/{$media->public_id}";
             }
 
@@ -116,7 +116,7 @@ class LinkPagePresentation
             $fileName = null;
             $fileUrl = null;
             if ($media !== null && $this->usableFile($media, $page)) {
-                $fileName = $media->original_name;
+                $fileName = $media->displayName();
                 if (! $editor) {
                     $fileUrl = "/content-media/{$media->public_id}";
                 }

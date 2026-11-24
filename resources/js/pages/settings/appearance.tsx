@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import AppearanceTabs from '@/components/appearance-tabs';
-import Heading from '@/components/heading';
+import { PageHeader } from '@/components/page-header';
 import { edit as editAppearance } from '@/routes/appearance';
 
 export default function Appearance() {
@@ -9,8 +9,7 @@ export default function Appearance() {
             <Head title="Appearance settings" />
 
             <div className="space-y-6">
-                <Heading
-                    variant="page"
+                <PageHeader
                     title="Appearance settings"
                     description="Update the appearance settings for your account"
                 />

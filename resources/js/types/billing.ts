@@ -16,8 +16,8 @@ export type BillingPlan = {
     code: string;
     name: string;
     description: string | null;
-    monthlyPrice: number;
-    annualPrice: number;
+    monthlyPrice: number | null;
+    annualPrice: number | null;
     currency: string;
     featured: boolean;
     sortOrder: number;
@@ -39,6 +39,8 @@ export type ProviderSubscription = {
     status: string;
     price: string | null;
     interval: string | null;
+    baseAmount: number | null;
+    currency: string | null;
     trialEndsAt: string | null;
     endsAt: string | null;
     onGracePeriod: boolean;

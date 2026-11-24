@@ -1,4 +1,4 @@
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import {
     CalendarClock,
     ChartNoAxesCombined,
@@ -9,6 +9,7 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 import { type FormEvent, type ReactNode, useRef, useState } from 'react';
+import { useContentEditorRoutes } from '@/components/admin/content-editor-routes';
 import { FormErrorSummary } from '@/components/forms/form-error-summary';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -74,7 +75,9 @@ type LinkFormDialogProps = {
     countries: CountryOption[];
     canManageApprovals: boolean;
     listQuery: string;
-    children: ReactNode;
+    children?: ReactNode;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 };
 
 type ErrorTarget = {
@@ -282,11 +285,19 @@ export function LinkFormDialog({
     children,
     tagOptions,
     countries,
+    open: controlledOpen,
+    onOpenChange,
 }: LinkFormDialogProps) {
-    const [open, setOpen] = useState(false);
+    const platform = usePage().props.platform;
+    const customDomainsEnabled = platform?.capabilities.domains !== false;
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+    const open = controlledOpen ?? uncontrolledOpen;
+    const { editorUrl } = useContentEditorRoutes();
     const [settingsPanel, setSettingsPanel] =
         useState<LinkSettingsPanel | null>(null);
-    const form = useForm<LinkFormData>(formDataFor(link));
+    const form = useForm<LinkFormData>(
+        formDataFor(link, platform?.defaultDelivery),
+    );
     const isEditing = link !== undefined;
     const settingsTriggerRef = useRef<HTMLButtonElement | null>(null);
     const errorSummaryRef = useRef<HTMLDivElement | null>(null);
@@ -315,48 +326,55 @@ export function LinkFormDialog({
         form.data.expires_at !== '' ||
         form.data.max_clicks !== '' ||
         form.data.approval_required;
-    const settingsActions: Array<{
-        panel: LinkSettingsPanel;
-        label: string;
-        icon: LucideIcon;
-        configured: boolean;
-    }> = [
-        {
-            panel: 'tracking',
-            label: 'Tracking',
-            icon: ChartNoAxesCombined,
-            configured: trackingConfigured,
-        },
-        {
-            panel: 'retargeting',
-            label: 'Retargeting',
-            icon: Crosshair,
-            configured: form.data.routing_rules.length > 0,
-        },
-        {
-            panel: 'password',
-            label: 'Password',
-            icon: LockKeyhole,
-            configured: accessCodeConfigured,
-        },
-        {
-            panel: 'schedule',
-            label: 'Schedule',
-            icon: CalendarClock,
-            configured: scheduleConfigured,
-        },
-    ];
+    const settingsActions = (
+        [
+            {
+                panel: 'tracking',
+                label: 'Tracking',
+                icon: ChartNoAxesCombined,
+                configured: trackingConfigured,
+            },
+            {
+                panel: 'retargeting',
+                label: 'Retargeting',
+                icon: Crosshair,
+                configured: form.data.routing_rules.length > 0,
+            },
+            {
+                panel: 'password',
+                label: 'Password',
+                icon: LockKeyhole,
+                configured: accessCodeConfigured,
+            },
+            {
+                panel: 'schedule',
+                label: 'Schedule',
+                icon: CalendarClock,
+                configured: scheduleConfigured,
+            },
+        ] satisfies Array<{
+            panel: LinkSettingsPanel;
+            label: string;
+            icon: LucideIcon;
+            configured: boolean;
+        }>
+    ).filter(
+        (action) =>
+            action.panel !== 'retargeting' ||
+            platform?.capabilities.targeting !== false,
+    );
 
     function handleOpenChange(nextOpen: boolean) {
         if (form.processing) {
             return;
         }
 
-        setOpen(nextOpen);
+        setUncontrolledOpen(nextOpen);
+        onOpenChange?.(nextOpen);
 
         if (nextOpen) {
             form.clearErrors();
-            form.setData(formDataFor(link));
+            form.setData(formDataFor(link, platform?.defaultDelivery));
             setSettingsPanel(null);
         }
     }
@@ -451,7 +469,8 @@ export function LinkFormDialog({
         const options = {
             preserveScroll: true,
             onSuccess: () => {
-                setOpen(false);
+                setUncontrolledOpen(false);
+                onOpenChange?.(false);
                 form.reset();
             },
             onError: () => {
@@ -462,7 +481,7 @@ export function LinkFormDialog({
         };
 
         if (link) {
-            form.patch(withListQuery(update(link.id).url, listQuery), options);
+            form.patch(editorUrl(withListQuery(update(link.id).url, listQuery)), options);
 
             return;
         }
@@ -472,7 +491,7 @@ export function LinkFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>{children}</DialogTrigger>
+            {children && <DialogTrigger asChild>{children}</DialogTrigger>}
             <DialogContent
                 className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[40rem]"
                 onOpenAutoFocus={(event) => {
@@ -503,8 +522,8 @@ export function LinkFormDialog({
                         {isEditing ? 'Edit short link' : 'Create short link'}
                     </DialogTitle>
                     <DialogDescription className="sr-only">
-                        Set a destination, then configure optional tracking,
-                        retargeting, password, and schedule controls.
+                        Set a destination, then configure optional tracking
+                        and other available controls.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -614,6 +633,11 @@ export function LinkFormDialog({
                                                 <SelectItem
                                                     key={domain.id}
                                                     value={domain.id.toString()}
+                                                    disabled={
+                                                        !customDomainsEnabled &&
+                                                        domain.id.toString() !==
+                                                            form.data.custom_domain_id
+                                                    }
                                                 >
                                                     {domain.hostname}
                                                 </SelectItem>
@@ -657,8 +681,9 @@ export function LinkFormDialog({
                                         id="link-host-help"
                                         className="text-xs"
                                     >
-                                        Only active, verified domains are
-                                        available.
+                                        {customDomainsEnabled
+                                            ? 'Only active, verified domains are available.'
+                                            : 'Custom domains are disabled by platform policy.'}
                                     </FieldDescription>
                                     {errors.custom_domain_id && (
                                         <FieldError>

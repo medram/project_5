@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import {
     createContext,
     useCallback,
@@ -95,6 +96,26 @@ function googleTag(): (...args: unknown[]) => void {
     return window.gtag;
 }
 
+function initializeGoogleAndTrack(
+    identifier: string,
+    eventName: string,
+): void {
+    const gtag = googleTag();
+    appendScript(
+        `linkpilot-google-analytics-${identifier}`,
+        `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(identifier)}`,
+    );
+    if (!runtime().initializedGoogle.has(identifier)) {
+        gtag('js', new Date());
+        gtag('config', identifier, { send_page_view: false });
+        runtime().initializedGoogle.add(identifier);
+    }
+    gtag('event', eventName, {
+        page_path: window.location.pathname,
+        send_to: identifier,
+    });
+}
+
 function uniqueSafePixels(
     pixels: PublicTrackingPixel[],
 ): PublicTrackingPixel[] {
@@ -131,19 +152,7 @@ function initializeAndTrack(
         return;
     }
 
-    const gtag = googleTag();
-    appendScript(
-        `linkpilot-google-analytics-${pixel.identifier}`,
-        `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(pixel.identifier)}`,
-    );
-    if (!runtime().initializedGoogle.has(pixel.identifier)) {
-        gtag('js', new Date());
-        gtag('config', pixel.identifier, { send_page_view: false });
-        runtime().initializedGoogle.add(pixel.identifier);
-    }
-    gtag('event', event.google, {
-        page_path: window.location.pathname,
-    });
+    initializeGoogleAndTrack(pixel.identifier, event.google);
 }
 
 export function usePublicTrackingEvent(): PublicTrackingContextValue {
@@ -159,6 +168,12 @@ export function PublicTrackingPixels({
     consent: 'granted' | 'denied' | null;
     children: ReactNode;
 }) {
+    const platformGa4 = usePage().props.platform?.analytics?.ga4;
+    const safePlatformGa4 =
+        typeof platformGa4 === 'string' &&
+        /^G-[A-Z0-9]{4,20}$/.test(platformGa4)
+            ? platformGa4
+            : null;
     const emittedViews = useRef(new Set<string>());
     const safePixels = {
         page_view: uniqueSafePixels(pixels.page_view),
@@ -178,21 +193,32 @@ export function PublicTrackingPixels({
 
     useEffect(() => {
         if (consent !== 'granted') return;
-        const viewKey = `${window.location.pathname}:${safePixels.page_view
+        const pageViewPixels = safePixels.page_view;
+        const viewKey = `${window.location.pathname}:${pageViewPixels
             .map((pixel) => `${pixel.provider}:${pixel.identifier}`)
             .sort()
-            .join(',')}`;
+            .join(',')}:${safePlatformGa4 ?? ''}`;
         if (
-            safePixels.page_view.length === 0 ||
+            (pageViewPixels.length === 0 && safePlatformGa4 === null) ||
             emittedViews.current.has(viewKey)
         ) {
             return;
         }
         emittedViews.current.add(viewKey);
-        for (const pixel of safePixels.page_view) {
+        for (const pixel of pageViewPixels) {
             initializeAndTrack(pixel, 'page_view');
         }
-    }, [consent, pixels]);
+        if (
+            safePlatformGa4 !== null &&
+            !pageViewPixels.some(
+                (pixel) =>
+                    pixel.provider === 'google_analytics' &&
+                    pixel.identifier === safePlatformGa4,
+            )
+        ) {
+            initializeGoogleAndTrack(safePlatformGa4, 'page_view');
+        }
+    }, [consent, pixels, safePlatformGa4]);
 
     return (
         <PublicTrackingContext.Provider value={emit}>

@@ -65,7 +65,34 @@ class PlatformSettingsReadiness
             $this->requirement('Secret key', $this->settings->secret('subscriptions', 'stripe_secret') !== null),
             $this->requirement('Webhook secret', $this->settings->secret('subscriptions', 'stripe_webhook_secret') !== null),
             $this->requirement('Tax policy acknowledgement', (bool) ($subscriptions['tax_policy_acknowledged'] ?? false)),
+            $this->stripeMode($subscriptions),
+            ['label' => 'Webhook URL', 'state' => 'ready', 'detail' => route('cashier.webhook')],
         ];
+    }
+
+    /** @param array<string, mixed> $subscriptions
+     *  @return array{label: string, state: string, detail: string}
+     */
+    private function stripeMode(array $subscriptions): array
+    {
+        $publishableKey = $subscriptions['stripe_publishable_key'] ?? null;
+        $secretKey = $this->settings->secret('subscriptions', 'stripe_secret');
+        $publishableMode = is_string($publishableKey)
+            ? (str_starts_with($publishableKey, 'pk_test_') ? 'test' : (str_starts_with($publishableKey, 'pk_live_') ? 'live' : null))
+            : null;
+        $secretMode = is_string($secretKey)
+            ? (str_starts_with($secretKey, 'sk_test_') ? 'test' : (str_starts_with($secretKey, 'sk_live_') ? 'live' : null))
+            : null;
+
+        if ($publishableMode === null && $secretMode === null) {
+            return ['label' => 'Stripe mode', 'state' => 'disabled', 'detail' => 'Not configured.'];
+        }
+
+        if ($publishableMode === null || $secretMode === null || $publishableMode !== $secretMode) {
+            return ['label' => 'Stripe mode', 'state' => 'incomplete', 'detail' => 'Publishable and secret keys must use the same test or live mode.'];
+        }
+
+        return ['label' => 'Stripe mode', 'state' => 'ready', 'detail' => ucfirst($publishableMode).' mode'];
     }
 
     /** @param array<string, mixed> $resolved */

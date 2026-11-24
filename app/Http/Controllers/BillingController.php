@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SelectFreePlanRequest;
 use App\Models\Plan;
+use App\Models\PlanStripePrice;
 use App\Services\Billing\PlanCatalogPresenter;
 use App\Services\Billing\StripeReadiness;
 use App\Services\Billing\WorkspaceUsage;
@@ -73,7 +74,7 @@ class BillingController extends Controller
     }
 
     /**
-     * @return array{status: string, price: string|null, interval: string|null, trialEndsAt: string|null, endsAt: string|null, onGracePeriod: bool}|null
+     * @return array{status: string, price: string|null, interval: string|null, baseAmount: int|null, currency: string|null, trialEndsAt: string|null, endsAt: string|null, onGracePeriod: bool}|null
      */
     private function providerSubscription(?Subscription $subscription): ?array
     {
@@ -86,20 +87,16 @@ class BillingController extends Controller
             ->filter()
             ->unique();
 
-        $interval = null;
-
-        foreach ($prices as $price) {
-            $interval = $this->readiness->intervalForPrice((string) $price);
-
-            if ($interval !== null) {
-                break;
-            }
-        }
+        $mappings = PlanStripePrice::query()->whereIn('stripe_price_id', $prices)->get()->keyBy('stripe_price_id');
+        $mapping = $prices->map(fn ($price) => $mappings[$price] ?? null)->first(fn ($entry) => $entry !== null);
+        $verified = $mapping !== null && $mapping->verified_at !== null && $mapping->unit_amount !== null;
 
         return [
             'status' => $subscription->stripe_status,
             'price' => $subscription->stripe_price,
-            'interval' => $interval,
+            'interval' => $mapping?->interval,
+            'baseAmount' => $verified ? $mapping->unit_amount : null,
+            'currency' => $verified ? $mapping->currency : null,
             'trialEndsAt' => $subscription->trial_ends_at?->toISOString(),
             'endsAt' => $subscription->ends_at?->toISOString(),
             'onGracePeriod' => $subscription->ends_at !== null && $subscription->ends_at->isFuture()

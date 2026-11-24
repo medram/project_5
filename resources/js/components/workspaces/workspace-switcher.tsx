@@ -26,10 +26,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { WorkspaceContext } from '@/types/workspaces';
 import { useSidebar } from '@/components/ui/sidebar';
 export function WorkspaceSwitcher() {
-    const { workspace } = usePage<{ workspace?: WorkspaceContext }>().props;
+    const { workspace } = usePage().props;
     const { isMobile, setOpenMobile } = useSidebar();
     const [open, setOpen] = useState(false);
     const [creating, setCreating] = useState(false);

@@ -90,6 +90,7 @@ class Workspace extends Model
         return $this->hasMany(QrCode::class);
     }
 
+    /** @return HasMany<BioPage, $this> */
     public function bioPages(): HasMany
     {
         return $this->hasMany(BioPage::class);
@@ -117,6 +118,7 @@ class Workspace extends Model
         return $this->hasMany(LinkPage::class);
     }
 
+    /** @return HasMany<LinkOverlay, $this> */
     public function linkOverlays(): HasMany
     {
         return $this->hasMany(LinkOverlay::class);

@@ -1,6 +1,17 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Pencil, Plus, RotateCcw, Save, Upload } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -10,6 +21,13 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +53,8 @@ export default function AdminLocalizationsIndex({
 }: AdminLocalizationsPageProps) {
     const [query, setQuery] = useState(filters.q);
     const [editing, setEditing] = useState<AdminTranslation | null>(null);
+    const [adding, setAdding] = useState(false);
+    const [resetting, setResetting] = useState<AdminTranslation | null>(null);
     const createForm = useForm({
         code: '',
         name: '',
@@ -74,15 +94,10 @@ export default function AdminLocalizationsIndex({
         <>
             <Head title="Localizations — Administration" />
             <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
-                <header>
-                    <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
-                        Database localizations
-                    </h1>
-                    <p className="max-w-3xl text-sm text-muted-foreground">
-                        Flat JSON string maps only. English is seeded,
-                        published, and the universal fallback.
-                    </p>
-                </header>
+                <PageHeader
+                    title="Database localizations"
+                    description="Flat JSON string maps only. English is seeded, published, and the universal fallback."
+                />
 
                 <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
                     <div className="grid gap-4">
@@ -204,6 +219,7 @@ export default function AdminLocalizationsIndex({
                                         type="submit"
                                         disabled={createForm.processing}
                                     >
+                                        <Plus aria-hidden="true" />
                                         Add locale
                                     </Button>
                                 </form>
@@ -223,21 +239,24 @@ export default function AdminLocalizationsIndex({
                                         </CardDescription>
                                     </div>
                                     {active && (
-                                        <Button
-                                            asChild
-                                            variant="outline"
-                                            size="sm"
-                                        >
-                                            <a
-                                                href={
-                                                    localizations.export(
-                                                        active.code,
-                                                    ).url
-                                                }
+                                        <div className="flex flex-wrap gap-2">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setAdding(true);
+                                                    setEditing({ key: '', value: '' });
+                                                }}
                                             >
-                                                Export JSON
-                                            </a>
-                                        </Button>
+                                                <Plus aria-hidden="true" />
+                                                Add translation
+                                            </Button>
+                                            <Button asChild variant="outline" size="sm">
+                                                <a href={localizations.export(active.code).url}>
+                                                    Export JSON
+                                                </a>
+                                            </Button>
+                                        </div>
                                     )}
                                 </div>
                                 <form onSubmit={search}>
@@ -265,7 +284,7 @@ export default function AdminLocalizationsIndex({
                                 </form>
                             </CardHeader>
                             <CardContent className="grid gap-4">
-                                <div className="overflow-hidden rounded-md border">
+                                <div className="overflow-x-auto rounded-md border">
                                     <table
                                         data-table-surface={
                                             translations.data.length > 0
@@ -283,7 +302,7 @@ export default function AdminLocalizationsIndex({
                                                     Value
                                                 </th>
                                                 <th className="px-3 py-2 text-right">
-                                                    Edit
+                                                    Actions
                                                 </th>
                                             </tr>
                                         </thead>
@@ -300,16 +319,35 @@ export default function AdminLocalizationsIndex({
                                                         {row.value}
                                                     </td>
                                                     <td className="px-3 py-2 text-right">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setEditing(row)
-                                                            }
-                                                        >
-                                                            Edit
-                                                        </Button>
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button
+                                                                size="icon"
+                                                                variant="secondary"
+                                                                type="button"
+                                                                className="size-8 rounded-full"
+                                                                title={`Edit ${row.key}`}
+                                                                aria-label={`Edit ${row.key}`}
+                                                                onClick={() => {
+                                                                    setAdding(false);
+                                                                    setEditing(row);
+                                                                }}
+                                                            >
+                                                                <Pencil aria-hidden="true" />
+                                                            </Button>
+                                                            {active?.code !== 'en' && (
+                                                                <Button
+                                                                    size="icon"
+                                                                    variant="destructive"
+                                                                    type="button"
+                                                                    className="size-8 rounded-full"
+                                                                    title={`Reset ${row.key} to English`}
+                                                                    aria-label={`Reset ${row.key} to English`}
+                                                                    onClick={() => setResetting(row)}
+                                                                >
+                                                                    <RotateCcw aria-hidden="true" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -344,6 +382,7 @@ export default function AdminLocalizationsIndex({
                                             !importForm.data.file
                                         }
                                     >
+                                        <Upload aria-hidden="true" />
                                         Import
                                     </Button>
                                 </form>
@@ -361,7 +400,15 @@ export default function AdminLocalizationsIndex({
                 <TranslationDialog
                     locale={active}
                     translation={editing}
+                    adding={adding}
                     onClose={() => setEditing(null)}
+                />
+            )}
+            {resetting && active && (
+                <ResetTranslationDialog
+                    locale={active}
+                    translation={resetting}
+                    onClose={() => setResetting(null)}
                 />
             )}
         </>
@@ -466,6 +513,7 @@ function LocaleEditor({
                         className="sm:col-span-2"
                         disabled={form.processing}
                     >
+                        <Save aria-hidden="true" />
                         Save locale
                     </Button>
                 </form>
@@ -477,24 +525,22 @@ function LocaleEditor({
 function TranslationDialog({
     locale,
     translation,
+    adding,
     onClose,
 }: {
     locale: AdminLocalizationsPageProps['locales'][number];
     translation: AdminTranslation;
+    adding: boolean;
     onClose: () => void;
 }) {
     const form = useForm({ key: translation.key, value: translation.value });
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-            role="dialog"
-            aria-modal="true"
-        >
-            <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl">
-                <h2 className="font-semibold">Edit translation</h2>
-                <p className="mb-3 text-sm text-muted-foreground">
-                    {locale.name}
-                </p>
+        <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{adding ? 'Add translation' : 'Edit translation'}</DialogTitle>
+                    <DialogDescription>{locale.name}</DialogDescription>
+                </DialogHeader>
                 <form
                     className="grid gap-3"
                     onSubmit={(e) => {
@@ -513,8 +559,12 @@ function TranslationDialog({
                             <Input
                                 id="translation-key"
                                 value={form.data.key}
-                                readOnly
+                                readOnly={!adding}
+                                onChange={(e) => form.setData('key', e.target.value)}
                             />
+                            {form.errors.key && (
+                                <p className="text-sm text-destructive">{form.errors.key}</p>
+                            )}
                         </Field>
                         <Field className="gap-1">
                             <FieldLabel htmlFor="translation-value">
@@ -528,6 +578,9 @@ function TranslationDialog({
                                     form.setData('value', e.target.value)
                                 }
                             />
+                            {form.errors.value && (
+                                <p className="text-sm text-destructive">{form.errors.value}</p>
+                            )}
                         </Field>
                     </FieldGroup>
                     <div className="flex justify-end gap-2">
@@ -539,11 +592,54 @@ function TranslationDialog({
                             Cancel
                         </Button>
                         <Button type="submit" disabled={form.processing}>
+                            <Save aria-hidden="true" />
                             Save
                         </Button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function ResetTranslationDialog({
+    locale,
+    translation,
+    onClose,
+}: {
+    locale: AdminLocalizationsPageProps['locales'][number];
+    translation: AdminTranslation;
+    onClose: () => void;
+}) {
+    const form = useForm({ key: translation.key });
+
+    return (
+        <AlertDialog open onOpenChange={(open) => { if (!open && !form.processing) onClose(); }}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Reset to English?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        The English fallback will replace the {locale.name} override for “{translation.key}”.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                {form.errors.key && (
+                    <p className="text-sm text-destructive">{form.errors.key}</p>
+                )}
+                <AlertDialogFooter>
+                    <AlertDialogCancel disabled={form.processing}>Cancel</AlertDialogCancel>
+                    <Button
+                        type="button"
+                        disabled={form.processing}
+                        onClick={() => form.delete(localizations.translations.update(locale.code).url, {
+                            preserveScroll: true,
+                            onSuccess: onClose,
+                        })}
+                    >
+                        <RotateCcw aria-hidden="true" />
+                        Reset to English
+                    </Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }

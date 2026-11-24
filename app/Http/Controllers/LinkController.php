@@ -10,6 +10,7 @@ use App\Services\Accounts\AccountProfileOptions;
 use App\Services\Billing\EnforcesPlanLimits;
 use App\Services\Links\LinkAttributes;
 use App\Services\Links\LinkRevisionService;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -139,9 +140,9 @@ class LinkController extends Controller
 
     public function update(UpdateLinkRequest $request, Link $link): RedirectResponse
     {
-        $workspace = $this->workspaceContext->currentFor($request->user());
+        $workspace = $this->workspaceContext->forContentRequest($request);
         $link = $workspace->links()->findOrFail($link->getKey());
-        Gate::authorize('update', $link);
+        app(AdminContentAccess::class)->authorize($request, 'update', $link);
 
         $validated = $request->validated();
         $tagIds = $validated['tag_ids'] ?? null;

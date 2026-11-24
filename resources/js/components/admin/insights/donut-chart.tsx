@@ -19,6 +19,22 @@ function swatch(index: number): string {
     return palette[index] ?? 'var(--chart-5)';
 }
 
+function collapseRows(rows: AdminDimension[]): AdminDimension[] {
+    if (rows.length <= palette.length) {
+        return rows;
+    }
+
+    const other = rows.find((row) => row.name === 'Other');
+    const named = rows.filter((row) => row.name !== 'Other');
+    const visible = named.slice(0, palette.length - 1);
+    const remainder =
+        named
+            .slice(palette.length - 1)
+            .reduce((total, row) => total + row.count, 0) + (other?.count ?? 0);
+
+    return [...visible, { name: 'Other', count: remainder }];
+}
+
 export function DimensionDonut({
     rows,
     label,
@@ -34,13 +50,14 @@ export function DimensionDonut({
         return null;
     }
 
-    const total = rows.reduce((sum, row) => sum + row.count, 0);
-    const chartRows = rows.map((row, index) => ({
+    const visibleRows = collapseRows(rows);
+    const total = visibleRows.reduce((sum, row) => sum + row.count, 0);
+    const chartRows = visibleRows.map((row, index) => ({
         label: nameFormatter(row.name),
         value: row.count,
         fill: swatch(index),
     }));
-    const ariaLabel = `${label}: ${rows
+    const ariaLabel = `${label}: ${visibleRows
         .map((row) => `${nameFormatter(row.name)} ${row.count}`)
         .join(', ')}`;
 
@@ -83,7 +100,7 @@ export function DimensionDonut({
                 </div>
             </div>
             <ul className="grid gap-2">
-                {rows.map((row, index) => {
+                {visibleRows.map((row, index) => {
                     const name = nameFormatter(row.name);
                     const share = total > 0 ? row.count / total : 0;
 

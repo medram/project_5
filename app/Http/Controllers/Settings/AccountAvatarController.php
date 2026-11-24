@@ -32,7 +32,7 @@ class AccountAvatarController extends Controller
         $disk = Storage::disk($media->disk);
         abort_unless($disk->exists($media->path), 404);
 
-        return $disk->response($media->path, $media->original_name, [
+        return $disk->response($media->path, $media->displayName(), [
             'Content-Type' => $media->mime_type,
             'Cache-Control' => 'private, max-age=300',
             'X-Content-Type-Options' => 'nosniff',

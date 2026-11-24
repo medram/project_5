@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Download } from 'lucide-react';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type { LinkPageLeadsProps } from '@/types/link-pages';
@@ -27,35 +28,24 @@ export default function LinkPageLeads({
             <Head title={`Lead responses for ${linkPage.name}`} />
 
             <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-2">
-                        <Button
-                            asChild
-                            size="sm"
-                            variant="ghost"
-                            className="-ml-3"
-                        >
-                            <Link href={backUrl}>
-                                <ArrowLeft data-icon="inline-start" />
-                                Link page
-                            </Link>
+                <Button asChild size="sm" variant="ghost" className="-ml-3">
+                    <Link href={backUrl}>
+                        <ArrowLeft data-icon="inline-start" />
+                        Link page
+                    </Link>
+                </Button>
+                <PageHeader
+                    title="Lead responses"
+                    description={`Responses for ${linkPage.name}. Submissions are encrypted, visible only to workspace owners and administrators, and kept for up to 30 days.`}
+                    actions={
+                        <Button asChild variant="outline">
+                            <a href={exportUrl}>
+                                <Download data-icon="inline-start" />
+                                Download CSV
+                            </a>
                         </Button>
-                        <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
-                            Lead responses
-                        </h1>
-                        <p className="max-w-2xl text-sm text-muted-foreground">
-                            Responses for {linkPage.name}. Submissions are
-                            encrypted, visible only to workspace owners and
-                            administrators, and kept for up to 30 days.
-                        </p>
-                    </div>
-                    <Button asChild variant="outline">
-                        <a href={exportUrl}>
-                            <Download data-icon="inline-start" />
-                            Download CSV
-                        </a>
-                    </Button>
-                </header>
+                    }
+                />
 
                 {leads.data.length === 0 ? (
                     <Card variant="transparent">

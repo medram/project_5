@@ -1,5 +1,6 @@
 import type { Auth, PlatformBranding } from '@/types/auth';
 import type { NotificationPreview } from '@/types/notifications';
+import type { WorkspaceContext } from '@/types/workspaces';
 
 declare module 'react' {
     interface InputHTMLAttributes<T> {
@@ -24,6 +25,9 @@ declare module '@inertiajs/core' {
             notificationUnreadCount: number;
             notificationPreview: NotificationPreview[];
             sidebarOpen: boolean;
+            errors: Record<string, string>;
+            workspace: WorkspaceContext | null;
+            googleAuthEnabled: boolean;
             [key: string]: unknown;
         };
     }

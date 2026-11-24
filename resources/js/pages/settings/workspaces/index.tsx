@@ -1,12 +1,11 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Copy, RefreshCw, UserPlus, Users } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import { PageHeader } from '@/components/page-header';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -17,7 +16,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import type {
-    WorkspaceContext,
     WorkspaceInvitation,
     WorkspaceMember,
     WorkspaceSettingsProps,
@@ -38,8 +36,7 @@ export default function WorkspaceSettings({
     memberCapacity,
     flash,
 }: WorkspaceSettingsProps) {
-    const { workspace: shared } = usePage<{ workspace?: WorkspaceContext }>()
-        .props;
+    const { workspace: shared } = usePage().props;
     const createWorkspace = useForm({ name: '' });
     const invite = useForm({ email: '', role: 'member' as 'admin' | 'member' });
     const planError = (invite.errors as Record<string, string | undefined>)
@@ -156,8 +153,7 @@ export default function WorkspaceSettings({
         <>
             <Head title="Workspaces" />
             <div className="space-y-6">
-                <Heading
-                    variant="page"
+                <PageHeader
                     title="Workspaces"
                     description="Choose where your team manages links and shared resources."
                 />
@@ -254,9 +250,11 @@ export default function WorkspaceSettings({
                                     }
                                     aria-invalid={!!createWorkspace.errors.name}
                                 />
-                                <InputError
-                                    message={createWorkspace.errors.name}
-                                />
+                                {createWorkspace.errors.name && (
+                                    <FieldError>
+                                        {createWorkspace.errors.name}
+                                    </FieldError>
+                                )}
                             </div>
                             <Button
                                 className="min-h-11"
@@ -374,7 +372,11 @@ export default function WorkspaceSettings({
                                         }
                                         aria-invalid={!!invite.errors.email}
                                     />
-                                    <InputError message={invite.errors.email} />
+                                    {invite.errors.email && (
+                                        <FieldError>
+                                            {invite.errors.email}
+                                        </FieldError>
+                                    )}
                                 </div>
                                 <Field data-invalid={!!invite.errors.role}>
                                     <FieldLabel htmlFor="invite-role">
@@ -706,9 +708,11 @@ export default function WorkspaceSettings({
                                                     ))}
                                             </SelectContent>
                                         </Select>
-                                        <InputError
-                                            message={transfer.errors.user_id}
-                                        />
+                                        {transfer.errors.user_id && (
+                                            <FieldError>
+                                                {transfer.errors.user_id}
+                                            </FieldError>
+                                        )}
                                     </Field>
                                     <div className="space-y-2">
                                         <Label htmlFor="transfer-password">
@@ -731,9 +735,11 @@ export default function WorkspaceSettings({
                                                 !!transfer.errors.password
                                             }
                                         />
-                                        <InputError
-                                            message={transfer.errors.password}
-                                        />
+                                        {transfer.errors.password && (
+                                            <FieldError>
+                                                {transfer.errors.password}
+                                            </FieldError>
+                                        )}
                                     </div>
                                     <div className="flex flex-wrap gap-2 sm:col-span-2">
                                         <Button

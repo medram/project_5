@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\MediaPurpose;
 use App\Enums\PlatformPermission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminCustomPageRequest;
+use App\Models\ContentMedia;
 use App\Models\CustomPage;
 use App\Services\Content\CustomPageHtmlSanitizer;
 use App\Services\Platform\AdminAudit;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +25,33 @@ class AdminCustomPageController extends Controller
         private readonly CustomPageHtmlSanitizer $sanitizer,
         private readonly AdminAudit $audit,
     ) {}
+
+    public function assetOptions(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->query('q', ''));
+        $selected = (int) $request->query('selected', 0);
+        $items = ContentMedia::query()
+            ->where('purpose', MediaPurpose::PlatformAsset)
+            ->whereNull('workspace_id')->whereNull('expires_at')
+            ->where('visibility', 'private')
+            ->whereIn('mime_type', ['image/jpeg', 'image/png', 'image/webp'])
+            ->whereIn('scan_state', ['clean', 'not_required'])
+            ->where(function ($builder) use ($query, $selected): void {
+                $builder->where('original_name', 'like', '%'.$query.'%')
+                    ->orWhere('display_name', 'like', '%'.$query.'%');
+                if ($selected > 0) {
+                    $builder->orWhere('id', $selected);
+                }
+            })
+            ->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [$selected])
+            ->orderByDesc('id')->limit(50)->get();
+
+        return response()->json(['items' => $items->map(fn (ContentMedia $media): array => [
+            'value' => (string) $media->id,
+            'label' => $media->displayName(),
+            'description' => $media->mime_type,
+        ])->values()]);
+    }
 
     public function index(Request $request): Response
     {

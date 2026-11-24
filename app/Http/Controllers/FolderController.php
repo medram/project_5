@@ -7,6 +7,7 @@ use App\Http\Requests\StoreFolderRequest;
 use App\Http\Requests\UpdateFolderRequest;
 use App\Models\Folder;
 use App\Services\Billing\EnforcesPlanLimits;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -78,8 +79,8 @@ class FolderController extends Controller
 
     public function update(UpdateFolderRequest $request, Folder $folder): RedirectResponse
     {
-        $folder = $this->workspaceContext->currentFor($request->user())->folders()->findOrFail($folder->getKey());
-        Gate::authorize('update', $folder);
+        $folder = $this->workspaceContext->forContentRequest($request)->folders()->findOrFail($folder->getKey());
+        app(AdminContentAccess::class)->authorize($request, 'update', $folder);
         $folder->update($request->validated());
 
         return to_route('folders.index', $this->listState($request, resetPage: true));

@@ -1,6 +1,7 @@
 export type AdminFileRow = {
     id: number;
     originalName: string;
+    retainsIndefinitely: boolean;
     workspace: string | null;
     owner: string | null;
     uploader: string | null;

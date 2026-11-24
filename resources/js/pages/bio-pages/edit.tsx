@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, ExternalLink, Power } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
+import { useContentEditorRoutes } from '@/components/admin/content-editor-routes';
 import { BioPageEditor } from '@/components/bio-pages/editor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,13 +11,14 @@ import { index, publicMethod, update } from '@/routes/bio-pages';
 import { type BioPageEditorProps, toBioPage } from '@/types/bio-pages';
 
 export default function EditBioPage(props: BioPageEditorProps) {
+    const { editorUrl, backUrl } = useContentEditorRoutes();
     const bioPage = toBioPage(props.bioPage);
     const publicUrl = publicMethod(bioPage.handle).url;
     const [updatingPublication, setUpdatingPublication] = useState(false);
 
     function togglePublished() {
         router.patch(
-            update(bioPage.id).url,
+            editorUrl(update(bioPage.id).url),
             {
                 handle: bioPage.handle,
                 display_name: bioPage.displayName,
@@ -78,7 +80,7 @@ export default function EditBioPage(props: BioPageEditorProps) {
                                       : 'Publish'}
                             </Button>
                             <Button variant="outline" asChild>
-                                <Link href={index()}>
+                                <Link href={backUrl ?? index().url}>
                                     <ArrowLeft data-icon="inline-start" />
                                     All bio pages
                                 </Link>

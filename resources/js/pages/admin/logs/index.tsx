@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
 import { Download } from 'lucide-react';
 import { formatAdminDate } from '@/components/admin/format';
+import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,29 +51,22 @@ export default function AdminLogsIndex({
         <>
             <Head title="Operational logs — Administration" />
             <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="space-y-1">
-                        <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
-                            Operational logs
-                        </h1>
-                        <p className="max-w-3xl text-sm text-muted-foreground">
-                            Application-owned queue, scheduler, mail, and
-                            operations lifecycle records. Raw logs, request
-                            bodies, environment values, and secrets are never
-                            exposed.
-                        </p>
-                    </div>
-                    <Button
-                        asChild
-                        variant="outline"
-                        className="min-h-11 self-start"
-                    >
-                        <a href={exportUrl}>
-                            <Download />
-                            Export CSV
-                        </a>
-                    </Button>
-                </header>
+                <PageHeader
+                    title="Operational logs"
+                    description="Application-owned queue, scheduler, mail, and operations lifecycle records. Raw logs, request bodies, environment values, and secrets are never exposed."
+                    actions={
+                        <Button
+                            asChild
+                            variant="outline"
+                            className="min-h-11 self-start"
+                        >
+                            <a href={exportUrl}>
+                                <Download />
+                                Export CSV
+                            </a>
+                        </Button>
+                    }
+                />
                 <Card>
                     <CardHeader>
                         <CardTitle>Filters</CardTitle>
@@ -226,7 +220,10 @@ export default function AdminLogsIndex({
                         {rows.total.toLocaleString()}
                     </p>
                     {rows.last_page > 1 && (
-                        <nav className="flex flex-wrap gap-1">
+                        <nav
+                            className="flex flex-wrap gap-1"
+                            aria-label="Logs pagination"
+                        >
                             {rows.links.map((link) =>
                                 link.url ? (
                                     <Link

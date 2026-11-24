@@ -309,7 +309,7 @@
         transition: background-color 150ms ease-out;
     }
 
-    [data-table-surface] tbody tr[aria-selected='true'] {
+    [data-table-surface] tbody tr[data-selected='true'] {
         background-color: var(--primary-soft);
     }
 
@@ -321,7 +321,7 @@
         );
     }
 
-    [data-table-surface] tbody tr[aria-selected='true']:hover {
+    [data-table-surface] tbody tr[data-selected='true']:hover {
         background-color: color-mix(in oklab, var(--primary) 14%, transparent);
     }
 

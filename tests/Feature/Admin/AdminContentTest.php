@@ -9,6 +9,7 @@ use App\Models\Link;
 use App\Models\LinkOverlay;
 use App\Models\LinkPage;
 use App\Models\TrackingPixel;
+use App\Models\QrCode;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -163,6 +164,33 @@ class AdminContentTest extends TestCase
                 ->has('rows.data', 1)
                 ->where('rows.data.0.provider', 'Meta'))
             ->assertDontSee($pixel->provider_id);
+    }
+
+    public function test_qr_metadata_includes_both_sources_without_destinations_or_access_codes(): void
+    {
+        [$owner] = $this->twoOwners();
+        $link = $this->link($owner, 'https://secret.example/link', 'Linked QR');
+        QrCode::query()->create([
+            'workspace_id' => $owner->current_workspace_id,
+            'source' => 'campaign',
+            'title' => 'Conference code',
+            'destination_url' => 'https://secret.example/campaign',
+            'access_code' => 'qr-secret-pin',
+            'is_active' => false,
+        ]);
+        $this->withoutVite();
+        $support = User::factory()->support()->create();
+        $this->actingAs($support)->get('/admin/qr-codes')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('resource.key', 'qr-codes')
+                ->where('rows.total', 2))
+            ->assertDontSee($link->destination_url)
+            ->assertDontSee('https://secret.example/campaign')
+            ->assertDontSee('qr-secret-pin')
+            ->assertDontSee('private-access-code');
+        $this->actingAs($support)->get('/admin/qr-codes?q=Conference&state=inactive')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('rows.total', 1)->where('rows.data.0.name', 'Conference code'));
+        $this->actingAs(User::factory()->create())->get('/admin/qr-codes')->assertForbidden();
     }
 
     public function test_content_search_filters_sort_and_pagination_are_url_backed(): void

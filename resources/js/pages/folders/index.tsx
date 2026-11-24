@@ -113,9 +113,14 @@ function DeleteFolderDialog({
             }}
         >
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                    <Trash2 data-icon="inline-start" />
-                    Delete
+                <Button
+                    variant="destructive"
+                    size="icon"
+                    className="size-8 rounded-full"
+                    title="Delete folder"
+                    aria-label={`Delete ${folder.name}`}
+                >
+                    <Trash2 aria-hidden="true" />
                 </Button>
             </DialogTrigger>
             <DialogContent>
@@ -536,9 +541,11 @@ export default function FoldersIndex({
                                             <tr
                                                 key={folder.id}
                                                 className="border-t"
-                                                aria-selected={selectedIds.includes(
-                                                    folder.id,
-                                                )}
+                                                data-selected={
+                                                    selectedIds.includes(
+                                                        folder.id,
+                                                    ) || undefined
+                                                }
                                             >
                                                 <td className="p-3">
                                                     <div className="inline-flex min-h-11 min-w-11 items-center justify-center">
@@ -570,7 +577,7 @@ export default function FoldersIndex({
                                                     }
                                                 </td>
                                                 <td className="p-3">
-                                                    <div className="flex flex-wrap gap-2 [&_button]:min-h-11 [&_button]:min-w-11">
+                                                    <div className="flex flex-wrap justify-end gap-2">
                                                         <FolderFormDialog
                                                             folder={folder}
                                                             listQuery={
@@ -578,11 +585,13 @@ export default function FoldersIndex({
                                                             }
                                                         >
                                                             <Button
-                                                                variant="outline"
-                                                                size="sm"
+                                                                variant="secondary"
+                                                                size="icon"
+                                                                className="size-8 rounded-full"
+                                                                title="Rename folder"
+                                                                aria-label={`Rename ${folder.name}`}
                                                             >
-                                                                <Pencil data-icon="inline-start" />
-                                                                Rename
+                                                                <Pencil aria-hidden="true" />
                                                             </Button>
                                                         </FolderFormDialog>
                                                         <DeleteFolderDialog

@@ -6,13 +6,14 @@ use App\Models\BioContentBlock;
 use App\Models\BioLink;
 use App\Models\BioPage;
 use Carbon\CarbonImmutable;
+use Closure;
 
 class BioPagePresentation
 {
     public const DEFAULT_APPEARANCE = ['theme' => 'light', 'typography' => 'sans', 'color' => 'blue', 'background' => 'plain'];
 
     /** @return array{handle: string, displayName: string, bio: string|null, appearance: array<string, string>, items: list<array<string, mixed>>} */
-    public function make(BioPage $page, bool $editor = false): array
+    public function make(BioPage $page, bool $editor = false, ?Closure $editorImageUrl = null): array
     {
         $now = CarbonImmutable::now('UTC');
         $links = $page->bioLinks()->get()->filter(fn (BioLink $link): bool => $editor || $this->eligible($link, $now))->map(fn (BioLink $link): array => [
@@ -21,7 +22,7 @@ class BioPagePresentation
             'isPinned' => $link->is_pinned, 'isActive' => $link->is_active,
             'startsAt' => $link->starts_at?->toISOString(), 'endsAt' => $link->ends_at?->toISOString(),
         ]);
-        $blocks = $page->contentBlocks()->with('contentMedia')->get()->filter(fn (BioContentBlock $block): bool => $editor || $this->eligible($block, $now))->map(fn (BioContentBlock $block): array => $this->block($page, $block, $editor));
+        $blocks = $page->contentBlocks()->with('contentMedia')->get()->filter(fn (BioContentBlock $block): bool => $editor || $this->eligible($block, $now))->map(fn (BioContentBlock $block): array => $this->block($page, $block, $editor, $editorImageUrl));
         $items = array_values($links->concat($blocks)->sort(function (array $a, array $b): int {
             return ((int) $b['isPinned'] <=> (int) $a['isPinned']) ?: ($a['position'] <=> $b['position']) ?: ($a['type'] <=> $b['type']) ?: ($a['id'] <=> $b['id']);
         })->all());
@@ -38,7 +39,7 @@ class BioPagePresentation
     }
 
     /** @return array<string, mixed> */
-    private function block(BioPage $page, BioContentBlock $block, bool $editor): array
+    private function block(BioPage $page, BioContentBlock $block, bool $editor, ?Closure $editorImageUrl): array
     {
         $data = ['type' => $block->type, 'id' => $block->id, 'position' => $block->position, 'isPinned' => $block->is_pinned, 'isActive' => $block->is_active, 'startsAt' => $block->starts_at?->toISOString(), 'endsAt' => $block->ends_at?->toISOString()];
         if ($block->type === 'image') {
@@ -50,7 +51,7 @@ class BioPagePresentation
                 'altText' => $block->content['alt_text'] ?? '',
                 'imageUrl' => $usable
                     ? ($editor
-                        ? "/dashboard/biolinks/{$page->id}/blocks/{$block->id}/image"
+                        ? ($editorImageUrl ? $editorImageUrl($page, $block) : "/dashboard/biolinks/{$page->id}/blocks/{$block->id}/image")
                         : "/bio/{$page->handle}/blocks/{$block->id}/image")
                     : null,
             ];

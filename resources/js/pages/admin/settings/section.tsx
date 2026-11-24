@@ -4,14 +4,20 @@ import {
     ArrowUp,
     Check,
     ChevronsUpDown,
+    CreditCard,
+    Mail,
+    Plus,
     Copy,
     Save,
     Trash2,
     Upload,
     X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import SettingsLayout from '@/pages/admin/settings/layout';
+import { collectSettingsChanges, isSettingVisible } from '@/pages/admin/settings/settings-form';
+import type { FormValues, SettingValue } from '@/pages/admin/settings/settings-form';
+import { FormErrorSummary } from '@/components/forms/form-error-summary';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,6 +43,8 @@ import {
     FieldError,
     FieldGroup,
     FieldLabel,
+    FieldLegend,
+    FieldSet,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
@@ -68,8 +76,6 @@ import type {
     AdminSettingsPageProps,
 } from '@/types/admin-settings';
 
-type SettingValue = string | number | boolean | string[] | number[] | null;
-type FormValues = Record<string, SettingValue>;
 type OptionItem = { value: string; label: string; description?: string | null };
 
 function initialValues(fields: AdminSettingField[]): FormValues {
@@ -130,20 +136,46 @@ export default function AdminSettingsSection({
         () => initialValues(fields),
         // The version changes after a successful save; fields carry new values.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [section.version],
+        [section.key, section.version],
     );
     const [values, setValues] = useState<FormValues>(initial);
     const [processing, setProcessing] = useState(false);
     const [uploading, setUploading] = useState<string | null>(null);
-    const page = usePage<{ errors: Record<string, string> }>();
+    const page = usePage();
     const errors = page.props.errors ?? {};
+    const requestErrorRef = useRef<HTMLDivElement>(null);
+    const summaryRef = useRef<HTMLDivElement>(null);
+    const saveBarRef = useRef<HTMLDivElement>(null);
+    const fieldErrors: Array<{ key: string; fieldKey: string; label: string; message: string; interactive: boolean }> = [];
+    const requestErrors: Array<{ key: string; message: string }> = [];
+    for (const [key, message] of Object.entries(errors)) {
+        const match = /^values\.([^.]+)(?:\.\d+)?$/.exec(key);
+        const field = match ? fields.find((candidate) => candidate.key === match[1]) : undefined;
+        if (field) {
+            fieldErrors.push({ key, fieldKey: field.key, label: field.label, message, interactive: isSettingVisible(field, values) });
+        } else if (!((section.key === 'email' && canManage && (key === 'recipient' || key === 'email')) ||
+            (section.key === 'subscriptions' && canManage && key === 'stripe'))) {
+            requestErrors.push({ key, message });
+        }
+    }
 
     useEffect(() => {
-        setValues(initialValues(fields));
+        // A stale response contains the latest saved values, not the user's draft.
+        if (!errors.version) {
+            setValues(initialValues(fields));
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [section.version]);
+    }, [section.key, section.version]);
 
     const dirty = JSON.stringify(values) !== JSON.stringify(initial);
+    const changes = collectSettingsChanges(fields, values, initial);
+    const canSave = Object.keys(changes.visible).length > 0;
+    const readiness = section.readiness;
+    const genericReadiness = readiness?.state === 'ready' &&
+        readiness.items.length === 1 &&
+        readiness.items[0].state === 'ready' &&
+        readiness.items[0].label === 'Configuration' &&
+        readiness.items[0].detail === 'Database-backed settings are available.';
 
     useEffect(() => {
         if (!dirty) {
@@ -176,57 +208,34 @@ export default function AdminSettingsSection({
             return;
         }
 
-        requestAnimationFrame(() => {
-            const invalid = document.querySelector<HTMLElement>(
-                '[aria-invalid="true"]',
-            );
-            invalid?.focus();
-            invalid?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        const frame = requestAnimationFrame(() => {
+            const target = requestErrorRef.current ?? summaryRef.current ??
+                (errors.recipient ? document.getElementById('test-email-recipient') : null);
+            target?.focus({ preventScroll: true });
+            target?.scrollIntoView({ block: 'center', behavior: 'auto' });
         });
+        return () => cancelAnimationFrame(frame);
     }, [errors]);
-
-    const visible = (field: AdminSettingField): boolean =>
-        field.visibleWhen === null ||
-        Object.entries(field.visibleWhen).every(
-            ([key, expected]) => values[key] === expected,
-        );
 
     const setValue = (key: string, value: SettingValue) => {
         setValues((current) => ({ ...current, [key]: value }));
     };
 
     const save = () => {
-        const changed: FormValues = {};
-
-        for (const field of fields) {
-            if (!visible(field)) {
-                continue;
-            }
-
-            const value = values[field.key];
-
-            if (
-                field.secret &&
-                (typeof value !== 'string' || value.trim() === '')
-            ) {
-                continue;
-            }
-
-            if (JSON.stringify(value) === JSON.stringify(initial[field.key])) {
-                continue;
-            }
-
-            changed[field.key] = value;
+        if (!canSave || errors.version) {
+            return;
         }
-
-        if (Object.keys(changed).length === 0) {
+        if (
+            changes.hasHiddenChanges &&
+            !window.confirm('Save visible changes and discard unsaved changes in hidden fields?')
+        ) {
             return;
         }
 
         setProcessing(true);
         router.patch(
             settings.update(section.key).url,
-            { version: section.version, values: changed },
+            { version: section.version, values: changes.visible },
             {
                 preserveScroll: true,
                 onFinish: () => setProcessing(false),
@@ -237,7 +246,8 @@ export default function AdminSettingsSection({
     const clearSecret = (field: AdminSettingField) => {
         if (
             !window.confirm(
-                'Remove the stored ' + field.label.toLowerCase() + '?',
+                'Remove the stored ' + field.label.toLowerCase() + '?' +
+                    (dirty ? ' Any unsaved changes on this page will be discarded.' : ''),
             )
         ) {
             return;
@@ -253,6 +263,9 @@ export default function AdminSettingsSection({
     };
 
     const uploadAsset = (field: AdminSettingField, file: File) => {
+        if (dirty && !window.confirm('Upload this asset now? Any unsaved changes on this page will be discarded.')) {
+            return;
+        }
         setUploading(field.key);
         router.post(
             '/admin/settings/' + section.key + '/assets/' + field.key,
@@ -269,20 +282,51 @@ export default function AdminSettingsSection({
         <>
             <Head title={section.label + ' settings'} />
             <SettingsLayout section={section.key} navigation={navigation}>
-                <div className="flex min-w-0 flex-col gap-5 pb-24">
-                    {section.description ? (
-                        <p className="max-w-3xl text-sm text-muted-foreground">
-                            {section.description}
-                        </p>
+                <div
+                    className="flex min-w-0 flex-col gap-5 pb-24 [&_button]:scroll-mb-32 [&_input]:scroll-mb-32 [&_textarea]:scroll-mb-32"
+                    onFocusCapture={(event) => {
+                        const target = event.target;
+                        const visibleTarget = target instanceof HTMLInputElement && target.type === 'file'
+                            ? target.labels?.[0] ?? target
+                            : target;
+                        requestAnimationFrame(() => {
+                            const bar = saveBarRef.current;
+                            if (document.activeElement === target && bar && !bar.contains(target) &&
+                                visibleTarget.getBoundingClientRect().bottom > bar.getBoundingClientRect().top - 8) {
+                                visibleTarget.scrollIntoView({ block: 'center', behavior: 'auto' });
+                            }
+                        });
+                    }}
+                >
+                    <div className="flex flex-col gap-1">
+                        <h2 className="text-lg font-semibold">{section.label}</h2>
+                        {section.description ? (
+                            <p className="max-w-3xl text-sm text-muted-foreground">
+                                {section.description}
+                            </p>
+                        ) : null}
+                    </div>
+
+                    {!canManage ? (
+                        <Alert>
+                            <AlertTitle>View-only access</AlertTitle>
+                            <AlertDescription>
+                                You can inspect settings and readiness. Changing
+                                values requires the manage permission.
+                            </AlertDescription>
+                        </Alert>
                     ) : null}
 
-                    {section.readiness ? (
+                    {readiness && !genericReadiness ? (
                         <Alert
                             variant={
                                 section.readiness.state === 'incomplete'
                                     ? 'destructive'
                                     : 'default'
                             }
+                            className={section.readiness.state === 'incomplete'
+                                ? 'border-danger/30 bg-danger-soft text-foreground *:data-[slot=alert-description]:text-foreground'
+                                : undefined}
                         >
                             <AlertTitle className="flex items-center gap-2">
                                 Provider readiness
@@ -308,19 +352,32 @@ export default function AdminSettingsSection({
                         </Alert>
                     ) : null}
 
-                    {Object.keys(errors).length > 0 ? (
-                        <Alert variant="destructive">
-                            <AlertTitle>Settings were not saved</AlertTitle>
+                    {requestErrors.length > 0 ? (
+                        <Alert ref={requestErrorRef} tabIndex={-1} variant="destructive"
+                            className="border-danger/30 bg-danger-soft text-foreground outline-none *:data-[slot=alert-description]:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40">
+                            <AlertTitle>Could not complete the request</AlertTitle>
                             <AlertDescription>
-                                Fix the highlighted fields and save again.
+                                <ul>{requestErrors.map(({ key, message }) => <li key={key}>{message}</li>)}</ul>
                             </AlertDescription>
                         </Alert>
                     ) : null}
+                    <FormErrorSummary
+                        summaryRef={summaryRef}
+                        titleId="settings-error-summary-title"
+                        entries={fieldErrors}
+                        className="mx-0 mb-0"
+                        onSelect={(key) => {
+                            const fieldKey = fieldErrors.find((entry) => entry.key === key)?.fieldKey;
+                            const target = fieldKey ? document.getElementById('setting-' + fieldKey) : null;
+                            target?.focus({ preventScroll: true });
+                            target?.scrollIntoView({ block: 'center', behavior: 'auto' });
+                        }}
+                    />
 
                     {section.groups.map((group) => (
                         <Card key={group.key} className="min-w-0">
                             <CardHeader className="gap-1">
-                                <CardTitle>{group.label}</CardTitle>
+                                <CardTitle as="h3">{group.label}</CardTitle>
                                 {group.description ? (
                                     <CardDescription>
                                         {group.description}
@@ -328,19 +385,15 @@ export default function AdminSettingsSection({
                                 ) : null}
                             </CardHeader>
                             <CardContent>
-                                <FieldGroup>
+                                <FieldGroup className="grid min-w-0 gap-5 xl:grid-cols-2">
                                     {group.fields
-                                        .filter(visible)
+                                        .filter((field) => isSettingVisible(field, values))
                                         .map((field) => (
                                             <SettingControl
                                                 key={field.key}
                                                 field={field}
                                                 value={values[field.key]}
-                                                error={
-                                                    errors[
-                                                        'values.' + field.key
-                                                    ]
-                                                }
+                                                error={fieldErrors.find((entry) => entry.fieldKey === field.key)?.message}
                                                 disabled={!canManage}
                                                 busy={uploading === field.key}
                                                 onChange={(value) =>
@@ -363,19 +416,19 @@ export default function AdminSettingsSection({
                         <OAuthCallbackPanel />
                     ) : null}
                     {section.key === 'email' && canManage ? (
-                        <TestEmailPanel error={errors.email} />
+                        <TestEmailPanel recipientError={errors.recipient} deliveryError={errors.email} />
                     ) : null}
                     {section.key === 'subscriptions' && canManage ? (
                         <TestStripePanel error={errors.stripe} />
                     ) : null}
 
                     {canManage ? (
-                        <div className="sticky bottom-0 z-20 -mx-4 mt-1 border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:-mx-6 md:px-6">
+                        <div ref={saveBarRef} className="sticky bottom-0 z-20 -mx-4 mt-1 border-t bg-background px-4 py-3 md:-mx-6 md:px-6">
                             <div className="flex flex-wrap items-center gap-3">
                                 <Button
                                     type="button"
-                                    className="min-h-11"
-                                    disabled={!dirty || processing}
+                                    className="min-h-11 md:min-h-9"
+                                    disabled={!canSave || processing || Boolean(errors.version)}
                                     onClick={save}
                                 >
                                     {processing ? (
@@ -392,21 +445,17 @@ export default function AdminSettingsSection({
                                     className="text-sm text-muted-foreground"
                                     aria-live="polite"
                                 >
-                                    {dirty
-                                        ? 'Unsaved changes'
-                                        : 'All changes saved'}
+                                    {!dirty
+                                        ? 'All changes saved'
+                                        : canSave
+                                          ? 'Unsaved changes'
+                                          : changes.hasHiddenChanges
+                                            ? 'Unsaved changes are in hidden fields. Change the related option to review them.'
+                                            : 'Enter a non-empty replacement to save a secret.'}
                                 </p>
                             </div>
                         </div>
-                    ) : (
-                        <Alert>
-                            <AlertTitle>View-only access</AlertTitle>
-                            <AlertDescription>
-                                You can inspect settings and readiness. Changing
-                                values requires the manage permission.
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                    ) : null}
                 </div>
             </SettingsLayout>
         </>
@@ -422,7 +471,7 @@ function OAuthCallbackPanel() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Google OAuth callback URL</CardTitle>
+                <CardTitle as="h3">Google OAuth callback URL</CardTitle>
                 <CardDescription>
                     Register this exact callback URL in the Google Cloud
                     console.
@@ -440,6 +489,7 @@ function OAuthCallbackPanel() {
                         <InputGroupButton
                             type="button"
                             size="sm"
+                            className="min-h-11 md:min-h-9"
                             onClick={async () => {
                                 await navigator.clipboard.writeText(callback);
                                 setCopied(true);
@@ -455,37 +505,40 @@ function OAuthCallbackPanel() {
     );
 }
 
-function TestEmailPanel({ error }: { error?: string }) {
+function TestEmailPanel({ recipientError, deliveryError }: { recipientError?: string; deliveryError?: string }) {
     const [recipient, setRecipient] = useState('');
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Test email delivery</CardTitle>
+                <CardTitle as="h3">Test email delivery</CardTitle>
                 <CardDescription>
                     Sends one plain message using the saved configuration. Save
                     changes before testing.
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
-                <Field data-invalid={Boolean(error)}>
+                <Field data-invalid={Boolean(recipientError)}>
                     <FieldLabel htmlFor="test-email-recipient">
                         Recipient
                     </FieldLabel>
                     <Input
+                        className="min-h-11 md:min-h-10"
                         id="test-email-recipient"
                         name="recipient"
                         type="email"
                         autoComplete="email"
                         value={recipient}
-                        aria-invalid={Boolean(error)}
+                        aria-invalid={Boolean(recipientError)}
+                        aria-describedby={recipientError ? 'test-email-recipient-error' : undefined}
                         onChange={(event) => setRecipient(event.target.value)}
                     />
-                    {error ? <FieldError>{error}</FieldError> : null}
+                    {recipientError ? <FieldError id="test-email-recipient-error" role="alert">{recipientError}</FieldError> : null}
                 </Field>
                 <Button
                     type="button"
                     variant="outline"
+                    className="min-h-11 md:min-h-9"
                     disabled={recipient === ''}
                     onClick={() =>
                         router.post(
@@ -495,8 +548,10 @@ function TestEmailPanel({ error }: { error?: string }) {
                         )
                     }
                 >
+                    <Mail data-icon="inline-start" aria-hidden="true" />
                     Send test email
                 </Button>
+                {deliveryError ? <FieldError role="alert">{deliveryError}</FieldError> : null}
             </CardContent>
         </Card>
     );
@@ -506,7 +561,7 @@ function TestStripePanel({ error }: { error?: string }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Validate Stripe credentials</CardTitle>
+                <CardTitle as="h3">Validate Stripe credentials</CardTitle>
                 <CardDescription>
                     Performs a read-only account request with the saved
                     settings. No checkout or subscription is created.
@@ -516,6 +571,7 @@ function TestStripePanel({ error }: { error?: string }) {
                 <Button
                     type="button"
                     variant="outline"
+                    className="min-h-11 md:min-h-9"
                     onClick={() =>
                         router.post(
                             '/admin/settings/subscriptions/test',
@@ -524,9 +580,10 @@ function TestStripePanel({ error }: { error?: string }) {
                         )
                     }
                 >
+                    <CreditCard data-icon="inline-start" aria-hidden="true" />
                     Test Stripe connection
                 </Button>
-                {error ? <FieldError>{error}</FieldError> : null}
+                {error ? <FieldError role="alert">{error}</FieldError> : null}
             </CardContent>
         </Card>
     );
@@ -553,12 +610,54 @@ function SettingControl({
 }) {
     const id = 'setting-' + field.key;
     const invalid = error !== undefined;
-    const describedBy = field.help ? id + '-help' : undefined;
+    const describedBy = [
+        field.help ? id + '-help' : null,
+        error ? id + '-error' : null,
+    ]
+        .filter((value): value is string => value !== null)
+        .join(' ') || undefined;
+    const wide = !field.secret && (['bool', 'text', 'list', 'int_list'].includes(field.type) ||
+        field.key === 'homepage' || field.key === 'default_delivery');
+
+    if (field.type === 'list' || field.type === 'int_list' ||
+        field.key === 'homepage' || field.key === 'default_delivery') {
+        return (
+            <FieldSet
+                id={id}
+                tabIndex={-1}
+                aria-invalid={invalid || undefined}
+                aria-describedby={describedBy}
+                className="min-w-0 xl:col-span-2 scroll-mb-32"
+                data-invalid={invalid || undefined}
+            >
+                <FieldLegend>{field.label}</FieldLegend>
+                {field.help ? (
+                    <FieldDescription id={id + '-help'}>
+                        {field.help}
+                    </FieldDescription>
+                ) : null}
+                <ControlBody
+                    field={field}
+                    value={value}
+                    id={id}
+                    invalid={invalid}
+                    describedBy={describedBy}
+                    disabled={disabled}
+                    busy={busy}
+                    onChange={onChange}
+                    onUpload={onUpload}
+                />
+                {error ? (
+                    <FieldError id={id + '-error'}>{error}</FieldError>
+                ) : null}
+            </FieldSet>
+        );
+    }
 
     if (field.type === 'bool') {
         return (
-            <Field data-invalid={invalid || undefined}>
-                <div className="flex items-start justify-between gap-4 rounded-md border p-3">
+            <Field className="min-w-0 xl:col-span-2" data-invalid={invalid || undefined}>
+                <div className="flex min-h-11 items-start justify-between gap-4 py-2">
                     <div className="flex flex-col gap-1">
                         <FieldLabel htmlFor={id}>{field.label}</FieldLabel>
                         {field.help ? (
@@ -566,7 +665,9 @@ function SettingControl({
                                 {field.help}
                             </FieldDescription>
                         ) : null}
-                        {error ? <FieldError>{error}</FieldError> : null}
+                        {error ? (
+                            <FieldError id={id + '-error'}>{error}</FieldError>
+                        ) : null}
                     </div>
                     {field.control === 'checkbox' ? (
                         <Checkbox
@@ -575,6 +676,7 @@ function SettingControl({
                             checked={value === true}
                             disabled={disabled}
                             aria-invalid={invalid}
+                            aria-describedby={describedBy}
                             onCheckedChange={(checked) =>
                                 onChange(checked === true)
                             }
@@ -586,6 +688,7 @@ function SettingControl({
                             checked={value === true}
                             disabled={disabled}
                             aria-invalid={invalid}
+                            aria-describedby={describedBy}
                             onCheckedChange={onChange}
                         />
                     )}
@@ -596,6 +699,7 @@ function SettingControl({
 
     return (
         <Field
+            className={cn('min-w-0', wide && 'xl:col-span-2')}
             data-invalid={invalid || undefined}
             data-disabled={disabled || undefined}
         >
@@ -612,6 +716,7 @@ function SettingControl({
                             type="button"
                             variant="ghost"
                             size="sm"
+                            className="min-h-11 md:min-h-9"
                             disabled={busy}
                             onClick={onClearSecret}
                         >
@@ -634,10 +739,11 @@ function SettingControl({
                 busy={busy}
                 onChange={onChange}
                 onUpload={onUpload}
+                describedBy={describedBy}
             />
 
             {field.help ? (
-                <FieldDescription id={describedBy}>
+                <FieldDescription id={id + '-help'}>
                     {field.help}
                 </FieldDescription>
             ) : null}
@@ -646,7 +752,7 @@ function SettingControl({
                     Stored — enter a replacement.
                 </FieldDescription>
             ) : null}
-            {error ? <FieldError>{error}</FieldError> : null}
+            {error ? <FieldError id={id + '-error'}>{error}</FieldError> : null}
         </Field>
     );
 }
@@ -660,6 +766,7 @@ function ControlBody({
     busy,
     onChange,
     onUpload,
+    describedBy,
 }: {
     field: AdminSettingField;
     value: SettingValue | undefined;
@@ -668,11 +775,13 @@ function ControlBody({
     disabled: boolean;
     busy: boolean;
     onChange: (value: SettingValue) => void;
+    describedBy: string | undefined;
     onUpload: (file: File) => void;
 }) {
     if (field.secret) {
         return (
             <Input
+                className="min-h-11 md:min-h-10"
                 id={id}
                 name={field.key}
                 type="password"
@@ -680,6 +789,7 @@ function ControlBody({
                 value={typeof value === 'string' ? value : ''}
                 disabled={disabled}
                 aria-invalid={invalid}
+                aria-describedby={describedBy}
                 placeholder={
                     field.configured
                         ? 'Stored — enter a replacement'
@@ -695,15 +805,21 @@ function ControlBody({
             return (
                 <ToggleGroup
                     type="single"
-                    variant="outline"
+                    variant="default"
                     value={String(value ?? '')}
                     disabled={disabled}
+                    aria-invalid={invalid || undefined}
+                    aria-describedby={describedBy}
                     onValueChange={(next) => next !== '' && onChange(next)}
-                    className="flex-wrap"
+                    className="w-fit max-w-full flex-wrap gap-[3px] rounded-2xl bg-default p-[3px]"
                 >
                     {Object.entries(field.options ?? {}).map(
                         ([option, label]) => (
-                            <ToggleGroupItem key={option} value={option}>
+                            <ToggleGroupItem
+                                key={option}
+                                value={option}
+                                className="min-h-11 rounded-[13px] px-3 text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm md:min-h-8"
+                            >
                                 {label}
                             </ToggleGroupItem>
                         ),
@@ -721,8 +837,9 @@ function ControlBody({
                 <SelectTrigger
                     id={id}
                     name={field.key}
-                    className="min-h-11 w-full"
+                    className="min-h-11 w-full md:min-h-10"
                     aria-invalid={invalid}
+                    aria-describedby={describedBy}
                 >
                     <SelectValue />
                 </SelectTrigger>
@@ -750,12 +867,14 @@ function ControlBody({
                     return (
                         <label
                             key={option}
-                            className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+                            className="flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm"
                         >
                             <Checkbox
                                 name={field.key + '[]'}
                                 checked={selected}
                                 disabled={disabled}
+                                aria-invalid={invalid || undefined}
+                                aria-describedby={describedBy}
                                 onCheckedChange={(checked) => {
                                     const current = Array.isArray(value)
                                         ? value.map(String)
@@ -777,6 +896,17 @@ function ControlBody({
         );
     }
 
+    if (field.type === 'int_list' && field.control === 'number-list') {
+        return (
+            <NumberListField
+                value={Array.isArray(value) ? value.map(Number) : []}
+                disabled={disabled}
+                onChange={onChange}
+                describedBy={describedBy}
+            />
+        );
+    }
+
     if (field.type === 'int_list') {
         return (
             <OrderedListField
@@ -784,6 +914,7 @@ function ControlBody({
                 value={Array.isArray(value) ? value.map(Number) : []}
                 disabled={disabled}
                 onChange={onChange}
+                describedBy={describedBy}
             />
         );
     }
@@ -801,6 +932,7 @@ function ControlBody({
                         value={
                             value === null || value === '' ? '' : String(value)
                         }
+                        describedBy={describedBy}
                         disabled={disabled}
                         invalid={invalid}
                         onChange={(next) =>
@@ -815,16 +947,17 @@ function ControlBody({
                         }
                     />
                     {field.asset && !disabled ? (
-                        <div className="flex items-center gap-2">
+                        <div className="group flex flex-wrap items-center gap-2">
                             <Button
                                 asChild
                                 variant="outline"
                                 size="sm"
+                                className="min-h-11 md:min-h-9"
                                 disabled={busy}
                             >
                                 <label
                                     htmlFor={id + '-upload'}
-                                    className="cursor-pointer"
+                                    className="cursor-pointer group-focus-within:ring-2 group-focus-within:ring-ring/40 group-focus-within:ring-offset-1"
                                 >
                                     {busy ? (
                                         <Spinner data-icon="inline-start" />
@@ -841,6 +974,7 @@ function ControlBody({
                                 id={id + '-upload'}
                                 type="file"
                                 accept="image/jpeg,image/png,image/webp"
+                                disabled={busy}
                                 className="sr-only"
                                 onChange={(event) => {
                                     const file = event.target.files?.[0];
@@ -866,6 +1000,7 @@ function ControlBody({
                 value={String(value ?? '')}
                 disabled={disabled}
                 aria-invalid={invalid}
+                aria-describedby={describedBy}
                 placeholder={field.placeholder ?? ''}
                 onChange={(event) => onChange(event.target.value)}
             />
@@ -875,6 +1010,7 @@ function ControlBody({
     if (field.type === 'int') {
         return (
             <Input
+                className="min-h-11 md:min-h-10"
                 id={id}
                 name={field.key}
                 type="number"
@@ -884,6 +1020,7 @@ function ControlBody({
                 }
                 disabled={disabled}
                 aria-invalid={invalid}
+                aria-describedby={describedBy}
                 placeholder={field.placeholder ?? ''}
                 onChange={(event) =>
                     onChange(
@@ -898,6 +1035,7 @@ function ControlBody({
 
     return (
         <Input
+            className="min-h-11 md:min-h-10"
             id={id}
             name={field.key}
             type={
@@ -915,84 +1053,133 @@ function ControlBody({
             }
             disabled={disabled}
             aria-invalid={invalid}
+            aria-describedby={describedBy}
             placeholder={field.placeholder ?? ''}
             onChange={(event) => onChange(event.target.value)}
         />
     );
 }
 
-function OrderedListField({
-    field,
-    value,
-    disabled,
-    onChange,
+function OrderedRows({
+    value, disabled, onChange, label, kind,
 }: {
-    field: AdminSettingField;
     value: number[];
     disabled: boolean;
     onChange: (value: number[]) => void;
+    label: (item: number) => string;
+    kind: 'delay' | 'page';
 }) {
-    const source = optionSource(field) ?? 'published-pages';
     const move = (index: number, direction: -1 | 1) => {
         const next = [...value];
         const target = index + direction;
-        if (target < 0 || target >= next.length) {
-            return;
-        }
+        if (target < 0 || target >= next.length) return;
         [next[index], next[target]] = [next[target], next[index]];
         onChange(next);
     };
 
     return (
-        <div className="flex flex-col gap-2">
-            <ul className="flex flex-col gap-1">
-                {value.map((item, index) => (
-                    <li
-                        key={String(item) + '-' + index}
-                        className="flex items-center gap-2 rounded-md border px-2 py-1.5"
-                    >
-                        <span className="min-w-0 flex-1 truncate text-sm">
-                            {String(item)}
-                        </span>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            disabled={disabled || index === 0}
-                            aria-label="Move up"
-                            onClick={() => move(index, -1)}
-                        >
-                            <ArrowUp aria-hidden="true" />
-                        </Button>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            disabled={disabled || index === value.length - 1}
-                            aria-label="Move down"
-                            onClick={() => move(index, 1)}
-                        >
-                            <ArrowDown aria-hidden="true" />
-                        </Button>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            disabled={disabled}
-                            aria-label="Remove"
-                            onClick={() =>
-                                onChange(
-                                    value.filter(
-                                        (_, position) => position !== index,
-                                    ),
-                                )
-                            }
-                        >
-                            <X aria-hidden="true" />
-                        </Button>
-                    </li>
-                ))}
-            </ul>
+        <ul className="flex flex-col gap-1">
+            {value.map((item, index) => (
+                <li key={`${item}-${index}`} className="flex min-w-0 items-center gap-2 rounded-md border px-2 py-1.5">
+                    <span className="min-w-0 flex-1 truncate text-sm">{label(item)}</span>
+                    <Button type="button" size="icon" className="size-11 md:size-9" variant="ghost"
+                        disabled={disabled || index === 0} aria-label={`Move ${kind} ${index + 1} up`}
+                        onClick={() => move(index, -1)}>
+                        <ArrowUp aria-hidden="true" />
+                    </Button>
+                    <Button type="button" size="icon" className="size-11 md:size-9" variant="ghost"
+                        disabled={disabled || index === value.length - 1} aria-label={`Move ${kind} ${index + 1} down`}
+                        onClick={() => move(index, 1)}>
+                        <ArrowDown aria-hidden="true" />
+                    </Button>
+                    <Button type="button" size="icon" className="size-11 md:size-9" variant="ghost"
+                        disabled={disabled} aria-label={`Remove ${kind} ${index + 1}`}
+                        onClick={() => onChange(value.filter((_, position) => position !== index))}>
+                        <X aria-hidden="true" />
+                    </Button>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+function NumberListField({ value, disabled, onChange, describedBy }: {
+    value: number[];
+    disabled: boolean;
+    onChange: (value: number[]) => void;
+    describedBy: string | undefined;
+}) {
+    const [input, setInput] = useState('');
+    const delay = Number(input);
+    const canAdd = input.trim() !== '' && Number.isInteger(delay) && delay >= 1 && delay <= 86400 && value.length < 10;
+
+    return (
+        <div className="flex min-w-0 flex-col gap-2">
+            {value.length === 0 ? <p className="text-sm text-muted-foreground">No retry delays added.</p> : (
+                <OrderedRows value={value} disabled={disabled} onChange={onChange} kind="delay" label={(item) => `${item} seconds`} />
+            )}
+            <p className="text-sm text-muted-foreground">Add up to 10 delays of 1–86,400 seconds.</p>
+            {!disabled ? (
+                <div className="flex flex-wrap items-center gap-2">
+                    <Input type="number" aria-label="Retry delay in seconds" aria-describedby={describedBy}
+                        min={1} max={86400} step={1} value={input}
+                        className="min-h-11 w-full sm:w-48 md:min-h-10"
+                        onChange={(event) => setInput(event.target.value)} />
+                    <Button type="button" variant="outline" className="min-h-11 md:min-h-9" disabled={!canAdd}
+                        onClick={() => {
+                            if (!canAdd) return;
+                            onChange([...value, delay]);
+                            setInput('');
+                        }}>
+                        <Plus data-icon="inline-start" aria-hidden="true" /> Add delay
+                    </Button>
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
+function OrderedListField({ field, value, disabled, onChange, describedBy }: {
+    field: AdminSettingField;
+    value: number[];
+    disabled: boolean;
+    onChange: (value: number[]) => void;
+    describedBy: string | undefined;
+}) {
+    const source = optionSource(field) ?? 'published-pages';
+    const selectedIds = value.join(',');
+    const [labels, setLabels] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        if (selectedIds === '') {
+            setLabels({});
+            return;
+        }
+        const controller = new AbortController();
+        fetch(optionUrl(source, '', selectedIds.split(',')), {
+            headers: { Accept: 'application/json' },
+            signal: controller.signal,
+            credentials: 'same-origin',
+        })
+            .then((response) => {
+                if (!response.ok) throw new Error('Unable to load page titles');
+                return response.json() as Promise<{ items?: OptionItem[] }>;
+            })
+            .then((payload) => {
+                if (!controller.signal.aborted) {
+                    setLabels(Object.fromEntries((payload.items ?? []).map((item) => [item.value, item.label])));
+                }
+            })
+            .catch(() => {
+                if (!controller.signal.aborted) setLabels({});
+            });
+        return () => controller.abort();
+    }, [source, selectedIds]);
+
+    return (
+        <div className="flex min-w-0 flex-col gap-2">
+            <OrderedRows value={value} disabled={disabled} onChange={onChange} kind="page"
+                label={(item) => labels[String(item)] ?? `Page #${item}`} />
             {!disabled ? (
                 <SearchableCombobox
                     id={'setting-' + field.key + '-add'}
@@ -1002,12 +1189,10 @@ function OrderedListField({
                     disabled={disabled}
                     invalid={false}
                     placeholder="Add an item…"
+                    describedBy={describedBy}
                     onChange={(next) => {
                         const numeric = Number(next);
-                        if (
-                            Number.isInteger(numeric) &&
-                            !value.includes(numeric)
-                        ) {
+                        if (Number.isInteger(numeric) && !value.includes(numeric)) {
                             onChange([...value, numeric]);
                         }
                     }}
@@ -1026,6 +1211,7 @@ function SearchableCombobox({
     invalid,
     placeholder,
     onChange,
+    describedBy,
 }: {
     id: string;
     field: AdminSettingField;
@@ -1035,6 +1221,7 @@ function SearchableCombobox({
     invalid: boolean;
     placeholder?: string;
     onChange: (value: string) => void;
+    describedBy: string | undefined;
 }) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
@@ -1073,10 +1260,12 @@ function SearchableCombobox({
                     type="button"
                     variant="outline"
                     role="combobox"
+                    aria-label={field.type === 'int_list' ? `Add page to ${field.label}` : undefined}
                     aria-expanded={open}
                     aria-invalid={invalid}
                     disabled={disabled}
-                    className="min-h-11 w-full justify-between font-normal"
+                    aria-describedby={describedBy}
+                    className="min-h-11 w-full justify-between font-normal md:min-h-10"
                 >
                     <span className="truncate">
                         {selected?.label ??
@@ -1091,6 +1280,7 @@ function SearchableCombobox({
             >
                 <Command shouldFilter={false}>
                     <CommandInput
+                        aria-label={`Search ${field.label}`}
                         placeholder={placeholder ?? 'Search…'}
                         value={query}
                         onValueChange={setQuery}

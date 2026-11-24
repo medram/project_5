@@ -4,7 +4,9 @@ namespace App\Services\Platform;
 
 use App\Enums\PlatformPermission;
 use App\Enums\PlatformRoleCode;
+use App\Models\PlatformRole;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class PlatformAuthorization
 {
@@ -13,8 +15,43 @@ class PlatformAuthorization
         return ! $user->is_suspended && $user->deletion_requested_at === null;
     }
 
+    public function lockSuperAdmin(): void
+    {
+        DB::table('platform_roles')
+            ->where('code', PlatformRoleCode::SuperAdmin->value)
+            ->update(['updated_at' => DB::raw('updated_at')]);
+    }
+
     /**
-     * @return list<PlatformRoleCode>
+     * Permissions held by assigned roles even while the account is inactive,
+     * so an operator cannot edit an account they could not otherwise manage.
+     *
+     * @return list<string>
+     */
+    public function assignedAbilities(User $user): array
+    {
+        $abilities = [];
+        $roles = $user->platformRoles()->get();
+        $roles->filter(fn (PlatformRole $role) => PlatformRoleCode::tryFrom($role->code) === null)
+            ->load('permissionGrants');
+
+        foreach ($roles as $role) {
+            foreach ($role->permissions() as $permission) {
+                $abilities[$permission->value] = true;
+            }
+        }
+
+        return array_keys($abilities);
+    }
+
+    /** @param list<string> $permissions */
+    public function canDelegate(User $actor, array $permissions): bool
+    {
+        return array_diff($permissions, $this->abilities($actor)) === [];
+    }
+
+    /**
+     * @return list<PlatformRole>
      */
     public function roles(User $user): array
     {
@@ -22,24 +59,22 @@ class PlatformAuthorization
             return [];
         }
 
-        $roles = [];
+        $roles = $user->platformRoles()->get();
+        $roles->filter(fn (PlatformRole $role) => PlatformRoleCode::tryFrom($role->code) === null)
+            ->load('permissionGrants');
 
-        foreach ($user->platformRoles()->get() as $role) {
-            $roles[] = $role->roleCode();
-        }
-
-        return $roles;
+        return $roles->all();
     }
 
     public function hasRole(User $user, PlatformRoleCode $role): bool
     {
-        return in_array($role, $this->roles($user), true);
+        return $this->isActive($user) && $user->hasPlatformRole($role);
     }
 
     public function allows(User $user, PlatformPermission $permission): bool
     {
         foreach ($this->roles($user) as $role) {
-            if ($role->grants($permission)) {
+            if (in_array($permission, $role->permissions(), true)) {
                 return true;
             }
         }

@@ -277,6 +277,7 @@ class PlatformSettings
                 'header' => $menuItems($menus['header_items'] ?? [], $menus['header_page_ids'] ?? []),
                 'footer' => $menuItems($menus['footer_items'] ?? [], $menus['footer_page_ids'] ?? []),
             ],
+            'defaultDelivery' => ($settings['links']['default_delivery'] ?? 'direct') === 'splash' ? 'splash' : 'direct',
             'visibility' => $visibility,
             'capabilities' => [
                 'targeting' => (bool) ($settings['links']['targeting_enabled'] ?? true),
@@ -591,6 +592,10 @@ class PlatformSettings
 
     public function assetReferenced(int $mediaId): bool
     {
+        if (CustomPage::query()->where('og_media_id', $mediaId)->exists()) {
+            return true;
+        }
+
         foreach (PlatformSetting::query()
             ->whereIn('section', ['general', 'biolinks', 'seo'])
             ->whereIn('key', ['logo_light_id', 'logo_dark_id', 'compact_logo_id', 'favicon_id', 'branding_media_id', 'og_media_id'])

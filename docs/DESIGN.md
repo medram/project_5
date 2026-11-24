@@ -179,12 +179,13 @@ No large drop shadows, colored shadows, blur/glass, or layered elevation. Hover 
 
 Top to bottom:
 
-1. **Identity block** (`16 px` padding, `12 px` gap): 40 px avatar (photo or deterministic soft gradient + initials), name `14/600`, role `12/500` muted. The whole block opens the account menu. Workspace context is a quiet `12 px` muted line or compact select directly beneath; it must never wrap or truncate the user's name.
-2. **Primary navigation**: 40 px rows, `10 px` horizontal padding, `8 px` radius, `10 px` icon–label gap, 16–18 px Lucide icons, `14/500` labels. Active: `--default` background, `--foreground` text. Hover: `--surface-secondary`. No active left bar, no accent-colored active text. Optional badge: 20 px success/default pill (`New`).
-3. **Sections**: `Workspace` and `Resources` for the user area; `Overview`, `Accounts`, `Content`, `Monetization`, `System` for admin. Section label: `11–12 px`, `500`, muted, `8 px` top margin, `6 px` bottom. Do not draw divider lines between sections.
-4. **Footer** (pinned): `Help & Information` and `Log out` rows with 16 px icons, then the current-plan row. Mouse/pen hover and keyboard focus open its usage panel; click/tap also opens it. The two-column panel shows all 11 usage metrics, progress, and the downgrade note. Owners get `Upgrade plan`; other roles get `Plan details`. Both actions open Billing & usage, where checkout and permissions remain enforced. Same row styling as nav. Log out is a real POST action. In admin, add `Workspace app` above these.
+1. **Brand**: show the configured platform logo and project name at the top of both sidebars. Use the themed link mark when the logo is missing, fails to load, or is only one pixel. In the collapsed rail, keep the mark centered and the name visually hidden but accessible.
+2. **Workspace switcher**: keep workspace context below the brand in the user sidebar header.
+3. **Primary navigation**: 40 px rows, `10 px` horizontal padding, `8 px` radius, `10 px` icon–label gap, 16–18 px Lucide icons, `14/500` labels. Active: `--default` background, `--foreground` text. Hover: `--surface-secondary`. No active left bar, no accent-colored active text. Optional badge: 20 px success/default pill (`New`).
+4. **Sections**: `Workspace` and `Resources` for the user area; `Overview`, `Accounts`, `Content`, `Monetization`, `System` for admin. Section label: `11–12 px`, `500`, muted, `8 px` top margin, `6 px` bottom. Do not draw divider lines between sections.
+5. **Footer** (pinned beneath the scrollable navigation): show the current-plan row followed by the identity block in the user area. In admin, show `Workspace app` followed by the identity block. The profile menu in both areas contains `Settings`, `Help & information`, and `Log out`. Mouse/pen hover and keyboard focus open the plan usage panel; click/tap also opens it. The two-column panel shows all 11 usage metrics, progress, and the downgrade note. Owners get `Upgrade plan`; other roles get `Plan details`. Both actions open Billing & usage, where checkout and permissions remain enforced. Log out is a real POST action.
 
-Collapsed state: 48 px rail with centered icons and tooltips. Do not hide the top identity avatar entirely; show the avatar only.
+The final identity block has a 40 px avatar (photo or deterministic soft gradient + initials), name `14/600`, and muted role `12/500`. It opens the account menu above the trigger; selecting a navigation action closes the mobile sidebar. Help opens a dialog that remains available after the menu closes and returns focus to the identity trigger when dismissed. In the collapsed 48 px rail, center the complete 32 px avatar and open its menu to the right.
 
 ### 6.2 Top bar (64 px)
 
@@ -195,6 +196,7 @@ Collapsed state: 48 px rail with centered icons and tooltips. Do not hide the to
 ### 6.3 Page header
 
 - `h1` 24/600, one optional sentence of `14/400` muted description, actions right-aligned and wrapping below the title on mobile.
+- Action clusters shrink and wrap their controls before the title column is squeezed. A wide filter form must never force the `h1` into a one-word column.
 - No eyebrow, icon tile, breadcrumb repetition, or decorative rule above the title.
 - Breadcrumbs remain available in the top bar on desktop; they are not repeated as a second title block.
 
@@ -234,12 +236,87 @@ The analytics screen adds three patterns on top of the overview dashboard:
 
 Large analytics panels: one full-width primary time-series card, then a two-column row (donut distribution + ranked horizontal bars), then a full-width table. Stat totals inside chart cards (`116,650` + `18.3%` chip) sit above the chart, left-aligned, with the legend at the top right.
 
-Traffic-source breakdowns extend that composition: a full-width country choropleth using the single accent ramp, followed by a three-column row of ranked referrers and browser/platform pie cards. The map keeps a ranked legend with country names, counts, and shares; pie legends keep every exact count and percentage visible. Charts never rely on color alone. Use the existing chart-card icons and do not add a second accent family for categorical slices.
+Traffic-source breakdowns extend that composition: a full-width country choropleth using the single accent ramp, followed by a three-column row of ranked referrers and browser/platform distribution cards. The map keeps a ranked legend with country names, counts, and shares; distribution legends keep every exact count and percentage visible. Charts never rely on color alone. Use the existing chart-card icons and do not add a second accent family for categorical slices.
 
 - Countries use `--chart-2` with opacity scaled from the listed minimum to maximum; unlisted countries use `--muted-foreground` at 18% so the world outline remains legible in both themes. The map's legend includes a Fewer → More scale.
 - Country maps use an unclipped Mercator canvas at its native 4:3 ratio, never a stretched or rounded map surface. Legend rows pair a decorative local SVG flag with the country name and ISO code. Flag assets are bundled through the local `flag-icons` package; never load them from a CDN.
-- Pies use the `--chart-1…5` ramp for up to five listed cohorts, including an `Other` cohort when the analytics service returns one. The pie card's legend repeats every count and share for keyboard and non-visual access.
+- Distribution cards use the `--chart-1…5` ramp for up to five listed cohorts, including an `Other` cohort when the analytics service returns one. The legend repeats every count and share for keyboard and non-visual access.
 - The map's internal caption is visually hidden because the card heading is the single title; the SVG retains the descriptive `aria-label`. The full-width map stacks above the three-column breakdown row below `lg` and the three cards stack on mobile. Keep `min-w-0` on the map grid and map wrapper so the responsive SVG's intrinsic width cannot widen the card past the viewport.
+
+### 7.2b Admin platform insights composition
+
+The platform dashboard is the operations view of the same analytics language, not a second design. Keep this order:
+
+1. **Header.** Title and one description sentence; a compact `Window` select, `Apply`, and `Visitor insights` action at the same 36 px control height. No full-width filter bar and no duplicate range label.
+2. **KPI row.** Four text-only cards: `Accounts`, `Workspaces`, `Provider MRR`, `Tracked events`. Do not add sparklines on this page; each card carries one figure and one context note.
+3. **Daily activity.** One full-width panel, `300 px` chart, with a `Clicks / QR scans / Tracked events` segmented control. Show the selected total and daily peak above the chart. Never plot three differently scaled series against one axis and never restore an exact daily-values table.
+4. **Countries.** A full-width country map with the ranked flag legend. Ranked countries use `--chart-2` opacity; the rest use `--muted-foreground` at 18%. Put the unresolved-country count in muted text below the map and keep the native 4:3 canvas unclipped.
+5. **Distribution row.** Three donut cards: `Top browsers`, `Top platforms`, `Device classes`. Donuts collapse to five slices (top four named cohorts plus `Other`); the center carries the event total and each legend row repeats count and share.
+6. **Referrers and resources.** `Top referrers` ranked bars beside a compact `Resource totals` definition grid. Resource totals are two-column label/value pairs, never a full-width table.
+7. **Growth and account health.** `Daily growth` bar panel, `Account health`, and `Cashier subscription states` in one desktop row. Account health opens with `active / total` and a progress bar, then the independent suspended and deletion-pending flags, then subscription mapping. Do not repeat the same snapshot as a row of badges above the charts.
+8. **Privacy.** One slim note at the end. State the k-anonymity threshold once below the donut row, not in every card description.
+
+### 7.2c Insights pages standard (all scopes)
+
+Every insights page — account, link, bio page, QR campaign, admin platform, admin visitor — uses one contract. Scope changes the copy and the data, never the layout vocabulary. New insights pages reuse the shared primitives instead of rebuilding charts.
+
+#### Page anatomy
+
+1. **Header.** One `h1`, one sentence that names the scope and the consent rule, and at most one secondary action. No eyebrow, no repeated title in the top bar.
+2. **Window.** One control, one source of truth, UTC. Account-scoped pages place the shared picker above the KPI row; admin pages place the compact `Window` select + `Apply` in the header action cluster. Never render two range controls or repeat the selected range as decorative text.
+3. **KPI row.** Three to five cards. Each card carries one figure, one label, and one context note. A card never holds a second chart. Sparklines are optional only on account-scoped pages and only for a real daily series; admin aggregate pages stay text-only.
+4. **Primary time series.** One full-width panel, `300 px` plot, total and comparison context above the plot. Use a segmented control for mutually exclusive daily metrics. Never place two differently scaled series on one axis. A second time panel is allowed only when it is visibly smaller and answers a different question.
+5. **Geography.** Countries are a full-width map with a ranked flag legend. Never a country donut or a country bar list. Ranked countries use `--chart-2` opacity; unlisted countries use `--muted-foreground` at 18%. Show the listed total and, when the dimension is incomplete, the unresolved count in muted text.
+6. **Distribution row.** Browsers, platforms, and device classes are donuts. Referrers, pages, buttons, event names, and UTM values are ranked bars or compact lists. Keep it three-up at `lg` and two-up at `sm`; never four equal chart cards in one row.
+7. **Closing row.** Scope-specific snapshots — daily growth, account health, subscription states, resource totals — sit below the traffic breakdowns as compact cards. Resource and inventory totals use a two-column definition grid, never a full-width table.
+8. **Privacy.** One slim note at the end. Consent scope, coarse dimensions, and the k-anonymity threshold appear once on the page, not in every card description.
+
+#### Chart choice
+
+| Question                               | Form                                      | Shared primitive                                                       |
+| -------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------- |
+| How does one measure change over time? | Full-width line, one series at a time     | `InsightActivityCard` / `InsightDailyChart` / account `DailyLineChart` |
+| How did new items accumulate?          | Compact stacked bars, total in the legend | `InsightDailyBarChart`                                                 |
+| Where did events come from?            | Full-width choropleth + ranked legend     | `TopCountriesCard` / `TrafficSourcesSection`                           |
+| What share is each cohort?             | Donut, top four named cohorts + `Other`   | `DimensionDonut` / `PieBreakdownCard`                                  |
+| Which items rank highest?              | Ranked bars, one accent, count visible    | `RankedBreakdownCard` / `RankedBars`                                   |
+| Is one target being met?               | Progress bar with the absolute figure     | Account health pattern                                                 |
+
+Rules for the shared charts:
+
+- One accent per chart. The main chart uses `--chart-2`; donuts use the `--chart-1…5` ramp; ranked bars use `--chart-2` only. Never rainbow a single series.
+- Donuts show a center total and a legend that repeats every count and share. Collapse to five slices so no two slices share a color.
+- A map legend pairs a local flag, country name, ISO code, count, and share. Do not rely on map color alone.
+- Ranked bars show the exact count; add a share only when the denominator is the full dimension and is stated.
+- Dimensions that do not cover every event say so in the card footer or the page note. Never present a listed total as the page total.
+- Chart tooltips keep exact daily values. Do not add an exact daily-values table to aggregate or admin insights pages. Account-scoped pages may keep a native `<details>` disclosure where auditability is required, but it must never replace the chart or the tooltip.
+
+#### Empty, loading, and error states
+
+- Use the shared `Empty` block with one sentence and one next step. Never invent demo rows to fill a window.
+- Skeletons match the final card, chart, and table heights; do not collapse the layout while loading.
+- Errors stay inside the affected card and keep the page's other sections usable.
+
+#### Reuse map
+
+| Concern              | Reuse                                                                                    | Do not rebuild           |
+| -------------------- | ---------------------------------------------------------------------------------------- | ------------------------ |
+| KPI card             | `components/dashboard/stat-card.tsx`                                                     | A per-page stat tile     |
+| Range and window     | `components/admin/insights/range-picker.tsx`, `components/analytics/window-picker.tsx`   | A third window control   |
+| Daily line / bars    | `components/admin/insights/daily-chart.tsx`, `components/analytics/daily-line-chart.tsx` | Recharts setup per page  |
+| Country map + legend | `components/analytics/traffic-sources.tsx`                                               | A second world map       |
+| Donut + legend       | `components/admin/insights/donut-chart.tsx`, `PieBreakdownCard`                          | A second pie legend      |
+| Ranked lists         | `components/analytics/ranked-breakdown-card.tsx`, `ranked-bars.tsx`                      | Page-specific bar markup |
+| Country flag         | `components/analytics/country-flag.tsx`                                                  | CDN flags or emoji       |
+| Empty state          | `components/ui/empty.tsx`                                                                | Decorative illustrations |
+
+#### Data honesty
+
+- Independent flags stay independent. Suspended accounts and deletion-pending accounts can overlap; never add them into a headline total.
+- A total must name its denominator: `events with a resolved country`, `listed referrers`, `active accounts`, `provider subscriptions`.
+- When a dimension is thresholded, state the threshold once near the dimension group. Do not repeat `Buckets under 5 events…` in every card.
+- Use the page's exact unit: `clicks`, `QR scans`, `events`, `page views`, `subscriptions`. Do not call events visitors.
+- Every number is `tabular-nums`; every share uses one decimal format across the page.
 
 ### 7.3 Segmented control / tabs
 
@@ -306,6 +383,13 @@ Radius 8 px, horizontal padding 12–16 px, icon gap 6–8 px, icons 16 px. Focu
 - QR scans store coarse `country_code`, `browser`, `platform`, and `referrer_host` request dimensions only; no raw IP, cookie, visitor hash, or user agent is retained. The muted note above the breakdowns carries both the privacy statement and the legacy-coverage explanation: older timestamp-only scans still count in totals and the daily trend while dimension cards only include scans with metadata.
 - Empty dimension cards use the same icons and empty states as Link insights, with QR-specific explanations: referrers usually arrive only when the browser sends one, and device data requires a recognizable user agent.
 
+### 7.5e Admin settings
+
+- Keep the five route-backed settings groups in a desktop rail without nested scrolling and a searchable mobile chooser. Use 36 px rows with space between groups, increasing to 40 px when the viewport is at least 1050 px tall. The rail moves with the document so every section remains reachable on short screens. Use one `Platform settings` page title, the selected section as `h2`, and schema group titles as `h3`.
+- Render ordinary and secret inputs in one column each at `xl`, and full width below `xl`; switches, textareas, lists, and segmented choices span the grid. Keep the sticky save bar clear of keyboard focus, including the visible upload label.
+- Show actionable provider readiness and server messages with readable semantic alert colors in both themes. Field errors appear inline and in the focusable summary; stale-version errors preserve the draft and require a reload before saving.
+- Retry delays use a numeric ordered editor; menu page IDs use the searchable published-page picker and resolve selected titles without discarding unavailable IDs.
+
 ### 7.6 Table / data grid
 
 - Container: white, 16 px radius, 1 px border, clipped overflow.
@@ -358,7 +442,7 @@ Radius 8 px, horizontal padding 12–16 px, icon gap 6–8 px, icons 16 px. Focu
 
 | Screen                                                                    | Reference mapping                                                                                                                                                                                                  |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Shell                                                                     | 240 px rail, identity block, pill nav, Help/Log out footer; 64 px top bar; gray canvas.                                                                                                                            |
+| Shell                                                                     | 240 px rail, pill nav, pinned plan and identity footer; help and logout in the profile menu; 64 px top bar; gray canvas.                                                                                           |
 | Insights (`/dashboard/insights`)                                          | The reference dashboard: 4 KPI cards, daily engagement line panel + traffic-source panel, then dimension/table panels. Filters collapse into a toolbar row above the KPI cards.                                    |
 | Short links (`/dashboard/links`)                                          | The reference table section: `Short links` heading + count chip, filter/sort/columns toolbar, search right, white table with identity column, click count, row actions. Cards view uses the same surface language. |
 | QR codes / Bio pages / Link pages / Folders / Domains / Overlays / Pixels | Same skeleton: page header, optional KPI strip, toolbar, list/table surface. No bespoke card styling.                                                                                                              |
@@ -366,12 +450,12 @@ Radius 8 px, horizontal padding 12–16 px, icon gap 6–8 px, icons 16 px. Focu
 
 ### Admin area
 
-| Screen                                                            | Reference mapping                                                                                                                                                                                           |
-| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shell                                                             | Same 240 px rail and top bar. Admin has more sections; keep the muted section labels and 40 px rows.                                                                                                        |
-| Platform insights                                                 | Reference dashboard composition. Range picker becomes a compact `Window` select + Apply in the header row. Four KPI cards, two chart panels, then a resource-totals table with the reference table styling. |
-| Users                                                             | Reference table page: KPI strip, filter toolbar, white table with avatar identity, roles, plan, last seen, and row actions.                                                                                 |
-| Roles / Plans / Subscriptions / Content / Files / Logs / Settings | Same surfaces, KPI strips, and table rules. Do not add new accent colors per section.                                                                                                                       |
+| Screen                                                            | Reference mapping                                                                                                                                                                                                                                                                                            |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Shell                                                             | Same 240 px rail and top bar. Admin has more sections; keep the muted section labels and 40 px rows.                                                                                                                                                                                                         |
+| Platform insights                                                 | Header inline range picker. Four text-only KPI cards, one full-width daily activity chart with a metric switch, full-width country map, browser/platform/device donuts, referrers beside compact resource totals, then growth/account health/cashier states and a privacy note. No exact daily-values table. |
+| Users                                                             | Reference table page: KPI strip, filter toolbar, white table with avatar identity, roles, plan, last seen, and row actions.                                                                                                                                                                                  |
+| Roles / Plans / Subscriptions / Content / Files / Logs / Settings | Same surfaces, KPI strips, and table rules. Do not add new accent colors per section.                                                                                                                                                                                                                        |
 
 ### Data that must stay real
 
@@ -385,27 +469,28 @@ Radius 8 px, horizontal padding 12–16 px, icon gap 6–8 px, icons 16 px. Focu
 
 ## 11. Implementation map
 
-| Concern                            | File                                                                                                              |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Tokens, base type, table utilities | `resources/css/app.css`                                                                                           |
-| Buttons                            | `resources/js/components/ui/button.tsx`                                                                           |
-| Cards                              | `resources/js/components/ui/card.tsx`                                                                             |
-| Badges/chips                       | `resources/js/components/ui/badge.tsx`                                                                            |
-| Inputs/selects                     | `resources/js/components/ui/input.tsx`, `select.tsx`                                                              |
-| Shell                              | `resources/js/components/app-sidebar.tsx`, `app-sidebar-header.tsx`, `app-shell.tsx`, `components/ui/sidebar.tsx` |
-| Admin shell                        | `resources/js/components/admin/admin-sidebar.tsx`, `layouts/admin-layout.tsx`                                     |
-| KPI cards                          | `resources/js/components/dashboard/stat-card.tsx`                                                                 |
-| Segmented control                  | `resources/js/components/ui/segmented-control.tsx`                                                                |
-| User dashboard                     | `resources/js/pages/analytics/index.tsx`, `components/analytics/analytics-dashboard.tsx`                          |
-| Traffic-source charts              | `resources/js/components/analytics/traffic-sources.tsx`, `ranked-breakdown-card.tsx`                              |
-| Analytics window and line chart    | `resources/js/components/analytics/window-picker.tsx`, `daily-line-chart.tsx`                                     |
-| Country flags                      | `resources/js/components/analytics/country-flag.tsx` + local `flag-icons` assets                                  |
-| QR scan insights                   | `resources/js/components/qr-codes/qr-scan-insights.tsx`, `qr-code-status.ts`, `app/Services/QrCodes/QrCodeAnalytics.php`, `app/Services/Analytics/RequestDimensions.php` |
-| Shared form dialog chrome           | `resources/js/components/forms/settings-panel-dialog.tsx`, `form-error-summary.tsx`                              |
-| QR creation modal                  | `resources/js/components/qr-codes/qr-code-form-dialog.tsx`, `qr-code-settings-dialogs.tsx`, `qr-code-form-data.ts` |
-| Admin dashboard                    | `resources/js/pages/admin/insights/index.tsx`, `components/admin/insights/*`                                      |
-| List pages                         | `resources/js/pages/links/index.tsx`, `pages/admin/users/index.tsx`, shared `resource-list/*`                     |
-| Page headers                       | `resources/js/components/page-header.tsx`                                                                         |
+| Concern                            | File                                                                                                                                                                                         |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tokens, base type, table utilities | `resources/css/app.css`                                                                                                                                                                      |
+| Buttons                            | `resources/js/components/ui/button.tsx`                                                                                                                                                      |
+| Cards                              | `resources/js/components/ui/card.tsx`                                                                                                                                                        |
+| Badges/chips                       | `resources/js/components/ui/badge.tsx`                                                                                                                                                       |
+| Inputs/selects                     | `resources/js/components/ui/input.tsx`, `select.tsx`                                                                                                                                         |
+| Shell                              | `resources/js/components/app-sidebar.tsx`, `app-sidebar-header.tsx`, `app-shell.tsx`, `components/ui/sidebar.tsx`                                                                            |
+| Admin shell                        | `resources/js/components/admin/admin-sidebar.tsx`, `layouts/admin-layout.tsx`                                                                                                                |
+| KPI cards                          | `resources/js/components/dashboard/stat-card.tsx`                                                                                                                                            |
+| Segmented control                  | `resources/js/components/ui/segmented-control.tsx`                                                                                                                                           |
+| User dashboard                     | `resources/js/pages/analytics/index.tsx`, `components/analytics/analytics-dashboard.tsx`                                                                                                     |
+| Traffic-source charts              | `resources/js/components/analytics/traffic-sources.tsx`, `ranked-breakdown-card.tsx`                                                                                                         |
+| Analytics window and line chart    | `resources/js/components/analytics/window-picker.tsx`, `daily-line-chart.tsx`                                                                                                                |
+| Country flags                      | `resources/js/components/analytics/country-flag.tsx` + local `flag-icons` assets                                                                                                             |
+| QR scan insights                   | `resources/js/components/qr-codes/qr-scan-insights.tsx`, `qr-code-status.ts`, `app/Services/QrCodes/QrCodeAnalytics.php`, `app/Services/Analytics/RequestDimensions.php`                     |
+| Shared form dialog chrome          | `resources/js/components/forms/settings-panel-dialog.tsx`, `form-error-summary.tsx`                                                                                                          |
+| QR creation modal                  | `resources/js/components/qr-codes/qr-code-form-dialog.tsx`, `qr-code-settings-dialogs.tsx`, `qr-code-form-data.ts`                                                                           |
+| Admin dashboard                    | `resources/js/pages/admin/insights/index.tsx`; `components/admin/insights/` activity, account-health, resource-totals, dimension, donut, and range-picker components                         |
+| Admin insights data                | `app/Http/Controllers/Admin/AdminInsightsController.php`, `app/Http/Requests/Admin/AdminInsightsRequest.php`, `app/Services/Admin/AdminInsights.php`, `resources/js/types/admin-insights.ts` |
+| List pages                         | `resources/js/pages/links/index.tsx`, `pages/admin/users/index.tsx`, shared `resource-list/*`                                                                                                |
+| Page headers                       | `resources/js/components/page-header.tsx`                                                                                                                                                    |
 
 ---
 
@@ -413,11 +498,12 @@ Radius 8 px, horizontal padding 12–16 px, icon gap 6–8 px, icons 16 px. Focu
 
 A screen is done when all are true:
 
-- [ ] Sidebar is 240 px, flat `#f5f5f5`, 1 px border, 40 px nav rows, gray active pill, identity at top, Help/Log out at bottom.
+- [ ] Sidebar is 240 px, flat `#f5f5f5`, 1 px border, 40 px nav rows, gray active pill, and pinned identity below the footer actions; help and logout are in the profile menu.
 - [ ] Top bar is 64 px with a 32 px trigger, a workspace/administration context label, and circular search/notification buttons; the page's primary action sits in its page header.
 - [ ] Page title is 24/600 with no eyebrow or decorative icon; description is 14 px muted.
 - [ ] KPI cards are white, 16 px radius, 16 px padding, 24/600 values, 13/500 muted labels; no fake deltas.
 - [ ] Chart panels are white, 16 px radius, 16/600 titles, 11 px muted axes, no vertical gridlines, accent-ramp series.
+- [ ] Every insights page follows §7.2c: one main time series, a full-width country map, donut distributions, ranked lists for referrers/pages, one threshold note, and no exact daily-values table on aggregate pages.
 - [ ] Tables have a `#efeff0` header, 56 px white rows, `#e4e4e7` separators, avatar identity cells, right-aligned numeric/actions.
 - [ ] Buttons are 8 px radius; inputs/selects 12 px; chips are 20 px pills; cards 16 px.
 - [ ] No second accent family, gradient background, glow, oversized shadow, emoji icon, or all-caps label.

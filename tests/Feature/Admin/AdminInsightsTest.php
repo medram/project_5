@@ -81,6 +81,16 @@ class AdminInsightsTest extends TestCase
             'stripe_monthly_price_id' => 'price_pro_monthly_test',
             'stripe_yearly_price_id' => 'price_pro_yearly_test',
         ]);
+        DB::table('plan_stripe_prices')->insert([
+            'plan_id' => $pro->id,
+            'stripe_price_id' => 'price_pro_monthly_test',
+            'interval' => 'month',
+            'currency' => 'usd',
+            'unit_amount' => 2900,
+            'verified_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
         DB::table('subscriptions')->insert([
             'workspace_id' => $workspace->id,
             'type' => 'default',

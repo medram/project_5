@@ -15,6 +15,35 @@ function FieldGroup({
     );
 }
 
+function FieldSet({
+    className,
+    ...props
+}: React.ComponentProps<'fieldset'>) {
+    return (
+        <fieldset
+            data-slot="field-set"
+            className={cn(
+                'flex min-w-0 flex-col gap-2 border-0 p-0',
+                className,
+            )}
+            {...props}
+        />
+    );
+}
+
+function FieldLegend({
+    className,
+    ...props
+}: React.ComponentProps<'legend'>) {
+    return (
+        <legend
+            data-slot="field-legend"
+            className={cn('text-sm leading-none font-medium', className)}
+            {...props}
+        />
+    );
+}
+
 function Field({ className, ...props }: React.ComponentProps<'div'>) {
     return (
         <div
@@ -61,4 +90,12 @@ function FieldError({ className, ...props }: React.ComponentProps<'p'>) {
     );
 }
 
-export { Field, FieldDescription, FieldError, FieldGroup, FieldLabel };
+export {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+};

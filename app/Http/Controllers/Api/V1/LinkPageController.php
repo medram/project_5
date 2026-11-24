@@ -42,18 +42,10 @@ class LinkPageController extends ApiController
             $this->workspace($request),
             PlanMetric::LinkPages,
             function (Workspace $workspace) use ($attributes, $actor): LinkPage {
-                $linkPage = $workspace->linkPages()->create([
+                return $workspace->linkPages()->create([
                     ...$attributes,
                     'user_id' => $actor->getKey(),
                 ]);
-                $linkPage->variants()->create([
-                    'name' => 'Control',
-                    'weight' => 100,
-                    'is_control' => true,
-                    'is_active' => true,
-                ]);
-
-                return $linkPage;
             },
         );
 

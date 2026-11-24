@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { type FormEvent, useEffect, useState } from 'react';
 import { CalendarRange } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,10 +17,13 @@ import type { AdminInsightsRange } from '@/types/admin-insights';
 export function InsightsRangePicker({
     range,
     url,
+    variant = 'panel',
 }: {
     range: AdminInsightsRange;
     url: string;
+    variant?: 'panel' | 'inline';
 }) {
+    const inline = variant === 'inline';
     const [preset, setPreset] = useState(range.preset);
     const [from, setFrom] = useState(range.from);
     const [to, setTo] = useState(range.to);
@@ -45,31 +49,44 @@ export function InsightsRangePicker({
     return (
         <form
             onSubmit={apply}
-            className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-[var(--shadow-surface)] sm:flex-row sm:items-center"
+            className={cn(
+                inline
+                    ? 'flex flex-wrap items-center gap-2'
+                    : 'flex flex-col gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-[var(--shadow-surface)] sm:flex-row sm:items-center',
+            )}
         >
-            <div className="hidden items-center gap-2 text-sm font-medium sm:mr-auto sm:flex">
-                <CalendarRange
-                    className="size-4 text-muted-foreground"
-                    aria-hidden="true"
-                />
-                <span>{range.label}</span>
-                <span className="text-xs font-normal text-muted-foreground">
-                    UTC
-                </span>
-            </div>
+            {!inline && (
+                <div className="hidden items-center gap-2 text-sm font-medium sm:mr-auto sm:flex">
+                    <CalendarRange
+                        className="size-4 text-muted-foreground"
+                        aria-hidden="true"
+                    />
+                    <span>{range.label}</span>
+                    <span className="text-xs font-normal text-muted-foreground">
+                        UTC
+                    </span>
+                </div>
+            )}
             <div className="flex flex-wrap items-end gap-2">
-                <div className="grid gap-1">
+                <div
+                    className={
+                        inline ? 'flex items-center gap-1.5' : 'grid gap-1'
+                    }
+                >
                     <Label
                         htmlFor="insights-range"
-                        className="text-xs text-muted-foreground"
+                        className={cn(
+                            'text-xs text-muted-foreground',
+                            inline && 'sr-only',
+                        )}
                     >
                         Window
                     </Label>
                     <Select value={preset} onValueChange={setPreset}>
                         <SelectTrigger
                             id="insights-range"
-                            size="sm"
-                            className="w-full sm:w-40"
+                            size={inline ? 'default' : 'sm'}
+                            className={inline ? 'w-40' : 'w-full sm:w-40'}
                         >
                             <SelectValue />
                         </SelectTrigger>
@@ -80,20 +97,28 @@ export function InsightsRangePicker({
                             <SelectItem value="custom">Custom range</SelectItem>
                         </SelectContent>
                     </Select>
+                    {inline ? (
+                        <span className="text-xs text-muted-foreground">
+                            UTC
+                        </span>
+                    ) : null}
                 </div>
                 {preset === 'custom' && (
                     <>
-                        <div className="grid gap-1">
+                        <div className={inline ? 'contents' : 'grid gap-1'}>
                             <Label
                                 htmlFor="insights-from"
-                                className="text-xs text-muted-foreground"
+                                className={cn(
+                                    'text-xs text-muted-foreground',
+                                    inline && 'sr-only',
+                                )}
                             >
                                 From
                             </Label>
                             <Input
                                 id="insights-from"
                                 type="date"
-                                className="h-8"
+                                className={inline ? 'h-9 w-36' : 'h-8'}
                                 value={from}
                                 required
                                 onChange={(event) =>
@@ -101,17 +126,20 @@ export function InsightsRangePicker({
                                 }
                             />
                         </div>
-                        <div className="grid gap-1">
+                        <div className={inline ? 'contents' : 'grid gap-1'}>
                             <Label
                                 htmlFor="insights-to"
-                                className="text-xs text-muted-foreground"
+                                className={cn(
+                                    'text-xs text-muted-foreground',
+                                    inline && 'sr-only',
+                                )}
                             >
                                 To
                             </Label>
                             <Input
                                 id="insights-to"
                                 type="date"
-                                className="h-8"
+                                className={inline ? 'h-9 w-36' : 'h-8'}
                                 value={to}
                                 required
                                 onChange={(event) => setTo(event.target.value)}
@@ -119,7 +147,11 @@ export function InsightsRangePicker({
                         </div>
                     </>
                 )}
-                <Button type="submit" size="sm" className="h-8">
+                <Button
+                    type="submit"
+                    size={inline ? 'default' : 'sm'}
+                    className={inline ? undefined : 'h-8'}
+                >
                     Apply
                 </Button>
             </div>

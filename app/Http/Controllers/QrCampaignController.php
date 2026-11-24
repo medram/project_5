@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PlanMetric;
+use App\Http\Middleware\ScopedAdminContent;
 use App\Http\Requests\StoreQrCodeRequest;
 use App\Http\Requests\UpdateQrCodeRequest;
 use App\Models\QrCode;
 use App\Models\Workspace;
 use App\Services\Billing\EnforcesPlanLimits;
+use App\Services\Platform\AdminContentMutation;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -66,10 +68,14 @@ class QrCampaignController extends Controller
 
     public function update(UpdateQrCodeRequest $request, QrCode $qrCode): RedirectResponse
     {
-        $workspace = $this->workspaceContext->currentFor($request->user());
+        $workspace = $this->workspaceContext->forContentRequest($request);
         $qrCode = $workspace->qrCodes()->findOrFail($qrCode->getKey());
         $data = $request->validated();
         $newLogoPath = $this->storeLogo($data['logo'] ?? null, $workspace);
+        $isAdmin = is_array($request->attributes->get(ScopedAdminContent::ATTRIBUTE));
+        if ($isAdmin && $newLogoPath !== null) {
+            app(AdminContentMutation::class)->onRollback($request, fn () => $this->deleteLogo($workspace, $newLogoPath));
+        }
         $oldLogoPath = null;
         $attributes = collect($data)->except([
             'access_code', 'remove_access_code', 'link_id', 'destination_url', 'logo', 'clear_logo',
@@ -116,7 +122,11 @@ class QrCampaignController extends Controller
             throw $exception;
         }
 
-        $this->deleteLogo($workspace, $oldLogoPath);
+        if ($isAdmin) {
+            DB::afterCommit(fn () => $this->deleteLogo($workspace, $oldLogoPath));
+        } else {
+            $this->deleteLogo($workspace, $oldLogoPath);
+        }
 
         return to_route('qr-codes.index');
     }

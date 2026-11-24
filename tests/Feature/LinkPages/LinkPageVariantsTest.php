@@ -56,6 +56,36 @@ class LinkPageVariantsTest extends TestCase
         $this->assertSame(1, DB::table('link_page_variants')->where('link_page_id', $page->id)->where('is_control', true)->count());
     }
 
+    public function test_pages_created_outside_the_creation_form_stay_editable(): void
+    {
+        $owner = User::factory()->create();
+        $page = LinkPage::query()->create([
+            'workspace_id' => $owner->current_workspace_id,
+            'user_id' => $owner->id,
+            'name' => 'Seeded page',
+            'slug' => 'seeded-page',
+            'title' => 'Seeded page',
+            'is_published' => true,
+        ]);
+        $item = $page->items()->create([
+            'title' => 'Seeded destination',
+            'destination_url' => 'https://example.com/seeded',
+            'position' => 0,
+            'is_active' => true,
+        ]);
+
+        $control = $page->controlVariant()->sole();
+        $this->assertSame($control->id, $item->fresh()->link_page_variant_id);
+
+        $this->withoutVite()->actingAs($owner)
+            ->get("/dashboard/link-pages/{$page->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('link-pages/edit')
+                ->where('selectedVariantId', $control->id)
+                ->where('items.0.title', 'Seeded destination'));
+    }
+
     public function test_variant_weights_stay_at_one_hundred_and_clients_cannot_create_another_control(): void
     {
         $owner = User::factory()->create();

@@ -32,6 +32,21 @@ class PlatformSettingsBehaviorTest extends TestCase
             'contact_enabled' => true,
             'registration_enabled' => true,
         ], $settings->version('landing'));
+        $settings->updateSection($administrator, 'themes', [
+            'default_scheme' => 'dark',
+            'accent' => 'teal',
+            'radius' => 'lg',
+        ], $settings->version('themes'));
+        $settings->updateSection($administrator, 'menus', [
+            'header_items' => ['home', 'pricing', 'contact', 'login', 'register'],
+            'footer_items' => ['contact', 'login'],
+        ], $settings->version('menus'));
+        $settings->updateSection($administrator, 'links', [
+            'default_delivery' => 'splash',
+            'targeting_enabled' => false,
+            'pixels_enabled' => false,
+            'domains_enabled' => false,
+        ], $settings->version('links'));
         $settings->updateSection($administrator, 'seo', [
             'default_title' => 'Acme',
             'default_description' => 'Acme description',
@@ -42,19 +57,134 @@ class PlatformSettingsBehaviorTest extends TestCase
         $settings->updateSection($administrator, 'ads', [
             'provider' => 'adsense',
             'publisher_id' => 'ca-pub-1234567890123456',
-            'content_slot' => '123456',
+            'header_slot' => '123456',
+            'content_slot' => '654321',
             'consent_required' => true,
         ], $settings->version('ads'));
+        $visitorHashKey = str_repeat('s', 32);
+        $settings->updateSection($administrator, 'analytics', [
+            'ga4_measurement_id' => 'G-ACME1234',
+            'visitor_hash_key' => $visitorHashKey,
+            'visitor_hash_version' => 'v1',
+        ], $settings->version('analytics'));
+        $settings->updateSection($administrator, 'gdpr', [
+            'privacy_url' => 'https://privacy.acme.test',
+        ], $settings->version('gdpr'));
 
-        $this->withoutVite();
-        $this->get('/')
-            ->assertOk()
+        $response = $this->withoutVite()->get('/');
+        $response->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('platform.siteName', 'Acme Links')
+                ->where('platform.defaultDelivery', 'splash')
+                ->where('name', 'Acme Links')
                 ->where('platform.visibility.pricing', true)
                 ->where('platform.seo.description', 'Acme description')
-                ->where('platform.verification.google', 'google-token')
-                ->where('platform.ads.provider', 'adsense'));
+                ->where('platform.ads.provider', 'adsense')
+                ->where('platform.ads.publisherId', 'ca-pub-1234567890123456')
+                ->where('platform.ads.headerSlot', '123456')
+                ->where('platform.ads.contentSlot', '654321')
+                ->where('platform.ads.consentRequired', true)
+                ->where('platform.analytics.ga4', 'G-ACME1234')
+                ->where('platform.analytics.consentEnabled', true)
+                ->where('trackingConsent', null)
+                ->where('canGrantConsent', true)
+                ->where('privacyUrl', 'https://privacy.acme.test')
+                ->where('platform.theme.scheme', 'dark')
+                ->where('platform.theme.accent', 'teal')
+                ->where('platform.theme.radius', 'lg')
+                ->where('platform.capabilities.targeting', false)
+                ->where('platform.capabilities.pixels', false)
+                ->where('platform.capabilities.domains', false)
+                ->where('platform.menus.header', [
+                    ['label' => 'Home', 'href' => route('home')],
+                    ['label' => 'Pricing', 'href' => route('pricing')],
+                    ['label' => 'Contact', 'href' => 'mailto:help@acme.test'],
+                    ['label' => 'Login', 'href' => route('login')],
+                    ['label' => 'Register', 'href' => route('register')],
+                ])
+                ->where('platform.menus.footer', [
+                    ['label' => 'Contact', 'href' => 'mailto:help@acme.test'],
+                    ['label' => 'Login', 'href' => route('login')],
+                ]));
+        $response->assertSee('data-platform-scheme="dark"', false)
+            ->assertSee('data-platform-accent="teal"', false)
+            ->assertSee('data-platform-radius="lg"', false);
+        $response->assertDontSee($visitorHashKey);
+    }
+
+    public function test_subscription_readiness_shows_stripe_mode_and_webhook_url_without_secrets(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $stripeSecret = 'sk_test_readiness_secret';
+        $webhookSecret = 'whsec_readiness_secret';
+        $settings->updateSection($administrator, 'subscriptions', [
+            'stripe_publishable_key' => 'pk_test_readiness',
+            'stripe_secret' => $stripeSecret,
+            'stripe_webhook_secret' => $webhookSecret,
+            'tax_policy_acknowledged' => true,
+        ], $settings->version('subscriptions'));
+
+        $response = $this->withoutVite()
+            ->actingAs($administrator)
+            ->get('/admin/settings/subscriptions')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('section.readiness.state', 'ready')
+                ->has('section.readiness.items', 6)
+                ->where('section.readiness.items.4.label', 'Stripe mode')
+                ->where('section.readiness.items.4.detail', 'Test mode')
+                ->where('section.readiness.items.5.label', 'Webhook URL')
+                ->where('section.readiness.items.5.detail', route('cashier.webhook')));
+
+        $response->assertDontSee($stripeSecret)->assertDontSee($webhookSecret);
+    }
+
+    public function test_mismatched_stripe_key_modes_are_incomplete_and_redacted(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $stripeSecret = 'sk_test_mismatch_secret';
+        $webhookSecret = 'whsec_mismatch_secret';
+        $settings->updateSection($administrator, 'subscriptions', [
+            'stripe_publishable_key' => 'pk_live_mismatch',
+            'stripe_secret' => $stripeSecret,
+            'stripe_webhook_secret' => $webhookSecret,
+            'tax_policy_acknowledged' => true,
+        ], $settings->version('subscriptions'));
+
+        $response = $this->withoutVite()
+            ->actingAs($administrator)
+            ->get('/admin/settings/subscriptions')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('section.readiness.state', 'incomplete')
+                ->where('section.readiness.items.4.state', 'incomplete')
+                ->where('section.readiness.items.4.detail', 'Publishable and secret keys must use the same test or live mode.'));
+
+        $response->assertDontSee($stripeSecret)->assertDontSee($webhookSecret);
+    }
+
+    public function test_consent_notice_position_and_policy_links_follow_platform_settings(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'gdpr', [
+            'consent_notice' => 'Choose whether to allow optional analytics.',
+            'consent_position' => 'corner',
+            'privacy_url' => 'https://privacy.example.test/policy',
+            'terms_url' => 'https://terms.example.test/terms',
+        ], $settings->version('gdpr'));
+
+        $this->withoutVite()->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('platform.gdpr.notice', 'Choose whether to allow optional analytics.')
+                ->where('platform.gdpr.position', 'corner')
+                ->where('platform.gdpr.defaultDenied', true)
+                ->where('platform.gdpr.privacyUrl', 'https://privacy.example.test/policy')
+                ->where('platform.gdpr.termsUrl', 'https://terms.example.test/terms')
+                ->where('privacyUrl', 'https://privacy.example.test/policy'));
     }
 
     public function test_homepage_and_pricing_visibility_follow_settings(): void
@@ -75,6 +205,25 @@ class PlatformSettingsBehaviorTest extends TestCase
         ], $settings->version('landing'));
         $this->get('/pricing')->assertNotFound();
         $this->get('/')->assertOk();
+    }
+
+    public function test_dashboard_home_uses_platform_setting(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'general', [
+            'dashboard_home' => 'analytics',
+        ], $settings->version('general'));
+
+        $user = User::factory()->create();
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertRedirect(route('analytics.index'));
+
+        $settings->updateSection($administrator, 'general', [
+            'dashboard_home' => 'links',
+        ], $settings->version('general'));
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertRedirect(route('links.index'));
     }
 
     public function test_registration_switch_and_blocked_domain_are_enforced(): void
@@ -182,6 +331,24 @@ class PlatformSettingsBehaviorTest extends TestCase
         ])->assertRedirect('/dashboard/links');
         $this->assertSame('splash', Link::query()->where('slug', 'default-delivery')->sole()->delivery_mode);
 
+        $this->actingAs($owner)->get('/dashboard/links')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('platform.defaultDelivery', 'splash'));
+
+        $routingRules = [[
+            'rule_type' => 'device',
+            'match_value' => 'mobile',
+            'target_url' => 'https://example.test/mobile',
+        ]];
+        $this->actingAs($owner)->post('/dashboard/links', [
+            'destination_url' => 'https://example.test/existing',
+            'title' => 'Existing rule',
+            'slug' => 'existinglink',
+            'is_active' => true,
+            'routing_rules' => $routingRules,
+        ])->assertRedirect('/dashboard/links');
+        $targetedLink = Link::query()->where('slug', 'existinglink')->sole();
+
         $settings->updateSection($administrator, 'links', [
             'targeting_enabled' => false,
             'domains_enabled' => false,
@@ -190,6 +357,31 @@ class PlatformSettingsBehaviorTest extends TestCase
             'slug_min' => 10,
             'slug_charset' => 'alphanumeric',
         ], $settings->version('links'));
+
+        $this->actingAs($owner)->patch("/dashboard/links/{$targetedLink->id}", [
+            'destination_url' => 'https://example.test/existing',
+            'delivery_mode' => 'splash',
+            'title' => 'Updated existing rule',
+            'slug' => 'existinglink',
+            'is_active' => true,
+            'routing_rules' => $routingRules,
+        ])->assertRedirect('/dashboard/links');
+        $targetedLink->refresh();
+        $this->assertSame('Updated existing rule', $targetedLink->title);
+        $this->assertSame(1, $targetedLink->routingRules()->count());
+
+        $this->actingAs($owner)->patch("/dashboard/links/{$targetedLink->id}", [
+            'destination_url' => 'https://example.test/existing',
+            'delivery_mode' => 'splash',
+            'title' => 'Changed target rule',
+            'slug' => 'existinglink',
+            'is_active' => true,
+            'routing_rules' => [[
+                'rule_type' => 'device',
+                'match_value' => 'mobile',
+                'target_url' => 'https://example.test/changed',
+            ]],
+        ])->assertSessionHasErrors('routing_rules');
 
         $this->actingAs($owner)->post('/dashboard/links', [
             'destination_url' => 'https://sub.blocked.test/path',

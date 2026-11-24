@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\MediaPurpose;
 use App\Models\ContentMedia;
+use App\Models\CustomPage;
 use App\Services\Settings\PlatformSettings;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -23,7 +24,7 @@ class PlatformMediaController extends Controller
         ];
         $allowed = array_filter(array_map('intval', $ids));
 
-        abort_unless(in_array($media, $allowed, true), 404);
+        abort_unless(in_array($media, $allowed, true) || CustomPage::query()->published()->where('og_media_id', $media)->exists(), 404);
 
         $file = ContentMedia::query()
             ->whereKey($media)
@@ -38,7 +39,7 @@ class PlatformMediaController extends Controller
         $disk = Storage::disk($file->disk);
         abort_unless($disk->exists($file->path), 404);
 
-        return $disk->response($file->path, $file->original_name, [
+        return $disk->response($file->path, $file->displayName(), [
             'Content-Type' => $file->mime_type,
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'public, max-age=300',

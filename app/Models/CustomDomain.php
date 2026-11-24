@@ -3,12 +3,17 @@
 namespace App\Models;
 
 use App\Services\Domains\HostNormalizer;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
+/**
+ * @property CarbonInterface|null $verified_at
+ * @property CarbonInterface|null $last_checked_at
+ */
 #[Fillable([
     'user_id',
     'hostname',
@@ -41,16 +46,19 @@ class CustomDomain extends Model
         return app(HostNormalizer::class)->normalizeHostname($hostname);
     }
 
+    /** @return BelongsTo<Workspace, $this> */
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<Link, $this> */
     public function links(): HasMany
     {
         return $this->hasMany(Link::class);

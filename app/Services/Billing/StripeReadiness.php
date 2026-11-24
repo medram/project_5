@@ -3,6 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Models\Plan;
+use App\Models\PlanStripePrice;
 
 /**
  * Reports whether provider-owned billing is fully configured. Nothing here
@@ -70,11 +71,25 @@ final class StripeReadiness
 
     public function priceId(Plan $plan, string $interval): ?string
     {
-        if (! $plan->is_active) {
+        if (! $plan->is_active || $plan->code === 'free' || ! in_array($interval, ['month', 'year'], true)) {
             return null;
         }
 
-        return $plan->stripePriceIdFor($interval);
+        $priceId = $plan->stripePriceIdFor($interval);
+        if ($priceId === null) {
+            return null;
+        }
+
+        $plan->loadMissing('stripePrices');
+
+        $price = $plan->stripePrices->first(fn (PlanStripePrice $price): bool =>
+            $price->stripe_price_id === $priceId
+            && $price->interval === $interval
+            && $price->verified_at !== null
+            && $price->unit_amount !== null
+        );
+
+        return $price === null ? null : $priceId;
     }
 
     public function intervalForPrice(string $priceId): ?string
@@ -83,15 +98,10 @@ final class StripeReadiness
             return null;
         }
 
-        $plan = Plan::query()
-            ->where('stripe_monthly_price_id', $priceId)
-            ->orWhere('stripe_yearly_price_id', $priceId)
-            ->first();
-
-        if ($plan === null || ! $plan->is_active) {
-            return null;
-        }
-
-        return $plan->stripe_yearly_price_id === $priceId ? 'year' : 'month';
+        return PlanStripePrice::query()
+            ->where('stripe_price_id', $priceId)
+            ->get()
+            ->first(fn (PlanStripePrice $price): bool => $price->stripe_price_id === $priceId)
+            ?->interval;
     }
 }

@@ -74,6 +74,15 @@ class LinkPage extends Model
 
     protected static function booted(): void
     {
+        static::created(function (LinkPage $linkPage): void {
+            $linkPage->variants()->create([
+                'name' => 'Control',
+                'weight' => 100,
+                'is_control' => true,
+                'is_active' => true,
+            ]);
+        });
+
         static::deleting(function (LinkPage $linkPage): void {
             $linkPage->trackingPixelRules()->delete();
         });

@@ -59,10 +59,13 @@ export function dateTimeUtcValue(value: string): string {
     return Number.isNaN(date.getTime()) ? value : date.toISOString();
 }
 
-export function formDataFor(link?: LinkListItem): LinkFormData {
+export function formDataFor(
+    link?: LinkListItem,
+    defaultDelivery: LinkDeliveryMode = 'direct',
+): LinkFormData {
     return {
         destination_url: link?.destinationUrl ?? '',
-        delivery_mode: link?.deliveryMode ?? 'direct',
+        delivery_mode: link?.deliveryMode ?? defaultDelivery,
         link_page_id: link?.linkPageId?.toString() ?? '',
         title: link?.title ?? '',
         slug: link?.slug ?? '',

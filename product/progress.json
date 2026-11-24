@@ -321,12 +321,15 @@
         },
         {
             "id": "admin-settings",
-            "state": "in_progress",
-            "lastVerifiedAt": "2026-11-12T16:55:00Z",
+            "state": "verified",
+            "lastVerifiedAt": "2026-11-18T15:04:44Z",
             "checks": [
                 "Settings repository suite passed 6 tests and 55 assertions across permissions, 18-section registry, typed values, encryption, environment precedence, optimistic versions, and audits.",
                 "Managed Chromium browsed all 18 sections at 1440x1000 and 390x844 with no overflow or page errors.",
-                "Settings consumer suite passed 7/51: public payload, homepage/pricing, registration/domain blocks, Google, Turnstile fail-closed, mail, retention, and link policy toggles; full suite 550/18,212."
+                "Settings consumer suite passed 7/51: public payload, homepage/pricing, registration/domain blocks, Google, Turnstile fail-closed, mail, retention, and link policy toggles; full suite 550/18,212.",
+                "Revenue, settings action/option/readiness, and consent contract suites passed: 20 tests/317 assertions, 23 tests/248 assertions, and 7 tests/48 assertions.",
+                "npm run types:check passed; browser verified consent gating, one matching send_to destination per GA4 event, and the styled /pricing surface without errors.",
+                "Full PHPUnit suite passed 616 tests and 19,056 assertions with one skipped test using a 512M PHP memory limit."
             ],
             "blockers": []
         },

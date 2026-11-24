@@ -10,6 +10,8 @@ use App\Models\ContentMedia;
 use App\Services\Content\ContentMediaStorage;
 use App\Services\Platform\AdminAudit;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -40,7 +42,8 @@ class AdminFileController extends Controller
         if ($search !== '') {
             $like = '%'.$search.'%';
             $query->where(fn ($media) => $media
-                ->where('original_name', 'like', $like)
+                ->where('display_name', 'like', $like)
+                ->orWhere(fn ($query) => $query->whereNull('display_name')->where('original_name', 'like', $like))
                 ->orWhere('sha256', 'like', $like)
                 ->orWhereHas('workspace', fn ($workspace) => $workspace->where('name', 'like', $like))
                 ->orWhereHas('uploader', fn ($uploader) => $uploader->where('name', 'like', $like)));
@@ -69,7 +72,8 @@ class AdminFileController extends Controller
             ->withQueryString()
             ->through(fn (ContentMedia $media): array => [
                 'id' => $media->id,
-                'originalName' => $media->original_name,
+                'originalName' => $media->displayName(),
+                'retainsIndefinitely' => $media->purpose->retainsIndefinitely(),
                 'workspace' => $media->workspace?->name,
                 'owner' => $media->workspace?->owner?->name,
                 'uploader' => $media->uploader?->name,
@@ -99,6 +103,44 @@ class AdminFileController extends Controller
             ],
             'purposes' => array_map(fn (MediaPurpose $purpose): array => ['value' => $purpose->value, 'label' => $purpose->label()], MediaPurpose::cases()),
         ]);
+    }
+
+    public function update(Request $request, int $media): RedirectResponse
+    {
+        $file = ContentMedia::query()->findOrFail($media);
+        $data = $request->validate([
+            'display_name' => ['required', 'string', 'max:255', 'regex:/\\A[^\\\\\\/\\x00-\\x1F\\x7F]+\\z/u'],
+            'expires_at' => ['nullable', 'date', 'after:now'],
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        if (in_array($data['display_name'], ['.', '..'], true)
+            || pathinfo($data['display_name'], PATHINFO_EXTENSION) !== pathinfo($file->original_name, PATHINFO_EXTENSION)) {
+            throw ValidationException::withMessages(['display_name' => 'Use a filename with the original extension.']);
+        }
+        if ($file->purpose->retainsIndefinitely() && ! empty($data['expires_at'])) {
+            throw ValidationException::withMessages(['expires_at' => 'This file must be retained indefinitely.']);
+        }
+
+        DB::transaction(function () use ($request, $file, $data): void {
+            $file = ContentMedia::query()->lockForUpdate()->findOrFail($file->id);
+            $file->fill([
+                'display_name' => $data['display_name'],
+                'expires_at' => $data['expires_at'] ?? null,
+            ]);
+            $changed = array_keys($file->getDirty());
+            $file->save();
+            $this->audit->record(
+                $request->user(),
+                PlatformPermission::AdminFilesManage,
+                'update_file',
+                $file,
+                trim($data['reason']),
+                ['fields' => $changed],
+            );
+        });
+
+        return back(fallback: route('admin.files.index'));
     }
 
     public function destroy(AdminFileActionRequest $request, int $media): RedirectResponse

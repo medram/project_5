@@ -10,6 +10,7 @@ import {
     Languages,
     Link2,
     PanelsTopLeft,
+    QrCode,
     ReceiptText,
     ScanLine,
     ScrollText,
@@ -46,7 +47,6 @@ export default function AdminSidebar() {
     const currentPath = url.split('?')[0];
 
     const can = (ability: string) => abilities.includes(ability);
-    const canViewContent = can('admin.content.view_metadata');
 
     const sections = [
         {
@@ -84,43 +84,49 @@ export default function AdminSidebar() {
                     label: 'Short links',
                     href: content.links().url,
                     icon: Link2,
-                    visible: canViewContent,
+                    visible: can('admin.content.links.view'),
                 },
                 {
                     label: 'Bio pages',
                     href: content.biolinks().url,
                     icon: UserRound,
-                    visible: canViewContent,
+                    visible: can('admin.content.biolinks.view'),
                 },
                 {
                     label: 'Link pages',
                     href: content.pages().url,
                     icon: FileText,
-                    visible: canViewContent,
+                    visible: can('admin.content.link_pages.view'),
+                },
+                {
+                    label: 'QR codes',
+                    href: '/admin/qr-codes',
+                    icon: QrCode,
+                    visible: can('admin.content.qr_codes.view'),
                 },
                 {
                     label: 'Folders',
                     href: content.folders().url,
                     icon: Folder,
-                    visible: canViewContent,
+                    visible: can('admin.content.folders.view'),
                 },
                 {
                     label: 'Domains',
                     href: content.domains().url,
                     icon: Globe2,
-                    visible: canViewContent,
+                    visible: can('admin.content.domains.view'),
                 },
                 {
                     label: 'Overlays',
                     href: content.overlays().url,
                     icon: PanelsTopLeft,
-                    visible: canViewContent,
+                    visible: can('admin.content.overlays.view'),
                 },
                 {
                     label: 'Pixels',
                     href: content.pixels().url,
                     icon: ScanLine,
-                    visible: canViewContent,
+                    visible: can('admin.content.pixels.view'),
                 },
                 {
                     label: 'Custom pages',
@@ -199,6 +205,7 @@ export default function AdminSidebar() {
                             const active =
                                 currentPath === item.href ||
                                 currentPath.startsWith(`${item.href}/`);
+                            const current = currentPath === item.href;
 
                             return (
                                 <SidebarMenuItem key={item.label}>
@@ -212,7 +219,11 @@ export default function AdminSidebar() {
                                             href={item.href}
                                             prefetch
                                             aria-current={
-                                                active ? 'page' : undefined
+                                                active
+                                                    ? current
+                                                        ? 'page'
+                                                        : 'location'
+                                                    : undefined
                                             }
                                             onClick={() => {
                                                 if (isMobile) {

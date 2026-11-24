@@ -1,5 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import { type FormEvent, type ReactNode, useState } from 'react';
+import { useContentEditorRoutes } from '@/components/admin/content-editor-routes';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -25,7 +26,9 @@ import type { FolderPayload } from '@/types/folders';
 type FolderFormDialogProps = {
     folder?: FolderPayload;
     listQuery: string;
-    children: ReactNode;
+    children?: ReactNode;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 };
 
 function dataFor(folder?: FolderPayload) {
@@ -39,8 +42,12 @@ export function FolderFormDialog({
     folder,
     listQuery,
     children,
+    open: controlledOpen,
+    onOpenChange,
 }: FolderFormDialogProps) {
-    const [open, setOpen] = useState(false);
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+    const open = controlledOpen ?? uncontrolledOpen;
+    const { editorUrl } = useContentEditorRoutes();
     const form = useForm(dataFor(folder));
     const isEditing = folder !== undefined;
 
@@ -49,7 +56,8 @@ export function FolderFormDialog({
             return;
         }
 
-        setOpen(nextOpen);
+        setUncontrolledOpen(nextOpen);
+        onOpenChange?.(nextOpen);
 
         if (nextOpen) {
             form.clearErrors();
@@ -63,14 +71,15 @@ export function FolderFormDialog({
         const options = {
             preserveScroll: true,
             onSuccess: () => {
-                setOpen(false);
+                setUncontrolledOpen(false);
+                onOpenChange?.(false);
                 form.reset();
             },
         };
 
         if (folder) {
             form.patch(
-                withListQuery(update(folder.id).url, listQuery),
+                editorUrl(withListQuery(update(folder.id).url, listQuery)),
                 options,
             );
 
@@ -82,7 +91,7 @@ export function FolderFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>{children}</DialogTrigger>
+            {children && <DialogTrigger asChild>{children}</DialogTrigger>}
             <DialogContent
                 onOpenAutoFocus={(event) => {
                     if (window.matchMedia('(max-width: 640px)').matches) {

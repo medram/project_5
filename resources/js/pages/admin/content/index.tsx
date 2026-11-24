@@ -1,7 +1,15 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Pencil, Search } from 'lucide-react';
+import { ContentEditorRoutesProvider } from '@/components/admin/content-editor-routes';
+import { CustomDomainEditor } from '@/components/admin/custom-domain-editor';
 import { formatAdminDate } from '@/components/admin/format';
+import { FolderFormDialog } from '@/components/folders/folder-form-dialog';
+import { LinkFormDialog } from '@/components/links/link-form-dialog';
+import { EditOverlayDialog } from '@/components/overlays/overlay-form-dialogs';
+import { PageHeader } from '@/components/page-header';
+import { QrCodeFormDialog } from '@/components/qr-codes/qr-code-form-dialog';
+import { EditPixelDialog } from '@/components/tracking-pixels/pixel-editor';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -18,19 +26,46 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { toLinkListItem } from '@/types/links';
 import type { AdminContentPageProps } from '@/types/admin-content';
 
 export default function AdminContentIndex({
     resource,
     rows,
     filters,
+    editing,
 }: AdminContentPageProps) {
     const { url } = usePage();
     const path = url.split('?')[0];
+    const listQuery = url.includes('?') ? url.slice(url.indexOf('?') + 1) : '';
+    const inlineEditor = !['biolinks', 'link-pages'].includes(resource.key);
     const [query, setQuery] = useState(filters.q ?? '');
     const [state, setState] = useState(filters.state ?? 'any');
     const [sort, setSort] = useState(filters.sort);
     const [direction, setDirection] = useState(filters.direction);
+
+    function closeEditor(open: boolean) {
+        if (open || !editing) {
+            return;
+        }
+
+        const editPath = `${editing.backUrl.split('?')[0]}/${editing.record.id}`;
+        if (!window.location.pathname.endsWith(editPath)) {
+            return;
+        }
+
+        router.get(editing.backUrl, {}, {
+            preserveScroll: true,
+            preserveState: true,
+            only: ['editing'],
+        });
+    }
+
+    function editHref(editUrl: string): string {
+        return !inlineEditor || listQuery === ''
+            ? editUrl
+            : `${editUrl}?${listQuery}`;
+    }
 
     function apply(event: FormEvent) {
         event.preventDefault();
@@ -58,21 +93,16 @@ export default function AdminContentIndex({
         <>
             <Head title={`${resource.title} — Administration`} />
             <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
-                <header className="space-y-1">
-                    <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
-                        {resource.title}
-                    </h1>
-                    <p className="max-w-3xl text-sm text-muted-foreground">
-                        {resource.description} Read-only across owners.
-                        Administrators are not attached to tenant workspaces.
-                    </p>
-                </header>
+                <PageHeader
+                    title={resource.title}
+                    description={`${resource.description} Editors use the selected workspace without adding an administrator membership.`}
+                />
 
                 <form
                     onSubmit={apply}
                     className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-3"
                 >
-                    <div className="relative min-w-0 flex-1 sm:max-w-sm">
+                    <div className="relative w-full min-w-0 sm:max-w-sm sm:flex-1">
                         <Search
                             className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
                             aria-hidden="true"
@@ -174,6 +204,9 @@ export default function AdminContentIndex({
                                 <th className="px-4 py-3 font-medium">
                                     Updated
                                 </th>
+                                <th className="px-4 py-3 font-medium">
+                                    <span className="sr-only">Actions</span>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -246,6 +279,31 @@ export default function AdminContentIndex({
                                     <td className="px-4 py-3 text-muted-foreground">
                                         {formatAdminDate(row.updatedAt)}
                                     </td>
+                                    <td className="px-4 py-3 text-right">
+                                        {row.editUrl && (
+                                            <Button
+                                                asChild
+                                                size="icon"
+                                                variant="secondary"
+                                                className="size-8 rounded-full"
+                                                title={`Edit ${row.name}`}
+                                            >
+                                                <Link
+                                                    href={editHref(row.editUrl)}
+                                                    preserveScroll
+                                                    preserveState={inlineEditor}
+                                                    only={
+                                                        inlineEditor
+                                                            ? ['editing']
+                                                            : undefined
+                                                    }
+                                                    aria-label={`Edit ${row.name}`}
+                                                >
+                                                    <Pencil aria-hidden="true" />
+                                                </Link>
+                                            </Button>
+                                        )}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -316,6 +374,24 @@ export default function AdminContentIndex({
                                 <p className="text-xs text-muted-foreground">
                                     Updated {formatAdminDate(row.updatedAt)}
                                 </p>
+                                {row.editUrl && (
+                                    <Button asChild variant="outline" size="sm" className="w-fit">
+                                        <Link
+                                            href={editHref(row.editUrl)}
+                                            preserveScroll
+                                            preserveState={inlineEditor}
+                                            only={
+                                                inlineEditor
+                                                    ? ['editing']
+                                                    : undefined
+                                            }
+                                            aria-label={`Edit ${row.name}`}
+                                        >
+                                            <Pencil aria-hidden="true" />
+                                            Edit
+                                        </Link>
+                                    </Button>
+                                )}
                             </CardContent>
                         </Card>
                     ))}
@@ -335,7 +411,10 @@ export default function AdminContentIndex({
                         {rows.total.toLocaleString()}
                     </p>
                     {rows.last_page > 1 && (
-                        <nav className="flex flex-wrap gap-1">
+                        <nav
+                            className="flex flex-wrap gap-1"
+                            aria-label="Content pagination"
+                        >
                             {rows.links.map((link) =>
                                 link.url === null ? (
                                     <span
@@ -367,6 +446,67 @@ export default function AdminContentIndex({
                     )}
                 </footer>
             </div>
+
+            {editing && (
+                <ContentEditorRoutesProvider
+                    ownerPrefix={`/dashboard/${editing.resource}/${editing.record.id}`}
+                    adminPrefix={`/admin/${editing.resource}/${editing.record.id}`}
+                    backUrl={editing.backUrl}
+                >
+                    {editing.resource === 'links' && (
+                        <LinkFormDialog
+                            link={toLinkListItem(editing.record)}
+                            folders={editing.folders}
+                            customDomains={editing.customDomains}
+                            linkOverlays={editing.linkOverlays}
+                            linkPages={editing.linkPages}
+                            tagOptions={editing.tagOptions}
+                            countries={editing.countries}
+                            canManageApprovals={editing.canManageApprovals}
+                            listQuery={listQuery}
+                            open
+                            onOpenChange={closeEditor}
+                        />
+                    )}
+                    {editing.resource === 'qr-codes' && (
+                        <QrCodeFormDialog
+                            campaign={editing.record}
+                            availableLinks={editing.availableLinks}
+                            open
+                            onOpenChange={closeEditor}
+                        />
+                    )}
+                    {editing.resource === 'folders' && (
+                        <FolderFormDialog
+                            folder={editing.record}
+                            listQuery={listQuery}
+                            open
+                            onOpenChange={closeEditor}
+                        />
+                    )}
+                    {editing.resource === 'custom-domains' && (
+                        <CustomDomainEditor
+                            domain={editing.record}
+                            onClose={() => closeEditor(false)}
+                        />
+                    )}
+                    {editing.resource === 'link-overlays' && (
+                        <EditOverlayDialog
+                            overlay={editing.record}
+                            open
+                            onOpenChange={closeEditor}
+                        />
+                    )}
+                    {editing.resource === 'pixels' && (
+                        <EditPixelDialog
+                            pixel={editing.record}
+                            targets={editing.availableTargets}
+                            open
+                            onOpenChange={closeEditor}
+                        />
+                    )}
+                </ContentEditorRoutesProvider>
+            )}
         </>
     );
 }

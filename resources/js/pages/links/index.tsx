@@ -441,8 +441,8 @@ function LinkRow({
     return (
         <>
             <li
-                className="grid gap-3 px-4 py-3.5 transition-colors hover:bg-surface-secondary/60 aria-selected:bg-primary-soft md:grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_5.5rem_8.5rem] md:items-center md:gap-4 md:py-3"
-                aria-selected={selected}
+                className="grid gap-3 px-4 py-3.5 transition-colors hover:bg-surface-secondary/60 data-[selected=true]:bg-primary-soft md:grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_5.5rem_8.5rem] md:items-center md:gap-4 md:py-3"
+                data-selected={selected || undefined}
             >
                 <div className="flex min-w-0 items-start gap-3">
                     <div className="inline-flex size-6 shrink-0 items-center justify-center">

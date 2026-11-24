@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\PlanMetric;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\WorkspacePlanOverride;
@@ -46,48 +47,85 @@ class AdminBillingTest extends TestCase
                 ->has('readiness'));
     }
 
-    public function test_plan_edits_change_only_display_metadata_and_price_mappings(): void
+    public function test_plan_edits_update_limits_but_do_not_change_price_mappings_or_code(): void
     {
         $administrator = User::factory()->admin()->create();
         $plan = Plan::query()->where('code', 'free')->sole();
-        $originalLimits = [
-            'monthly_price' => $plan->monthly_price,
-            'annual_price' => $plan->annual_price,
-            'link_limit' => $plan->link_limit,
-        ];
-
-        $this->actingAs($administrator)
-            ->patch('/admin/plans/free', [
-                'name' => 'Starter',
-                'description' => 'A revised description.',
-                'sort_order' => 4,
-                'featured' => true,
-                'is_active' => true,
-                'stripe_monthly_price_id' => 'price_free_monthly',
-                'stripe_yearly_price_id' => 'price_free_yearly',
-                'code' => 'hacked',
-                'monthly_price' => 999999,
-                'link_limit' => 999999,
-            ])
-            ->assertRedirect();
+        $this->actingAs($administrator)->patch('/admin/plans/free', [
+            'name' => 'Starter',
+            'description' => 'A revised description.',
+            'sort_order' => 4,
+            'featured' => true,
+            'is_active' => true,
+            'stripe_monthly_price_id' => 'price_free_monthly',
+            'stripe_yearly_price_id' => 'price_free_yearly',
+            'code' => 'hacked',
+            'monthly_price' => 999999,
+            'limits' => [
+                'links' => null, 'folders' => 0, 'qr_campaigns' => 3, 'bio_pages' => 1,
+                'domains' => 0, 'pixels' => 0, 'members' => 1, 'webhooks' => 0,
+                'link_pages' => 1, 'api_keys' => 0, 'storage_bytes' => 1024,
+            ],
+        ])->assertRedirect()->assertSessionHasNoErrors();
 
         $plan->refresh();
         $this->assertSame('Starter', $plan->name);
         $this->assertSame('A revised description.', $plan->display_metadata['description']);
         $this->assertTrue($plan->display_metadata['featured']);
         $this->assertSame(4, $plan->display_metadata['sort_order']);
-        $this->assertSame('price_free_monthly', $plan->stripe_monthly_price_id);
-        $this->assertSame('price_free_yearly', $plan->stripe_yearly_price_id);
+        $this->assertNull($plan->stripe_monthly_price_id);
+        $this->assertNull($plan->stripe_yearly_price_id);
         $this->assertSame('free', $plan->code);
-        foreach ($originalLimits as $column => $value) {
-            $this->assertSame($value, $plan->getAttribute($column));
-        }
-
+        $this->assertSame(0, $plan->monthly_price);
+        $this->assertNull($plan->link_limit);
+        $this->assertSame(0, $plan->folder_limit);
+        $this->assertSame(3, $plan->qr_campaign_limit);
         $this->assertDatabaseHas('admin_audit_logs', [
             'permission' => 'admin.billing.manage',
             'action' => 'update_plan',
             'subject_id' => $plan->id,
         ]);
+    }
+
+    public function test_catalog_order_follows_updated_sort_order_in_admin_and_pricing(): void
+    {
+        $this->withoutVite();
+        $administrator = User::factory()->admin()->create();
+        $pro = Plan::query()->where('code', 'pro')->sole();
+        $metadata = $pro->display_metadata ?? [];
+
+        $this->actingAs($administrator)
+            ->patch('/admin/plans/pro', [
+                'name' => $pro->name,
+                'description' => $metadata['description'] ?? null,
+                'sort_order' => 9,
+                'featured' => (bool) ($metadata['featured'] ?? false),
+                'is_active' => true,
+                'limits' => collect(PlanMetric::cases())
+                    ->mapWithKeys(fn (PlanMetric $metric): array => [
+                        $metric->value => $pro->getAttribute($metric->planColumn()),
+                    ])
+                    ->all(),
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($administrator)
+            ->get('/admin/plans')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('admin/plans/index')
+                ->where('plans.0.code', 'free')
+                ->where('plans.1.code', 'business')
+                ->where('plans.2.code', 'pro'));
+
+        $this->get('/pricing')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('pricing/index')
+                ->where('plans.0.code', 'free')
+                ->where('plans.1.code', 'business')
+                ->where('plans.2.code', 'pro'));
     }
 
     public function test_override_creation_requires_reason_and_active_plan_and_is_idempotent(): void

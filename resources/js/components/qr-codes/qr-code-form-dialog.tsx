@@ -15,6 +15,7 @@ import {
     useRef,
     useState,
 } from 'react';
+import { useContentEditorRoutes } from '@/components/admin/content-editor-routes';
 import { FormErrorSummary } from '@/components/forms/form-error-summary';
 import { Button } from '@/components/ui/button';
 import {
@@ -255,12 +256,18 @@ export function QrCodeFormDialog({
     children,
     campaign,
     availableLinks,
+    open: controlledOpen,
+    onOpenChange,
 }: {
-    children: ReactNode;
+    children?: ReactNode;
     campaign?: QrCodeCampaign;
     availableLinks: QrCodeLinkOption[];
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }) {
-    const [open, setOpen] = useState(false);
+    const [internalOpen, setInternalOpen] = useState(false);
+    const open = controlledOpen ?? internalOpen;
+    const { editorUrl, isAdmin } = useContentEditorRoutes();
     const [settingsPanel, setSettingsPanel] = useState<QrSettingsPanel | null>(
         null,
     );
@@ -314,7 +321,7 @@ export function QrCodeFormDialog({
         parsedPreviewMargin <= 20
             ? parsedPreviewMargin
             : 4;
-    const draftPreviewUrl = draftPreview({
+    const ownerDraftPreviewUrl = draftPreview({
         query: {
             foreground_color: /^#[0-9a-f]{6}$/i.test(form.data.foreground_color)
                 ? form.data.foreground_color
@@ -327,8 +334,11 @@ export function QrCodeFormDialog({
             size: previewSize,
         },
     }).url;
+    const draftPreviewUrl = isAdmin && campaign
+        ? editorUrl(`${update(campaign.id).url}/draft-preview.svg${ownerDraftPreviewUrl.slice(ownerDraftPreviewUrl.indexOf('?'))}`)
+        : ownerDraftPreviewUrl;
     const linkedQr = campaign?.source === 'linked';
-    const previewSrc = campaign ? preview(campaign.id).url : draftPreviewUrl;
+    const previewSrc = campaign ? editorUrl(preview(campaign.id).url) : draftPreviewUrl;
     const previewLogoAlt =
         form.data.logo_alt ||
         (campaign?.has_logo && !form.data.clear_logo
@@ -391,7 +401,8 @@ export function QrCodeFormDialog({
             return;
         }
 
-        setOpen(nextOpen);
+        setInternalOpen(nextOpen);
+        onOpenChange?.(nextOpen);
 
         if (nextOpen) {
             form.resetAndClearErrors();
@@ -513,18 +524,18 @@ export function QrCodeFormDialog({
                   }),
             ...(campaign ? { _method: 'PATCH' as const } : {}),
         }));
-        form.post(campaign ? update(campaign.id).url : store().url, {
+        form.post(campaign ? editorUrl(update(campaign.id).url) : store().url, {
             preserveScroll: true,
             onSuccess: (page) => {
                 const savedCampaign = campaign
-                    ? ((
-                          page.props as unknown as QrCodeIndexProps
-                      ).campaigns.find((item) => item.id === campaign.id) ??
-                      campaign)
+                    ? ((page.props as unknown as Partial<QrCodeIndexProps>).campaigns?.find(
+                          (item) => item.id === campaign.id,
+                      ) ?? campaign)
                     : undefined;
                 form.setDefaults(qrCodeFormData(savedCampaign));
                 form.reset();
-                setOpen(false);
+                setInternalOpen(false);
+                onOpenChange?.(false);
             },
             onError: () => {
                 setErrorFocusKey((key) => key + 1);
@@ -534,7 +545,7 @@ export function QrCodeFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>{children}</DialogTrigger>
+            {children && <DialogTrigger asChild>{children}</DialogTrigger>}
             <DialogContent
                 className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[52rem]"
                 onOpenAutoFocus={(event) => {

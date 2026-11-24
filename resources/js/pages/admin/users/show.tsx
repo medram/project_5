@@ -34,6 +34,8 @@ import {
 } from '@/components/admin/format';
 import { UserAvatar } from '@/components/user-avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Card,
     CardContent,
@@ -83,6 +85,36 @@ export default function AdminUserShow({
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [planCode, setPlanCode] = useState('');
+    const [profileName, setProfileName] = useState(account.name);
+    const [profileEmail, setProfileEmail] = useState(account.email);
+    const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
+
+    function saveProfile(): void {
+        setProfileErrors({});
+        request(
+            {
+                title: 'Save account profile?',
+                description: profileEmail !== account.email
+                    ? 'Changing the email clears verification and sends a new verification link. The account must verify the new address.'
+                    : 'The account name will be updated. The existing email verification status will be preserved.',
+                confirmLabel: 'Save profile',
+            },
+            () => router.patch(
+                `/admin/users/${account.id}/profile`,
+                { name: profileName, email: profileEmail },
+                {
+                    preserveScroll: true,
+                    onSuccess: finish,
+                    onError: (errors) => {
+                        setProfileErrors(errors);
+                        setPending(null);
+                        setProcessing(false);
+                    },
+                    onFinish: () => setProcessing(false),
+                },
+            ),
+        );
+    }
 
     function request(
         confirmation: AdminConfirmation,
@@ -231,7 +263,7 @@ export default function AdminUserShow({
             {
                 title: assigned ? `Grant ${roleName}?` : `Remove ${roleName}?`,
                 description: assigned
-                    ? `${account.name} will receive the permissions in this immutable role.`
+                    ? `${account.name} will receive the permissions granted by this role.`
                     : `${account.name} will lose the permissions granted by this role.`,
                 confirmLabel: assigned ? 'Grant role' : 'Remove role',
                 destructive: !assigned,
@@ -423,6 +455,27 @@ export default function AdminUserShow({
                                 Account identity and lifecycle metadata.
                             </CardDescription>
                         </CardHeader>
+                        {can('admin.users.manage_profile') && (
+                            <CardContent>
+                                <form className="grid gap-4" onSubmit={(event) => {
+                                    event.preventDefault();
+                                    saveProfile();
+                                }}>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="profile-name">Name</Label>
+                                        <Input id="profile-name" value={profileName} onChange={(event) => setProfileName(event.target.value)} required maxLength={255} aria-invalid={!!profileErrors.name} />
+                                        {profileErrors.name && <p role="alert" className="text-sm text-destructive">{profileErrors.name}</p>}
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="profile-email">Email</Label>
+                                        <Input id="profile-email" type="email" value={profileEmail} onChange={(event) => setProfileEmail(event.target.value)} required maxLength={255} aria-invalid={!!profileErrors.email} />
+                                        {profileErrors.email && <p role="alert" className="text-sm text-destructive">{profileErrors.email}</p>}
+                                    </div>
+                                    {profileErrors.profile && <p role="alert" className="text-sm text-destructive">{profileErrors.profile}</p>}
+                                    <Button type="submit" disabled={processing} className="w-fit">Save profile</Button>
+                                </form>
+                            </CardContent>
+                        )}
                         <CardContent>
                             <dl className="grid gap-4 sm:grid-cols-2">
                                 <Field
@@ -586,8 +639,8 @@ export default function AdminUserShow({
                         <CardHeader className="gap-1">
                             <CardTitle>Platform roles</CardTitle>
                             <CardDescription>
-                                Immutable seeded roles. Role changes are audited
-                                and cannot be performed on your own account.
+                                Role changes are audited. You cannot change your
+                                own role assignments.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-3">
@@ -595,6 +648,18 @@ export default function AdminUserShow({
                                 const assigned = account.roles.some(
                                     (current) => current.code === role.code,
                                 );
+                                const exceedsCeiling = role.permissions.some(
+                                    (permission) => !can(permission.value),
+                                );
+                                const grantBlocked =
+                                    !assigned &&
+                                    (account.status === 'suspended' ||
+                                        account.status === 'deletion_pending');
+                                const blockedReason = exceedsCeiling
+                                    ? 'You cannot change a role with permissions you do not hold.'
+                                    : grantBlocked
+                                      ? 'Restore this account before granting roles.'
+                                      : null;
 
                                 return (
                                     <div
@@ -607,6 +672,7 @@ export default function AdminUserShow({
                                                     {role.name}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
+                                                    {assigned ? 'Assigned · ' : ''}
                                                     {role.permissions.length}{' '}
                                                     permissions
                                                 </p>
@@ -617,6 +683,7 @@ export default function AdminUserShow({
                                                         type="button"
                                                         size="sm"
                                                         variant="outline"
+                                                        disabled={processing || blockedReason !== null}
                                                         onClick={() =>
                                                             changeRole(
                                                                 role.code,
@@ -638,6 +705,12 @@ export default function AdminUserShow({
                                                     </Button>
                                                 )}
                                         </div>
+                                        {can('admin.users.manage_roles') &&
+                                            !account.isSelf && blockedReason && (
+                                                <p className="mt-2 text-xs text-muted-foreground">
+                                                    {blockedReason}
+                                                </p>
+                                            )}
                                         <details className="mt-3">
                                             <summary className="cursor-pointer text-sm text-muted-foreground">
                                                 Permissions

@@ -119,6 +119,48 @@ class PlatformSettingsRuntimeTest extends TestCase
         $this->assertSame(750, config('services.linkpilot.webhooks.excerpt_bytes'));
     }
 
+    public function test_revision_changes_at_the_same_timestamp_refresh_cached_integrations(): void
+    {
+        \Illuminate\Support\Carbon::setTestNow('2026-11-13 12:00:00');
+
+        try {
+            $administrator = User::factory()->admin()->create();
+            $settings = app(PlatformSettings::class);
+            $settings->updateSection($administrator, 'email', [
+                'mailer' => 'smtp',
+                'smtp_host' => 'first.smtp.test',
+                'smtp_port' => 587,
+                'smtp_security' => 'starttls',
+            ], $settings->version('email'));
+            $settings->updateSection($administrator, 'authentication', [
+                'google_enabled' => true,
+                'google_client_id' => 'first.apps.googleusercontent.com',
+                'google_client_secret' => 'first-secret',
+            ], $settings->version('authentication'));
+            $settings->applyRuntime();
+
+            $mail = app(\Illuminate\Mail\MailManager::class);
+            $socialite = app(\Laravel\Socialite\Contracts\Factory::class);
+            $firstMailer = $mail->mailer('smtp');
+            $firstGoogleDriver = $socialite->driver('google');
+
+            $settings->updateSection($administrator, 'email', [
+                'smtp_host' => 'second.smtp.test',
+            ], $settings->version('email'));
+            $settings->updateSection($administrator, 'authentication', [
+                'google_client_id' => 'second.apps.googleusercontent.com',
+            ], $settings->version('authentication'));
+            $settings->applyRuntime();
+
+            $this->assertNotSame($firstMailer, $mail->mailer('smtp'));
+            $this->assertNotSame($firstGoogleDriver, $socialite->driver('google'));
+            $this->assertSame('second.smtp.test', config('mail.mailers.smtp.host'));
+            $this->assertSame('second.apps.googleusercontent.com', config('services.google.client_id'));
+        } finally {
+            \Illuminate\Support\Carbon::setTestNow();
+        }
+    }
+
     public function test_smtp_security_maps_to_supported_transport_modes(): void
     {
         $administrator = User::factory()->admin()->create();
@@ -141,6 +183,11 @@ class PlatformSettingsRuntimeTest extends TestCase
             $this->assertSame($autoTls, config('mail.mailers.smtp.auto_tls'), $security);
             $this->assertTrue(config('mail.mailers.smtp.verify_peer'), $security);
         }
+    }
+
+    public function test_legacy_tax_policy_environment_does_not_configure_cashier(): void
+    {
+        $this->assertFalse(config('cashier.tax_policy_acknowledged'));
     }
 
     public function test_apply_runtime_is_a_noop_when_settings_tables_are_absent(): void
@@ -222,6 +269,32 @@ class PlatformSettingsRuntimeTest extends TestCase
         $this->assertSame('Queue Name', config('app.name'));
     }
 
+
+    public function test_one_shot_queue_worker_applies_settings_before_handling_a_job(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'general', [
+            'site_name' => 'One-shot Queue Name',
+        ], $settings->version('general'));
+
+        config([
+            'app.name' => 'Stale Queue Name',
+            'queue.default' => 'database',
+            'queue.connections.database.queue' => 'default',
+        ]);
+        RuntimeSettingsObservationJob::$observedAppName = null;
+        RuntimeSettingsObservationJob::dispatch();
+
+        $this->artisan('queue:work', [
+            'connection' => 'database',
+            '--once' => true,
+            '--sleep' => 0,
+            '--tries' => 1,
+        ])->assertExitCode(0);
+
+        $this->assertSame('One-shot Queue Name', RuntimeSettingsObservationJob::$observedAppName);
+    }
     public function test_cashier_payment_and_webhook_routes_are_owned_by_the_application(): void
     {
         $this->assertTrue(Route::has('cashier.payment'));
@@ -234,7 +307,35 @@ class PlatformSettingsRuntimeTest extends TestCase
     {
         $groups = app('router')->getMiddlewareGroups();
 
+        $this->assertLessThan(
+            array_search(ApplyPlatformSettings::class, $groups['web'], true),
+            array_search(\App\Http\Middleware\EnsureAllowedHost::class, $groups['web'], true),
+        );
+        $this->assertLessThan(
+            array_search(\Illuminate\Routing\Middleware\SubstituteBindings::class, $groups['web'], true),
+            array_search(ApplyPlatformSettings::class, $groups['web'], true),
+        );
+        $this->assertLessThan(
+            array_search(\Illuminate\Routing\Middleware\SubstituteBindings::class, $groups['api'], true),
+            array_search(ApplyPlatformSettings::class, $groups['api'], true),
+        );
+
         $this->assertContains(ApplyPlatformSettings::class, $groups['web']);
         $this->assertContains(ApplyPlatformSettings::class, $groups['api']);
+    }
+}
+
+final class RuntimeSettingsObservationJob implements \Illuminate\Contracts\Queue\ShouldQueue
+{
+    use \Illuminate\Bus\Queueable;
+    use \Illuminate\Foundation\Bus\Dispatchable;
+    use \Illuminate\Queue\InteractsWithQueue;
+    use \Illuminate\Queue\SerializesModels;
+
+    public static ?string $observedAppName = null;
+
+    public function handle(): void
+    {
+        self::$observedAppName = config('app.name');
     }
 }

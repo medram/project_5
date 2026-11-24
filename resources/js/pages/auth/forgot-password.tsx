@@ -1,7 +1,7 @@
 // Components
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import InputError from '@/components/input-error';
+import { FieldError } from '@/components/ui/field';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
             <Head title="Forgot password" />
 
             {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
+                <div className="mb-4 text-center text-sm font-medium text-success-soft-foreground">
                     {status}
                 </div>
             )}
@@ -35,7 +35,9 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     placeholder="email@example.com"
                                 />
 
-                                <InputError message={errors.email} />
+                                {errors.email && (
+                                    <FieldError>{errors.email}</FieldError>
+                                )}
                             </div>
 
                             <div className="my-6 flex items-center justify-start">

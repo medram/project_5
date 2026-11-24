@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\PlatformRoleCode;
+use App\Models\PlatformRole;
 use App\Models\User;
 use App\Services\Platform\PlatformRoleAssignments;
 use Illuminate\Console\Command;
@@ -35,7 +36,8 @@ class GrantAdministrator extends Command
             return self::FAILURE;
         }
 
-        $changed = app(PlatformRoleAssignments::class)->grantSystem($user, PlatformRoleCode::SuperAdmin);
+        $role = PlatformRole::query()->where('code', PlatformRoleCode::SuperAdmin->value)->firstOrFail();
+        $changed = app(PlatformRoleAssignments::class)->grantSystem($user, $role);
 
         $this->components->info($changed
             ? "Granted super administrator access to {$user->email}."

@@ -150,6 +150,28 @@ class AccountSettingsTest extends TestCase
         $this->actingAs(User::factory()->create())->get(route('google.connect'))->assertNotFound();
     }
 
+    public function test_google_login_requires_an_existing_account_when_platform_policy_is_enabled(): void
+    {
+        $this->enableGoogle();
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'authentication', [
+            'google_enabled' => true,
+            'google_client_id' => 'google-client-id.apps.googleusercontent.com',
+            'google_client_secret' => 'google-client-secret',
+            'google_require_existing' => true,
+        ], $settings->version('authentication'));
+
+        $this->mockGoogleUser('google-new', 'new-google@example.test');
+
+        $this->get(route('google.callback'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('google');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['email' => 'new-google@example.test']);
+    }
+
     public function test_google_login_uses_a_linked_identity_and_never_auto_links_an_existing_email(): void
     {
         $this->enableGoogle();
@@ -179,6 +201,32 @@ class AccountSettingsTest extends TestCase
         $this->assertGuest();
         $this->assertDatabaseMissing('social_accounts', ['provider_user_id' => 'google-new']);
         $this->assertNull($existing->refresh()->socialAccounts()->first());
+    }
+
+    public function test_single_session_policy_revokes_previous_database_sessions_on_login(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'authentication', [
+            'single_session' => true,
+        ], $settings->version('authentication'));
+        $user = User::factory()->create(['password' => bcrypt('test-password')]);
+
+        DB::table('sessions')->insert([
+            'id' => 'previous-session',
+            'user_id' => $user->id,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'test',
+            'payload' => base64_encode(serialize([])),
+            'last_activity' => now()->timestamp,
+        ]);
+
+        $this->post(route('login'), [
+            'email' => $user->email,
+            'password' => 'test-password',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertDatabaseMissing('sessions', ['id' => 'previous-session']);
     }
 
     public function test_google_login_denies_suspended_and_pending_deletion_accounts(): void

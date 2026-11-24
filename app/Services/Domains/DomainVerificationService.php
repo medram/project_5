@@ -5,6 +5,7 @@ namespace App\Services\Domains;
 use App\Models\CustomDomain;
 use App\Models\Workspace;
 use App\Services\Notifications\WorkspaceNotificationService;
+use Closure;
 use DateTimeInterface;
 use Illuminate\Support\Str;
 use Throwable;
@@ -16,50 +17,32 @@ class DomainVerificationService
         private readonly HttpsDomainChallengeProbe $https,
     ) {}
 
-    public function verify(CustomDomain $domain): CustomDomain
+    public function verify(CustomDomain $domain, ?Closure $apply = null): CustomDomain
     {
         $observedToken = $domain->verification_token;
         $observedStatus = $domain->status;
         $wasActive = $observedStatus === 'active';
-        $expectedTxtRecord = "linkpilot={$observedToken}";
+        $verifiedAt = null;
 
         try {
-            if (! in_array($expectedTxtRecord, $this->dns->recordsFor("_linkpilot-verify.{$domain->hostname}"), true)) {
-                return $this->recordCheck(
-                    $domain,
-                    $observedToken,
-                    $observedStatus,
-                    $wasActive ? 'failed' : 'pending_dns',
-                    $wasActive ? 'The DNS TXT verification record is no longer present.' : null,
-                );
-            }
-
-            if (! $this->https->respondsWithToken($domain->hostname, $observedToken)) {
-                return $this->recordCheck(
-                    $domain,
-                    $observedToken,
-                    $observedStatus,
-                    $wasActive ? 'failed' : 'pending_tls',
-                    $wasActive ? 'The HTTPS verification endpoint is no longer reachable.' : null,
-                );
+            if (! in_array("linkpilot={$observedToken}", $this->dns->recordsFor("_linkpilot-verify.{$domain->hostname}"), true)) {
+                $status = $wasActive ? 'failed' : 'pending_dns';
+                $failureReason = $wasActive ? 'The DNS TXT verification record is no longer present.' : null;
+            } elseif (! $this->https->respondsWithToken($domain->hostname, $observedToken)) {
+                $status = $wasActive ? 'failed' : 'pending_tls';
+                $failureReason = $wasActive ? 'The HTTPS verification endpoint is no longer reachable.' : null;
+            } else {
+                $status = 'active';
+                $failureReason = null;
+                $verifiedAt = $domain->verified_at ?? now();
             }
         } catch (Throwable $exception) {
-            return $this->recordCheck(
-                $domain,
-                $observedToken,
-                $observedStatus,
-                'failed',
-                Str::limit($exception->getMessage(), 500, ''),
-            );
+            $status = 'failed';
+            $failureReason = Str::limit($exception->getMessage(), 500, '');
         }
 
         return $this->recordCheck(
-            $domain,
-            $observedToken,
-            $observedStatus,
-            'active',
-            null,
-            $domain->verified_at ?? now(),
+            $domain, $observedToken, $observedStatus, $status, $failureReason, $verifiedAt, $apply,
         );
     }
 
@@ -83,7 +66,14 @@ class DomainVerificationService
         string $status,
         ?string $failureReason,
         ?DateTimeInterface $verifiedAt = null,
+        ?Closure $apply = null,
     ): CustomDomain {
+        if ($apply !== null) {
+            return $apply(fn () => $this->recordCheck(
+                $domain, $observedToken, $observedStatus, $status, $failureReason, $verifiedAt,
+            ));
+        }
+
         $attributes = [
             'status' => $status,
             'last_checked_at' => now(),

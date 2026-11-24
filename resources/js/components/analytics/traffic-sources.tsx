@@ -247,12 +247,14 @@ function CountryLegend({
     );
 }
 
-function TopCountriesCard({
+export function TopCountriesCard({
     rows,
     metric,
+    footer,
 }: {
     rows: AnalyticsCount[];
     metric: TrafficMetric;
+    footer?: string;
 }) {
     const total = sumCounts(rows);
     const mapData = toMapData(rows);
@@ -284,7 +286,7 @@ function TopCountriesCard({
                     />
                 ) : (
                     <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-center">
-                        <div className="mx-auto w-full max-w-2xl min-w-0">
+                        <div className="mx-auto w-full max-w-3xl min-w-0">
                             <WorldMap
                                 data={mapData}
                                 title={`Top countries by ${
@@ -342,6 +344,11 @@ function TopCountriesCard({
                         <CountryLegend rows={rows} metric={metric} />
                     </div>
                 )}
+                {footer ? (
+                    <p className="mt-4 text-xs text-muted-foreground">
+                        {footer}
+                    </p>
+                ) : null}
             </CardContent>
         </Card>
     );
@@ -401,7 +408,7 @@ function PieTooltipContent({
     );
 }
 
-function PieBreakdownCard({
+export function PieBreakdownCard({
     title,
     description,
     icon,
@@ -430,18 +437,11 @@ function PieBreakdownCard({
     return (
         <Card className="min-w-0">
             <CardHeader className="gap-1.5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="grid gap-1">
-                        <CardHeading icon={icon}>{title}</CardHeading>
-                        <CardDescription className="text-xs">
-                            {description}
-                        </CardDescription>
-                    </div>
-                    {rows.length > 0 && (
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                            {total.toLocaleString()} {trafficUnit(metric)}
-                        </span>
-                    )}
+                <div className="grid gap-1">
+                    <CardHeading icon={icon}>{title}</CardHeading>
+                    <CardDescription className="text-xs">
+                        {description}
+                    </CardDescription>
                 </div>
             </CardHeader>
             <CardContent>
@@ -453,37 +453,53 @@ function PieBreakdownCard({
                     />
                 ) : (
                     <div className="grid gap-4">
-                        <ChartContainer
-                            config={chartConfig}
-                            className="mx-auto aspect-square h-[190px] w-full max-w-[230px]"
-                            aria-label={`${title} distribution for the top ${rows.length} groups. Exact counts and percentages are listed below.`}
-                        >
-                            <RechartsPieChart>
-                                <ChartTooltip
-                                    content={
-                                        <PieTooltipContent metric={metric} />
-                                    }
-                                />
-                                <Pie
-                                    data={data}
-                                    dataKey="count"
-                                    nameKey="name"
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius="92%"
-                                    stroke="var(--card)"
-                                    strokeWidth={2}
-                                    isAnimationActive={false}
-                                >
-                                    {data.map((entry) => (
-                                        <Cell
-                                            key={entry.name}
-                                            fill={entry.fill}
-                                        />
-                                    ))}
-                                </Pie>
-                            </RechartsPieChart>
-                        </ChartContainer>
+                        <div className="relative mx-auto h-[190px] w-[190px] max-w-full">
+                            <ChartContainer
+                                config={chartConfig}
+                                className="h-full w-full"
+                                aria-label={`${title} distribution for the top ${rows.length} groups. Exact counts and percentages are listed below.`}
+                            >
+                                <RechartsPieChart>
+                                    <ChartTooltip
+                                        content={
+                                            <PieTooltipContent
+                                                metric={metric}
+                                            />
+                                        }
+                                    />
+                                    <Pie
+                                        data={data}
+                                        dataKey="count"
+                                        nameKey="name"
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius="55%"
+                                        outerRadius="92%"
+                                        stroke="var(--card)"
+                                        strokeWidth={2}
+                                        isAnimationActive={false}
+                                    >
+                                        {data.map((entry) => (
+                                            <Cell
+                                                key={entry.name}
+                                                fill={entry.fill}
+                                            />
+                                        ))}
+                                    </Pie>
+                                </RechartsPieChart>
+                            </ChartContainer>
+                            <div
+                                className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5"
+                                aria-hidden="true"
+                            >
+                                <span className="text-xl font-semibold tabular-nums">
+                                    {total.toLocaleString()}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                    {trafficUnit(metric)}
+                                </span>
+                            </div>
+                        </div>
                         <ul
                             className="grid gap-2"
                             aria-label={`${title} values`}
@@ -524,6 +540,7 @@ export function TrafficSourcesSection({
     platforms,
     devices,
     metric = 'events',
+    countryFooter,
 }: {
     referrers: AnalyticsCount[];
     countries: AnalyticsCount[];
@@ -531,6 +548,7 @@ export function TrafficSourcesSection({
     platforms: AnalyticsCount[];
     devices?: AnalyticsCount[];
     metric?: TrafficMetric;
+    countryFooter?: string;
 }) {
     return (
         <section
@@ -541,7 +559,11 @@ export function TrafficSourcesSection({
                     : 'lg:grid-cols-2 xl:grid-cols-4'
             }`}
         >
-            <TopCountriesCard rows={countries} metric={metric} />
+            <TopCountriesCard
+                rows={countries}
+                metric={metric}
+                footer={countryFooter}
+            />
             {devices !== undefined && (
                 <RankedBreakdownCard
                     title="Top devices"

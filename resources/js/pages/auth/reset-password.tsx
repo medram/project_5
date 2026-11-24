@@ -1,5 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
+import { FieldError } from '@/components/ui/field';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,10 +36,11 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 className="mt-1 block w-full"
                                 readOnly
                             />
-                            <InputError
-                                message={errors.email}
-                                className="mt-2"
-                            />
+                            {errors.email && (
+                                <FieldError className="mt-2">
+                                    {errors.email}
+                                </FieldError>
+                            )}
                         </div>
 
                         <div className="grid gap-2">
@@ -53,7 +54,9 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 placeholder="Password"
                                 passwordrules={passwordRules}
                             />
-                            <InputError message={errors.password} />
+                            {errors.password && (
+                                <FieldError>{errors.password}</FieldError>
+                            )}
                         </div>
 
                         <div className="grid gap-2">
@@ -68,10 +71,11 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 placeholder="Confirm password"
                                 passwordrules={passwordRules}
                             />
-                            <InputError
-                                message={errors.password_confirmation}
-                                className="mt-2"
-                            />
+                            {errors.password_confirmation && (
+                                <FieldError className="mt-2">
+                                    {errors.password_confirmation}
+                                </FieldError>
+                            )}
                         </div>
 
                         <Button

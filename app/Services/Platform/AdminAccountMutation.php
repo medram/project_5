@@ -23,6 +23,7 @@ class AdminAccountMutation
     public function run(User $actor, User $target, PlatformPermission $permission, Closure $mutation): mixed
     {
         return DB::transaction(function () use ($actor, $target, $permission, $mutation): mixed {
+            $this->authorization->lockSuperAdmin();
             $accounts = User::query()
                 ->whereIn('id', [$actor->getKey(), $target->getKey()])
                 ->orderBy('id')

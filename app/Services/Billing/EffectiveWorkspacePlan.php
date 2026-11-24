@@ -4,6 +4,7 @@ namespace App\Services\Billing;
 
 use App\Models\BillingHealthRecord;
 use App\Models\Plan;
+use App\Models\PlanStripePrice;
 use App\Models\Workspace;
 use App\Models\WorkspacePlanOverride;
 use Illuminate\Support\Carbon;
@@ -108,13 +109,15 @@ final class EffectiveWorkspacePlan
             return null;
         }
 
-        return Plan::query()
-            ->where(fn ($query) => $query
-                ->whereIn('stripe_monthly_price_id', $prices)
-                ->orWhereIn('stripe_yearly_price_id', $prices))
-            ->orderBy('monthly_price')
-            ->orderBy('id')
-            ->first();
+        $mappings = PlanStripePrice::query()->with('plan')->whereIn('stripe_price_id', $prices)->get()->keyBy('stripe_price_id');
+
+        foreach ($prices as $price) {
+            if (isset($mappings[$price])) {
+                return $mappings[$price]->plan;
+            }
+        }
+
+        return null;
     }
 
     private function recordUnmappedPrice(Workspace $workspace, Subscription $subscription): void

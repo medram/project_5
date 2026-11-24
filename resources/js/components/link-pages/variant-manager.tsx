@@ -1,6 +1,7 @@
 import { router, useForm } from '@inertiajs/react';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { type FormEvent } from 'react';
+import { useContentEditorRoutes } from '@/components/admin/content-editor-routes';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,6 +49,7 @@ function VariantSettings({
     page: LinkPage;
     variant: LinkPageVariant;
 }) {
+    const { editorUrl } = useContentEditorRoutes();
     const form = useForm<VariantFormData>({
         name: variant.name,
         weight: variant.weight,
@@ -57,10 +59,10 @@ function VariantSettings({
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         form.patch(
-            updateVariant({
+            editorUrl(updateVariant({
                 linkPage: page.id,
                 linkPageVariant: variant.id,
-            }).url,
+            }).url),
             { preserveScroll: true },
         );
     }
@@ -72,10 +74,10 @@ function VariantSettings({
             )
         ) {
             router.delete(
-                destroyVariant({
+                editorUrl(destroyVariant({
                     linkPage: page.id,
                     linkPageVariant: variant.id,
-                }).url,
+                }).url),
                 { preserveScroll: true },
             );
         }
@@ -193,6 +195,7 @@ function VariantSettings({
 }
 
 function AddVariantForm({ page }: { page: LinkPage }) {
+    const { editorUrl } = useContentEditorRoutes();
     const form = useForm<{ name: string; weight: number }>({
         name: '',
         weight: 0,
@@ -200,7 +203,7 @@ function AddVariantForm({ page }: { page: LinkPage }) {
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        form.post(storeVariant(page).url, {
+        form.post(editorUrl(storeVariant(page).url), {
             preserveScroll: true,
             onSuccess: () => form.reset(),
         });
@@ -282,6 +285,7 @@ export function LinkPageVariantManager({
     variants: LinkPageVariant[];
     selectedVariantId: number;
 }) {
+    const { editorUrl } = useContentEditorRoutes();
     const selected =
         variants.find((variant) => variant.id === selectedVariantId) ??
         variants.find((variant) => variant.isControl);
@@ -309,7 +313,7 @@ export function LinkPageVariantManager({
                                 (variant) => variant.id === Number(value),
                             );
                             router.get(
-                                showPage(page).url,
+                                editorUrl(showPage(page).url),
                                 next?.isControl ? {} : { variant: next?.id },
                                 { preserveScroll: true },
                             );

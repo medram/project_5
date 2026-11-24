@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\MediaPurpose;
+use App\Http\Middleware\ScopedAdminContent;
 use App\Http\Requests\StoreLinkPageBlockRequest;
 use App\Models\ContentMedia;
 use App\Models\LinkPage;
@@ -11,11 +12,11 @@ use App\Models\LinkPageLead;
 use App\Models\LinkPageVariant;
 use App\Models\Workspace;
 use App\Services\Content\ContentMediaStorage;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -54,7 +55,7 @@ class LinkPageBlockController extends Controller
                 $media = $this->media->store($file, $workspace, $request->user(), $mediaPurpose);
                 $block->update(['content_media_id' => $media->id]);
             } catch (Throwable $exception) {
-                if ($media) {
+                if ($media && ! $request->attributes->has(ScopedAdminContent::ATTRIBUTE)) {
                     $this->media->delete($media);
                 }
                 $block->delete();
@@ -89,7 +90,7 @@ class LinkPageBlockController extends Controller
             : null;
 
         try {
-            $result = DB::transaction(function () use ($data, $linkPage, $linkPageBlock, $newMedia): ContentMedia|RedirectResponse|null {
+            $result = DB::transaction(function () use ($data, $linkPage, $linkPageBlock, $newMedia): ?ContentMedia {
                 $block = LinkPageBlock::query()
                     ->with('contentMedia')
                     ->lockForUpdate()
@@ -115,10 +116,10 @@ class LinkPageBlockController extends Controller
                         ->where('retention_expires_at', '>', now('UTC'))
                         ->exists();
                 if ($hasUnexpiredLeads && $attributes['type'] !== 'form') {
-                    return back()->withErrors(['type' => 'This block cannot change type while its responses are retained.']);
+                    throw ValidationException::withMessages(['type' => 'This block cannot change type while its responses are retained.']);
                 }
                 if ($hasUnexpiredLeads && $attributes['content'] !== $block->content) {
-                    return back()->withErrors(['fields' => 'Keep this form unchanged while its responses are retained.']);
+                    throw ValidationException::withMessages(['fields' => 'Keep this form unchanged while its responses are retained.']);
                 }
 
                 $oldMedia = $block->contentMedia;
@@ -127,21 +128,14 @@ class LinkPageBlockController extends Controller
                 return $oldMedia;
             });
         } catch (Throwable $exception) {
-            if ($newMedia) {
+            if ($newMedia && ! $request->attributes->has(ScopedAdminContent::ATTRIBUTE)) {
                 $this->media->delete($newMedia);
             }
             throw $exception;
         }
 
-        if ($result instanceof RedirectResponse) {
-            if ($newMedia) {
-                $this->media->delete($newMedia);
-            }
-
-            return $result;
-        }
         if ($result && ($newMedia || ! in_array($data['type'], ['image', 'file'], true))) {
-            $this->media->delete($result);
+            $this->deleteMedia($request, $result);
         }
 
         return $this->editorResponse($linkPage, $variant);
@@ -153,7 +147,7 @@ class LinkPageBlockController extends Controller
         abort_unless($linkPageBlock->link_page_id === $linkPage->id, 404);
 
         if ($linkPageBlock->contentMedia) {
-            $this->media->delete($linkPageBlock->contentMedia);
+            $this->deleteMedia($request, $linkPageBlock->contentMedia);
         }
         $linkPageBlock->delete();
 
@@ -173,9 +167,7 @@ class LinkPageBlockController extends Controller
         LinkPage $linkPage,
         LinkPageBlock $linkPageBlock,
     ): StreamedResponse {
-        $workspace = $this->workspaces->currentFor($request->user());
-        abort_unless((int) $linkPage->workspace_id === (int) $workspace->id, 404);
-        Gate::authorize('view', $linkPage);
+        $workspace = $this->authorizePage($request, $linkPage, 'view');
         abort_unless($linkPageBlock->link_page_id === $linkPage->id && $linkPageBlock->type === 'image', 404);
 
         return $this->streamImage($this->imageMedia($linkPageBlock, (int) $workspace->id));
@@ -240,11 +232,20 @@ class LinkPageBlockController extends Controller
 
     private function authorizePage(Request $request, LinkPage $linkPage, string $ability): Workspace
     {
-        $workspace = $this->workspaces->currentFor($request->user());
+        $workspace = $this->workspaces->forContentRequest($request);
         abort_unless((int) $linkPage->workspace_id === (int) $workspace->id, 404);
-        Gate::authorize($ability, $linkPage);
+        app(AdminContentAccess::class)->authorize($request, $ability, $linkPage);
 
         return $workspace;
+    }
+
+    private function deleteMedia(Request $request, ContentMedia $media): void
+    {
+        if ($request->attributes->has(ScopedAdminContent::ATTRIBUTE)) {
+            DB::afterCommit(fn () => $this->media->delete($media));
+        } else {
+            $this->media->delete($media);
+        }
     }
 
     private function imageMedia(LinkPageBlock $block, int $workspaceId): ContentMedia

@@ -51,10 +51,10 @@ class ContentMediaController extends Controller
 
         $contentDisposition = 'inline';
         if ($isFile) {
-            $filenameFallback = preg_replace('/[^A-Za-z0-9._-]/', '_', $media->original_name) ?: 'download.pdf';
+            $filenameFallback = preg_replace('/[^A-Za-z0-9._-]/', '_', $media->displayName()) ?: 'download.pdf';
             $contentDisposition = HeaderUtils::makeDisposition(
                 'attachment',
-                $media->original_name,
+                $media->displayName(),
                 $filenameFallback,
             );
         }

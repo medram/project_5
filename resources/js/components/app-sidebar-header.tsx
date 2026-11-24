@@ -15,8 +15,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { WorkspaceContext } from '@/types/workspaces';
-import type { NotificationPreview } from '@/types/notifications';
 
 export function AppSidebarHeader({
     breadcrumbs = [],
@@ -28,11 +26,7 @@ export function AppSidebarHeader({
     showSearch?: boolean;
 }) {
     const { workspace, notificationUnreadCount, notificationPreview } =
-        usePage<{
-            workspace?: WorkspaceContext;
-            notificationUnreadCount: number;
-            notificationPreview: NotificationPreview[];
-        }>().props;
+        usePage().props;
 
     return (
         <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 bg-background px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-16 sm:px-5">

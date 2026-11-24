@@ -26,13 +26,6 @@ class LinkPageFactory extends Factory
     {
         return $this->afterMaking(function (LinkPage $page): void {
             $page->workspace_id ??= app(WorkspaceContext::class)->currentFor($page->user)->id;
-        })->afterCreating(function (LinkPage $page): void {
-            $page->variants()->create([
-                'name' => 'Control',
-                'weight' => 100,
-                'is_control' => true,
-                'is_active' => true,
-            ]);
         });
     }
 }

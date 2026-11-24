@@ -4,10 +4,13 @@ namespace App\Services\Content;
 
 use App\Enums\MediaPurpose;
 use App\Enums\PlanMetric;
+use App\Http\Middleware\ScopedAdminContent;
 use App\Models\ContentMedia;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Billing\EnforcesPlanLimits;
+use App\Services\Platform\AdminContentMutation;
+use App\Services\Platform\PlatformAuthorization;
 use App\Services\Settings\PlatformSettings;
 use ErrorException;
 use finfo;
@@ -41,7 +44,13 @@ class ContentMediaStorage
 
     public function store(UploadedFile $file, Workspace $workspace, User $user, MediaPurpose $purpose): ContentMedia
     {
-        if (! $user->belongsToWorkspace($workspace)) {
+        $scope = request()->attributes->get(ScopedAdminContent::ATTRIBUTE);
+        $scopedAdmin = is_array($scope)
+            && request()->user()?->is($user)
+            && (int) $scope['actor_id'] === (int) $user->getKey()
+            && $scope['workspace']->is($workspace)
+            && app(PlatformAuthorization::class)->allows($user, $scope['permission']);
+        if (! $scopedAdmin && ! $user->belongsToWorkspace($workspace)) {
             throw new AuthorizationException('The user is not a member of the media workspace.');
         }
 
@@ -95,7 +104,7 @@ class ContentMediaStorage
             $publicId = (string) Str::uuid();
             $originalName = $this->safeOriginalName($file);
 
-            return app(EnforcesPlanLimits::class)->create(
+            $media = app(EnforcesPlanLimits::class)->create(
                 $workspace,
                 PlanMetric::StorageBytes,
                 function (Workspace $lockedWorkspace) use (
@@ -148,6 +157,11 @@ class ContentMediaStorage
                 },
                 $storedSize,
             );
+            if ($scopedAdmin) {
+                app(AdminContentMutation::class)->onRollback(request(), fn () => Storage::disk($media->disk)->delete($media->path));
+            }
+
+            return $media;
         } finally {
             if ($temporaryPath !== null && is_file($temporaryPath)) {
                 unlink($temporaryPath);
@@ -289,6 +303,22 @@ class ContentMediaStorage
     {
         if (! $media->trashed()) {
             $media->delete();
+        }
+    }
+
+    public function deleteIfUnreferencedPlatformAsset(?int $mediaId): void
+    {
+        if ($mediaId === null || $this->settings->assetReferenced($mediaId)) {
+            return;
+        }
+
+        $media = ContentMedia::query()
+            ->whereKey($mediaId)
+            ->where('purpose', MediaPurpose::PlatformAsset)
+            ->first();
+
+        if ($media instanceof ContentMedia) {
+            $this->delete($media);
         }
     }
 

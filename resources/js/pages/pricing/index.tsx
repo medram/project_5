@@ -10,6 +10,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { formatMoney } from '@/lib/money';
 import type { BillingPlan } from '@/types/billing';
 
 type Props = {
@@ -22,16 +23,10 @@ type Props = {
     loginPath: string;
 };
 
-function amount(plan: BillingPlan, value: number): string {
-    if (value === 0) {
-        return 'Free';
-    }
-
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: plan.currency,
-        maximumFractionDigits: 0,
-    }).format(value / 100);
+function amount(plan: BillingPlan, value: number | null): string {
+    if (value === null) return 'Price unavailable';
+    if (plan.code === 'free') return 'Free';
+    return formatMoney(value, plan.currency);
 }
 
 export default function Pricing({
@@ -91,14 +86,15 @@ export default function Pricing({
                                     <div>
                                         <p className="text-2xl font-semibold">
                                             {amount(plan, plan.monthlyPrice)}
-                                            <span className="text-sm font-normal text-muted-foreground">
-                                                {' '}
-                                                / month
-                                            </span>
+                                            {plan.monthlyPrice !== null && (
+                                                <span className="text-sm font-normal text-muted-foreground">
+                                                    {' '}/ month
+                                                </span>
+                                            )}
                                         </p>
                                         <p className="text-muted-foreground">
                                             {annualDisplay
-                                                ? `${amount(plan, plan.annualPrice)} / year`
+                                                ? `${amount(plan, plan.annualPrice)}${plan.annualPrice === null ? '' : ' / year'}`
                                                 : 'Annual billing hidden'}
                                         </p>
                                     </div>

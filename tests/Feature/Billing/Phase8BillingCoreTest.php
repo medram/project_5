@@ -31,6 +31,9 @@ class Phase8BillingCoreTest extends TestCase
         $business = Plan::query()->where('code', 'business')->sole();
         $pro->update(['stripe_monthly_price_id' => 'price_pro_month', 'stripe_yearly_price_id' => 'price_pro_year']);
         $business->update(['stripe_monthly_price_id' => 'price_business_month']);
+        $this->mapPrice($pro, 'price_pro_month', 'month');
+        $this->mapPrice($pro, 'price_pro_year', 'year');
+        $this->mapPrice($business, 'price_business_month', 'month');
 
         $this->subscribe($workspace, 'price_pro_month');
 
@@ -96,6 +99,7 @@ class Phase8BillingCoreTest extends TestCase
         $workspace = $user->personalWorkspace()->sole();
         $pro = Plan::query()->where('code', 'pro')->sole();
         $pro->update(['stripe_yearly_price_id' => 'price_pro_year']);
+        $this->mapPrice($pro, 'price_pro_year', 'year');
 
         $this->subscribe($workspace, 'price_unmapped', status: 'trialing');
 
@@ -208,6 +212,15 @@ class Phase8BillingCoreTest extends TestCase
             PlanMetric::BioPages,
             fn (): string => 'must-not-run',
         );
+    }
+
+    private function mapPrice(Plan $plan, string $id, string $interval): void
+    {
+        DB::table('plan_stripe_prices')->insert([
+            'plan_id' => $plan->id, 'stripe_price_id' => $id, 'interval' => $interval,
+            'currency' => 'usd', 'unit_amount' => null, 'verified_at' => null,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
     }
 
     private function subscribe(Workspace $workspace, string $price, string $status = 'active', mixed $endsAt = null): void

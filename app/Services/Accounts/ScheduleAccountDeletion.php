@@ -5,6 +5,7 @@ namespace App\Services\Accounts;
 use App\Enums\PlatformRoleCode;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Platform\PlatformAuthorization;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Laravel\Cashier\Subscription;
@@ -14,6 +15,7 @@ final class ScheduleAccountDeletion
     public function schedule(User $user): void
     {
         DB::transaction(function () use ($user): void {
+            app(PlatformAuthorization::class)->lockSuperAdmin();
             $locked = User::query()->lockForUpdate()->findOrFail($user->getKey());
             /** @var User $locked */
             if ($locked->deletion_requested_at !== null) {

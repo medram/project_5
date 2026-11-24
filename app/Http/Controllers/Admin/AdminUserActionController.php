@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\PlatformPermission;
+use App\Concerns\ProfileValidationRules;
 use App\Enums\PlatformRoleCode;
+use App\Enums\PlatformPermission;
+use App\Models\PlatformRole;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\User;
@@ -23,6 +25,8 @@ use Illuminate\Validation\ValidationException;
 
 class AdminUserActionController extends Controller
 {
+    use ProfileValidationRules;
+
     public function __construct(
         private readonly AdminAccountMutation $mutations,
         private readonly AdminAudit $audit,
@@ -73,6 +77,57 @@ class AdminUserActionController extends Controller
                 );
             },
         );
+
+        return $this->backToUser($user);
+    }
+
+    public function updateProfile(Request $request, User $user): RedirectResponse
+    {
+        $data = $request->validate($this->profileRules($user->id));
+        $actorId = $this->actor($request)->getKey();
+
+        $emailChanged = DB::transaction(function () use ($actorId, $user, $data): bool {
+            $accounts = User::query()->whereKey([$actorId, $user->getKey()])
+                ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            $actor = $accounts->get($actorId);
+            $account = $accounts->get($user->getKey());
+            abort_if($actor === null || $account === null, 404);
+            abort_unless($this->authorization->allows($actor, PlatformPermission::AdminUsersManageProfile), 403);
+
+            if (! $actor->is($account)) {
+                abort_unless($this->authorization->canDelegate($actor, $this->authorization->assignedAbilities($account)), 403);
+                abort_if(
+                    $account->hasPlatformRole(PlatformRoleCode::SuperAdmin)
+                    && ! $actor->hasPlatformRole(PlatformRoleCode::SuperAdmin),
+                    403,
+                );
+            }
+
+            $account->fill($data);
+            $changed = array_keys($account->getDirty());
+            $emailChanged = $account->isDirty('email');
+            if ($emailChanged) {
+                $account->email_verified_at = null;
+            }
+            $account->save();
+            $this->audit->record($actor, PlatformPermission::AdminUsersManageProfile, 'update_profile', $account, null, [
+                'fields' => $changed,
+            ]);
+
+            return $emailChanged;
+        });
+
+        if ($emailChanged) {
+            try {
+                $user->refresh()->sendEmailVerificationNotification();
+            } catch (\Throwable $exception) {
+                report($exception);
+
+                return $this->backToUser($user)->withErrors([
+                    'profile' => 'The profile was saved, but the verification email failed. Use the resend verification action.',
+                ]);
+            }
+        }
 
         return $this->backToUser($user);
     }
@@ -182,10 +237,10 @@ class AdminUserActionController extends Controller
     public function updateRole(Request $request, User $user): RedirectResponse
     {
         $validated = $request->validate([
-            'role' => ['required', Rule::enum(PlatformRoleCode::class)],
+            'role' => ['required', 'string', Rule::exists('platform_roles', 'code')],
             'assigned' => ['required', 'boolean'],
         ]);
-        $role = PlatformRoleCode::from($validated['role']);
+        $role = PlatformRole::query()->where('code', $validated['role'])->firstOrFail();
 
         if ((bool) $validated['assigned']) {
             $this->roleAssignments->grant($this->actor($request), $user, $role);

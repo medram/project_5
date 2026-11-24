@@ -1,5 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
+import { FieldError } from '@/components/ui/field';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -39,7 +39,9 @@ export default function ConfirmPassword() {
                                 autoFocus
                             />
 
-                            <InputError message={errors.password} />
+                            {errors.password && (
+                                <FieldError>{errors.password}</FieldError>
+                            )}
                         </div>
 
                         <div className="flex items-center">

@@ -51,27 +51,28 @@ class AdminSettingOptionController extends Controller
             ->where('visibility', 'private')
             ->whereIn('scan_state', ['not_required', 'clean'])
             ->whereNull('expires_at')
-            ->when($query !== '', fn ($builder) => $builder->where('original_name', 'like', '%'.$query.'%'))
+            ->when($query !== '', fn ($builder) => $builder->where(fn ($names) => $names
+                ->where('display_name', 'like', '%'.$query.'%')
+                ->orWhere(fn ($original) => $original->whereNull('display_name')->where('original_name', 'like', '%'.$query.'%'))))
             ->orderByDesc('id')
             ->limit(50)
-            ->get(['id', 'original_name', 'mime_type']);
+            ->get(['id', 'original_name', 'display_name', 'mime_type']);
 
         if ($selected !== []) {
-            $rows = $rows->merge(
-                ContentMedia::query()
-                    ->whereIn('id', array_map('intval', $selected))
-                    ->where('purpose', MediaPurpose::PlatformAsset)
-                    ->whereNull('workspace_id')
-                    ->where('visibility', 'private')
-                    ->whereIn('scan_state', ['not_required', 'clean'])
-                    ->whereNull('expires_at')
-                    ->get(['id', 'original_name', 'mime_type']),
-            )->unique('id');
+            $selectedRows = ContentMedia::query()
+                ->whereIn('id', array_map('intval', $selected))
+                ->where('purpose', MediaPurpose::PlatformAsset)
+                ->whereNull('workspace_id')
+                ->where('visibility', 'private')
+                ->whereIn('scan_state', ['not_required', 'clean'])
+                ->whereNull('expires_at')
+                ->get(['id', 'original_name', 'display_name', 'mime_type']);
+            $rows = $selectedRows->merge($rows)->unique('id')->take(50);
         }
 
         return $rows->map(fn (ContentMedia $media): array => [
             'value' => (string) $media->id,
-            'label' => $media->original_name,
+            'label' => $media->displayName(),
             'description' => $media->mime_type,
         ])->values()->all();
     }

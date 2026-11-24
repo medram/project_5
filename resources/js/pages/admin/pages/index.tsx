@@ -1,12 +1,13 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
-import { ExternalLink, Plus, Trash2 } from 'lucide-react';
+import { ExternalLink, Globe2, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
     AdminConfirmDialog,
     type AdminConfirmation,
 } from '@/components/admin/admin-confirm-dialog';
 import { formatAdminDate } from '@/components/admin/format';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -93,24 +94,18 @@ export default function AdminPagesIndex({
         <>
             <Head title="Custom pages — Administration" />
             <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="space-y-1">
-                        <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
-                            Custom pages
-                        </h1>
-                        <p className="max-w-3xl text-sm text-muted-foreground">
-                            Draft and publish sanitized application pages.
-                            Public pages are served only from published records;
-                            reserved application slugs cannot be claimed.
-                        </p>
-                    </div>
-                    <Button asChild className="min-h-11 self-start">
-                        <Link href={pages.create().url}>
-                            <Plus aria-hidden="true" />
-                            New page
-                        </Link>
-                    </Button>
-                </header>
+                <PageHeader
+                    title="Custom pages"
+                    description="Draft and publish sanitized application pages. Public pages are served only from published records; reserved application slugs cannot be claimed."
+                    actions={
+                        <Button asChild className="min-h-11 self-start">
+                            <Link href={pages.create().url}>
+                                <Plus aria-hidden="true" />
+                                New page
+                            </Link>
+                        </Button>
+                    }
+                />
 
                 <form
                     onSubmit={apply}
@@ -236,23 +231,26 @@ export default function AdminPagesIndex({
                                         <div className="flex flex-wrap justify-end gap-1">
                                             <Button
                                                 asChild
-                                                size="sm"
-                                                variant="outline"
-                                                className="min-h-9"
+                                                size="icon"
+                                                variant="secondary"
+                                                className="size-8 rounded-full"
+                                                title="Edit page"
                                             >
                                                 <Link
                                                     href={
                                                         pages.edit(page.id).url
                                                     }
+                                                    aria-label={`Edit ${page.title}`}
                                                 >
-                                                    Edit
+                                                    <Pencil aria-hidden="true" />
                                                 </Link>
                                             </Button>
                                             <Button
                                                 asChild
-                                                size="sm"
-                                                variant="ghost"
-                                                className="min-h-9"
+                                                size="icon"
+                                                variant="secondary"
+                                                className="size-8 rounded-full"
+                                                title="Preview page"
                                             >
                                                 <a
                                                     href={
@@ -261,16 +259,19 @@ export default function AdminPagesIndex({
                                                     }
                                                     target="_blank"
                                                     rel="noreferrer"
+                                                    aria-label={`Preview ${page.title}`}
                                                 >
                                                     <ExternalLink aria-hidden="true" />
-                                                    Preview
                                                 </a>
                                             </Button>
                                             {page.state !== 'published' && (
                                                 <Button
                                                     type="button"
-                                                    size="sm"
-                                                    className="min-h-9"
+                                                    size="icon"
+                                                    variant="secondary"
+                                                    className="size-8 rounded-full"
+                                                    title="Publish page"
+                                                    aria-label={`Publish ${page.title}`}
                                                     onClick={() =>
                                                         publish(
                                                             page.id,
@@ -278,14 +279,16 @@ export default function AdminPagesIndex({
                                                         )
                                                     }
                                                 >
-                                                    Publish
+                                                    <Globe2 aria-hidden="true" />
                                                 </Button>
                                             )}
                                             <Button
                                                 type="button"
-                                                size="sm"
+                                                size="icon"
                                                 variant="destructive"
-                                                className="min-h-9"
+                                                className="size-8 rounded-full"
+                                                title="Delete page"
+                                                aria-label={`Delete ${page.title}`}
                                                 onClick={() =>
                                                     destroy(page.id, page.title)
                                                 }
@@ -341,6 +344,7 @@ export default function AdminPagesIndex({
                                         className="min-h-11"
                                     >
                                         <Link href={pages.edit(page.id).url}>
+                                            <Pencil aria-hidden="true" />
                                             Edit
                                         </Link>
                                     </Button>
@@ -355,6 +359,7 @@ export default function AdminPagesIndex({
                                             target="_blank"
                                             rel="noreferrer"
                                         >
+                                            <ExternalLink aria-hidden="true" />
                                             Preview
                                         </a>
                                     </Button>
@@ -367,6 +372,7 @@ export default function AdminPagesIndex({
                                                 publish(page.id, page.title)
                                             }
                                         >
+                                            <Globe2 aria-hidden="true" />
                                             Publish
                                         </Button>
                                     )}
@@ -379,6 +385,7 @@ export default function AdminPagesIndex({
                                             destroy(page.id, page.title)
                                         }
                                     >
+                                        <Trash2 aria-hidden="true" />
                                         Delete
                                     </Button>
                                 </div>
@@ -400,7 +407,10 @@ export default function AdminPagesIndex({
                         {paginator.total.toLocaleString()} pages
                     </p>
                     {paginator.last_page > 1 && (
-                        <nav className="flex flex-wrap gap-1">
+                        <nav
+                            className="flex flex-wrap gap-1"
+                            aria-label="Pages pagination"
+                        >
                             {paginator.links.map((link) =>
                                 link.url === null ? (
                                     <span

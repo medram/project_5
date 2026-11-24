@@ -391,7 +391,7 @@ class AdministrationTest extends TestCase
         $this->assertFalse($account->refresh()->hasPlatformRole(PlatformRoleCode::Support));
     }
 
-    public function test_roles_page_is_a_read_only_matrix_with_members(): void
+    public function test_roles_page_exposes_builtin_roles_permissions_and_members(): void
     {
         $administrator = User::factory()->admin()->create();
         User::factory()->support()->create(['name' => 'Support Member']);
@@ -408,6 +408,8 @@ class AdministrationTest extends TestCase
                 ->where('roles.1.code', 'support')
                 ->where('roles.1.usersCount', 1)
                 ->where('roles.1.members.0.name', 'Support Member')
+                ->where('roles.0.isBuiltIn', true)
+                ->has('allPermissions')
                 ->has('roles.0.permissions'));
     }
 

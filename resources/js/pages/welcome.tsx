@@ -1,13 +1,29 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import AppLogo from '@/components/app-logo';
 import { TrackingConsent } from '@/components/analytics/tracking-consent';
+import { PublicTrackingPixels } from '@/components/analytics/public-tracking-pixels';
 import PublicAdSlot from '@/components/platform/public-ad-slot';
 import MaintenanceBanner from '@/components/platform/maintenance-banner';
+import { useAppearance } from '@/hooks/use-appearance';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard, login } from '@/routes';
 import { register } from '@/routes';
 
+const emptyTrackingPixels = {
+    page_view: [],
+    button_click: [],
+    lead_submit: [],
+};
+
 export default function Welcome() {
     const { auth, platform } = usePage().props;
+    const { resolvedAppearance } = useAppearance();
+    const brandName = platform?.siteName ?? 'LinkPilot';
+    const fullLogo =
+        resolvedAppearance === 'dark'
+            ? (platform?.logos.dark ?? platform?.logos.light ?? null)
+            : (platform?.logos.light ?? platform?.logos.dark ?? null);
+    const compactLogo = platform?.logos.compact ?? null;
     const { trackingConsent, privacyUrl, canGrantConsent } = usePage<{
         trackingConsent: 'granted' | 'denied' | null;
         privacyUrl: string | null;
@@ -22,33 +38,69 @@ export default function Welcome() {
                     platform?.seo.homeTitle ?? platform?.seo.title ?? 'Welcome'
                 }
             />
+            <PublicTrackingPixels
+                pixels={emptyTrackingPixels}
+                consent={trackingConsent}
+            >
+                {null}
+            </PublicTrackingPixels>
             <div className="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] lg:justify-center lg:p-8 dark:bg-[#0a0a0a]">
                 <MaintenanceBanner />
                 <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
-                    <nav className="flex flex-wrap items-center justify-end gap-4">
-                        {auth.user ? (
+                    <nav
+                        aria-label="Main navigation"
+                        className="flex flex-wrap items-center justify-between gap-4"
+                    >
+                        <div className="inline-flex min-w-0 items-center">
                             <Link
-                                href={dashboard()}
-                                className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
+                                href="/"
+                                aria-label={brandName}
+                                className="inline-flex items-center gap-2 text-foreground sm:hidden"
                             >
-                                Dashboard
+                                {compactLogo ?? fullLogo ? (
+                                    <img
+                                        src={compactLogo ?? fullLogo ?? undefined}
+                                        alt=""
+                                        width={32}
+                                        height={32}
+                                        className="size-8 shrink-0 object-contain"
+                                    />
+                                ) : null}
+                                <span>{brandName}</span>
                             </Link>
-                        ) : null}
-                        {(platform?.menus.header ?? []).map((item) => (
                             <Link
-                                key={item.href}
-                                href={item.href}
-                                className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
+                                href="/"
+                                aria-label={brandName}
+                                className="hidden items-center text-foreground sm:inline-flex"
                             >
-                                {item.label}
+                                <AppLogo />
                             </Link>
-                        ))}
-                        {!platform && !auth.user ? (
-                            <>
-                                <Link href={login()}>Log in</Link>
-                                <Link href={register()}>Register</Link>
-                            </>
-                        ) : null}
+                        </div>
+                        <div className="flex flex-wrap items-center justify-end gap-4">
+                            {auth.user ? (
+                                <Link
+                                    href={dashboard()}
+                                    className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
+                                >
+                                    Dashboard
+                                </Link>
+                            ) : null}
+                            {(platform?.menus.header ?? []).map((item) => (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
+                                >
+                                    {item.label}
+                                </Link>
+                            ))}
+                            {!platform && !auth.user ? (
+                                <>
+                                    <Link href={login()}>Log in</Link>
+                                    <Link href={register()}>Register</Link>
+                                </>
+                            ) : null}
+                        </div>
                     </nav>
                 </header>
                 <div className="w-full max-w-[335px] lg:max-w-4xl">

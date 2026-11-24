@@ -79,6 +79,12 @@ class Plan extends Model
         return $this->hasMany(WorkspacePlanOverride::class);
     }
 
+    /** @return HasMany<PlanStripePrice, $this> */
+    public function stripePrices(): HasMany
+    {
+        return $this->hasMany(PlanStripePrice::class);
+    }
+
     public function stripePriceIdFor(string $interval): ?string
     {
         $column = $interval === 'year' ? 'stripe_yearly_price_id' : 'stripe_monthly_price_id';

@@ -46,7 +46,6 @@ export default function ManagePasskeys(props: Props) {
     return (
         <div className="space-y-6">
             <Heading
-                variant="small"
                 title="Passkeys"
                 description="Manage your passkeys for passwordless sign-in"
             />

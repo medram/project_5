@@ -117,7 +117,7 @@ export default function AdminUsersIndex({
     return (
         <>
             <Head title="Users — Administration" />
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-5 pt-4 pb-10">
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
                 <PageHeader
                     title="Users"
                     description="Account status, platform roles, workspace counts, and entitlement source. Content and visitor data are never exposed here."

@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Enums\PlanMetric;
 use App\Http\Requests\StoreBioPageRequest;
 use App\Http\Requests\UpdateBioPageRequest;
+use App\Http\Middleware\ScopedAdminContent;
 use App\Models\BioPage;
 use App\Services\Billing\EnforcesPlanLimits;
 use App\Services\BioPages\BioPagePresentation;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,23 +49,29 @@ class BioPageController extends Controller
     public function show(Request $request, BioPage $bioPage): Response
     {
         $this->ensureInCurrentWorkspace($request, $bioPage);
-        Gate::authorize('view', $bioPage);
-        $presentation = app(BioPagePresentation::class)->make($bioPage, true);
+        app(AdminContentAccess::class)->authorize($request, 'view', $bioPage);
+        $admin = $request->attributes->get(ScopedAdminContent::ATTRIBUTE);
+        $presentation = app(BioPagePresentation::class)->make(
+            $bioPage,
+            true,
+            $admin ? fn ($page, $block) => route('admin.content.biolinks.blocks.preview-image', [$page, $block]) : null,
+        );
         $bioPage->setAttribute('appearance', $presentation['appearance']);
         $previewAt = now('UTC')->toISOString();
 
-        return Inertia::render('bio-pages/edit', [
+        return Inertia::render($admin ? 'admin/content/bio-edit' : 'bio-pages/edit', [
             'bioPage' => $bioPage,
             'bioLinks' => $bioPage->bioLinks()->get(),
             'contentBlocks' => array_values(array_filter($presentation['items'], fn (array $item): bool => $item['type'] !== 'link')),
             'previewAt' => $previewAt,
+            ...($admin ? ['backUrl' => $admin['list_url'], 'editorUrl' => $admin['editor_url']] : []),
         ]);
     }
 
     public function update(UpdateBioPageRequest $request, BioPage $bioPage): RedirectResponse
     {
         $this->ensureInCurrentWorkspace($request, $bioPage);
-        Gate::authorize('update', $bioPage);
+        app(AdminContentAccess::class)->authorize($request, 'update', $bioPage);
         $data = $request->validated();
 
         if (isset($data['appearance'])) {
@@ -75,7 +83,9 @@ class BioPageController extends Controller
 
         $bioPage->update($data);
 
-        return back(fallback: route('bio-pages.show', $bioPage));
+        $admin = $request->attributes->get(ScopedAdminContent::ATTRIBUTE);
+
+        return $admin ? redirect($admin['editor_url']) : back(fallback: route('bio-pages.show', $bioPage));
     }
 
     public function destroy(Request $request, BioPage $bioPage): RedirectResponse
@@ -89,6 +99,6 @@ class BioPageController extends Controller
 
     private function ensureInCurrentWorkspace(Request $request, BioPage $bioPage): void
     {
-        abort_unless((int) $bioPage->workspace_id === (int) $this->workspaces->currentFor($request->user())->id, 404);
+        abort_unless((int) $bioPage->workspace_id === (int) $this->workspaces->forContentRequest($request)->id, 404);
     }
 }

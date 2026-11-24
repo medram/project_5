@@ -10,6 +10,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import { type FormEvent } from 'react';
+import { useContentEditorRoutes } from '@/components/admin/content-editor-routes';
 import { LinkPageBlockForm } from '@/components/link-pages/block-form';
 import { LinkPageVariantManager } from '@/components/link-pages/variant-manager';
 import { LinkPagePresentation } from '@/components/link-pages/presentation';
@@ -125,6 +126,7 @@ function ItemForm({
     item: LinkPageItem;
     variants: LinkPageVariant[];
 }) {
+    const { editorUrl } = useContentEditorRoutes();
     const form = useForm<LinkPageItemFormData>({
         title: item.title,
         destination_url: item.destinationUrl,
@@ -134,11 +136,11 @@ function ItemForm({
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        form.patch(updateItem([page, item]).url, { preserveScroll: true });
+        form.patch(editorUrl(updateItem([page, item]).url), { preserveScroll: true });
     }
 
     function remove() {
-        router.delete(destroyItem([page, item]).url, { preserveScroll: true });
+        router.delete(editorUrl(destroyItem([page, item]).url), { preserveScroll: true });
     }
 
     return (
@@ -271,6 +273,7 @@ function AddItemForm({
     variants: LinkPageVariant[];
     selectedVariantId: number;
 }) {
+    const { editorUrl } = useContentEditorRoutes();
     const form = useForm<LinkPageItemFormData>({
         title: '',
         destination_url: '',
@@ -280,7 +283,7 @@ function AddItemForm({
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        form.post(storeItem(page).url, {
+        form.post(editorUrl(storeItem(page).url), {
             preserveScroll: true,
             onSuccess: () => form.reset(),
         });
@@ -383,6 +386,7 @@ export default function LinkPageEditor({
     leadsUrl,
     privacyUrl,
 }: LinkPageEditorProps) {
+    const { editorUrl, backUrl, isAdmin } = useContentEditorRoutes();
     const selectedVariant = variants.find(
         (variant) => variant.id === selectedVariantId,
     );
@@ -397,7 +401,7 @@ export default function LinkPageEditor({
     });
 
     function save() {
-        const url = update(linkPage).url;
+        const url = editorUrl(update(linkPage).url);
         form.patch(
             selectedVariant?.isControl
                 ? url
@@ -432,7 +436,7 @@ export default function LinkPageEditor({
         ];
 
         router.patch(
-            reorder(linkPage).url,
+            editorUrl(reorder(linkPage).url),
             {
                 variant_id: selectedVariantId,
                 items: order,
@@ -454,7 +458,7 @@ export default function LinkPageEditor({
                             variant="ghost"
                             className="-ml-3"
                         >
-                            <Link href={index().url}>
+                            <Link href={backUrl ?? index().url}>
                                 <ArrowLeft data-icon="inline-start" />
                                 Link pages
                             </Link>
@@ -479,10 +483,12 @@ export default function LinkPageEditor({
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        <Button asChild variant="outline">
-                            <Link href={insightsUrl}>Variant insights</Link>
-                        </Button>
-                        {canViewLeads && leadsUrl && (
+                        {!isAdmin && (
+                            <Button asChild variant="outline">
+                                <Link href={insightsUrl}>Variant insights</Link>
+                            </Button>
+                        )}
+                        {!isAdmin && canViewLeads && leadsUrl && (
                             <Button asChild variant="outline">
                                 <Link href={leadsUrl}>Lead responses</Link>
                             </Button>

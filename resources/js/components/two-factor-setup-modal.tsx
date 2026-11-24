@@ -3,7 +3,7 @@ import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { Check, Copy, ScanLine } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AlertError from '@/components/alert-error';
-import InputError from '@/components/input-error';
+import { FieldError } from '@/components/ui/field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -196,11 +196,14 @@ function TwoFactorVerificationStep({
                                     )}
                                 </InputOTPGroup>
                             </InputOTP>
-                            <InputError
-                                message={
-                                    errors?.confirmTwoFactorAuthentication?.code
-                                }
-                            />
+                            {errors?.confirmTwoFactorAuthentication?.code && (
+                                <FieldError>
+                                    {
+                                        errors.confirmTwoFactorAuthentication
+                                            .code
+                                    }
+                                </FieldError>
+                            )}
                         </div>
 
                         <div className="flex w-full space-x-5">

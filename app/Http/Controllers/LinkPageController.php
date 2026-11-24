@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PlanMetric;
+use App\Http\Middleware\ScopedAdminContent;
 use App\Http\Requests\StoreLinkPageRequest;
 use App\Models\LinkPage;
 use App\Models\Workspace;
 use App\Services\Billing\EnforcesPlanLimits;
 use App\Services\Content\ContentMediaStorage;
 use App\Services\LinkPages\LinkPagePresentation;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -49,18 +51,10 @@ class LinkPageController extends Controller
             $workspace,
             PlanMetric::LinkPages,
             function (Workspace $workspace) use ($attributes, $request): LinkPage {
-                $linkPage = $workspace->linkPages()->create([
+                return $workspace->linkPages()->create([
                     ...$attributes,
                     'user_id' => $request->user()->id,
                 ]);
-                $linkPage->variants()->create([
-                    'name' => 'Control',
-                    'weight' => 100,
-                    'is_control' => true,
-                    'is_active' => true,
-                ]);
-
-                return $linkPage;
             },
         );
 
@@ -70,7 +64,7 @@ class LinkPageController extends Controller
     public function show(Request $request, LinkPage $linkPage): Response
     {
         $this->ensureInCurrentWorkspace($request, $linkPage);
-        Gate::authorize('view', $linkPage);
+        app(AdminContentAccess::class)->authorize($request, 'view', $linkPage);
         $controlVariant = $linkPage->controlVariant()->where('is_active', true)->firstOrFail();
         $requestedVariantId = filter_var($request->query('variant'), FILTER_VALIDATE_INT);
         $selectedVariant = is_int($requestedVariantId) && $requestedVariantId > 0
@@ -78,11 +72,18 @@ class LinkPageController extends Controller
             : null;
         $selectedVariant ??= $controlVariant;
         $variants = $linkPage->variants()->orderByDesc('is_control')->orderBy('id')->get();
-        $items = $this->presentation->make($linkPage, editor: true, variant: $selectedVariant);
+        $scope = $request->attributes->get(ScopedAdminContent::ATTRIBUTE);
+        $items = $this->presentation->make(
+            $linkPage,
+            editor: true,
+            variant: $selectedVariant,
+            editorImageUrl: $scope ? fn ($page, $block) => route('admin.content.link-pages.blocks.preview-image', [$page, $block]) : null,
+        );
 
-        $canViewLeads = $request->user()->can('viewLeads', $linkPage);
+        $canViewLeads = ! $scope && $request->user()->can('viewLeads', $linkPage);
 
-        return Inertia::render('link-pages/edit', [
+        return Inertia::render($scope ? 'admin/content/link-page-edit' : 'link-pages/edit', [
+            'backUrl' => $scope['list_url'] ?? null,
             'linkPage' => $this->pageData($linkPage),
             'variants' => $variants->map(fn ($variant): array => [
                 'id' => $variant->id,
@@ -107,7 +108,7 @@ class LinkPageController extends Controller
     public function update(StoreLinkPageRequest $request, LinkPage $linkPage): RedirectResponse
     {
         $this->ensureInCurrentWorkspace($request, $linkPage);
-        Gate::authorize('update', $linkPage);
+        app(AdminContentAccess::class)->authorize($request, 'update', $linkPage);
         $linkPage->update($request->validated());
 
         return to_route('link-pages.show', [
@@ -150,7 +151,7 @@ class LinkPageController extends Controller
 
     private function ensureInCurrentWorkspace(Request $request, LinkPage $linkPage): void
     {
-        $workspace = $this->workspaces->currentFor($request->user());
+        $workspace = $this->workspaces->forContentRequest($request);
         abort_unless((int) $linkPage->workspace_id === (int) $workspace->id, 404);
     }
 }

@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { type FormEvent, useId, useState } from 'react';
+import { useContentEditorRoutes } from '@/components/admin/content-editor-routes';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -123,6 +124,7 @@ export function LinkPageBlockForm({
     variants: LinkPageVariant[];
     selectedVariantId: number;
 }) {
+    const { editorUrl } = useContentEditorRoutes();
     const fieldPrefix = useId();
     const [value, setValue] = useState(() => initialValue(block));
     const [variantId, setVariantId] = useState(
@@ -233,19 +235,19 @@ export function LinkPageBlockForm({
         if (block) {
             data.append('_method', 'patch');
             router.post(
-                updateBlock({ linkPage: page.id, linkPageBlock: block.id }).url,
+                editorUrl(updateBlock({ linkPage: page.id, linkPageBlock: block.id }).url),
                 data,
                 options,
             );
         } else {
-            router.post(storeBlock(page.id).url, data, options);
+            router.post(editorUrl(storeBlock(page.id).url), data, options);
         }
     }
 
     function remove() {
         if (!block) return;
         router.delete(
-            destroyBlock({ linkPage: page.id, linkPageBlock: block.id }).url,
+            editorUrl(destroyBlock({ linkPage: page.id, linkPageBlock: block.id }).url),
             { preserveScroll: true },
         );
     }

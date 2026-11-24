@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\MediaPurpose;
 use App\Models\CustomPage;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -49,7 +50,12 @@ class AdminCustomPageRequest extends FormRequest
             'placement' => ['nullable', Rule::in(['header', 'footer'])],
             'seo_title' => ['nullable', 'string', 'max:160'],
             'seo_description' => ['nullable', 'string', 'max:320'],
-            'og_media_id' => ['nullable', 'integer', 'exists:content_media,id'],
+            'og_media_id' => ['nullable', 'integer', Rule::exists('content_media', 'id')->where(fn ($query) => $query
+                ->where('purpose', MediaPurpose::PlatformAsset->value)
+                ->whereNull('workspace_id')->whereNull('deleted_at')->whereNull('expires_at')
+                ->where('visibility', 'private')
+                ->whereIn('mime_type', ['image/jpeg', 'image/png', 'image/webp'])
+                ->whereIn('scan_state', ['clean', 'not_required']))],
         ];
     }
 }

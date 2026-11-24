@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\LinkPage;
 use App\Models\LinkPageVariant;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -175,9 +175,9 @@ class LinkPageVariantController extends Controller
 
     private function authorizePage(Request $request, LinkPage $linkPage): void
     {
-        $workspace = $this->workspaces->currentFor($request->user());
+        $workspace = $this->workspaces->forContentRequest($request);
         abort_unless((int) $linkPage->workspace_id === (int) $workspace->id, 404);
-        Gate::authorize('update', $linkPage);
+        app(AdminContentAccess::class)->authorize($request, 'update', $linkPage);
     }
 
     private function editorResponse(LinkPage $linkPage, LinkPageVariant $variant): RedirectResponse

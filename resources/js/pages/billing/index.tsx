@@ -10,6 +10,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { formatMoney } from '@/lib/money';
 import type {
     BillingPageProps,
     BillingPlan,
@@ -37,18 +38,9 @@ const planFeatureRows: Array<{
     },
 ];
 
-function formatAmount(plan: BillingPlan, amount: number): string {
-    if (amount === 0) {
-        return 'Free';
-    }
-
-    const value = amount / 100;
-
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: plan.currency,
-        maximumFractionDigits: value % 1 === 0 ? 0 : 2,
-    }).format(value);
+function formatAmount(plan: BillingPlan, amount: number | null): string {
+    if (amount === null) return 'Price unavailable';
+    return plan.code === 'free' ? 'Free' : formatMoney(amount, plan.currency);
 }
 
 export default function BillingIndex({
@@ -95,15 +87,11 @@ export default function BillingIndex({
                                     {effectivePlan.name}
                                 </p>
                                 <p className="text-sm tabular-nums">
-                                    {formatAmount(
-                                        effectivePlan,
-                                        effectivePlan.monthlyPrice,
-                                    )}
-                                    {effectivePlan.monthlyPrice > 0 && (
-                                        <span className="text-muted-foreground">
-                                            /mo
-                                        </span>
-                                    )}
+                                    {providerManaged
+                                        ? providerSubscription?.baseAmount != null && providerSubscription.currency
+                                            ? `${formatMoney(providerSubscription.baseAmount, providerSubscription.currency)}${providerSubscription.interval === 'year' ? '/yr' : providerSubscription.interval === 'month' ? '/mo' : ''}`
+                                            : 'Price unavailable'
+                                        : `${override ? 'Catalog price: ' : ''}${formatAmount(effectivePlan, effectivePlan.monthlyPrice)}${effectivePlan.monthlyPrice !== null && effectivePlan.code !== 'free' ? '/mo' : ''}`}
                                 </p>
                             </div>
 
@@ -203,17 +191,11 @@ export default function BillingIndex({
                                                     {plan.name}
                                                 </CardTitle>
                                                 <CardDescription className="text-xs tabular-nums">
-                                                    {plan.monthlyPrice === 0
+                                                    {plan.code === 'free'
                                                         ? 'No cost'
-                                                        : `${formatAmount(
-                                                              plan,
-                                                              plan.monthlyPrice,
-                                                          )}/mo`}
-                                                    {plan.annualPrice > 0 &&
-                                                        ` · ${formatAmount(
-                                                            plan,
-                                                            plan.annualPrice,
-                                                        )}/yr`}
+                                                        : `${formatAmount(plan, plan.monthlyPrice)}${plan.monthlyPrice === null ? '' : '/mo'}`}
+                                                    {billing.annualDisplay && plan.code !== 'free' &&
+                                                        ` · ${formatAmount(plan, plan.annualPrice)}${plan.annualPrice === null ? '' : '/yr'}`}
                                                 </CardDescription>
                                             </div>
                                             {active && (
@@ -317,6 +299,9 @@ export default function BillingIndex({
                                                             Choose yearly
                                                         </Button>
                                                     )}
+                                                {!plan.checkout.month && (!billing.annualDisplay || !plan.checkout.year) && (
+                                                    <span className="text-sm text-muted-foreground">Price unavailable</span>
+                                                )}
                                             </div>
                                         ) : (
                                             <span className="text-sm text-muted-foreground">

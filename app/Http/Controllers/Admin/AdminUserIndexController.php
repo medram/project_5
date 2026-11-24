@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PlatformPermission;
 use App\Enums\PlatformRoleCode;
 use App\Http\Controllers\Controller;
 use App\Models\Link;
 use App\Models\Plan;
+use App\Models\PlanStripePrice;
 use App\Models\PlatformRole;
 use App\Models\User;
 use App\Services\Billing\WorkspaceUsage;
@@ -25,10 +27,13 @@ class AdminUserIndexController extends Controller
             'q' => ['nullable', 'string', 'max:100'],
             'status' => ['nullable', Rule::in(['active', 'suspended', 'deletion_pending'])],
             'verification' => ['nullable', Rule::in(['verified', 'unverified'])],
-            'role' => ['nullable', Rule::in([...array_map(fn (PlatformRoleCode $role): string => $role->value, PlatformRoleCode::cases()), 'none'])],
-            'plan' => ['nullable', 'string', Rule::exists('plans', 'code')->where('is_active', true)],
+            'role' => ['nullable', 'string', Rule::in([...PlatformRole::query()->pluck('code')->all(), 'none'])],
+            'plan' => ['nullable', 'string', Rule::exists('plans', 'code')],
         ]);
 
+        $hasCustomRoles = PlatformRole::query()
+            ->whereNotIn('code', [PlatformRoleCode::SuperAdmin->value, PlatformRoleCode::Support->value])
+            ->exists();
         $search = trim((string) ($filters['q'] ?? ''));
         $query = User::query()
             ->with([
@@ -75,17 +80,11 @@ class AdminUserIndexController extends Controller
         $planCode = $filters['plan'] ?? null;
 
         if ($planCode !== null) {
-            $plan = Plan::query()->where('code', $planCode)->where('is_active', true)->sole();
-            $paidPlans = Plan::query()
-                ->where('is_active', true)
-                ->where('code', '!=', 'free')
-                ->get(['id', 'stripe_monthly_price_id', 'stripe_yearly_price_id']);
-            $paidPrices = $paidPlans
-                ->flatMap(fn (Plan $paid): array => [$paid->stripe_monthly_price_id, $paid->stripe_yearly_price_id])
-                ->filter(fn (mixed $price): bool => is_string($price) && $price !== '')
-                ->unique()
-                ->values()
-                ->all();
+            $plan = Plan::query()->where('code', $planCode)->sole();
+            $paidPrices = PlanStripePrice::query()
+                ->whereHas('plan', fn (Builder $plans) => $plans->where('code', '!=', 'free'))
+                ->pluck('stripe_price_id')->all();
+            $planPrices = PlanStripePrice::query()->where('plan_id', $plan->id)->pluck('stripe_price_id')->all();
             $activeOverride = fn (Builder $override): Builder => $override
                 ->whereNull('revoked_at')
                 ->where(fn (Builder $started) => $started
@@ -100,14 +99,18 @@ class AdminUserIndexController extends Controller
                     ->orWhere(fn (Builder $grace) => $grace
                         ->whereNotNull('ends_at')
                         ->where('ends_at', '>', now())));
+            $matchesPrices = fn (Builder $subscription, array $prices): Builder => $subscription
+                ->where(fn (Builder $matches) => $matches
+                    ->whereIn('stripe_price', $prices)
+                    ->orWhereHas('items', fn (Builder $items) => $items->whereIn('stripe_price', $prices)));
 
-            $query->whereHas('personalWorkspace', function (Builder $workspace) use ($plan, $paidPrices, $activeOverride, $validSubscription): void {
+            $query->whereHas('personalWorkspace', function (Builder $workspace) use ($plan, $paidPrices, $planPrices, $activeOverride, $validSubscription, $matchesPrices): void {
                 if ($plan->code === 'free') {
                     $workspace->where(fn (Builder $matches) => $matches
                         ->whereHas('planOverrides', fn (Builder $override) => $activeOverride($override)->where('plan_id', $plan->id))
                         ->orWhere(fn (Builder $withoutOverride) => $withoutOverride
                             ->whereDoesntHave('planOverrides', $activeOverride)
-                            ->whereDoesntHave('subscriptions', fn (Builder $subscription) => $validSubscription($subscription)->whereIn('stripe_price', $paidPrices))));
+                            ->whereDoesntHave('subscriptions', fn (Builder $subscription) => $matchesPrices($validSubscription($subscription), $paidPrices))));
 
                     return;
                 }
@@ -116,10 +119,7 @@ class AdminUserIndexController extends Controller
                     ->whereHas('planOverrides', fn (Builder $override) => $activeOverride($override)->where('plan_id', $plan->id))
                     ->orWhere(fn (Builder $withoutOverride) => $withoutOverride
                         ->whereDoesntHave('planOverrides', $activeOverride)
-                        ->whereHas('subscriptions', fn (Builder $subscription) => $validSubscription($subscription)->whereIn('stripe_price', array_filter([
-                            $plan->stripe_monthly_price_id,
-                            $plan->stripe_yearly_price_id,
-                        ])))));
+                        ->whereHas('subscriptions', fn (Builder $subscription) => $matchesPrices($validSubscription($subscription), $planPrices))));
             });
         }
 
@@ -176,7 +176,6 @@ class AdminUserIndexController extends Controller
                 'plan' => $planCode,
             ],
             'plans' => Plan::query()
-                ->where('is_active', true)
                 ->orderBy('monthly_price')
                 ->get(['code', 'name'])
                 ->map(fn (Plan $plan): array => ['code' => $plan->code, 'name' => $plan->name])
@@ -189,7 +188,13 @@ class AdminUserIndexController extends Controller
             'overview' => [
                 'accounts' => User::query()->count(),
                 'administrators' => User::query()
-                    ->whereHas('platformRoles', fn (Builder $roles) => $roles->where('code', PlatformRoleCode::SuperAdmin->value))
+                    ->where('is_suspended', false)
+                    ->whereNull('deletion_requested_at')
+                    ->whereHas('platformRoles', fn (Builder $roles) => $roles
+                        ->whereIn('code', [PlatformRoleCode::SuperAdmin->value, PlatformRoleCode::Support->value])
+                        ->when($hasCustomRoles, fn (Builder $roles) => $roles
+                            ->orWhereHas('permissionGrants', fn (Builder $grants) => $grants
+                                ->where('permission', PlatformPermission::AdminAccess->value))))
                     ->count(),
                 'suspended' => User::query()->where('is_suspended', true)->count(),
                 'deletionPending' => User::query()->whereNotNull('deletion_requested_at')->count(),

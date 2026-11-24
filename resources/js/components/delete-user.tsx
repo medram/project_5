@@ -2,7 +2,7 @@ import { Form } from '@inertiajs/react';
 import { useRef } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import { FieldError } from '@/components/ui/field';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,7 +23,6 @@ export default function DeleteUser() {
         <div className="space-y-6">
             <Heading
                 title="Schedule account deletion"
-                variant="small"
                 description="Schedule deletion with a 30-day restore window. Transfer every collaborative workspace and cancel any paid workspace subscription first."
             />
             <div className="space-y-4 rounded-xl border bg-card p-5">
@@ -87,9 +86,17 @@ export default function DeleteUser() {
                                             autoComplete="current-password"
                                         />
 
-                                        <InputError message={errors.password} />
+                                        {errors.password && (
+                                            <FieldError>
+                                                {errors.password}
+                                            </FieldError>
+                                        )}
                                     </div>
-                                    <InputError message={errors.workspaces} />
+                                    {errors.workspaces && (
+                                        <FieldError>
+                                            {errors.workspaces}
+                                        </FieldError>
+                                    )}
 
                                     <DialogFooter className="gap-2">
                                         <DialogClose asChild>

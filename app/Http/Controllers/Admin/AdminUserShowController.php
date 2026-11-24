@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PlatformRoleCode;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\PlatformRole;
@@ -70,6 +71,11 @@ class AdminUserShowController extends Controller
             ])
             ->all();
 
+        $roleOptions = PlatformRole::query()->orderBy('id')->get(['id', 'code', 'name']);
+        $roleOptions->filter(fn (PlatformRole $role) => PlatformRoleCode::tryFrom($role->code) === null)
+            ->load('permissionGrants');
+        $actorRoles = $request->user()->platformRoles()->pluck('code')->all();
+
         return Inertia::render('admin/users/show', [
             'account' => [
                 'id' => $account->id,
@@ -109,18 +115,17 @@ class AdminUserShowController extends Controller
                 'tokens' => $tokens,
             ],
             'workspaces' => $workspaces,
-            'roles' => PlatformRole::query()
-                ->orderBy('id')
-                ->get(['code', 'name'])
-                ->map(fn (PlatformRole $role): array => [
+            'roles' => $roleOptions->map(fn (PlatformRole $role): array => [
                     'code' => $role->code,
                     'name' => $role->name,
+                    'isBuiltIn' => PlatformRoleCode::tryFrom($role->code) !== null,
+                    'isAssignedToActor' => in_array($role->code, $actorRoles, true),
                     'permissions' => array_map(
                         fn ($permission): array => [
                             'value' => $permission->value,
                             'label' => $permission->label(),
                         ],
-                        $role->roleCode()->permissions(),
+                        $role->permissions(),
                     ),
                 ])->values()->all(),
             'plans' => Plan::query()

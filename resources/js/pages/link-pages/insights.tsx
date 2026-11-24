@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -75,69 +76,57 @@ export default function LinkPageInsights({
             <Head title={`Insights for ${linkPage.name}`} />
 
             <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-2">
-                        <Button
-                            asChild
-                            size="sm"
-                            variant="ghost"
-                            className="-ml-3"
-                        >
-                            <Link href={backUrl}>
-                                <ArrowLeft data-icon="inline-start" />
-                                Edit page
-                            </Link>
-                        </Button>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">
-                                {linkPage.name} insights
-                            </h1>
-                        </div>
-                        <p className="max-w-2xl text-sm text-muted-foreground">
-                            Compare consented views, destination clicks, and
-                            submitted leads. Visitor identities are not shown.
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap items-end gap-2">
-                        <Field className="gap-1">
-                            <FieldLabel htmlFor="insights-period">
-                                Date range
-                            </FieldLabel>
-                            <Select
-                                value={String(insights.days)}
-                                onValueChange={changePeriod}
-                            >
-                                <SelectTrigger
-                                    id="insights-period"
-                                    className="h-11 min-w-36"
+                <Button asChild size="sm" variant="ghost" className="-ml-3">
+                    <Link href={backUrl}>
+                        <ArrowLeft data-icon="inline-start" />
+                        Edit page
+                    </Link>
+                </Button>
+                <PageHeader
+                    title={`${linkPage.name} insights`}
+                    description="Compare consented views, destination clicks, and submitted leads. Visitor identities are not shown."
+                    actions={
+                        <div className="flex flex-wrap items-end gap-2">
+                            <Field className="gap-1">
+                                <FieldLabel htmlFor="insights-period">
+                                    Date range
+                                </FieldLabel>
+                                <Select
+                                    value={String(insights.days)}
+                                    onValueChange={changePeriod}
                                 >
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="7">
-                                        Last 7 days
-                                    </SelectItem>
-                                    <SelectItem value="30">
-                                        Last 30 days
-                                    </SelectItem>
-                                    <SelectItem value="90">
-                                        Last 90 days
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </Field>
-                        <Button asChild variant="outline">
-                            <a
-                                href={linkPage.publicUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                <ExternalLink data-icon="inline-start" />
-                                Open public page
-                            </a>
-                        </Button>
-                    </div>
-                </header>
+                                    <SelectTrigger
+                                        id="insights-period"
+                                        className="h-11 min-w-36"
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="7">
+                                            Last 7 days
+                                        </SelectItem>
+                                        <SelectItem value="30">
+                                            Last 30 days
+                                        </SelectItem>
+                                        <SelectItem value="90">
+                                            Last 90 days
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </Field>
+                            <Button asChild variant="outline">
+                                <a
+                                    href={linkPage.publicUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    <ExternalLink data-icon="inline-start" />
+                                    Open public page
+                                </a>
+                            </Button>
+                        </div>
+                    }
+                />
 
                 <Card>
                     <CardHeader>

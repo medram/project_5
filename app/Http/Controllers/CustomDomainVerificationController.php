@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\ScopedAdminContent;
 use App\Models\CustomDomain;
 use App\Services\Domains\DomainVerificationService;
+use App\Services\Platform\AdminContentAccess;
+use App\Services\Platform\AdminContentMutation;
 use App\Services\Workspaces\WorkspaceContext;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 class CustomDomainVerificationController extends Controller
 {
@@ -19,6 +22,14 @@ class CustomDomainVerificationController extends Controller
     public function verify(Request $request, CustomDomain $customDomain): RedirectResponse
     {
         $this->authorizeIntegrationManagement($request, $customDomain);
+        $scope = $request->attributes->get(ScopedAdminContent::ATTRIBUTE);
+        if (is_array($scope)) {
+            $this->verification->verify($customDomain, fn (Closure $apply) => app(AdminContentMutation::class)
+                ->run($request, $customDomain, 'admin.content.domains.verify', $apply));
+
+            return redirect($scope['editor_url']);
+        }
+
         $this->verification->verify($customDomain);
 
         return to_route('custom-domains.index');
@@ -34,8 +45,8 @@ class CustomDomainVerificationController extends Controller
 
     private function authorizeIntegrationManagement(Request $request, CustomDomain $customDomain): void
     {
-        $workspace = $this->workspaceContext->currentFor($request->user());
+        $workspace = $this->workspaceContext->forContentRequest($request);
         abort_unless((int) $customDomain->workspace_id === (int) $workspace->getKey(), 404);
-        Gate::authorize('manageIntegrations', $workspace);
+        app(AdminContentAccess::class)->authorize($request, 'manageIntegrations', $workspace);
     }
 }

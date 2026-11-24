@@ -4,7 +4,6 @@ export type QrCodeLinkOption = {
     id: number;
     slug: string;
     title: string | null;
-    destination_url: string;
 };
 
 export type QrCodeCampaign = {

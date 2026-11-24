@@ -19,19 +19,10 @@ export default function ContentShow({
     preview: boolean;
 }) {
     const title = page.seoTitle || page.title;
-    const description = page.seoDescription || undefined;
 
     return (
         <>
-            <Head title={title}>
-                {description && (
-                    <meta name="description" content={description} />
-                )}
-                <meta property="og:title" content={title} />
-                {description && (
-                    <meta property="og:description" content={description} />
-                )}
-            </Head>
+            <Head title={title} />
             <main className="min-h-screen bg-background text-foreground">
                 {preview && (
                     <div className="border-b border-warning/30 bg-warning-soft px-4 py-3 text-center text-sm text-warning-soft-foreground">

@@ -37,7 +37,7 @@ class CheckoutController extends Controller
             ]);
         }
 
-        abort_unless(in_array($plan->code, ['pro', 'business'], true) && $plan->is_active, 404);
+        abort_unless($plan->code !== 'free' && $plan->is_active, 404);
         abort_unless(in_array($interval, ['month', 'year'], true), 404);
 
         $priceId = $this->readiness->priceId($plan, $interval);

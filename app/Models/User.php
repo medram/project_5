@@ -115,8 +115,8 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 
         $permissions = [];
 
-        foreach ($this->platformRoles()->get() as $role) {
-            foreach ($role->roleCode()->permissions() as $permission) {
+        foreach (app(\App\Services\Platform\PlatformAuthorization::class)->roles($this) as $role) {
+            foreach ($role->permissions() as $permission) {
                 $permissions[$permission->value] = $permission;
             }
         }

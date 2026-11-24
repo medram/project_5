@@ -18,7 +18,7 @@ class QrCodeAssetController extends Controller
 
     public function preview(Request $request, QrCode $qrCode): Response
     {
-        $qrCode = $this->workspaceContext->currentFor($request->user())
+        $qrCode = $this->workspaceContext->forContentRequest($request)
             ->qrCodes()
             ->findOrFail($qrCode->getKey());
 
@@ -35,7 +35,7 @@ class QrCodeAssetController extends Controller
             'size' => ['sometimes', 'integer', 'between:128,1024'],
         ]);
         $qrCode = new QrCode([
-            'workspace_id' => $this->workspaceContext->currentFor($request->user())->id,
+            'workspace_id' => $this->workspaceContext->forContentRequest($request)->id,
             'code' => 'preview-only',
             'source' => 'campaign',
             'foreground_color' => $settings['foreground_color'] ?? '#000000',

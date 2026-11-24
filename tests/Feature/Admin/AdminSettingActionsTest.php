@@ -3,7 +3,9 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\MediaPurpose;
+use App\Models\CustomPage;
 use App\Models\ContentMedia;
+use App\Models\Locale;
 use App\Models\User;
 use App\Services\Content\ContentMediaStorage;
 use App\Services\Settings\PlatformSettings;
@@ -96,6 +98,49 @@ class AdminSettingActionsTest extends TestCase
         Storage::disk(self::DISK)->assertExists($asset->path);
     }
 
+    public function test_selection_and_clear_soft_delete_assets_only_when_unreferenced(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $storage = app(ContentMediaStorage::class);
+        $first = $storage->storePlatformAsset(UploadedFile::fake()->image('first.png', 10, 10), $administrator);
+        $settings->updateSection($administrator, 'general', [
+            'logo_light_id' => $first->id,
+            'logo_dark_id' => $first->id,
+        ], $settings->version('general'));
+        $second = $storage->storePlatformAsset(UploadedFile::fake()->image('second.png', 10, 10), $administrator);
+
+        $this->actingAs($administrator)
+            ->patch('/admin/settings/general', [
+                'version' => 1,
+                'values' => ['logo_light_id' => $second->id],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertFalse($first->refresh()->trashed());
+
+        $this->actingAs($administrator)
+            ->patch('/admin/settings/general', [
+                'version' => 2,
+                'values' => ['logo_dark_id' => null],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertSoftDeleted('content_media', ['id' => $first->id]);
+
+        $this->actingAs($administrator)
+            ->patch('/admin/settings/general', [
+                'version' => 3,
+                'values' => ['logo_light_id' => null],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertSoftDeleted('content_media', ['id' => $second->id]);
+    }
+
     public function test_secret_clear_rejects_stale_versions_and_unknown_keys(): void
     {
         $administrator = User::factory()->admin()->create();
@@ -125,7 +170,7 @@ class AdminSettingActionsTest extends TestCase
         $this->assertSame(2, $settings->version('captcha'));
     }
 
-    public function test_options_exclude_tenant_media_and_unpublished_pages(): void
+    public function test_platform_asset_options_exclude_tenant_media(): void
     {
         $administrator = User::factory()->admin()->create();
         $workspace = $administrator->personalWorkspace()->firstOrFail();
@@ -150,6 +195,108 @@ class AdminSettingActionsTest extends TestCase
             ->assertOk();
 
         $this->assertSame([], $response->json('items'));
+    }
+
+    public function test_selected_platform_asset_is_not_dropped_by_option_result_limit(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $selectedId = 0;
+
+        for ($index = 0; $index < 51; $index++) {
+            $publicId = (string) Str::uuid();
+            $asset = ContentMedia::query()->create([
+                'uploaded_by' => $administrator->id,
+                'public_id' => $publicId,
+                'disk' => self::DISK,
+                'path' => 'platform/'.$publicId.'.png',
+                'original_name' => "asset-{$index}.png",
+                'mime_type' => 'image/png',
+                'byte_size' => 10,
+                'sha256' => hash('sha256', (string) $index),
+                'visibility' => 'private',
+                'scan_state' => 'not_required',
+                'purpose' => MediaPurpose::PlatformAsset,
+            ]);
+
+            if ($index === 0) {
+                $selectedId = (int) $asset->getKey();
+            }
+        }
+
+        $response = $this->actingAs($administrator)
+            ->getJson('/admin/settings/options/platform-assets?selected[]='.$selectedId)
+            ->assertOk();
+        $values = array_column($response->json('items'), 'value');
+
+        $this->assertCount(50, $values);
+        $this->assertContains((string) $selectedId, $values);
+    }
+
+    public function test_page_and_locale_options_filter_unpublished_records_and_keep_selected_values(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $privacyPage = CustomPage::query()->create([
+            'slug' => 'privacy-page',
+            'title' => 'Privacy',
+            'body' => '<p>Privacy</p>',
+            'state' => 'published',
+            'created_by' => $administrator->id,
+        ]);
+        $termsPage = CustomPage::query()->create([
+            'slug' => 'terms-page',
+            'title' => 'Terms',
+            'body' => '<p>Terms</p>',
+            'state' => 'published',
+            'created_by' => $administrator->id,
+        ]);
+        $draftPage = CustomPage::query()->create([
+            'slug' => 'draft-page',
+            'title' => 'Draft',
+            'body' => '<p>Draft</p>',
+            'state' => 'draft',
+            'created_by' => $administrator->id,
+        ]);
+
+        $pages = $this->actingAs($administrator)
+            ->getJson('/admin/settings/options/published-pages?q=Privacy&selected[]='.$termsPage->id.'&selected[]='.$draftPage->id)
+            ->assertOk();
+        $this->assertEqualsCanonicalizing(
+            [(string) $privacyPage->id, (string) $termsPage->id],
+            array_column($pages->json('items'), 'value'),
+        );
+
+        Locale::query()->create(['code' => 'es', 'name' => 'Spanish', 'direction' => 'ltr', 'is_published' => true]);
+        Locale::query()->create(['code' => 'de', 'name' => 'German', 'direction' => 'ltr', 'is_published' => true]);
+        Locale::query()->create(['code' => 'fr', 'name' => 'French', 'direction' => 'ltr', 'is_published' => false]);
+
+        $locales = $this->getJson('/admin/settings/options/locales?q=Spanish&selected[]=de&selected[]=fr')
+            ->assertOk();
+        $this->assertEqualsCanonicalizing(['es', 'de'], array_column($locales->json('items'), 'value'));
+    }
+
+    public function test_timezone_and_storage_disk_options_keep_valid_selected_values(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $timezones = $this->actingAs($administrator)
+            ->getJson('/admin/settings/options/timezones?q=America%2FLos_Angeles&selected[]=UTC')
+            ->assertOk();
+        $this->assertEqualsCanonicalizing(
+            ['America/Los_Angeles', 'UTC'],
+            array_column($timezones->json('items'), 'value'),
+        );
+
+        config()->set('filesystems.disks', [
+            'private-local' => ['driver' => 'local', 'root' => storage_path('framework/private-settings')],
+            'public-local' => ['driver' => 'local', 'root' => public_path('settings'), 'visibility' => 'public'],
+            'private-s3' => ['driver' => 's3', 'visibility' => 'private'],
+            'unsupported-ftp' => ['driver' => 'ftp', 'visibility' => 'private'],
+        ]);
+        $disks = $this->getJson('/admin/settings/options/storage-disks?q=private-local&selected[]=private-s3')
+            ->assertOk();
+        $this->assertEqualsCanonicalizing(
+            ['private-local', 'private-s3'],
+            array_column($disks->json('items'), 'value'),
+        );
     }
 
     public function test_email_test_uses_saved_settings_and_returns_a_generic_failure(): void
@@ -179,4 +326,20 @@ class AdminSettingActionsTest extends TestCase
             ->post('/admin/settings/email/test', ['recipient' => 'admin@example.test'])
             ->assertSessionHasErrors('email');
     }
+
+    public function test_stripe_validation_stops_when_billing_is_disabled(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'subscriptions', [
+            'billing_enabled' => false,
+        ], $settings->version('subscriptions'));
+
+        $this->actingAs($administrator)
+            ->from('/admin/settings/subscriptions')
+            ->post('/admin/settings/subscriptions/test')
+            ->assertRedirect('/admin/settings/subscriptions')
+            ->assertSessionHasErrors(['stripe' => 'Billing is disabled.']);
+    }
+
 }
