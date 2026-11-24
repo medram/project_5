@@ -7,6 +7,7 @@ import {
 } from '@/components/admin/admin-confirm-dialog';
 import { formatAdminDate, humanizeAdminValue } from '@/components/admin/format';
 import { PageHeader } from '@/components/page-header';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -166,7 +167,7 @@ export default function AdminSubscriptionsIndex({
                     </p>
                 )}
 
-                <div className="grid gap-4">
+                <div className="grid gap-3">
                     {workspaces.data.length === 0 && (
                         <Card variant="transparent">
                             <CardContent className="p-8 text-center text-sm text-muted-foreground">
@@ -175,14 +176,31 @@ export default function AdminSubscriptionsIndex({
                         </Card>
                     )}
                     {workspaces.data.map((workspace) => (
-                        <Card key={workspace.workspace.id}>
-                            <CardHeader className="gap-2">
-                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                    <div>
-                                        <CardTitle>
-                                            {workspace.workspace.name}
-                                        </CardTitle>
-                                        <CardDescription>
+                        <Card
+                            key={workspace.workspace.id}
+                            className="gap-2 py-3"
+                        >
+                            <CardHeader className="gap-1">
+                                <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                            <CardTitle className="truncate">
+                                                {workspace.workspace.name}
+                                            </CardTitle>
+                                            <Badge
+                                                variant="outline"
+                                                className="font-normal"
+                                            >
+                                                {workspace.effectivePlan.name}
+                                            </Badge>
+                                            <span className="text-xs text-muted-foreground">
+                                                {humanizeAdminValue(
+                                                    workspace.effectivePlan
+                                                        .source,
+                                                ).toLowerCase()}
+                                            </span>
+                                        </div>
+                                        <CardDescription className="truncate">
                                             {workspace.workspace.owner?.name ??
                                                 'No owner'}{' '}
                                             ·{' '}
@@ -195,24 +213,60 @@ export default function AdminSubscriptionsIndex({
                                                 : 'members'}
                                         </CardDescription>
                                     </div>
-                                    <p className="text-sm">
-                                        {workspace.effectivePlan.name}
-                                        <span className="text-muted-foreground">
-                                            {' '}
-                                            ·{' '}
-                                            {humanizeAdminValue(
-                                                workspace.effectivePlan.source,
-                                            ).toLowerCase()}
-                                        </span>
-                                    </p>
+                                    {canManage && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={
+                                                    !workspace.provider
+                                                        .canCancel
+                                                }
+                                                onClick={() =>
+                                                    providerAction(
+                                                        workspace,
+                                                        'cancel',
+                                                    )
+                                                }
+                                            >
+                                                <Ban data-icon="inline-start" />
+                                                Cancel at period end
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={
+                                                    !workspace.provider
+                                                        .canResume
+                                                }
+                                                onClick={() =>
+                                                    providerAction(
+                                                        workspace,
+                                                        'resume',
+                                                    )
+                                                }
+                                            >
+                                                <RotateCcw data-icon="inline-start" />
+                                                Resume
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                onClick={() =>
+                                                    setOverrideTarget(workspace)
+                                                }
+                                            >
+                                                <Plus data-icon="inline-start" />
+                                                Add override
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             </CardHeader>
-                            <CardContent className="grid gap-4">
-                                <div className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
-                                    <Detail
-                                        label="Effective plan"
-                                        value={workspace.effectivePlan.name}
-                                    />
+                            <CardContent className="grid gap-2">
+                                <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                                     <Detail
                                         label="Override expires"
                                         value={formatAdminDate(
@@ -221,13 +275,13 @@ export default function AdminSubscriptionsIndex({
                                         )}
                                     />
                                     <Detail
-                                        label="Provider status"
+                                        label="Provider"
                                         value={
                                             workspace.provider.status
                                                 ? humanizeAdminValue(
                                                       workspace.provider.status,
                                                   )
-                                                : 'No provider subscription'
+                                                : 'No subscription'
                                         }
                                     />
                                     <Detail
@@ -248,102 +302,57 @@ export default function AdminSubscriptionsIndex({
                                             workspace.provider.priceId ?? '—'
                                         }
                                     />
-                                </div>
-
-                                <div className="flex flex-wrap gap-2">
-                                    {canManage && (
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="outline"
-                                            className="h-9"
-                                            disabled={
-                                                !workspace.provider.canCancel
-                                            }
-                                            onClick={() =>
-                                                providerAction(
-                                                    workspace,
-                                                    'cancel',
-                                                )
-                                            }
-                                        >
-                                            <Ban data-icon="inline-start" />
-                                            Cancel at period end
-                                        </Button>
-                                    )}
-                                    {canManage && (
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="outline"
-                                            className="h-9"
-                                            disabled={
-                                                !workspace.provider.canResume
-                                            }
-                                            onClick={() =>
-                                                providerAction(
-                                                    workspace,
-                                                    'resume',
-                                                )
-                                            }
-                                        >
-                                            <RotateCcw data-icon="inline-start" />
-                                            Resume
-                                        </Button>
-                                    )}
-                                    {canManage && (
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            className="h-9"
-                                            onClick={() =>
-                                                setOverrideTarget(workspace)
-                                            }
-                                        >
-                                            <Plus data-icon="inline-start" />
-                                            Add override
-                                        </Button>
-                                    )}
-                                </div>
+                                </dl>
 
                                 {workspace.overrides.length > 0 && (
-                                    <div className="grid gap-2">
-                                        <p className="text-sm font-medium">
+                                    <div className="grid gap-1">
+                                        <p className="text-xs font-medium text-muted-foreground">
                                             Active overrides
                                         </p>
                                         {workspace.overrides.map((override) => (
                                             <div
                                                 key={override.id}
-                                                className="flex flex-col gap-2 rounded-md border px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
+                                                className="flex flex-col gap-1 rounded-md border border-separator px-2.5 py-1.5 text-xs sm:flex-row sm:items-center sm:justify-between"
                                             >
                                                 <div className="min-w-0">
-                                                    <p className="font-medium">
-                                                        {override.plan?.name ??
-                                                            'Deleted plan'}{' '}
-                                                        ·{' '}
-                                                        {humanizeAdminValue(
-                                                            override.source,
-                                                        )}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {override.reason}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {formatAdminDate(
-                                                            override.startsAt,
-                                                        )}{' '}
-                                                        →{' '}
-                                                        {formatAdminDate(
-                                                            override.expiresAt,
-                                                        )}
-                                                    </p>
+                                                    <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                                                        <span className="font-medium text-foreground">
+                                                            {override.plan
+                                                                ?.name ??
+                                                                'Deleted plan'}
+                                                        </span>
+                                                        <span className="text-muted-foreground">
+                                                            ·{' '}
+                                                            {humanizeAdminValue(
+                                                                override.source,
+                                                            )}
+                                                        </span>
+                                                        <span
+                                                            className="truncate text-muted-foreground"
+                                                            title={
+                                                                override.reason
+                                                            }
+                                                        >
+                                                            · {override.reason}
+                                                        </span>
+                                                        <span className="text-muted-foreground tabular-nums">
+                                                            ·{' '}
+                                                            {formatAdminDate(
+                                                                override.startsAt,
+                                                            )}{' '}
+                                                            →{' '}
+                                                            {formatAdminDate(
+                                                                override.expiresAt,
+                                                            )}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 {canManage && (
                                                     <Button
                                                         type="button"
                                                         size="sm"
-                                                        variant="outline"
-                                                        className="min-h-9 shrink-0"
+                                                        variant="ghost"
+                                                        className="h-8 shrink-0 self-start px-2 text-xs sm:self-auto"
                                                         onClick={() =>
                                                             setRevokeTarget({
                                                                 workspace,
@@ -429,9 +438,9 @@ export default function AdminSubscriptionsIndex({
 
 function Detail({ label, value }: { label: string; value: string }) {
     return (
-        <div>
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="break-words">{value}</p>
+        <div className="flex items-baseline gap-1.5">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className="font-medium break-words tabular-nums">{value}</dd>
         </div>
     );
 }
