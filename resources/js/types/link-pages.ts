@@ -177,8 +177,13 @@ export type LinkPageInsightVariant = LinkPageVariant &
     };
 
 export type LinkPageInsightsProps = {
-    linkPage: Pick<LinkPage, 'id' | 'name' | 'slug' | 'publicUrl'>;
+    linkPage: Pick<LinkPage, 'id' | 'name' | 'slug'> & {
+        publicUrl: string | null;
+    };
     backUrl: string;
+    backLabel?: string;
+    editUrl?: string;
+    windowBaseUrl: string;
     insights: {
         days: 7 | 30 | 90;
         startDate: string;

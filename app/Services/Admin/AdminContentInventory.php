@@ -56,7 +56,7 @@ class AdminContentInventory
             request: $request,
             key: 'links',
             title: 'Short links',
-            description: 'Cross-workspace short-link metadata. Destinations, access rules, and parameter values are not exposed.',
+            description: 'Cross-workspace short-link metadata. Editors can open item insights and destinations; access codes stay hidden.',
             identifierLabel: 'Slug',
             nameColumn: 'title',
             stateOptions: [['value' => 'active', 'label' => 'Active'], ['value' => 'inactive', 'label' => 'Inactive'], ['value' => 'archived', 'label' => 'Archived']],
@@ -88,7 +88,7 @@ class AdminContentInventory
             request: $request,
             key: 'biolinks',
             title: 'Link in bio pages',
-            description: 'Cross-workspace bio-page metadata. Bio text, links, and visitor data are not exposed.',
+            description: 'Cross-workspace bio-page metadata. Editors can open the bio editor and consented analytics; raw visitor identities stay hidden.',
             identifierLabel: 'Handle',
             nameColumn: 'display_name',
             stateOptions: [['value' => 'published', 'label' => 'Published'], ['value' => 'draft', 'label' => 'Draft']],
@@ -123,7 +123,7 @@ class AdminContentInventory
             request: $request,
             key: 'qr-codes',
             title: 'QR codes',
-            description: 'Cross-workspace QR metadata. Destinations and access codes are not exposed.',
+            description: 'Cross-workspace QR metadata. Editors can open campaign insights and destinations; access codes stay hidden.',
             identifierLabel: 'Code',
             nameColumn: 'title',
             stateOptions: [['value' => 'active', 'label' => 'Active'], ['value' => 'inactive', 'label' => 'Inactive']],
@@ -262,7 +262,7 @@ class AdminContentInventory
             request: $request,
             key: 'link-pages',
             title: 'Link pages',
-            description: 'Cross-workspace link-page metadata. Blocks, leads, variants, and destination URLs are not exposed.',
+            description: 'Cross-workspace link-page metadata. Editors can open the page editor and variant insights; lead responses stay owner-only.',
             identifierLabel: 'Slug',
             nameColumn: 'name',
             stateOptions: [['value' => 'published', 'label' => 'Published'], ['value' => 'draft', 'label' => 'Draft']],
@@ -336,15 +336,15 @@ class AdminContentInventory
         $sort = $request->sort();
         $column = $sort === 'name' ? $nameColumn : $sort;
         $direction = $request->direction() === 'asc' ? 'asc' : 'desc';
-        [$managePermission, $deletePermission, $editRoute, $destroyRoute] = match ($key) {
-            'links' => [PlatformPermission::AdminLinksManage, PlatformPermission::AdminLinksDelete, 'admin.content.links.edit', 'admin.content.links.destroy'],
-            'biolinks' => [PlatformPermission::AdminBioPagesManage, PlatformPermission::AdminBioPagesDelete, 'admin.content.biolinks.edit', 'admin.content.biolinks.destroy'],
-            'qr-codes' => [PlatformPermission::AdminQrCodesManage, PlatformPermission::AdminQrCodesDelete, 'admin.content.qr-codes.edit', 'admin.content.qr-codes.destroy'],
-            'folders' => [PlatformPermission::AdminFoldersManage, PlatformPermission::AdminFoldersDelete, 'admin.content.folders.edit', 'admin.content.folders.destroy'],
-            'custom-domains' => [PlatformPermission::AdminDomainsManage, PlatformPermission::AdminDomainsDelete, 'admin.content.domains.edit', 'admin.content.domains.destroy'],
-            'link-overlays' => [PlatformPermission::AdminOverlaysManage, PlatformPermission::AdminOverlaysDelete, 'admin.content.overlays.edit', 'admin.content.overlays.destroy'],
-            'link-pages' => [PlatformPermission::AdminLinkPagesManage, PlatformPermission::AdminLinkPagesDelete, 'admin.content.link-pages.edit', 'admin.content.link-pages.destroy'],
-            'pixels' => [PlatformPermission::AdminPixelsManage, PlatformPermission::AdminPixelsDelete, 'admin.content.pixels.edit', 'admin.content.pixels.destroy'],
+        [$managePermission, $deletePermission, $editRoute, $destroyRoute, $viewRoute] = match ($key) {
+            'links' => [PlatformPermission::AdminLinksManage, PlatformPermission::AdminLinksDelete, 'admin.content.links.edit', 'admin.content.links.destroy', 'admin.content.links.insights'],
+            'biolinks' => [PlatformPermission::AdminBioPagesManage, PlatformPermission::AdminBioPagesDelete, 'admin.content.biolinks.edit', 'admin.content.biolinks.destroy', 'admin.content.biolinks.insights'],
+            'qr-codes' => [PlatformPermission::AdminQrCodesManage, PlatformPermission::AdminQrCodesDelete, 'admin.content.qr-codes.edit', 'admin.content.qr-codes.destroy', 'admin.content.qr-codes.insights'],
+            'folders' => [PlatformPermission::AdminFoldersManage, PlatformPermission::AdminFoldersDelete, 'admin.content.folders.edit', 'admin.content.folders.destroy', null],
+            'custom-domains' => [PlatformPermission::AdminDomainsManage, PlatformPermission::AdminDomainsDelete, 'admin.content.domains.edit', 'admin.content.domains.destroy', null],
+            'link-overlays' => [PlatformPermission::AdminOverlaysManage, PlatformPermission::AdminOverlaysDelete, 'admin.content.overlays.edit', 'admin.content.overlays.destroy', null],
+            'link-pages' => [PlatformPermission::AdminLinkPagesManage, PlatformPermission::AdminLinkPagesDelete, 'admin.content.link-pages.edit', 'admin.content.link-pages.destroy', 'admin.content.link-pages.insights'],
+            'pixels' => [PlatformPermission::AdminPixelsManage, PlatformPermission::AdminPixelsDelete, 'admin.content.pixels.edit', 'admin.content.pixels.destroy', null],
             default => throw new InvalidArgumentException("Unknown admin content inventory [{$key}]."),
         };
         $canEdit = $this->authorization->allows($request->user(), $managePermission);
@@ -355,10 +355,13 @@ class AdminContentInventory
             ->orderBy('id')
             ->paginate(20)
             ->withQueryString()
-            ->through(function (Model $model) use ($map, $canEdit, $canDelete, $editRoute, $destroyRoute): array {
+            ->through(function (Model $model) use ($map, $canEdit, $canDelete, $editRoute, $destroyRoute, $viewRoute): array {
                 $row = $map($model);
                 if ($canEdit) {
                     $row['editUrl'] = route($editRoute, $model, false);
+                    if ($viewRoute !== null) {
+                        $row['viewUrl'] = route($viewRoute, $model, false);
+                    }
                 }
                 if ($canDelete && (! $model instanceof QrCode || $model->source === 'campaign')) {
                     $row['deleteUrl'] = route($destroyRoute, $model, false);

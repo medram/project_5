@@ -391,11 +391,17 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
             Route::get('links/{link}', [AdminContentEditController::class, 'link'])
                 ->middleware('platform:admin.content.links.view')
                 ->name('content.links.edit');
+            Route::get('links/{link}/insights', LinkInsightsController::class)
+                ->middleware('platform:admin.content.links.view')
+                ->name('content.links.insights');
             Route::patch('links/{link}', [LinkController::class, 'update'])->name('content.links.update');
         });
 
         Route::middleware(['platform:admin.content.biolinks.manage', ScopedAdminContent::class])->group(function (): void {
             Route::get('biolinks/{bioPage}', [BioPageController::class, 'show'])->name('content.biolinks.edit');
+            Route::get('biolinks/{bioPage}/insights', BioPageInsightsController::class)
+                ->middleware('platform:admin.content.biolinks.view')
+                ->name('content.biolinks.insights');
             Route::patch('biolinks/{bioPage}', [BioPageController::class, 'update'])->name('content.biolinks.update');
             Route::post('biolinks/{bioPage}/links', [BioLinkController::class, 'store'])->name('content.biolinks.links.store');
             Route::patch('biolinks/{bioPage}/links/{bioLink}', [BioLinkController::class, 'update'])->name('content.biolinks.links.update');
@@ -411,6 +417,9 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
             Route::get('qr-codes/{qrCode}', [AdminContentEditController::class, 'qrCode'])
                 ->middleware('platform:admin.content.qr_codes.view')
                 ->name('content.qr-codes.edit');
+            Route::get('qr-codes/{qrCode}/insights', [QrCodeInsightsController::class, 'campaign'])
+                ->middleware('platform:admin.content.qr_codes.view')
+                ->name('content.qr-codes.insights');
             Route::patch('qr-codes/{qrCode}', [QrCampaignController::class, 'update'])->name('content.qr-codes.update');
             Route::get('qr-codes/{qrCode}/preview.svg', [QrCodeAssetController::class, 'preview'])->name('content.qr-codes.preview');
             Route::get('qr-codes/{qrCode}/draft-preview.svg', [QrCodeAssetController::class, 'draftPreview'])->name('content.qr-codes.draft-preview');
@@ -441,6 +450,9 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
 
         Route::middleware(['platform:admin.content.link_pages.manage', ScopedAdminContent::class])->group(function (): void {
             Route::get('link-pages/{linkPage}', [LinkPageController::class, 'show'])->name('content.link-pages.edit');
+            Route::get('link-pages/{linkPage}/insights', LinkPageInsightsController::class)
+                ->middleware('platform:admin.content.link_pages.view')
+                ->name('content.link-pages.insights');
             Route::patch('link-pages/{linkPage}', [LinkPageController::class, 'update'])->name('content.link-pages.update');
             Route::post('link-pages/{linkPage}/items', [LinkPageItemController::class, 'store'])->name('content.link-pages.items.store');
             Route::patch('link-pages/{linkPage}/items/reorder', [LinkPageItemController::class, 'reorder'])->name('content.link-pages.items.reorder');

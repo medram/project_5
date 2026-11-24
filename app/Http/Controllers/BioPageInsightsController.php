@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\ScopedAdminContent;
 use App\Models\AnalyticsEvent;
 use App\Models\BioPage;
+use App\Services\Admin\AdminContentNavigation;
 use App\Services\BioPages\BioPagePresentation;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,21 +19,27 @@ class BioPageInsightsController extends Controller
     public function __construct(
         private readonly WorkspaceContext $workspaceContext,
         private readonly BioPagePresentation $presentation,
+        private readonly AdminContentNavigation $navigation,
     ) {}
 
     public function __invoke(Request $request, BioPage $bioPage): Response
     {
-        $workspace = $this->workspaceContext->currentFor($request->user());
+        $workspace = $this->workspaceContext->forContentRequest($request);
         $bioPage = BioPage::query()
             ->where('workspace_id', $workspace->getKey())
             ->whereKey($bioPage->getKey())
             ->firstOrFail();
-        Gate::authorize('view', $bioPage);
+        app(AdminContentAccess::class)->authorize($request, 'view', $bioPage);
+        $admin = $request->attributes->get(ScopedAdminContent::ATTRIBUTE);
         $days = $this->selectedDays($request);
-        $presentation = $this->presentation->make($bioPage, true);
+        $presentation = $this->presentation->make(
+            $bioPage,
+            true,
+            is_array($admin) ? fn ($page, $block) => route('admin.content.biolinks.blocks.preview-image', [$page, $block]) : null,
+        );
         $bioPage->setAttribute('appearance', $presentation['appearance']);
 
-        return Inertia::render('bio-pages/edit', [
+        $props = [
             'bioPage' => $bioPage,
             'bioLinks' => $bioPage->bioLinks()->get(),
             'contentBlocks' => array_values(array_filter(
@@ -40,7 +48,17 @@ class BioPageInsightsController extends Controller
             )),
             'previewAt' => now('UTC')->toISOString(),
             'insights' => $this->insightsForPage($bioPage, $days),
-        ]);
+        ];
+
+        if (is_array($admin)) {
+            $props['backUrl'] = $this->navigation->withListQuery($request, $admin['list_url']);
+            $props['editorUrl'] = $admin['editor_url'];
+        }
+
+        return Inertia::render(
+            is_array($admin) ? 'admin/content/bio-edit' : 'bio-pages/edit',
+            $props,
+        );
     }
 
     private function selectedDays(Request $request): int

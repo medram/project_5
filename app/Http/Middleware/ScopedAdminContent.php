@@ -133,11 +133,18 @@ class ScopedAdminContent
             );
 
             $destination = $scope['editor_url'];
+            $insightsPath = $definition['list'].'/'.$root->getRouteKey().'/insights';
+            $referer = $request->headers->get('referer');
+            $refererPath = is_string($referer) ? parse_url($referer, PHP_URL_PATH) : null;
+            $returnToInsights = is_string($refererPath) && $refererPath === $insightsPath;
+
             if (! $keepEditor) {
                 parse_str((string) $request->getQueryString(), $query);
                 unset($query['page']);
                 $remaining = http_build_query($query);
-                $destination = $definition['list'].($remaining === '' ? '' : '?'.$remaining);
+                $destination = $returnToInsights
+                    ? $insightsPath.($remaining === '' ? '' : '?'.$remaining)
+                    : $definition['list'].($remaining === '' ? '' : '?'.$remaining);
             }
 
             if (! $isDestroy && $root instanceof LinkPage) {

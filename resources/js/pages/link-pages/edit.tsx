@@ -483,11 +483,9 @@ export default function LinkPageEditor({
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {!isAdmin && (
-                            <Button asChild variant="outline">
-                                <Link href={insightsUrl}>Variant insights</Link>
-                            </Button>
-                        )}
+                        <Button asChild variant="outline">
+                            <Link href={insightsUrl}>Variant insights</Link>
+                        </Button>
                         {!isAdmin && canViewLeads && leadsUrl && (
                             <Button asChild variant="outline">
                                 <Link href={leadsUrl}>Lead responses</Link>

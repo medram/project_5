@@ -130,6 +130,19 @@ what not to rebuild.
   card. If a chart needs a new field, add it to the service and the TypeScript
   contract first.
 
+## Admin content item views
+
+- Entry: `resources/js/pages/admin/content/{link-insights,qr-insights,link-page-insights}.tsx`
+  and `bio-edit.tsx`; routes `admin.content.*.insights`.
+- Data: the owner insight controllers made admin-aware with
+  `WorkspaceContext::forContentRequest` and `AdminContentAccess`. The inventory
+  emits `viewUrl` only for actors holding `admin.content.<resource>.manage`.
+- Rules: the item name is the primary link, Edit stays secondary; back links
+  preserve list filters; public links require publication; access codes and raw
+  visitor identities never enter item-view props.
+- Editing: link insights opens `LinkFormDialog` over the page and returns to the
+  same filtered window after save, without a table round-trip.
+
 ## Admin settings
 
 - Entry: `resources/js/pages/admin/settings/layout.tsx`,

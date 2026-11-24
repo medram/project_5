@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\ScopedAdminContent;
 use App\Models\Link;
+use App\Services\Admin\AdminContentNavigation;
+use App\Services\Admin\AdminLinkEditorData;
 use App\Services\Analytics\AnalyticsInsights;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,13 +18,49 @@ class LinkInsightsController extends Controller
     public function __construct(
         private readonly AnalyticsInsights $analytics,
         private readonly WorkspaceContext $workspaceContext,
+        private readonly AdminContentNavigation $navigation,
+        private readonly AdminLinkEditorData $linkEditor,
     ) {}
 
     public function __invoke(Request $request, Link $link): Response
     {
-        Gate::authorize('view', $link);
-        $workspace = $this->workspaceContext->currentFor($request->user());
+        app(AdminContentAccess::class)->authorize($request, 'view', $link);
+        $workspace = $this->workspaceContext->forContentRequest($request);
+        abort_unless((int) $link->workspace_id === (int) $workspace->getKey(), 404);
+        /** @var Link $link */
         $link = $workspace->links()->findOrFail($link->getKey());
+
+        $days = $this->selectedDays($request);
+        $admin = $request->attributes->get(ScopedAdminContent::ATTRIBUTE);
+
+        if (is_array($admin)) {
+            $data = $this->linkEditor->load($workspace, $link);
+            $link = $data['link'];
+
+            return Inertia::render('admin/content/link-insights', [
+                'link' => $link,
+                'analytics' => $this->analytics->forLink($link, $days),
+                'backUrl' => $this->navigation->withListQuery($request, $admin['list_url']),
+                'backLabel' => 'Short links',
+                'edit' => [
+                    'folders' => $data['folders'],
+                    'customDomains' => $data['customDomains'],
+                    'linkOverlays' => $data['linkOverlays'],
+                    'linkPages' => $data['linkPages'],
+                    'tagOptions' => $data['tagOptions'],
+                    'countries' => $data['countries'],
+                    'canManageApprovals' => $data['canManageApprovals'],
+                    'listQuery' => http_build_query([
+                        ...$this->navigation->listQuery($request),
+                        'days' => (string) $days,
+                    ]),
+                ],
+                'windowBaseUrl' => $this->navigation->withListQuery(
+                    $request,
+                    route('admin.content.links.insights', $link, false),
+                ),
+            ]);
+        }
 
         $link->load(
             'folder:id,name',
@@ -34,10 +73,7 @@ class LinkInsightsController extends Controller
 
         return Inertia::render('links/insights', [
             'link' => $link,
-            'analytics' => $this->analytics->forLink(
-                $link,
-                $this->selectedDays($request),
-            ),
+            'analytics' => $this->analytics->forLink($link, $days),
         ]);
     }
 

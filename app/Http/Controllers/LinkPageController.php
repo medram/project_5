@@ -7,6 +7,7 @@ use App\Http\Middleware\ScopedAdminContent;
 use App\Http\Requests\StoreLinkPageRequest;
 use App\Models\LinkPage;
 use App\Models\Workspace;
+use App\Services\Admin\AdminContentNavigation;
 use App\Services\Billing\EnforcesPlanLimits;
 use App\Services\Content\ContentMediaStorage;
 use App\Services\LinkPages\LinkPagePresentation;
@@ -25,6 +26,7 @@ class LinkPageController extends Controller
         private readonly WorkspaceContext $workspaces,
         private readonly LinkPagePresentation $presentation,
         private readonly ContentMediaStorage $media,
+        private readonly AdminContentNavigation $navigation,
     ) {}
 
     public function index(Request $request): Response
@@ -82,7 +84,9 @@ class LinkPageController extends Controller
         $canViewLeads = ! $scope && $request->user()->can('viewLeads', $linkPage);
 
         return Inertia::render($scope ? 'admin/content/link-page-edit' : 'link-pages/edit', [
-            'backUrl' => $scope['list_url'] ?? null,
+            'backUrl' => is_array($scope)
+                ? $this->navigation->withListQuery($request, $scope['list_url'])
+                : null,
             'linkPage' => $this->pageData($linkPage),
             'variants' => $variants->map(fn ($variant): array => [
                 'id' => $variant->id,
@@ -92,7 +96,9 @@ class LinkPageController extends Controller
                 'isActive' => $variant->is_active,
             ])->values()->all(),
             'selectedVariantId' => $selectedVariant->id,
-            'insightsUrl' => route('link-pages.insights', $linkPage),
+            'insightsUrl' => is_array($scope)
+                ? $this->navigation->withListQuery($request, route('admin.content.link-pages.insights', $linkPage, false))
+                : route('link-pages.insights', $linkPage),
             'items' => $items,
             'previewItems' => array_values(array_filter(
                 $items,

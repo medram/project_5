@@ -7,6 +7,7 @@ use App\Http\Middleware\ScopedAdminContent;
 use App\Http\Requests\StoreBioPageRequest;
 use App\Http\Requests\UpdateBioPageRequest;
 use App\Models\BioPage;
+use App\Services\Admin\AdminContentNavigation;
 use App\Services\Billing\EnforcesPlanLimits;
 use App\Services\BioPages\BioPagePresentation;
 use App\Services\Content\ContentMediaStorage;
@@ -24,6 +25,7 @@ class BioPageController extends Controller
         private readonly WorkspaceContext $workspaces,
         private readonly EnforcesPlanLimits $planLimits,
         private readonly ContentMediaStorage $media,
+        private readonly AdminContentNavigation $navigation,
     ) {}
 
     public function index(Request $request): Response
@@ -66,7 +68,10 @@ class BioPageController extends Controller
             'bioLinks' => $bioPage->bioLinks()->get(),
             'contentBlocks' => array_values(array_filter($presentation['items'], fn (array $item): bool => $item['type'] !== 'link')),
             'previewAt' => $previewAt,
-            ...($admin ? ['backUrl' => $admin['list_url'], 'editorUrl' => $admin['editor_url']] : []),
+            ...(is_array($admin) ? [
+                'backUrl' => $this->navigation->withListQuery($request, $admin['list_url']),
+                'editorUrl' => $admin['editor_url'],
+            ] : []),
         ]);
     }
 

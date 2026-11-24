@@ -55,4 +55,8 @@ export type QrCodeInsightsProps = {
     scope: 'workspace' | 'campaign';
     qrCode: QrCodeCampaign | null;
     analytics: QrCodeAnalytics;
+    backUrl?: string;
+    backLabel?: string;
+    editUrl?: string;
+    windowBaseUrl?: string;
 };

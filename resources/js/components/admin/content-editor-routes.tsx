@@ -2,12 +2,14 @@ import { createContext, useContext, type ReactNode } from 'react';
 
 type ContentEditorRoutes = {
     editorUrl: (ownerUrl: string) => string;
+    insightsUrl: (ownerUrl: string) => string;
     backUrl: string | null;
     isAdmin: boolean;
 };
 
 const ownerRoutes: ContentEditorRoutes = {
     editorUrl: (url) => url,
+    insightsUrl: (url) => url,
     backUrl: null,
     isAdmin: false,
 };
@@ -25,7 +27,7 @@ export function ContentEditorRoutesProvider({
     backUrl: string;
     children: ReactNode;
 }) {
-    function editorUrl(ownerUrl: string): string {
+    function mapUrl(ownerUrl: string): string {
         const suffix = ownerUrl.slice(ownerPrefix.length);
         if (
             !ownerUrl.startsWith(ownerPrefix) ||
@@ -38,7 +40,14 @@ export function ContentEditorRoutesProvider({
     }
 
     return (
-        <ContentEditorRoutesContext.Provider value={{ editorUrl, backUrl, isAdmin: true }}>
+        <ContentEditorRoutesContext.Provider
+            value={{
+                editorUrl: mapUrl,
+                insightsUrl: mapUrl,
+                backUrl,
+                isAdmin: true,
+            }}
+        >
             {children}
         </ContentEditorRoutesContext.Provider>
     );

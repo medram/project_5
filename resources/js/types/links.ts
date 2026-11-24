@@ -123,9 +123,24 @@ export type LinkIndexProps = {
     };
 };
 
+export type LinkInsightsEditor = {
+    folders: FolderOption[];
+    customDomains: CustomDomainOption[];
+    linkOverlays: LinkOverlayOption[];
+    linkPages: LinkPageOption[];
+    tagOptions: LinkTagOption[];
+    countries: CountryOption[];
+    canManageApprovals: boolean;
+    listQuery: string;
+};
+
 export type LinkInsightPageProps = {
     link: LinkPayload;
     analytics: AnalyticsInsightsResult;
+    backUrl?: string;
+    backLabel?: string;
+    edit?: LinkInsightsEditor | null;
+    windowBaseUrl?: string;
 };
 
 export type LinkRevisionRoutingRule = {

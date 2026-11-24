@@ -2,36 +2,60 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\ScopedAdminContent;
 use App\Models\AnalyticsEvent;
 use App\Models\LinkPage;
+use App\Services\Admin\AdminContentNavigation;
+use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class LinkPageInsightsController extends Controller
 {
-    public function __construct(private readonly WorkspaceContext $workspaces) {}
+    public function __construct(
+        private readonly WorkspaceContext $workspaces,
+        private readonly AdminContentNavigation $navigation,
+    ) {}
 
     public function __invoke(Request $request, LinkPage $linkPage): Response
     {
-        $workspace = $this->workspaces->currentFor($request->user());
+        $workspace = $this->workspaces->forContentRequest($request);
         abort_unless((int) $linkPage->workspace_id === (int) $workspace->id, 404);
-        Gate::authorize('view', $linkPage);
+        app(AdminContentAccess::class)->authorize($request, 'view', $linkPage);
         $days = filter_var($request->query('days', 30), FILTER_VALIDATE_INT);
         abort_unless(is_int($days) && in_array($days, [7, 30, 90], true), 422);
+        $admin = $request->attributes->get(ScopedAdminContent::ATTRIBUTE);
 
-        return Inertia::render('link-pages/insights', [
+        $props = [
             'linkPage' => [
                 'id' => $linkPage->id,
                 'name' => $linkPage->name,
                 'slug' => $linkPage->slug,
-                'publicUrl' => url("/pages/{$linkPage->slug}"),
+                'publicUrl' => $linkPage->is_published ? url("/pages/{$linkPage->slug}") : null,
             ],
-            'backUrl' => route('link-pages.show', $linkPage),
+            'backUrl' => is_array($admin)
+                ? $this->navigation->withListQuery($request, $admin['list_url'])
+                : route('link-pages.show', $linkPage),
+            'backLabel' => is_array($admin) ? 'Link pages' : 'Edit page',
+            'windowBaseUrl' => is_array($admin)
+                ? $this->navigation->withListQuery($request, route('admin.content.link-pages.insights', $linkPage, false))
+                : route('link-pages.insights', $linkPage),
             'insights' => $this->insightsForPage($linkPage, $days),
-        ]);
+        ];
+
+        if (is_array($admin)) {
+            $props['editUrl'] = $this->navigation->withListQuery(
+                $request,
+                route('admin.content.link-pages.edit', $linkPage, false),
+            );
+        }
+
+        return Inertia::render(
+            is_array($admin) ? 'admin/content/link-page-insights' : 'link-pages/insights',
+            $props,
+        );
     }
 
     /** @return array<string, mixed> */

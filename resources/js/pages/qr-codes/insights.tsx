@@ -1,11 +1,13 @@
-import { Head } from '@inertiajs/react';
-import { ExternalLink } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { ArrowLeft, ExternalLink, Pencil } from 'lucide-react';
+import { PageHeader } from '@/components/page-header';
 import { QrScanInsights } from '@/components/qr-codes/qr-scan-insights';
 import {
     qrCampaignBadgeVariant,
     qrCampaignState,
 } from '@/components/qr-codes/qr-code-status';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { redirect as publicLink } from '@/routes/links';
 import { campaignInsights, index, insights } from '@/routes/qr-codes';
@@ -16,11 +18,16 @@ export default function QrCodeInsights({
     scope,
     qrCode,
     analytics,
+    backUrl,
+    backLabel,
+    editUrl,
+    windowBaseUrl,
 }: QrCodeInsightsProps) {
     const currentUrl =
-        scope === 'campaign' && qrCode
+        windowBaseUrl ??
+        (scope === 'campaign' && qrCode
             ? campaignInsights(qrCode.id).url
-            : insights().url;
+            : insights().url);
     const title =
         scope === 'campaign'
             ? qrCode?.title || qrCode?.link?.title || 'QR campaign scans'
@@ -38,14 +45,46 @@ export default function QrCodeInsights({
     const state = qrCode ? qrCampaignState(qrCode) : null;
 
     function windowUrl(days: AnalyticsWindowDays): string {
-        return `${currentUrl}?days=${days}`;
+        const separator = currentUrl.includes('?') ? '&' : '?';
+
+        return `${currentUrl}${separator}days=${days}`;
     }
 
     return (
         <>
             <Head title={`${title} · QR insights`} />
             <section className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
-                <h1 className="sr-only">{title}</h1>
+                {backUrl ? (
+                    <div className="flex flex-col gap-4">
+                        <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="w-fit"
+                        >
+                            <Link href={backUrl}>
+                                <ArrowLeft data-icon="inline-start" />
+                                {backLabel ?? 'QR codes'}
+                            </Link>
+                        </Button>
+                        <PageHeader
+                            title={title}
+                            description="Aggregate scan history and consented analytics for this QR code in the selected UTC window."
+                            actions={
+                                editUrl ? (
+                                    <Button asChild size="sm" variant="outline">
+                                        <Link href={editUrl}>
+                                            <Pencil data-icon="inline-start" />
+                                            Edit QR code
+                                        </Link>
+                                    </Button>
+                                ) : undefined
+                            }
+                        />
+                    </div>
+                ) : (
+                    <h1 className="sr-only">{title}</h1>
+                )}
 
                 {qrCode && state && (
                     <Card className="py-3">

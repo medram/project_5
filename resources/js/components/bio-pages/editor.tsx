@@ -728,8 +728,9 @@ export function BioPageEditor({
     previewAt,
     insights,
 }: BioPageEditorProps) {
-    const { editorUrl, isAdmin } = useContentEditorRoutes();
+    const { editorUrl, insightsUrl: insightsHref } = useContentEditorRoutes();
     const page = toBioPage(payload);
+    const currentUrl = usePage().url;
     const platform = usePage().props.platform;
     const linkAllowed = (
         platform?.availableBlocks ?? [
@@ -773,6 +774,18 @@ export function BioPageEditor({
         (a, b) =>
             Number(b.isPinned) - Number(a.isPinned) || a.position - b.position,
     );
+    function insightUrl(days?: number): string {
+        const base = insightsHref(bioPageInsightsRoute(page.id).url);
+        const params = new URLSearchParams(currentUrl.split('?')[1] ?? '');
+
+        if (days !== undefined) {
+            params.set('days', String(days));
+        }
+
+        const query = params.toString();
+
+        return query === '' ? base : `${base}?${query}`;
+    }
     function save(event: FormEvent) {
         event.preventDefault();
         form.patch(editorUrl(updateBioPage(page.id).url), { preserveScroll: true });
@@ -822,7 +835,7 @@ export function BioPageEditor({
                     role="tablist"
                     aria-label="Bio page editor"
                 >
-                    {(isAdmin ? (['content', 'appearance'] as const) : (['content', 'appearance', 'insights'] as const)).map(
+                    {(['content', 'appearance', 'insights'] as const).map(
                         (choice) => (
                             <button
                                 key={choice}
@@ -838,14 +851,10 @@ export function BioPageEditor({
                                 onClick={() => {
                                     setTab(choice);
                                     if (choice === 'insights' && !insights) {
-                                        router.get(
-                                            bioPageInsightsRoute(page.id).url,
-                                            { days: 30 },
-                                            {
-                                                preserveState: true,
-                                                preserveScroll: true,
-                                            },
-                                        );
+                                        router.get(insightUrl(30), {}, {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                        });
                                     }
                                 }}
                             >
@@ -1001,14 +1010,10 @@ export function BioPageEditor({
                     <BioPageInsightsPanel
                         insights={insights}
                         onWindowChange={(days) =>
-                            router.get(
-                                bioPageInsightsRoute(page.id).url,
-                                { days },
-                                {
-                                    preserveState: true,
-                                    preserveScroll: true,
-                                },
-                            )
+                            router.get(insightUrl(days), {}, {
+                                preserveState: true,
+                                preserveScroll: true,
+                            })
                         }
                     />
                 )}

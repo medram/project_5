@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +47,9 @@ function VariantStatus({ variant }: { variant: LinkPageInsightVariant }) {
 export default function LinkPageInsights({
     linkPage,
     backUrl,
+    backLabel,
+    editUrl,
+    windowBaseUrl,
     insights,
 }: LinkPageInsightsProps) {
     const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
@@ -64,9 +67,11 @@ export default function LinkPageInsights({
         const days = Number(value);
         if (days !== 7 && days !== 30 && days !== 90) return;
 
+        const separator = windowBaseUrl.includes('?') ? '&' : '?';
+
         router.get(
-            window.location.pathname,
-            { days },
+            `${windowBaseUrl}${separator}days=${days}`,
+            {},
             { preserveScroll: true, preserveState: true, replace: true },
         );
     }
@@ -76,10 +81,15 @@ export default function LinkPageInsights({
             <Head title={`Insights for ${linkPage.name}`} />
 
             <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-5 pt-4 pb-10">
-                <Button asChild size="sm" variant="ghost" className="-ml-3">
+                <Button
+                    asChild
+                    size="sm"
+                    variant="ghost"
+                    className="-ml-3 w-fit"
+                >
                     <Link href={backUrl}>
                         <ArrowLeft data-icon="inline-start" />
-                        Edit page
+                        {backLabel ?? 'Edit page'}
                     </Link>
                 </Button>
                 <PageHeader
@@ -87,6 +97,14 @@ export default function LinkPageInsights({
                     description="Compare consented views, destination clicks, and submitted leads. Visitor identities are not shown."
                     actions={
                         <div className="flex flex-wrap items-end gap-2">
+                            {editUrl && (
+                                <Button asChild variant="outline">
+                                    <Link href={editUrl}>
+                                        <Pencil data-icon="inline-start" />
+                                        Edit page
+                                    </Link>
+                                </Button>
+                            )}
                             <Field className="gap-1">
                                 <FieldLabel htmlFor="insights-period">
                                     Date range
@@ -114,16 +132,18 @@ export default function LinkPageInsights({
                                     </SelectContent>
                                 </Select>
                             </Field>
-                            <Button asChild variant="outline">
-                                <a
-                                    href={linkPage.publicUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    <ExternalLink data-icon="inline-start" />
-                                    Open public page
-                                </a>
-                            </Button>
+                            {linkPage.publicUrl && (
+                                <Button asChild variant="outline">
+                                    <a
+                                        href={linkPage.publicUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        <ExternalLink data-icon="inline-start" />
+                                        Open public page
+                                    </a>
+                                </Button>
+                            )}
                         </div>
                     }
                 />

@@ -14,8 +14,9 @@ use App\Models\LinkPage;
 use App\Models\QrCode;
 use App\Models\TrackingPixel;
 use App\Models\TrackingPixelRule;
-use App\Services\Accounts\AccountProfileOptions;
 use App\Services\Admin\AdminContentInventory;
+use App\Services\Admin\AdminContentNavigation;
+use App\Services\Admin\AdminLinkEditorData;
 use App\Services\Platform\AdminContentAccess;
 use App\Services\Workspaces\WorkspaceContext;
 use Inertia\Inertia;
@@ -26,46 +27,25 @@ class AdminContentEditController extends Controller
     public function __construct(
         private readonly WorkspaceContext $workspaces,
         private readonly AdminContentAccess $access,
-        private readonly AccountProfileOptions $profileOptions,
+        private readonly AdminLinkEditorData $linkEditor,
         private readonly AdminContentInventory $inventory,
+        private readonly AdminContentNavigation $navigation,
     ) {}
 
     public function link(AdminContentRequest $request, Link $link): Response
     {
         $workspace = $this->workspaces->forContentRequest($request);
         $this->access->authorize($request, 'view', $link);
-        $linkId = $link->getKey();
-        $customDomainId = $link->custom_domain_id;
-        $linkOverlayId = $link->link_overlay_id;
-        $linkPageId = $link->link_page_id;
-        $link = $workspace->links()
-            ->with([
-                'folder' => fn ($query) => $query->where('workspace_id', $workspace->id)->select(['id', 'name']),
-                'tags' => fn ($query) => $query->where('link_tags.workspace_id', $workspace->id)->select(['link_tags.id', 'link_tags.name', 'link_tags.slug', 'link_tags.color']),
-                'customDomain' => fn ($query) => $query->where('workspace_id', $workspace->id)->select(['id', 'hostname', 'status']),
-                'linkOverlay' => fn ($query) => $query->where('workspace_id', $workspace->id)->select(['id', 'name']),
-                'linkPage' => fn ($query) => $query->where('workspace_id', $workspace->id)->select(['id', 'name', 'slug']),
-                'routingRules' => fn ($query) => $query->where('workspace_id', $workspace->id),
-            ])
-            ->withExists(['revisions as has_pending_revision' => fn ($query) => $query
-                ->where('workspace_id', $workspace->id)->where('status', 'pending')])
-            ->withCount('clicks')
-            ->findOrFail($linkId);
+        $data = $this->linkEditor->load($workspace, $link);
 
-        return $this->render($request, 'links', $link, [
-            'folders' => $workspace->folders()->orderBy('name')->get(['id', 'name']),
-            'tagOptions' => $workspace->linkTags()->orderBy('name')->get(['id', 'name', 'slug', 'color']),
-            'customDomains' => $workspace->customDomains()
-                ->where(fn ($query) => $query->where('status', 'active')->orWhere('id', $customDomainId))
-                ->orderBy('hostname')->get(['id', 'hostname']),
-            'linkOverlays' => $workspace->linkOverlays()
-                ->where(fn ($query) => $query->where('is_active', true)->orWhere('id', $linkOverlayId))
-                ->orderBy('name')->get(['id', 'name']),
-            'linkPages' => $workspace->linkPages()
-                ->where(fn ($query) => $query->where('is_published', true)->orWhere('id', $linkPageId))
-                ->orderBy('name')->get(['id', 'name', 'slug']),
-            'countries' => $this->profileOptions->countries(),
-            'canManageApprovals' => true,
+        return $this->render($request, 'links', $data['link'], [
+            'folders' => $data['folders'],
+            'tagOptions' => $data['tagOptions'],
+            'customDomains' => $data['customDomains'],
+            'linkOverlays' => $data['linkOverlays'],
+            'linkPages' => $data['linkPages'],
+            'countries' => $data['countries'],
+            'canManageApprovals' => $data['canManageApprovals'],
         ]);
     }
 
@@ -163,8 +143,9 @@ class AdminContentEditController extends Controller
     private function render(AdminContentRequest $request, string $resource, mixed $record, array $extra = []): Response
     {
         $scope = $request->attributes->get(ScopedAdminContent::ATTRIBUTE);
-        $query = trim((string) $request->getQueryString());
-        $backUrl = $scope['list_url'].($query === '' ? '' : '?'.$query);
+        $backUrl = is_array($scope)
+            ? $this->navigation->withListQuery($request, $scope['list_url'])
+            : '/admin';
 
         return Inertia::render('admin/content/index', [
             ...$this->inventory->props($request, $resource),

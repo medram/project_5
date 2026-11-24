@@ -1,6 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
-import { Pencil, Search, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Search, Trash2 } from 'lucide-react';
 import { AdminContentDeleteDialog } from '@/components/admin/admin-content-delete-dialog';
 import { ContentEditorRoutesProvider } from '@/components/admin/content-editor-routes';
 import { CustomDomainEditor } from '@/components/admin/custom-domain-editor';
@@ -97,9 +97,11 @@ export default function AdminContentIndex({
     }
 
     function editHref(editUrl: string): string {
-        return !inlineEditor || listQuery === ''
-            ? editUrl
-            : `${editUrl}?${listQuery}`;
+        return listQuery === '' ? editUrl : `${editUrl}?${listQuery}`;
+    }
+
+    function viewHref(viewUrl: string): string {
+        return listQuery === '' ? viewUrl : `${viewUrl}?${listQuery}`;
     }
 
     function deleteHref(deleteUrl: string): string {
@@ -255,9 +257,19 @@ export default function AdminContentIndex({
                                     className="border-t transition-colors hover:bg-muted/30"
                                 >
                                     <td className="max-w-72 px-4 py-3">
-                                        <p className="truncate font-medium">
-                                            {row.name}
-                                        </p>
+                                        {row.viewUrl ? (
+                                            <Link
+                                                href={viewHref(row.viewUrl)}
+                                                preserveScroll
+                                                className="block truncate font-medium underline-offset-4 hover:underline"
+                                            >
+                                                {row.name}
+                                            </Link>
+                                        ) : (
+                                            <p className="truncate font-medium">
+                                                {row.name}
+                                            </p>
+                                        )}
                                         {row.identifier && (
                                             <p className="truncate text-xs text-muted-foreground">
                                                 {row.identifier}
@@ -393,7 +405,17 @@ export default function AdminContentIndex({
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0">
                                         <CardTitle className="truncate text-base">
-                                            {row.name}
+                                            {row.viewUrl ? (
+                                                <Link
+                                                    href={viewHref(row.viewUrl)}
+                                                    preserveScroll
+                                                    className="underline-offset-4 hover:underline"
+                                                >
+                                                    {row.name}
+                                                </Link>
+                                            ) : (
+                                                row.name
+                                            )}
                                         </CardTitle>
                                         {row.identifier && (
                                             <CardDescription className="truncate">
@@ -443,6 +465,22 @@ export default function AdminContentIndex({
                                     Updated {formatAdminDate(row.updatedAt)}
                                 </p>
                                 <div className="flex flex-wrap gap-2">
+                                    {row.viewUrl && (
+                                        <Button
+                                            asChild
+                                            size="sm"
+                                            className="w-fit"
+                                        >
+                                            <Link
+                                                href={viewHref(row.viewUrl)}
+                                                preserveScroll
+                                                aria-label={`Open ${row.name}`}
+                                            >
+                                                <Eye aria-hidden="true" />
+                                                Open
+                                            </Link>
+                                        </Button>
+                                    )}
                                     {row.editUrl && (
                                         <Button asChild variant="outline" size="sm" className="w-fit">
                                             <Link
