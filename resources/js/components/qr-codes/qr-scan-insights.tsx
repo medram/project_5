@@ -1,4 +1,4 @@
-import { QrCode } from 'lucide-react';
+import { Globe, Monitor, PanelTop, QrCode, ScanLine } from 'lucide-react';
 import { DailyLineChart } from '@/components/analytics/daily-line-chart';
 import { TrafficSourcesSection } from '@/components/analytics/traffic-sources';
 import { AnalyticsWindowPicker } from '@/components/analytics/window-picker';
@@ -32,6 +32,7 @@ export function QrScanInsights({
                 className="grid grid-cols-2 gap-3 xl:grid-cols-4"
             >
                 <StatCard
+                    icon={ScanLine}
                     label="Scans"
                     value={analytics.totalScans.toLocaleString()}
                     note={`${analytics.days} days`}
@@ -39,16 +40,19 @@ export function QrScanInsights({
                     sparklineColor="var(--chart-2)"
                 />
                 <StatCard
+                    icon={Globe}
                     label="Countries"
                     value={analytics.countryCount.toLocaleString()}
                     note={`${analytics.days} days`}
                 />
                 <StatCard
+                    icon={PanelTop}
                     label="Browsers"
                     value={analytics.browserCount.toLocaleString()}
                     note={`${analytics.days} days`}
                 />
                 <StatCard
+                    icon={Monitor}
                     label="Devices"
                     value={analytics.deviceCount.toLocaleString()}
                     note={`${analytics.days} days`}

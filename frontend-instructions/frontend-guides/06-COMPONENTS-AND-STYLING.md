@@ -110,7 +110,8 @@ column use `tabular-nums`.
 
 - Lucide only. Size `size-4` inside buttons; `size-5` for standalone status.
 - Use an icon when it speeds recognition (create, delete, external link), not
-  as decoration. Do not put an icon on every label or every KPI.
+  as decoration. KPI cards use the shared `StatCard` icon; other labels do not
+  need decorative icons.
 - Decorative icons get `aria-hidden="true"`; icon-only buttons get
   `aria-label`.
 - Use `data-icon="inline-start"` for the spacing contract next to a label.

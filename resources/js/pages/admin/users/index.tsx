@@ -175,26 +175,17 @@ export default function AdminUsersIndex({
                             Icon: Link2,
                         },
                     ].map(({ label, value, Icon }, index, stats) => (
-                        <div
+                        <StatCard
                             key={label}
+                            icon={Icon}
+                            label={label}
+                            value={value.toLocaleString()}
                             className={
                                 index === stats.length - 1
-                                    ? 'relative col-span-2 lg:col-span-1'
-                                    : 'relative'
+                                    ? 'col-span-2 lg:col-span-1'
+                                    : undefined
                             }
-                        >
-                            <StatCard
-                                label={label}
-                                value={value.toLocaleString()}
-                                className="h-full [&>div]:pr-12"
-                            />
-                            <span
-                                aria-hidden="true"
-                                className="pointer-events-none absolute right-4 bottom-4 flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary-soft-foreground"
-                            >
-                                <Icon className="size-5" />
-                            </span>
-                        </div>
+                        />
                     ))}
                 </section>
 

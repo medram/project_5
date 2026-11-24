@@ -1,4 +1,9 @@
-import { ChartNoAxesCombined, MousePointerClick } from 'lucide-react';
+import {
+    ChartNoAxesCombined,
+    Eye,
+    MousePointerClick,
+    Percent,
+} from 'lucide-react';
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { RankedBreakdownCard } from '@/components/analytics/ranked-breakdown-card';
 import { TrafficSourcesSection } from '@/components/analytics/traffic-sources';
@@ -99,6 +104,7 @@ export function BioPageInsightsPanel({
 
             <div className="grid gap-3 sm:grid-cols-3">
                 <StatCard
+                    icon={Eye}
                     label="Page views"
                     value={insights.totalViews.toLocaleString()}
                     note={`${insights.days} days`}
@@ -106,6 +112,7 @@ export function BioPageInsightsPanel({
                     sparklineColor="var(--chart-2)"
                 />
                 <StatCard
+                    icon={MousePointerClick}
                     label="Button clicks"
                     value={insights.totalClicks.toLocaleString()}
                     note={`${insights.days} days`}
@@ -113,6 +120,7 @@ export function BioPageInsightsPanel({
                     sparklineColor="var(--chart-4)"
                 />
                 <StatCard
+                    icon={Percent}
                     label="Click-through rate"
                     value={`${clickThroughRate.toFixed(1)}%`}
                     note="Clicks ÷ page views"

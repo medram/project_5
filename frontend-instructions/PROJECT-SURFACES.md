@@ -121,7 +121,7 @@ what not to rebuild.
 - Data: `resources/js/types/admin-insights.ts`, built by
   `app/Services/Admin/AdminInsights.php`.
 - Reuse: the exact page order in `AGENTS.md` and `docs/DESIGN.md` §7.2b/§7.2c.
-- Rules: one compact window control with Apply; four text-only KPI cards; one
+- Rules: one compact window control with Apply; four KPI cards with icons; one
   main line series with a metric switch; full-width country map; three donuts;
   ranked referrers plus resource totals; growth bars, account health, and
   subscription states; one privacy note at the end. K-anonymity threshold copy

@@ -208,15 +208,15 @@ The final identity block has a 40 px avatar (photo or deterministic soft gradien
 
 ```
 ┌──────────────────────────────────┐
-│ Revenue                    [↑3.3%]│  ← 13/500 muted; chip right
-│ $228,441                          │  ← 24/600 tight
+│ Revenue                    [icon] │  ← 13/500 muted; icon right
+│ $228,441                   [↑3.3%]│  ← 24/600 tight; context right
 └──────────────────────────────────┘
 ```
 
 - `16 px` padding, `12 px` gap, white surface, 16 px radius, minimum height 94 px.
 - Grid: label/value left, trend or context chip right, vertically aligned to the value baseline.
 - Delta chip: 20 px tall, soft success/danger fill, 12/500, 12 px arrow icon. Show only when a real comparison period exists. Otherwise show a neutral period chip (`30 days`) or no chip.
-- Never place a colored icon tile above the label.
+- Each KPI uses a 20 px Lucide icon in a 40 px `--primary-soft` tile. Place it at bottom right when there is no context; with a note, trend, or sparkline, place it at top right and reserve space so nothing overlaps.
 
 ### 7.2 Chart panel
 
@@ -231,7 +231,7 @@ The final identity block has a 40 px avatar (photo or deterministic soft gradien
 The analytics screen adds three patterns on top of the overview dashboard:
 
 - **One title contract.** The reference puts the page name (`Analytics`) in the top bar and omits a content title. LinkPilot keeps the top bar to a compact `13 px` current-page breadcrumb and renders the single `24/600` page `h1` in content, so every page (including custom admin headers) has the same title contract. Never add a second eyebrow, kicker, or duplicated display title.
-- **KPI sparklines.** Each KPI card may carry a 32–40 px edge-to-edge sparkline at its bottom: 1.5 px line, soft gradient fill fading to transparent, no axes or dots. Use the metric's semantic color (blue/success/warning) only when the series is real. Cards without a series stay at the 94 px text-only height.
+- **KPI sparklines.** Each KPI card may carry a 32–40 px edge-to-edge sparkline at its bottom: 1.5 px line, soft gradient fill fading to transparent, no axes or dots. Use the metric's semantic color (blue/success/warning) only when the series is real. Cards without a series have a 94 px minimum height and may grow to fit their icon and context.
 - **Section headings outside tables.** `Top pages` uses a `16/600` heading plus a `12/400` muted description above the table, not a card title. Date ranges use a quiet segmented control (`7D 30D 90D 12M`), 28–32 px high, above the KPI row.
 
 Large analytics panels: one full-width primary time-series card, then a two-column row (donut distribution + ranked horizontal bars), then a full-width table. Stat totals inside chart cards (`116,650` + `18.3%` chip) sit above the chart, left-aligned, with the legend at the top right.
@@ -248,7 +248,7 @@ Traffic-source breakdowns extend that composition: a full-width country chorople
 The platform dashboard is the operations view of the same analytics language, not a second design. Keep this order:
 
 1. **Header.** Title and one description sentence; a compact `Window` select, `Apply`, and `Visitor insights` action at the same 36 px control height. No full-width filter bar and no duplicate range label.
-2. **KPI row.** Four text-only cards: `Accounts`, `Workspaces`, `Provider MRR`, `Tracked events`. Do not add sparklines on this page; each card carries one figure and one context note.
+2. **KPI row.** Four cards with metric icons: `Accounts`, `Workspaces`, `Provider MRR`, `Tracked events`. Do not add sparklines on this page; each card carries one figure and one context note.
 3. **Daily activity.** One full-width panel, `300 px` chart, with a `Clicks / QR scans / Tracked events` segmented control. Show the selected total and daily peak above the chart. Never plot three differently scaled series against one axis and never restore an exact daily-values table.
 4. **Countries.** A full-width country map with the ranked flag legend. Ranked countries use `--chart-2` opacity; the rest use `--muted-foreground` at 18%. Put the unresolved-country count in muted text below the map and keep the native 4:3 canvas unclipped.
 5. **Distribution row.** Three donut cards: `Top browsers`, `Top platforms`, `Device classes`. Donuts collapse to five slices (top four named cohorts plus `Other`); the center carries the event total and each legend row repeats count and share.
@@ -264,7 +264,7 @@ Every insights page — account, link, bio page, QR campaign, admin platform, ad
 
 1. **Header.** One `h1`, one sentence that names the scope and the consent rule, and at most one secondary action. No eyebrow, no repeated title in the top bar.
 2. **Window.** One control, one source of truth, UTC. Account-scoped pages place the shared picker above the KPI row; admin pages place the compact `Window` select + `Apply` in the header action cluster. Never render two range controls or repeat the selected range as decorative text.
-3. **KPI row.** Three to five cards. Each card carries one figure, one label, and one context note. A card never holds a second chart. Sparklines are optional only on account-scoped pages and only for a real daily series; admin aggregate pages stay text-only.
+3. **KPI row.** Three to five cards. Each card carries one figure, one label, one context note, and a metric icon. A card never holds a second chart. Sparklines are optional only on account-scoped pages and only for a real daily series; admin aggregate pages do not use them.
 4. **Primary time series.** One full-width panel, `300 px` plot, total and comparison context above the plot. Use a segmented control for mutually exclusive daily metrics. Never place two differently scaled series on one axis. A second time panel is allowed only when it is visibly smaller and answers a different question.
 5. **Geography.** Countries are a full-width map with a ranked flag legend. Never a country donut or a country bar list. Ranked countries use `--chart-2` opacity; unlisted countries use `--muted-foreground` at 18%. Show the listed total and, when the dimension is incomplete, the unresolved count in muted text.
 6. **Distribution row.** Browsers, platforms, and device classes are donuts. Referrers, pages, buttons, event names, and UTM values are ranked bars or compact lists. Keep it three-up at `lg` and two-up at `sm`; never four equal chart cards in one row.
@@ -453,7 +453,7 @@ Radius 8 px, horizontal padding 12–16 px, icon gap 6–8 px, icons 16 px. Focu
 | Screen                                                            | Reference mapping                                                                                                                                                                                                                                                                                            |
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Shell                                                             | Same 240 px rail and top bar. Admin has more sections; keep the muted section labels and 40 px rows.                                                                                                                                                                                                         |
-| Platform insights                                                 | Header inline range picker. Four text-only KPI cards, one full-width daily activity chart with a metric switch, full-width country map, browser/platform/device donuts, referrers beside compact resource totals, then growth/account health/cashier states and a privacy note. No exact daily-values table. |
+| Platform insights                                                 | Header inline range picker. Four KPI cards with icons, one full-width daily activity chart with a metric switch, full-width country map, browser/platform/device donuts, referrers beside compact resource totals, then growth/account health/cashier states and a privacy note. No exact daily-values table. |
 | Users                                                             | Reference table page: KPI strip, filter toolbar, white table with avatar identity, roles, plan, last seen, and row actions.                                                                                                                                                                                  |
 | Roles / Plans / Subscriptions / Content / Files / Logs / Settings | Same surfaces, KPI strips, and table rules. Do not add new accent colors per section.                                                                                                                                                                                                                        |
 
@@ -501,7 +501,7 @@ A screen is done when all are true:
 - [ ] Sidebar is 240 px, flat `#f5f5f5`, 1 px border, 40 px nav rows, gray active pill, and pinned identity below the footer actions; help and logout are in the profile menu.
 - [ ] Top bar is 64 px with a 32 px trigger, a workspace/administration context label, and circular search/notification buttons; the page's primary action sits in its page header.
 - [ ] Page title is 24/600 with no eyebrow or decorative icon; description is 14 px muted.
-- [ ] KPI cards are white, 16 px radius, 16 px padding, 24/600 values, 13/500 muted labels; no fake deltas.
+- [ ] KPI cards are white, 16 px radius, 16 px padding, 24/600 values, 13/500 muted labels, and a soft-accent metric icon; no fake deltas.
 - [ ] Chart panels are white, 16 px radius, 16/600 titles, 11 px muted axes, no vertical gridlines, accent-ramp series.
 - [ ] Every insights page follows §7.2c: one main time series, a full-width country map, donut distributions, ranked lists for referrers/pages, one threshold note, and no exact daily-values table on aggregate pages.
 - [ ] Tables have a `#efeff0` header, 56 px white rows, `#e4e4e7` separators, avatar identity cells, right-aligned numeric/actions.

@@ -1,6 +1,14 @@
 import { Link, router } from '@inertiajs/react';
 import { type FormEvent, useEffect, useState } from 'react';
-import { ArrowUpRight, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import {
+    Activity,
+    ArrowUpRight,
+    ChevronDown,
+    MousePointerClick,
+    Ratio,
+    SlidersHorizontal,
+    UsersRound,
+} from 'lucide-react';
 import {
     DailyLineChart,
     formatChartDay,
@@ -586,6 +594,7 @@ export function AnalyticsDashboard(props: AnalyticsDashboardProps) {
                 className="grid grid-cols-2 gap-3 xl:grid-cols-4"
             >
                 <StatCard
+                    icon={MousePointerClick}
                     label="Clicks"
                     value={analytics.totalClicks.toLocaleString()}
                     note={`${analytics.days} days`}
@@ -593,11 +602,13 @@ export function AnalyticsDashboard(props: AnalyticsDashboardProps) {
                     sparklineColor="var(--chart-2)"
                 />
                 <StatCard
+                    icon={UsersRound}
                     label="Unique visitors"
                     value={analytics.uniqueVisitors.toLocaleString()}
                     note={`${analytics.days} days`}
                 />
                 <StatCard
+                    icon={Activity}
                     label="Tracked events"
                     value={analytics.totalEvents.toLocaleString()}
                     note={`${analytics.days} days`}
@@ -605,6 +616,7 @@ export function AnalyticsDashboard(props: AnalyticsDashboardProps) {
                     sparklineColor="var(--chart-4)"
                 />
                 <StatCard
+                    icon={Ratio}
                     label="Clicks per visitor"
                     value={clicksPerVisitor.toFixed(1)}
                     note={`${analytics.days} days`}

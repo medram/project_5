@@ -242,10 +242,12 @@ If the confirmation needs a password or a form, use `Dialog` + `Form` instead.
 ## 6. KPI row
 
 ```tsx
-// source: resources/js/pages/admin/insights/index.tsx (text-only KPI pattern)
+// source: resources/js/pages/admin/insights/index.tsx (KPI pattern)
+import { Building2, UsersRound } from 'lucide-react';
+
 <section aria-label="Platform totals" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-    <StatCard label="Accounts" value={data.accounts.total.toLocaleString()} note={`${data.accounts.new} new in window`} />
-    <StatCard label="Workspaces" value={data.workspaces.total.toLocaleString()} note={`${data.workspaces.new} new in window`} />
+    <StatCard icon={UsersRound} label="Accounts" value={data.accounts.total.toLocaleString()} note={`${data.accounts.new} new in window`} />
+    <StatCard icon={Building2} label="Workspaces" value={data.workspaces.total.toLocaleString()} note={`${data.workspaces.new} new in window`} />
 </section>
 ```
 

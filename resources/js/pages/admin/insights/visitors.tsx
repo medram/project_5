@@ -3,10 +3,14 @@ import {
     Activity,
     ArrowLeft,
     Compass,
+    Eye,
     Laptop,
     MonitorSmartphone,
+    MousePointerClick,
+    ScanLine,
     Share2,
     ShieldCheck,
+    UsersRound,
 } from 'lucide-react';
 import { InsightActivityCard } from '@/components/admin/insights/activity-card';
 import { DimensionPanel } from '@/components/admin/insights/dimension-panel';
@@ -94,26 +98,31 @@ export default function AdminVisitorInsights({
                     className="grid grid-cols-2 gap-3 lg:grid-cols-5"
                 >
                     <StatCard
+                        icon={Activity}
                         label="Tracked events"
                         value={number(data.totals.events)}
                         note={`${data.range.days} days`}
                     />
                     <StatCard
+                        icon={UsersRound}
                         label="Unique visitors"
                         value={number(data.totals.uniqueVisitors)}
                         note={`${data.range.days} days`}
                     />
                     <StatCard
+                        icon={Eye}
                         label="Page views"
                         value={number(data.totals.pageViews)}
                         note={`${data.range.days} days`}
                     />
                     <StatCard
+                        icon={MousePointerClick}
                         label="Clicks"
                         value={number(data.totals.clicks)}
                         note={`${data.range.days} days`}
                     />
                     <StatCard
+                        icon={ScanLine}
                         label="QR scans"
                         value={number(data.totals.scans)}
                         note={`${data.range.days} days`}

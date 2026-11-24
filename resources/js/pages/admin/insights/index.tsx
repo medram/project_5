@@ -1,5 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import {
+    Activity,
+    Building2,
     Compass,
     CreditCard,
     ExternalLink,
@@ -7,6 +9,7 @@ import {
     MonitorSmartphone,
     Share2,
     ShieldCheck,
+    UsersRound,
 } from 'lucide-react';
 import { AccountHealthCard } from '@/components/admin/insights/account-health-card';
 import { InsightActivityCard } from '@/components/admin/insights/activity-card';
@@ -133,21 +136,25 @@ export default function AdminInsightsIndex({
                     className="grid grid-cols-2 gap-3 lg:grid-cols-4"
                 >
                     <StatCard
+                        icon={UsersRound}
                         label="Accounts"
                         value={number(data.accounts.total)}
                         note={`${number(data.accounts.new)} new in window`}
                     />
                     <StatCard
+                        icon={Building2}
                         label="Workspaces"
                         value={number(data.workspaces.total)}
                         note={`${number(data.workspaces.new)} new in window`}
                     />
                     <StatCard
+                        icon={CreditCard}
                         label="Provider MRR"
                         value={money(data.subscriptions.mrrCents)}
                         note="Current snapshot"
                     />
                     <StatCard
+                        icon={Activity}
                         label="Tracked events"
                         value={number(data.engagement.events)}
                         note={`${number(data.engagement.clicks)} clicks · ${number(data.engagement.scans)} scans`}

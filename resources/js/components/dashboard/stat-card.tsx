@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, type LucideIcon } from 'lucide-react';
 import { type ReactNode, useId } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ export type StatTrend = {
 type StatCardProps = {
     label: string;
     value: ReactNode;
+    icon?: LucideIcon;
     note?: string;
     trend?: StatTrend;
     sparkline?: number[];
@@ -50,6 +51,7 @@ function sparklineShape(values: number[]) {
 export function StatCard({
     label,
     value,
+    icon: Icon,
     note,
     trend,
     sparkline,
@@ -63,6 +65,7 @@ export function StatCard({
         sparkline && sparkline.length > 1
             ? sparklineShape(sparkline)
             : undefined;
+    const iconAtTop = Boolean(Icon && (note || trend || shape));
 
     return (
         <div
@@ -73,10 +76,20 @@ export function StatCard({
                 className,
             )}
         >
-            <p className="text-[13px] leading-[18px] font-medium text-muted-foreground">
+            <p
+                className={cn(
+                    'text-[13px] leading-[18px] font-medium text-muted-foreground',
+                    iconAtTop && 'min-h-10 pr-12',
+                )}
+            >
                 {label}
             </p>
-            <div className="flex items-end justify-between gap-3">
+            <div
+                className={cn(
+                    'flex items-end justify-between gap-3',
+                    Icon && !iconAtTop && 'pr-12',
+                )}
+            >
                 <p className="text-2xl leading-7 font-semibold tracking-[-0.02em] tabular-nums">
                     {value}
                 </p>
@@ -132,6 +145,17 @@ export function StatCard({
                         />
                     </svg>
                 </div>
+            )}
+            {Icon && (
+                <span
+                    aria-hidden="true"
+                    className={cn(
+                        'pointer-events-none absolute right-4 flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary-soft-foreground',
+                        iconAtTop ? 'top-4' : 'bottom-4',
+                    )}
+                >
+                    <Icon className="size-5" />
+                </span>
             )}
         </div>
     );

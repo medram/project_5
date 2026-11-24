@@ -7,6 +7,8 @@ import {
     Link2,
     Pencil,
     Plus,
+    QrCode,
+    ScanLine,
     Trash2,
 } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
@@ -317,14 +319,17 @@ export default function QrCodes({
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     <StatCard
+                        icon={QrCode}
                         label="QR codes"
                         value={campaigns.length.toLocaleString()}
                     />
                     <StatCard
+                        icon={ScanLine}
                         label="Total recorded scans"
                         value={totalScans.toLocaleString()}
                     />
                     <StatCard
+                        icon={Link2}
                         label="Direct campaigns"
                         value={directCampaigns.toLocaleString()}
                         className="col-span-2 sm:col-span-1"
