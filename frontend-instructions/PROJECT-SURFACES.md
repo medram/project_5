@@ -203,17 +203,17 @@ what not to rebuild.
 
 ## Shared chart and feedback primitives
 
-| Need | Component | Owner |
-|---|---|---|
-| Daily activity line/bar | `InsightDailyChart`, `InsightDailyBarChart` | `resources/js/components/admin/insights/daily-chart.tsx` |
-| Donut + legend | `DonutChart` via `DimensionPanel` | `resources/js/components/admin/insights/donut-chart.tsx` |
-| Ranked bars | `RankedBars` | `resources/js/components/admin/insights/ranked-bars.tsx` |
-| Country map | `TopCountriesCard` | `resources/js/components/analytics/traffic-sources.tsx` |
-| Ranked list | `RankedBreakdownCard` | `resources/js/components/analytics/ranked-breakdown-card.tsx` |
-| Flags | `CountryFlag` | `resources/js/components/analytics/country-flag.tsx` |
-| KPI card | `StatCard` | `resources/js/components/dashboard/stat-card.tsx` |
-| Empty state | `Empty*` | `resources/js/components/ui/empty.tsx` |
-| Form error summary | `FormErrorSummary` | `resources/js/components/forms/form-error-summary.tsx` |
+| Need                    | Component                                   | Owner                                                         |
+| ----------------------- | ------------------------------------------- | ------------------------------------------------------------- |
+| Daily activity line/bar | `InsightDailyChart`, `InsightDailyBarChart` | `resources/js/components/admin/insights/daily-chart.tsx`      |
+| Donut + legend          | `DonutChart` via `DimensionPanel`           | `resources/js/components/admin/insights/donut-chart.tsx`      |
+| Ranked bars             | `RankedBars`                                | `resources/js/components/admin/insights/ranked-bars.tsx`      |
+| Country map             | `TopCountriesCard`                          | `resources/js/components/analytics/traffic-sources.tsx`       |
+| Ranked list             | `RankedBreakdownCard`                       | `resources/js/components/analytics/ranked-breakdown-card.tsx` |
+| Flags                   | `CountryFlag`                               | `resources/js/components/analytics/country-flag.tsx`          |
+| KPI card                | `StatCard`                                  | `resources/js/components/dashboard/stat-card.tsx`             |
+| Empty state             | `Empty*`                                    | `resources/js/components/ui/empty.tsx`                        |
+| Form error summary      | `FormErrorSummary`                          | `resources/js/components/forms/form-error-summary.tsx`        |
 
 Do not duplicate these in a page. Do not add a second chart library, a country
 bar chart, or a new empty-state block.

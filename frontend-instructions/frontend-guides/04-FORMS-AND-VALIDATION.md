@@ -5,54 +5,18 @@ error surface.
 
 ## Choose the API
 
-| Surface | API | Why |
-|---|---|---|
-| Auth, settings, page-level form | `<Form {...Action.form()}>` | Uncontrolled, Wayfinder-native, reset helpers |
-| Dialog, editor, multi-step controlled form | `useForm<T>()` | Controlled data, `setData`, `transform`, partial submit |
-| One-shot action with no fields | `router.post/patch/delete` | No form state needed |
+| Surface                                    | API                         | Why                                                     |
+| ------------------------------------------ | --------------------------- | ------------------------------------------------------- |
+| Auth, settings, page-level form            | `<Form {...Action.form()}>` | Uncontrolled, Wayfinder-native, reset helpers           |
+| Dialog, editor, multi-step controlled form | `useForm<T>()`              | Controlled data, `setData`, `transform`, partial submit |
+| One-shot action with no fields             | `router.post/patch/delete`  | No form state needed                                    |
 
 Never mix both APIs in one form. Never add Formik, React Hook Form, Zod, or a
 client schema.
 
 ## Page form recipe
 
-```tsx
-import { Form } from '@inertiajs/react';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import { Button } from '@/components/ui/button';
-import { Field, FieldError, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
-
-<Form
-    {...ProfileController.update.form()}
-    options={{ preserveScroll: true }}
-    className="space-y-6"
->
-    {({ processing, errors }) => (
-        <>
-            <Field data-invalid={Boolean(errors.name)}>
-                <FieldLabel htmlFor="name">Name</FieldLabel>
-                <Input
-                    id="name"
-                    name="name"
-                    defaultValue={auth.user?.name ?? ''}
-                    required
-                    aria-invalid={Boolean(errors.name)}
-                    aria-describedby={errors.name ? 'name-error' : undefined}
-                />
-                {errors.name && (
-                    <FieldError id="name-error">{errors.name}</FieldError>
-                )}
-            </Field>
-            <Button disabled={processing} data-test="update-profile-button">
-                {processing && <Spinner />}
-                Save
-            </Button>
-        </>
-    )}
-</Form>;
-```
+See `11-RECIPES.md` §3 for the complete page-form skeleton.
 
 - `options={{ preserveScroll: true }}` unless scrolling to the top is intended.
 - `resetOnSuccess` for create forms and secret fields; omit it when the saved
@@ -67,7 +31,14 @@ import { useForm } from '@inertiajs/react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { FormErrorSummary } from '@/components/forms/form-error-summary';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { store } from '@/routes/folders';
 
 const form = useForm({ name: '' });
@@ -93,27 +64,39 @@ function submit(event: FormEvent) {
     });
 }
 
-<Dialog open={open} onOpenChange={(next) => {
-    setOpen(next);
-    if (next) {
-        form.clearErrors();
-        form.reset();
-    }
-}}>
+<Dialog
+    open={open}
+    onOpenChange={(next) => {
+        setOpen(next);
+        if (next) {
+            form.clearErrors();
+            form.reset();
+        }
+    }}
+>
     <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[40rem]">
         <DialogHeader className="shrink-0 px-6 pt-6 pr-14 pb-4">
-            <DialogTitle id="form-title" tabIndex={-1}>Create folder</DialogTitle>
+            <DialogTitle id="form-title" tabIndex={-1}>
+                Create folder
+            </DialogTitle>
             <DialogDescription className="sr-only">
                 Set the required fields, then save.
             </DialogDescription>
         </DialogHeader>
-        <FormErrorSummary summaryRef={summaryRef} titleId="form-errors" entries={entries} onSelect={focusField} />
+        <FormErrorSummary
+            summaryRef={summaryRef}
+            titleId="form-errors"
+            entries={entries}
+            onSelect={focusField}
+        />
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-1">
                 {/* fields */}
             </div>
             <DialogFooter className="shrink-0 border-t px-6 py-4">
-                <Button type="submit" disabled={form.processing}>Save</Button>
+                <Button type="submit" disabled={form.processing}>
+                    Save
+                </Button>
             </DialogFooter>
         </form>
     </DialogContent>
@@ -131,9 +114,16 @@ function submit(event: FormEvent) {
 ```tsx
 <Field data-invalid={Boolean(errors.email)}>
     <FieldLabel htmlFor="email">Email</FieldLabel>
-    <Input id="email" aria-invalid={Boolean(errors.email)}
-        aria-describedby={errors.email ? 'email-help email-error' : 'email-help'} />
-    <FieldDescription id="email-help">We only use this for sign-in.</FieldDescription>
+    <Input
+        id="email"
+        aria-invalid={Boolean(errors.email)}
+        aria-describedby={
+            errors.email ? 'email-help email-error' : 'email-help'
+        }
+    />
+    <FieldDescription id="email-help">
+        We only use this for sign-in.
+    </FieldDescription>
     {errors.email && <FieldError id="email-error">{errors.email}</FieldError>}
 </Field>
 ```
@@ -193,16 +183,16 @@ expects null, not as a blanket rule.
 
 ## Field types
 
-| Control | Primitive | Notes |
-|---|---|---|
-| Text/email/password/URL | `Input` | `PasswordInput` adds the visibility toggle |
-| Long text | `Textarea` | Set `rows`; do not auto-grow without a reason |
-| Select | `Select` | Add a hidden input when the form posts natively |
-| Checkbox | `Checkbox` | Label wraps or `htmlFor` matches |
-| Switch | `Switch` | Pair with a label and a description |
-| Combobox/tag picker | `Popover` + `Command` | Keep the selected chips outside the popover |
-| File | `Input type="file"` | Show type/size limits in `FieldDescription` |
-| OTP | `InputOTP` | One group, `REGEXP_ONLY_DIGITS` where numeric |
+| Control                 | Primitive             | Notes                                           |
+| ----------------------- | --------------------- | ----------------------------------------------- |
+| Text/email/password/URL | `Input`               | `PasswordInput` adds the visibility toggle      |
+| Long text               | `Textarea`            | Set `rows`; do not auto-grow without a reason   |
+| Select                  | `Select`              | Add a hidden input when the form posts natively |
+| Checkbox                | `Checkbox`            | Label wraps or `htmlFor` matches                |
+| Switch                  | `Switch`              | Pair with a label and a description             |
+| Combobox/tag picker     | `Popover` + `Command` | Keep the selected chips outside the popover     |
+| File                    | `Input type="file"`   | Show type/size limits in `FieldDescription`     |
+| OTP                     | `InputOTP`            | One group, `REGEXP_ONLY_DIGITS` where numeric   |
 
 ## Modal form layout
 
@@ -228,16 +218,16 @@ expects null, not as a blanket rule.
 
 ## Anti-patterns
 
-| Anti-pattern | Replacement |
-|---|---|
-| Raw `<input>` without `Field` | `Field` + primitive |
-| `<p className="text-destructive">` | `FieldError` |
-| `window.confirm` | `AlertDialog` or `Dialog` |
-| Zod/RHF/Formik schema | Server `FormRequest` |
-| Duplicate validation in `onSubmit` | Remove it |
-| Toast for validation | Inline `FieldError` / summary |
-| Success toast for a visible list update | Close/reset silently |
-| One giant form for unrelated panels | Panels with one submit per panel and a summary |
+| Anti-pattern                            | Replacement                                    |
+| --------------------------------------- | ---------------------------------------------- |
+| Raw `<input>` without `Field`           | `Field` + primitive                            |
+| `<p className="text-destructive">`      | `FieldError`                                   |
+| `window.confirm`                        | `AlertDialog` or `Dialog`                      |
+| Zod/RHF/Formik schema                   | Server `FormRequest`                           |
+| Duplicate validation in `onSubmit`      | Remove it                                      |
+| Toast for validation                    | Inline `FieldError` / summary                  |
+| Success toast for a visible list update | Close/reset silently                           |
+| One giant form for unrelated panels     | Panels with one submit per panel and a summary |
 
 ## Checklist
 

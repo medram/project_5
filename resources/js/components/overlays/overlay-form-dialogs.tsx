@@ -4,8 +4,23 @@ import { type FormEvent, type ReactNode, useState } from 'react';
 import { useContentEditorRoutes } from '@/components/admin/content-editor-routes';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
@@ -276,7 +291,15 @@ export function CreateOverlayDialog({ children }: { children: ReactNode }) {
     );
 }
 
-export function EditOverlayDialog({ overlay, open: controlledOpen, onOpenChange }: { overlay: LinkOverlay; open?: boolean; onOpenChange?: (open: boolean) => void }) {
+export function EditOverlayDialog({
+    overlay,
+    open: controlledOpen,
+    onOpenChange,
+}: {
+    overlay: LinkOverlay;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+}) {
     const [localOpen, setLocalOpen] = useState(false);
     const open = controlledOpen ?? localOpen;
     const setOpen = onOpenChange ?? setLocalOpen;
@@ -303,12 +326,14 @@ export function EditOverlayDialog({ overlay, open: controlledOpen, onOpenChange 
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            {controlledOpen === undefined && <DialogTrigger asChild>
-                <Button type="button" size="sm" variant="outline">
-                    <Pencil data-icon="inline-start" />
-                    Edit
-                </Button>
-            </DialogTrigger>}
+            {controlledOpen === undefined && (
+                <DialogTrigger asChild>
+                    <Button type="button" size="sm" variant="outline">
+                        <Pencil data-icon="inline-start" />
+                        Edit
+                    </Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Edit {overlay.name}</DialogTitle>

@@ -3,7 +3,12 @@ import { useState } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
 import { PageHeader } from '@/components/page-header';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@/components/ui/field';
 import { UserAvatar } from '@/components/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -337,7 +342,9 @@ export default function Profile({
                                         </SelectContent>
                                     </Select>
                                     {errors.timezone && (
-                                        <FieldError>{errors.timezone}</FieldError>
+                                        <FieldError>
+                                            {errors.timezone}
+                                        </FieldError>
                                     )}
                                 </Field>
                             </FieldGroup>

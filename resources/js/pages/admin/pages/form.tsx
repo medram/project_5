@@ -36,13 +36,18 @@ export default function AdminPageForm({ page }: AdminPageFormProps) {
         og_media_id: page?.og_media_id ? String(page.og_media_id) : '',
     });
     const [assetQuery, setAssetQuery] = useState('');
-    const [assets, setAssets] = useState<{ value: string; label: string }[]>([]);
+    const [assets, setAssets] = useState<{ value: string; label: string }[]>(
+        [],
+    );
     const [assetError, setAssetError] = useState(false);
 
     useEffect(() => {
         const controller = new AbortController();
         const timer = window.setTimeout(() => {
-            const params = new URLSearchParams({ q: assetQuery, selected: form.data.og_media_id });
+            const params = new URLSearchParams({
+                q: assetQuery,
+                selected: form.data.og_media_id,
+            });
             fetch(`/admin/custom-pages/assets/options?${params}`, {
                 headers: { Accept: 'application/json' },
                 credentials: 'same-origin',
@@ -52,10 +57,14 @@ export default function AdminPageForm({ page }: AdminPageFormProps) {
                     if (!response.ok) throw new Error('Unable to load assets');
                     return response.json();
                 })
-                .then((payload: { items: { value: string; label: string }[] }) => {
-                    setAssets(payload.items);
-                    setAssetError(false);
-                })
+                .then(
+                    (payload: {
+                        items: { value: string; label: string }[];
+                    }) => {
+                        setAssets(payload.items);
+                        setAssetError(false);
+                    },
+                )
                 .catch(() => {
                     if (!controller.signal.aborted) setAssetError(true);
                 });
@@ -317,30 +326,50 @@ export default function AdminPageForm({ page }: AdminPageFormProps) {
                                     <Input
                                         id="page-og-search"
                                         value={assetQuery}
-                                        onChange={(event) => setAssetQuery(event.target.value)}
+                                        onChange={(event) =>
+                                            setAssetQuery(event.target.value)
+                                        }
                                         placeholder="Search by filename"
                                     />
-                                    <Label htmlFor="page-og-media">Social image</Label>
+                                    <Label htmlFor="page-og-media">
+                                        Social image
+                                    </Label>
                                     <Select
                                         value={form.data.og_media_id || 'none'}
                                         onValueChange={(value) =>
-                                            form.setData('og_media_id', value === 'none' ? '' : value)
+                                            form.setData(
+                                                'og_media_id',
+                                                value === 'none' ? '' : value,
+                                            )
                                         }
                                     >
-                                        <SelectTrigger id="page-og-media" aria-invalid={!!form.errors.og_media_id}>
+                                        <SelectTrigger
+                                            id="page-og-media"
+                                            aria-invalid={
+                                                !!form.errors.og_media_id
+                                            }
+                                        >
                                             <SelectValue placeholder="Choose an image" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="none">Use platform default</SelectItem>
+                                            <SelectItem value="none">
+                                                Use platform default
+                                            </SelectItem>
                                             {assets.map((asset) => (
-                                                <SelectItem key={asset.value} value={asset.value}>
+                                                <SelectItem
+                                                    key={asset.value}
+                                                    value={asset.value}
+                                                >
                                                     {asset.label}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                     {assetError && (
-                                        <p className="text-sm text-destructive">Unable to load images. Try searching again.</p>
+                                        <p className="text-sm text-destructive">
+                                            Unable to load images. Try searching
+                                            again.
+                                        </p>
                                     )}
                                     {form.errors.og_media_id && (
                                         <p className="text-sm text-destructive">

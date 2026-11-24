@@ -59,10 +59,12 @@ function VariantSettings({
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         form.patch(
-            editorUrl(updateVariant({
-                linkPage: page.id,
-                linkPageVariant: variant.id,
-            }).url),
+            editorUrl(
+                updateVariant({
+                    linkPage: page.id,
+                    linkPageVariant: variant.id,
+                }).url,
+            ),
             { preserveScroll: true },
         );
     }
@@ -74,10 +76,12 @@ function VariantSettings({
             )
         ) {
             router.delete(
-                editorUrl(destroyVariant({
-                    linkPage: page.id,
-                    linkPageVariant: variant.id,
-                }).url),
+                editorUrl(
+                    destroyVariant({
+                        linkPage: page.id,
+                        linkPageVariant: variant.id,
+                    }).url,
+                ),
                 { preserveScroll: true },
             );
         }

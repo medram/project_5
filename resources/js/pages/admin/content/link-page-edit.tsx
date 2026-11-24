@@ -2,7 +2,9 @@ import { ContentEditorRoutesProvider } from '@/components/admin/content-editor-r
 import LinkPageEditor from '@/pages/link-pages/edit';
 import type { LinkPageEditorProps } from '@/types/link-pages';
 
-export default function AdminLinkPageEdit(props: LinkPageEditorProps & { backUrl: string }) {
+export default function AdminLinkPageEdit(
+    props: LinkPageEditorProps & { backUrl: string },
+) {
     return (
         <ContentEditorRoutesProvider
             ownerPrefix={`/dashboard/link-pages/${props.linkPage.id}`}

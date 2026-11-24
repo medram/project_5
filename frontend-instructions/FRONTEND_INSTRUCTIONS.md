@@ -18,21 +18,21 @@ exists in the file you opened.
 
 ## Approved stack
 
-| Layer | Approved technology | Owns | Forbidden alternative |
-|---|---|---|---|
-| Routing | Laravel routes + Inertia v3 | Page props, redirects, validation | Client router, React Router |
-| Route helpers | Wayfinder (`@/routes/*`) | URL and method pairs | Ziggy, global `route()`, raw product URLs |
-| UI primitives | shadcn/ui (`components/ui`) + Radix | Buttons, dialogs, menus, fields | HeroUI, MUI, Chakra, a parallel kit |
-| Styling | Tailwind CSS v4 + CSS variables | Layout, spacing, semantic color | CSS-in-JS, inline style systems |
-| Icons | Lucide React | All product icons | Mixed icon packs |
-| Toasts | Sonner via `components/ui/sonner` | Server flash and client copy | Second toast library |
-| Charts | Recharts via `components/ui/chart` | Time series and distributions | A second chart library |
-| Maps | `react-svg-worldmap` + local flags | Country maps | Country bar charts, CDN flags |
-| Rich text | Tiptap | Bio/page editors | Contenteditable by hand |
-| Build/tooling | Vite+ (`vp`) | Dev, build, lint, tests | Parallel webpack config |
-| State | Inertia page props + local state | All data | React Query, SWR, Redux, Zustand |
-| HTTP | Inertia `router` / `useForm` / `Form` | Mutations and visits | Axios, fetch wrappers |
-| Validation | Laravel `FormRequest` | The only schema | Zod, Yup, Formik, RHF |
+| Layer         | Approved technology                   | Owns                              | Forbidden alternative                     |
+| ------------- | ------------------------------------- | --------------------------------- | ----------------------------------------- |
+| Routing       | Laravel routes + Inertia v3           | Page props, redirects, validation | Client router, React Router               |
+| Route helpers | Wayfinder (`@/routes/*`)              | URL and method pairs              | Ziggy, global `route()`, raw product URLs |
+| UI primitives | shadcn/ui (`components/ui`) + Radix   | Buttons, dialogs, menus, fields   | HeroUI, MUI, Chakra, a parallel kit       |
+| Styling       | Tailwind CSS v4 + CSS variables       | Layout, spacing, semantic color   | CSS-in-JS, inline style systems           |
+| Icons         | Lucide React                          | All product icons                 | Mixed icon packs                          |
+| Toasts        | Sonner via `components/ui/sonner`     | Server flash and client copy      | Second toast library                      |
+| Charts        | Recharts via `components/ui/chart`    | Time series and distributions     | A second chart library                    |
+| Maps          | `react-svg-worldmap` + local flags    | Country maps                      | Country bar charts, CDN flags             |
+| Rich text     | Tiptap                                | Bio/page editors                  | Contenteditable by hand                   |
+| Build/tooling | Vite+ (`vp`)                          | Dev, build, lint, tests           | Parallel webpack config                   |
+| State         | Inertia page props + local state      | All data                          | React Query, SWR, Redux, Zustand          |
+| HTTP          | Inertia `router` / `useForm` / `Form` | Mutations and visits              | Axios, fetch wrappers                     |
+| Validation    | Laravel `FormRequest`                 | The only schema                   | Zod, Yup, Formik, RHF                     |
 
 Project: LinkPilot. Stack details and versions live in `PROJECT-PROFILE.md`.
 
@@ -44,41 +44,41 @@ changes an interactive control, focus behavior, or responsive layout also reads
 `08-ACCESSIBILITY-AND-RESPONSIVE.md`. A visual-polish or "make it not look
 AI-generated" request also reads the `unslop` skill after the guides.
 
-| Task | Mandatory guides |
-|---|---|
-| Create or modify a page | 01, 02, 06 |
-| Create an admin page | 02, 03, 05, 06; add 04/07 for dialogs |
-| Add a settings section | 02, 04, 07 |
-| Build or change a form | 04, 07 |
-| Add a dialog | 04, 07 |
-| Add or change a list/table | 03, 05, 06 |
-| Add a chart | 03, 06, 07 |
-| Change feedback, loading, or empty states | 07 |
-| Touch navigation, focus, or responsive layout | 02, 08 |
-| Refactor or move ownership | 01, 10 |
-| Run checks or prove a change | 09 |
-| Write or update a test | 09 |
-| Add a dependency or primitive | 06, 10 |
-| Wire a route, controller prop, or permission | 03 |
-| Build a domain surface (links, QR, bio, link pages, insights) | `PROJECT-SURFACES.md` plus 02/05/06 |
+| Task                                                          | Mandatory guides                      |
+| ------------------------------------------------------------- | ------------------------------------- |
+| Create or modify a page                                       | 01, 02, 06                            |
+| Create an admin page                                          | 02, 03, 05, 06; add 04/07 for dialogs |
+| Add a settings section                                        | 02, 04, 07                            |
+| Build or change a form                                        | 04, 07                                |
+| Add a dialog                                                  | 04, 07                                |
+| Add or change a list/table                                    | 03, 05, 06                            |
+| Add a chart                                                   | 03, 06, 07                            |
+| Change feedback, loading, or empty states                     | 07                                    |
+| Touch navigation, focus, or responsive layout                 | 02, 08                                |
+| Refactor or move ownership                                    | 01, 10                                |
+| Run checks or prove a change                                  | 09                                    |
+| Write or update a test                                        | 09                                    |
+| Add a dependency or primitive                                 | 06, 10                                |
+| Wire a route, controller prop, or permission                  | 03                                    |
+| Build a domain surface (links, QR, bio, link pages, insights) | `PROJECT-SURFACES.md` plus 02/05/06   |
 
 ## Rule ownership
 
-| Rule domain | Owner |
-|---|---|
-| Visual tokens, type, composition | `docs/DESIGN.md` |
+| Rule domain                                 | Owner                      |
+| ------------------------------------------- | -------------------------- |
+| Visual tokens, type, composition            | `docs/DESIGN.md`           |
 | Stack, forbidden libraries, non-negotiables | `FRONTEND_INSTRUCTIONS.md` |
-| Page, layout, navigation | 02 |
-| Data, routes, permissions | 03 |
-| Forms, validation | 04 |
-| Lists, tables | 05 |
-| Components, styling | 06 |
-| Feedback, overlays | 07 |
-| Accessibility, responsive | 08 |
-| Testing, verification | 09 |
-| Workflow, ownership | 01, 10 |
-| Project commands, paths, contracts | `PROJECT-PROFILE.md` |
-| Domain surfaces | `PROJECT-SURFACES.md` |
+| Page, layout, navigation                    | 02                         |
+| Data, routes, permissions                   | 03                         |
+| Forms, validation                           | 04                         |
+| Lists, tables                               | 05                         |
+| Components, styling                         | 06                         |
+| Feedback, overlays                          | 07                         |
+| Accessibility, responsive                   | 08                         |
+| Testing, verification                       | 09                         |
+| Workflow, ownership                         | 01, 10                     |
+| Project commands, paths, contracts          | `PROJECT-PROFILE.md`       |
+| Domain surfaces                             | `PROJECT-SURFACES.md`      |
 
 ## Non-negotiables
 

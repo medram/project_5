@@ -350,11 +350,15 @@ function BlockFormEditor({
         if (block) {
             data.append('_method', 'patch');
             router.post(
-                editorUrl(updateBioBlock({ bioPage: page.id, bioBlock: block.id }).url),
+                editorUrl(
+                    updateBioBlock({ bioPage: page.id, bioBlock: block.id })
+                        .url,
+                ),
                 data,
                 options,
             );
-        } else router.post(editorUrl(storeBioBlock(page.id).url), data, options);
+        } else
+            router.post(editorUrl(storeBioBlock(page.id).url), data, options);
     }
     return (
         <form
@@ -650,7 +654,9 @@ function LinkForm({
         };
         if (link)
             router.patch(
-                editorUrl(updateBioLink({ bioPage: page.id, bioLink: link.id }).url),
+                editorUrl(
+                    updateBioLink({ bioPage: page.id, bioLink: link.id }).url,
+                ),
                 data,
                 options,
             );
@@ -788,7 +794,9 @@ export function BioPageEditor({
     }
     function save(event: FormEvent) {
         event.preventDefault();
-        form.patch(editorUrl(updateBioPage(page.id).url), { preserveScroll: true });
+        form.patch(editorUrl(updateBioPage(page.id).url), {
+            preserveScroll: true,
+        });
     }
     function canMove(from: number, to: number) {
         return (
@@ -851,10 +859,14 @@ export function BioPageEditor({
                                 onClick={() => {
                                     setTab(choice);
                                     if (choice === 'insights' && !insights) {
-                                        router.get(insightUrl(30), {}, {
-                                            preserveState: true,
-                                            preserveScroll: true,
-                                        });
+                                        router.get(
+                                            insightUrl(30),
+                                            {},
+                                            {
+                                                preserveState: true,
+                                                preserveScroll: true,
+                                            },
+                                        );
                                     }
                                 }}
                             >
@@ -1010,10 +1022,14 @@ export function BioPageEditor({
                     <BioPageInsightsPanel
                         insights={insights}
                         onWindowChange={(days) =>
-                            router.get(insightUrl(days), {}, {
-                                preserveState: true,
-                                preserveScroll: true,
-                            })
+                            router.get(
+                                insightUrl(days),
+                                {},
+                                {
+                                    preserveState: true,
+                                    preserveScroll: true,
+                                },
+                            )
                         }
                     />
                 )}
@@ -1131,10 +1147,12 @@ export function BioPageEditor({
                                             const toggleVisibility = () => {
                                                 if (!link) return;
                                                 router.patch(
-                                                    editorUrl(updateBioLink({
-                                                        bioPage: page.id,
-                                                        bioLink: link.id,
-                                                    }).url),
+                                                    editorUrl(
+                                                        updateBioLink({
+                                                            bioPage: page.id,
+                                                            bioLink: link.id,
+                                                        }).url,
+                                                    ),
                                                     {
                                                         is_active:
                                                             !link.is_active,
@@ -1151,20 +1169,28 @@ export function BioPageEditor({
                                                 }
                                                 if (link) {
                                                     router.delete(
-                                                        editorUrl(destroyBioLink({
-                                                            bioPage: page.id,
-                                                            bioLink: link.id,
-                                                        }).url),
+                                                        editorUrl(
+                                                            destroyBioLink({
+                                                                bioPage:
+                                                                    page.id,
+                                                                bioLink:
+                                                                    link.id,
+                                                            }).url,
+                                                        ),
                                                         {
                                                             preserveScroll: true,
                                                         },
                                                     );
                                                 } else if (block) {
                                                     router.delete(
-                                                        editorUrl(destroyBioBlock({
-                                                            bioPage: page.id,
-                                                            bioBlock: block.id,
-                                                        }).url),
+                                                        editorUrl(
+                                                            destroyBioBlock({
+                                                                bioPage:
+                                                                    page.id,
+                                                                bioBlock:
+                                                                    block.id,
+                                                            }).url,
+                                                        ),
                                                         {
                                                             preserveScroll: true,
                                                         },

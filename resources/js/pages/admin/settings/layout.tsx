@@ -1,8 +1,25 @@
 import { Link, router } from '@inertiajs/react';
 import {
-    BadgeCheck, BarChart3, Check, ChevronsUpDown, ContactRound, CreditCard,
-    KeyRound, Languages, Link2, Mail, Megaphone, Menu, Palette, PanelsTopLeft,
-    Search, Server, Settings2, Shield, ShieldCheck, Upload,
+    BadgeCheck,
+    BarChart3,
+    Check,
+    ChevronsUpDown,
+    ContactRound,
+    CreditCard,
+    KeyRound,
+    Languages,
+    Link2,
+    Mail,
+    Megaphone,
+    Menu,
+    Palette,
+    PanelsTopLeft,
+    Search,
+    Server,
+    Settings2,
+    Shield,
+    ShieldCheck,
+    Upload,
 } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
@@ -94,7 +111,10 @@ export default function SettingsLayout({
                                 aria-label={`Choose settings section: ${current?.label ?? 'Settings'}`}
                             >
                                 <span className="flex items-center gap-2">
-                                    <CurrentIcon className="size-4" aria-hidden="true" />
+                                    <CurrentIcon
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     {current?.label ?? 'Settings'}
                                 </span>
                                 <ChevronsUpDown aria-hidden="true" />
@@ -105,7 +125,10 @@ export default function SettingsLayout({
                             className="w-[min(22rem,calc(100vw-2rem))] p-0"
                         >
                             <Command>
-                                <CommandInput placeholder="Search settings…" aria-label="Search settings sections" />
+                                <CommandInput
+                                    placeholder="Search settings…"
+                                    aria-label="Search settings sections"
+                                />
                                 <CommandList>
                                     <CommandEmpty>
                                         No section found.
@@ -116,24 +139,52 @@ export default function SettingsLayout({
                                             heading={category.label}
                                         >
                                             {category.items.map((item) => {
-                                                const Icon = sectionIcons[item.key] ?? Settings2;
+                                                const Icon =
+                                                    sectionIcons[item.key] ??
+                                                    Settings2;
                                                 return (
                                                     <CommandItem
                                                         key={item.key}
                                                         value={`${item.label} ${item.key}`}
-                                                        data-active={item.key === section}
-                                                        aria-current={item.key === section ? 'page' : undefined}
+                                                        data-active={
+                                                            item.key === section
+                                                        }
+                                                        aria-current={
+                                                            item.key === section
+                                                                ? 'page'
+                                                                : undefined
+                                                        }
                                                         onSelect={() => {
                                                             setOpen(false);
-                                                            router.visit(settings.show(item.key).url);
+                                                            router.visit(
+                                                                settings.show(
+                                                                    item.key,
+                                                                ).url,
+                                                            );
                                                         }}
                                                     >
-                                                        <Icon className="size-4" aria-hidden="true" />
+                                                        <Icon
+                                                            className="size-4"
+                                                            aria-hidden="true"
+                                                        />
                                                         <span className="flex-1">
                                                             {item.label}
-                                                            {item.key === section ? <span className="sr-only"> (current section)</span> : null}
+                                                            {item.key ===
+                                                            section ? (
+                                                                <span className="sr-only">
+                                                                    {' '}
+                                                                    (current
+                                                                    section)
+                                                                </span>
+                                                            ) : null}
                                                         </span>
-                                                        {item.key === section ? <Check className="size-4" aria-hidden="true" /> : null}
+                                                        {item.key ===
+                                                        section ? (
+                                                            <Check
+                                                                className="size-4"
+                                                                aria-hidden="true"
+                                                            />
+                                                        ) : null}
                                                     </CommandItem>
                                                 );
                                             })}
@@ -155,7 +206,8 @@ export default function SettingsLayout({
                                 {category.label}
                             </p>
                             {category.items.map((item) => {
-                                const Icon = sectionIcons[item.key] ?? Settings2;
+                                const Icon =
+                                    sectionIcons[item.key] ?? Settings2;
                                 return (
                                     <Link
                                         key={item.key}
@@ -166,9 +218,16 @@ export default function SettingsLayout({
                                                 ? 'bg-muted font-medium text-foreground'
                                                 : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
                                         )}
-                                        aria-current={item.key === section ? 'page' : undefined}
+                                        aria-current={
+                                            item.key === section
+                                                ? 'page'
+                                                : undefined
+                                        }
                                     >
-                                        <Icon className="size-4 shrink-0" aria-hidden="true" />
+                                        <Icon
+                                            className="size-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
                                         {item.label}
                                     </Link>
                                 );

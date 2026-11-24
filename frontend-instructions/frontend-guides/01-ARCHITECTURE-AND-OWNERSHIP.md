@@ -5,19 +5,19 @@ deciding where code belongs.
 
 ## Directory map
 
-| Path | Owns |
-|---|---|
-| `resources/js/pages/**` | One file per Inertia page; page composition, `<Head>`, page header |
-| `resources/js/layouts/**` | Shells (`UserLayout`, `AdminLayout`, `AuthLayout`, `SettingsLayout`) |
-| `resources/js/components/**` | Domain components grouped by feature |
-| `resources/js/components/ui/**` | shadcn-derived primitives, locally themed |
-| `resources/js/hooks/**` | Reusable browser behavior |
-| `resources/js/lib/**` | Pure utilities |
-| `resources/js/types/**` | TypeScript contracts |
-| `resources/js/routes/**` | Generated Wayfinder route helpers |
-| `resources/js/actions/**` | Generated Wayfinder controller actions |
-| `resources/js/wayfinder/**` | Generated internals |
-| `resources/css/app.css` | Tailwind entry, CSS variables, base layers |
+| Path                            | Owns                                                                 |
+| ------------------------------- | -------------------------------------------------------------------- |
+| `resources/js/pages/**`         | One file per Inertia page; page composition, `<Head>`, page header   |
+| `resources/js/layouts/**`       | Shells (`UserLayout`, `AdminLayout`, `AuthLayout`, `SettingsLayout`) |
+| `resources/js/components/**`    | Domain components grouped by feature                                 |
+| `resources/js/components/ui/**` | shadcn-derived primitives, locally themed                            |
+| `resources/js/hooks/**`         | Reusable browser behavior                                            |
+| `resources/js/lib/**`           | Pure utilities                                                       |
+| `resources/js/types/**`         | TypeScript contracts                                                 |
+| `resources/js/routes/**`        | Generated Wayfinder route helpers                                    |
+| `resources/js/actions/**`       | Generated Wayfinder controller actions                               |
+| `resources/js/wayfinder/**`     | Generated internals                                                  |
+| `resources/css/app.css`         | Tailwind entry, CSS variables, base layers                           |
 
 ## Ownership
 
@@ -106,28 +106,28 @@ There are no data-fetching hooks. Page props are the data layer. Do not create
 
 ## State ownership
 
-| State | Owner | Example |
-|---|---|---|
-| Server data | Inertia page props | Rows, totals, permissions |
-| Filters and range | URL query | `?q=…&days=30` |
-| Selection, open/closed, drafts | Local `useState` | `selectedIds`, dialog open |
-| Form values | `useForm` or `<Form>` | Dialog and page forms |
-| Global UI | Providers in `app.tsx` | Tooltips, toasts, theme |
+| State                          | Owner                  | Example                    |
+| ------------------------------ | ---------------------- | -------------------------- |
+| Server data                    | Inertia page props     | Rows, totals, permissions  |
+| Filters and range              | URL query              | `?q=…&days=30`             |
+| Selection, open/closed, drafts | Local `useState`       | `selectedIds`, dialog open |
+| Form values                    | `useForm` or `<Form>`  | Dialog and page forms      |
+| Global UI                      | Providers in `app.tsx` | Tooltips, toasts, theme    |
 
 There is no global store. Do not add one for a single surface.
 
 ## Where to add code
 
-| Task | Location |
-|---|---|
-| New page | `pages/<area>/<name>.tsx` + controller + route + layout registry check |
-| New admin page | `pages/admin/<area>/` + `AdminLayout` via `admin/` prefix |
-| New list | Page + `components/resource-list/*` + a row component in the domain folder |
-| New form | Page or dialog component in the domain folder; see guide 04 |
-| New dialog | Domain component; compose `components/ui/dialog` |
-| New chart | Domain component; compose `components/ui/chart` |
+| Task                 | Location                                                                   |
+| -------------------- | -------------------------------------------------------------------------- |
+| New page             | `pages/<area>/<name>.tsx` + controller + route + layout registry check     |
+| New admin page       | `pages/admin/<area>/` + `AdminLayout` via `admin/` prefix                  |
+| New list             | Page + `components/resource-list/*` + a row component in the domain folder |
+| New form             | Page or dialog component in the domain folder; see guide 04                |
+| New dialog           | Domain component; compose `components/ui/dialog`                           |
+| New chart            | Domain component; compose `components/ui/chart`                            |
 | New settings section | `pages/admin/settings/section.tsx` + `settings-form.ts`; no new page shell |
-| New shared primitive | `components/ui` only after 2+ consumers and a real API |
+| New shared primitive | `components/ui` only after 2+ consumers and a real API                     |
 
 ## Size and extraction
 

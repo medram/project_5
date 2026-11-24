@@ -1,12 +1,12 @@
 {
-  "packVersion": 1,
-  "verifiedAt": "2026-11-23T14:55:46Z",
-  "packHash": "35b1b3f8cbcee93d49612d77c8cb2ed88a700b3595e284e47ea65cd73a81583d",
-  "conformance": {
-    "raw-palette": 18,
-    "raw-dashboard-url": 20,
-    "window-confirm": 10,
-    "router-put": 0,
-    "second-chart-library": 0
-  }
+    "packVersion": 1,
+    "verifiedAt": "2026-11-23T14:55:46Z",
+    "packHash": "35b1b3f8cbcee93d49612d77c8cb2ed88a700b3595e284e47ea65cd73a81583d",
+    "conformance": {
+        "raw-palette": 18,
+        "raw-dashboard-url": 20,
+        "window-confirm": 10,
+        "router-put": 0,
+        "second-chart-library": 0
+    }
 }

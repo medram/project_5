@@ -245,14 +245,27 @@ export default function AdminLocalizationsIndex({
                                                 size="sm"
                                                 onClick={() => {
                                                     setAdding(true);
-                                                    setEditing({ key: '', value: '' });
+                                                    setEditing({
+                                                        key: '',
+                                                        value: '',
+                                                    });
                                                 }}
                                             >
                                                 <Plus aria-hidden="true" />
                                                 Add translation
                                             </Button>
-                                            <Button asChild variant="outline" size="sm">
-                                                <a href={localizations.export(active.code).url}>
+                                            <Button
+                                                asChild
+                                                variant="outline"
+                                                size="sm"
+                                            >
+                                                <a
+                                                    href={
+                                                        localizations.export(
+                                                            active.code,
+                                                        ).url
+                                                    }
+                                                >
                                                     Export JSON
                                                 </a>
                                             </Button>
@@ -328,13 +341,18 @@ export default function AdminLocalizationsIndex({
                                                                 title={`Edit ${row.key}`}
                                                                 aria-label={`Edit ${row.key}`}
                                                                 onClick={() => {
-                                                                    setAdding(false);
-                                                                    setEditing(row);
+                                                                    setAdding(
+                                                                        false,
+                                                                    );
+                                                                    setEditing(
+                                                                        row,
+                                                                    );
                                                                 }}
                                                             >
                                                                 <Pencil aria-hidden="true" />
                                                             </Button>
-                                                            {active?.code !== 'en' && (
+                                                            {active?.code !==
+                                                                'en' && (
                                                                 <Button
                                                                     size="icon"
                                                                     variant="destructive"
@@ -342,7 +360,11 @@ export default function AdminLocalizationsIndex({
                                                                     className="size-8 rounded-full"
                                                                     title={`Reset ${row.key} to English`}
                                                                     aria-label={`Reset ${row.key} to English`}
-                                                                    onClick={() => setResetting(row)}
+                                                                    onClick={() =>
+                                                                        setResetting(
+                                                                            row,
+                                                                        )
+                                                                    }
                                                                 >
                                                                     <RotateCcw aria-hidden="true" />
                                                                 </Button>
@@ -626,10 +648,17 @@ function TranslationDialog({
 }) {
     const form = useForm({ key: translation.key, value: translation.value });
     return (
-        <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+        <Dialog
+            open
+            onOpenChange={(open) => {
+                if (!open) onClose();
+            }}
+        >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{adding ? 'Add translation' : 'Edit translation'}</DialogTitle>
+                    <DialogTitle>
+                        {adding ? 'Add translation' : 'Edit translation'}
+                    </DialogTitle>
                     <DialogDescription>{locale.name}</DialogDescription>
                 </DialogHeader>
                 <form
@@ -651,10 +680,14 @@ function TranslationDialog({
                                 id="translation-key"
                                 value={form.data.key}
                                 readOnly={!adding}
-                                onChange={(e) => form.setData('key', e.target.value)}
+                                onChange={(e) =>
+                                    form.setData('key', e.target.value)
+                                }
                             />
                             {form.errors.key && (
-                                <p className="text-sm text-destructive">{form.errors.key}</p>
+                                <p className="text-sm text-destructive">
+                                    {form.errors.key}
+                                </p>
                             )}
                         </Field>
                         <Field className="gap-1">
@@ -670,7 +703,9 @@ function TranslationDialog({
                                 }
                             />
                             {form.errors.value && (
-                                <p className="text-sm text-destructive">{form.errors.value}</p>
+                                <p className="text-sm text-destructive">
+                                    {form.errors.value}
+                                </p>
                             )}
                         </Field>
                     </FieldGroup>
@@ -705,26 +740,42 @@ function ResetTranslationDialog({
     const form = useForm({ key: translation.key });
 
     return (
-        <AlertDialog open onOpenChange={(open) => { if (!open && !form.processing) onClose(); }}>
+        <AlertDialog
+            open
+            onOpenChange={(open) => {
+                if (!open && !form.processing) onClose();
+            }}
+        >
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Reset to English?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        The English fallback will replace the {locale.name} override for “{translation.key}”.
+                        The English fallback will replace the {locale.name}{' '}
+                        override for “{translation.key}”.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 {form.errors.key && (
-                    <p className="text-sm text-destructive">{form.errors.key}</p>
+                    <p className="text-sm text-destructive">
+                        {form.errors.key}
+                    </p>
                 )}
                 <AlertDialogFooter>
-                    <AlertDialogCancel disabled={form.processing}>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel disabled={form.processing}>
+                        Cancel
+                    </AlertDialogCancel>
                     <Button
                         type="button"
                         disabled={form.processing}
-                        onClick={() => form.delete(localizations.translations.update(locale.code).url, {
-                            preserveScroll: true,
-                            onSuccess: onClose,
-                        })}
+                        onClick={() =>
+                            form.delete(
+                                localizations.translations.update(locale.code)
+                                    .url,
+                                {
+                                    preserveScroll: true,
+                                    onSuccess: onClose,
+                                },
+                            )
+                        }
                     >
                         <RotateCcw aria-hidden="true" />
                         Reset to English

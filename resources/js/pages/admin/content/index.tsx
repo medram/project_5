@@ -89,11 +89,15 @@ export default function AdminContentIndex({
             return;
         }
 
-        router.get(editing.backUrl, {}, {
-            preserveScroll: true,
-            preserveState: true,
-            only: ['editing'],
-        });
+        router.get(
+            editing.backUrl,
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['editing'],
+            },
+        );
     }
 
     function editHref(editUrl: string): string {
@@ -341,9 +345,13 @@ export default function AdminContentIndex({
                                                     title={`Edit ${row.name}`}
                                                 >
                                                     <Link
-                                                        href={editHref(row.editUrl)}
+                                                        href={editHref(
+                                                            row.editUrl,
+                                                        )}
                                                         preserveScroll
-                                                        preserveState={inlineEditor}
+                                                        preserveState={
+                                                            inlineEditor
+                                                        }
                                                         only={
                                                             inlineEditor
                                                                 ? ['editing']
@@ -357,9 +365,13 @@ export default function AdminContentIndex({
                                             )}
                                             {row.deleteUrl && (
                                                 <AdminContentDeleteDialog
-                                                    deleteUrl={deleteHref(row.deleteUrl)}
+                                                    deleteUrl={deleteHref(
+                                                        row.deleteUrl,
+                                                    )}
                                                     resourceLabel={
-                                                        singularLabels[resource.key] ?? 'record'
+                                                        singularLabels[
+                                                            resource.key
+                                                        ] ?? 'record'
                                                     }
                                                     recordName={row.name}
                                                     description={deleteDescription(
@@ -482,7 +494,12 @@ export default function AdminContentIndex({
                                         </Button>
                                     )}
                                     {row.editUrl && (
-                                        <Button asChild variant="outline" size="sm" className="w-fit">
+                                        <Button
+                                            asChild
+                                            variant="outline"
+                                            size="sm"
+                                            className="w-fit"
+                                        >
                                             <Link
                                                 href={editHref(row.editUrl)}
                                                 preserveScroll
@@ -501,16 +518,21 @@ export default function AdminContentIndex({
                                     )}
                                     {row.deleteUrl && (
                                         <AdminContentDeleteDialog
-                                            deleteUrl={deleteHref(row.deleteUrl)}
+                                            deleteUrl={deleteHref(
+                                                row.deleteUrl,
+                                            )}
                                             resourceLabel={
-                                                singularLabels[resource.key] ?? 'record'
+                                                singularLabels[resource.key] ??
+                                                'record'
                                             }
                                             recordName={row.name}
                                             description={deleteDescription(
                                                 resource.key,
                                                 row.name,
                                             )}
-                                            confirmationValue={row.deleteConfirmation}
+                                            confirmationValue={
+                                                row.deleteConfirmation
+                                            }
                                         >
                                             <Button
                                                 type="button"

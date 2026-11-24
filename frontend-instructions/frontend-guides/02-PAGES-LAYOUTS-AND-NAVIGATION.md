@@ -7,13 +7,13 @@ navigation element.
 
 `resources/js/app.tsx` owns the mapping. Current behavior:
 
-| Page prefix | Layout |
-|---|---|
-| `welcome`, `bio-pages/public`, `link-pages/public`, `links/overlay`, `links/unlock`, `qr-codes/unlock`, `content/show` | `null` |
-| `auth/` | `AuthLayout` |
-| `admin/` | `AdminLayout` |
-| `settings/`, `webhooks/`, `billing/` | `[UserLayout, SettingsLayout]` |
-| Everything else | `UserLayout` |
+| Page prefix                                                                                                            | Layout                         |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `welcome`, `bio-pages/public`, `link-pages/public`, `links/overlay`, `links/unlock`, `qr-codes/unlock`, `content/show` | `null`                         |
+| `auth/`                                                                                                                | `AuthLayout`                   |
+| `admin/`                                                                                                               | `AdminLayout`                  |
+| `settings/`, `webhooks/`, `billing/`                                                                                   | `[UserLayout, SettingsLayout]` |
+| Everything else                                                                                                        | `UserLayout`                   |
 
 A page supplies `breadcrumbs` (product pages) or `title`/`description` (auth
 pages) through its static `.layout` object. `setLayoutProps()` is used at
@@ -79,7 +79,7 @@ import { PageHeader } from '@/components/page-header';
     title="Short links"
     description="Create and monitor every route in this workspace."
     actions={<Button>Create short link</Button>}
-/>
+/>;
 ```
 
 Rules:
@@ -145,6 +145,64 @@ use breadcrumbs.
 - `pages/dashboard.tsx` is a placeholder. Do not use it as a template.
 - `links/insights.tsx` and older analytics pages keep bespoke compositions;
   new insights pages follow `docs/DESIGN.md` §7.2c.
+
+## Page recipe
+
+```tsx
+// source: resources/js/pages/folders/index.tsx (structure)
+import { Head } from '@inertiajs/react';
+import { PageHeader } from '@/components/page-header';
+import { Button } from '@/components/ui/button';
+import type { FolderIndexProps } from '@/types/folders';
+import { index as foldersIndex } from '@/routes/folders';
+
+export default function Folders({ folders }: FolderIndexProps) {
+    return (
+        <>
+            <Head title="Folders" />
+            <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-5 px-5 pt-4 pb-10">
+                <PageHeader
+                    title="Folders"
+                    description="Group related links into collections."
+                    actions={<Button>Create folder</Button>}
+                />
+                {/* Render folders.data here. */}
+            </div>
+        </>
+    );
+}
+
+Folders.layout = {
+    breadcrumbs: [{ title: 'Folders', href: foldersIndex() }],
+};
+```
+
+## KPI row recipe
+
+```tsx
+// source: resources/js/pages/admin/insights/index.tsx (KPI pattern)
+import { Building2, UsersRound } from 'lucide-react';
+
+<section
+    aria-label="Platform totals"
+    className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+>
+    <StatCard
+        icon={UsersRound}
+        label="Accounts"
+        value={data.accounts.total.toLocaleString()}
+        note={`${data.accounts.new} new in window`}
+    />
+    <StatCard
+        icon={Building2}
+        label="Workspaces"
+        value={data.workspaces.total.toLocaleString()}
+        note={`${data.workspaces.new} new in window`}
+    />
+</section>;
+```
+
+`StatCard` accepts `sparkline`; admin aggregate pages must not pass it.
 
 ## Checklist
 

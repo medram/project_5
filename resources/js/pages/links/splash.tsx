@@ -70,10 +70,16 @@ export default function PublicLinkSplash({
                         className="w-full sm:w-auto"
                     >
                         {processing && <Spinner data-icon="inline-start" />}
-                        {remaining > 0 ? `Continue in ${remaining}s` : 'Continue'}
+                        {remaining > 0
+                            ? `Continue in ${remaining}s`
+                            : 'Continue'}
                         <ArrowRight data-icon="inline-end" />
                     </Button>
-                    <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+                    <p
+                        className="text-sm text-muted-foreground"
+                        role="status"
+                        aria-live="polite"
+                    >
                         {remaining > 0
                             ? `The continue button unlocks in ${remaining} seconds.`
                             : 'You can continue to the destination now.'}

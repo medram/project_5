@@ -30,10 +30,12 @@
 ### Task 1: Share the existing billing usage rows
 
 **Files:**
+
 - Create: `resources/js/components/billing/usage-metrics.tsx`
 - Modify: `resources/js/pages/billing/index.tsx`
 
 **Interfaces:**
+
 - Produces: `usageOrder`, `UsageRow`, and `formatBytes` exports used by both the billing page and sidebar panel.
 - `UsageRow` accepts the existing `UsageMetric`, noun, and `keyof PlanLimits` props; preserve current billing-page output and over-limit messaging.
 
@@ -44,11 +46,13 @@
 ### Task 2: Add the sidebar usage panel and document the interaction
 
 **Files:**
+
 - Create: `resources/js/components/sidebar-plan-usage.tsx`
 - Modify: `resources/js/components/app-sidebar.tsx`
 - Modify: `docs/DESIGN.md`
 
 **Interfaces:**
+
 - `SidebarPlanUsage` accepts the current workspace plan, role, and usage values; no backend payload changes.
 - `app-sidebar.tsx` renders `SidebarPlanUsage` only when a current workspace exists.
 
@@ -61,6 +65,7 @@
 ### Task 3: Verify the rendered interaction
 
 **Files:**
+
 - No new automated test files unless a direct failure shows an uncovered regression case.
 
 - [ ] Run `npm run types:check` and `./node_modules/.bin/vp check resources/js/components/sidebar-plan-usage.tsx resources/js/components/billing/usage-metrics.tsx resources/js/components/app-sidebar.tsx resources/js/pages/billing/index.tsx` once after implementation.

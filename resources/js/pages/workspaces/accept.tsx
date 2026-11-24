@@ -72,9 +72,7 @@ export default function AcceptWorkspaceInvitation({
                         Accept while signed in with the invited email address.
                     </p>
                     <form onSubmit={accept} className="space-y-3">
-                        {acceptError && (
-                            <FieldError>{acceptError}</FieldError>
-                        )}
+                        {acceptError && <FieldError>{acceptError}</FieldError>}
                         <Button
                             type="submit"
                             className="w-full"

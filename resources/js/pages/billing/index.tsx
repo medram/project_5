@@ -88,7 +88,9 @@ export default function BillingIndex({
                                 </p>
                                 <p className="text-sm tabular-nums">
                                     {providerManaged
-                                        ? providerSubscription?.baseAmount != null && providerSubscription.currency
+                                        ? providerSubscription?.baseAmount !=
+                                              null &&
+                                          providerSubscription.currency
                                             ? `${formatMoney(providerSubscription.baseAmount, providerSubscription.currency)}${providerSubscription.interval === 'year' ? '/yr' : providerSubscription.interval === 'month' ? '/mo' : ''}`
                                             : 'Price unavailable'
                                         : `${override ? 'Catalog price: ' : ''}${formatAmount(effectivePlan, effectivePlan.monthlyPrice)}${effectivePlan.monthlyPrice !== null && effectivePlan.code !== 'free' ? '/mo' : ''}`}
@@ -194,7 +196,8 @@ export default function BillingIndex({
                                                     {plan.code === 'free'
                                                         ? 'No cost'
                                                         : `${formatAmount(plan, plan.monthlyPrice)}${plan.monthlyPrice === null ? '' : '/mo'}`}
-                                                    {billing.annualDisplay && plan.code !== 'free' &&
+                                                    {billing.annualDisplay &&
+                                                        plan.code !== 'free' &&
                                                         ` · ${formatAmount(plan, plan.annualPrice)}${plan.annualPrice === null ? '' : '/yr'}`}
                                                 </CardDescription>
                                             </div>
@@ -299,9 +302,14 @@ export default function BillingIndex({
                                                             Choose yearly
                                                         </Button>
                                                     )}
-                                                {!plan.checkout.month && (!billing.annualDisplay || !plan.checkout.year) && (
-                                                    <span className="text-sm text-muted-foreground">Price unavailable</span>
-                                                )}
+                                                {!plan.checkout.month &&
+                                                    (!billing.annualDisplay ||
+                                                        !plan.checkout
+                                                            .year) && (
+                                                        <span className="text-sm text-muted-foreground">
+                                                            Price unavailable
+                                                        </span>
+                                                    )}
                                             </div>
                                         ) : (
                                             <span className="text-sm text-muted-foreground">

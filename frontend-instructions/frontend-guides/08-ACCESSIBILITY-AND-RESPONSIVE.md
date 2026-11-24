@@ -83,12 +83,12 @@ or any responsive layout.
 
 ## Responsive
 
-| Width | Check |
-|---|---|
-| 1440 | Full sidebar, three-up cards, table columns readable |
-| 1024 | Admin table/card switch; sidebar persistent; settings rail vertical |
-| 768 | Admin tables still show cards; user lists may switch; drawer rows ≥44 px |
-| 390 | Single column, no page-level horizontal scroll, dialog footer reachable |
+| Width | Check                                                                    |
+| ----- | ------------------------------------------------------------------------ |
+| 1440  | Full sidebar, three-up cards, table columns readable                     |
+| 1024  | Admin table/card switch; sidebar persistent; settings rail vertical      |
+| 768   | Admin tables still show cards; user lists may switch; drawer rows ≥44 px |
+| 390   | Single column, no page-level horizontal scroll, dialog footer reachable  |
 
 Rules:
 

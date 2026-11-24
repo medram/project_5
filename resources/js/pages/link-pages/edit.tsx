@@ -136,11 +136,15 @@ function ItemForm({
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        form.patch(editorUrl(updateItem([page, item]).url), { preserveScroll: true });
+        form.patch(editorUrl(updateItem([page, item]).url), {
+            preserveScroll: true,
+        });
     }
 
     function remove() {
-        router.delete(editorUrl(destroyItem([page, item]).url), { preserveScroll: true });
+        router.delete(editorUrl(destroyItem([page, item]).url), {
+            preserveScroll: true,
+        });
     }
 
     return (

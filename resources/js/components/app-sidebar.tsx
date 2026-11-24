@@ -26,7 +26,7 @@ export function AppSidebar() {
                 <Link
                     href={dashboard()}
                     prefetch
-                    className="flex min-h-10 min-w-0 items-center rounded-md focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none group-data-[collapsible=icon]:justify-center"
+                    className="flex min-h-10 min-w-0 items-center rounded-md group-data-[collapsible=icon]:justify-center focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
                 >
                     <AppLogo hideNameWhenCollapsed />
                 </Link>
@@ -41,7 +41,7 @@ export function AppSidebar() {
                 />
             </SidebarContent>
 
-            <SidebarFooter className="gap-1 p-3 pt-1 max-lg:border-t max-lg:border-sidebar-border group-data-[collapsible=icon]:px-2">
+            <SidebarFooter className="gap-1 p-3 pt-1 group-data-[collapsible=icon]:px-2 max-lg:border-t max-lg:border-sidebar-border">
                 {workspace?.current && (
                     <SidebarMenu>
                         <SidebarMenuItem>

@@ -31,6 +31,7 @@
 ### Task 1: Migrate User controls to the local shadcn components
 
 **Files:**
+
 - Modify: `resources/js/components/bio-pages/editor.tsx`
 - Modify: `resources/js/components/link-pages/block-form.tsx`
 - Modify: `resources/js/components/link-pages/lead-form.tsx`
@@ -48,6 +49,7 @@
 - Modify: `resources/js/pages/tracking-pixels/index.tsx`
 
 **Interfaces:**
+
 - Consumes: `@/components/ui/{input,textarea,select,checkbox,field}` as currently implemented.
 - Produces: User forms and form-like filters use the same local primitives with their existing values and callbacks.
 
@@ -63,9 +65,11 @@
 ### Task 2: Migrate the remaining Admin checkboxes
 
 **Files:**
+
 - Modify: `resources/js/pages/admin/localizations/index.tsx`
 
 **Interfaces:**
+
 - Consumes: local shadcn `Checkbox` and `Field` components.
 - Produces: Locale `Published` and `Default locale` controls retain their boolean values and submit behavior.
 
@@ -76,10 +80,12 @@
 ### Task 3: Make populated data tables opaque and no-data areas transparent
 
 **Files:**
+
 - Inspect/modify all User/Admin table surfaces returned by `grep "<table\\b"` in `resources/js/pages` and `resources/js/components`, including the table view in `resources/js/pages/links/index.tsx`.
 - Inspect/modify User/Admin empty-state surfaces in `resources/js/pages` and `resources/js/components`.
 
 **Interfaces:**
+
 - Consumes: existing `bg-card`, `bg-muted`, and transparent empty-state styling.
 - Produces: populated tables have an opaque card surface; empty-state containers have no opaque fill.
 
@@ -90,10 +96,12 @@
 ### Task 4: Final verification and remaining-native control audit
 
 **Files:**
+
 - Inspect: `resources/js/components/workspaces/workspace-switcher.tsx`
 - Inspect: `resources/css/app.css`
 
 **Interfaces:**
+
 - Consumes: User/Admin form controls, populated table surfaces, and transparent no-data areas.
 - Produces: shadcn controls cover in-scope forms/filters; populated tables are opaque; empty states are transparent; shell workspace switcher remains native.
 

@@ -144,34 +144,38 @@ footer”, “country map”. Use `grep` for exact symbols.
 
 ```md
 ## What changed
+
 - <behavior> in <surface>
 
 ## Files
+
 - <path> — <why>
 
 ## Checks
+
 - `npm run types:check` → exit 0
 - `npx vp check --no-fmt <paths>` → pass
 - `npx vp test <paths>` → N passed
 - Browser: <pages> at <widths>; console: <none/…>
 
 ## Known limitations
+
 - <unverified surface or follow-up>
 ```
 
 ## Common failure modes
 
-| Failure | Prevention |
-|---|---|
-| Raw palette for status | Semantic tokens; grep `text-(green|red|blue)-` |
-| Raw product URL | Wayfinder; grep `'/dashboard/` |
-| Duplicate page title | One `PageHeader`; no eyebrow `<h1>` |
-| Client validation schema | Server `FormRequest` only |
-| Toast for validation | Inline `FieldError` |
+| Failure                     | Prevention                                   |
+| --------------------------- | -------------------------------------------- |
+| Raw palette for status      | Semantic tokens; grep `text-(green           | red | blue)-` |
+| Raw product URL             | Wayfinder; grep `'/dashboard/`               |
+| Duplicate page title        | One `PageHeader`; no eyebrow `<h1>`          |
+| Client validation schema    | Server `FormRequest` only                    |
+| Toast for validation        | Inline `FieldError`                          |
 | Table overflows page at 390 | Cards below `md`; `min-w-0`; internal scroll |
-| Missing accessible name | `aria-label` on icon-only control |
-| Editing generated files | Fix the Laravel route, regenerate |
-| Repo-wide reformat | Scope `vp check --fix` to changed paths |
+| Missing accessible name     | `aria-label` on icon-only control            |
+| Editing generated files     | Fix the Laravel route, regenerate            |
+| Repo-wide reformat          | Scope `vp check --fix` to changed paths      |
 
 ## Checklist
 

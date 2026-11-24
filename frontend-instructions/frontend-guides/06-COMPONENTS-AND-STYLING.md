@@ -7,19 +7,19 @@ Read this when you choose a component, add a primitive, or style a surface.
 Exact values live in `docs/DESIGN.md` §3–§5; this table is a usage map. If they
 disagree, DESIGN wins.
 
-| Need | Token / utility |
-|---|---|
-| Page background | `bg-background`, `text-foreground` |
-| Card surface | `bg-card`, `text-card-foreground`, `border-border` |
-| Secondary surface | `bg-surface-secondary`, `bg-surface-tertiary` |
-| Divider | `border-separator` |
-| Accent | `bg-primary`, `text-primary`, `bg-primary-soft` |
-| Success | `text-success`, `bg-success-soft`, `text-success-soft-foreground` |
-| Warning | `text-warning`, `bg-warning-soft`, `text-warning-soft-foreground` |
-| Danger | `text-danger`, `bg-danger-soft`, `text-danger-soft-foreground` |
+| Need               | Token / utility                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| Page background    | `bg-background`, `text-foreground`                                                       |
+| Card surface       | `bg-card`, `text-card-foreground`, `border-border`                                       |
+| Secondary surface  | `bg-surface-secondary`, `bg-surface-tertiary`                                            |
+| Divider            | `border-separator`                                                                       |
+| Accent             | `bg-primary`, `text-primary`, `bg-primary-soft`                                          |
+| Success            | `text-success`, `bg-success-soft`, `text-success-soft-foreground`                        |
+| Warning            | `text-warning`, `bg-warning-soft`, `text-warning-soft-foreground`                        |
+| Danger             | `text-danger`, `bg-danger-soft`, `text-danger-soft-foreground`                           |
 | Legacy error alias | `text-destructive`, `border-destructive` — shadcn-compatible; `FieldError` still uses it |
-| Charts | `var(--chart-1…5)`, `bg-chart-*` |
-| Muted text | `text-muted-foreground` |
+| Charts             | `var(--chart-1…5)`, `bg-chart-*`                                                         |
+| Muted text         | `text-muted-foreground`                                                                  |
 
 Use the token, never the hex. Never hard-code a hue; the platform accent remaps
 `--primary` and the chart ramp at runtime. `destructive` is the
@@ -33,15 +33,15 @@ palette is tracked by the checker; it is not a status-color pattern.
 
 ## Type scale
 
-| Role | Classes |
-|---|---|
-| Page title | `text-2xl leading-8 font-semibold tracking-[-0.02em] text-balance` |
+| Role          | Classes                                                                           |
+| ------------- | --------------------------------------------------------------------------------- |
+| Page title    | `text-2xl leading-8 font-semibold tracking-[-0.02em] text-balance`                |
 | Section title | `text-xl font-semibold tracking-[-0.02em]` or `text-base leading-6 font-semibold` |
-| KPI value | `text-2xl leading-7 font-semibold tracking-[-0.02em] tabular-nums` |
-| Body | `text-sm leading-5` |
-| Label | `text-sm font-medium` |
-| Meta | `text-xs leading-4 font-medium text-muted-foreground` |
-| Micro | `text-[11px]` only for chart ticks or a dense badge |
+| KPI value     | `text-2xl leading-7 font-semibold tracking-[-0.02em] tabular-nums`                |
+| Body          | `text-sm leading-5`                                                               |
+| Label         | `text-sm font-medium`                                                             |
+| Meta          | `text-xs leading-4 font-medium text-muted-foreground`                             |
+| Micro         | `text-[11px]` only for chart ticks or a dense badge                               |
 
 Sentence case everywhere. No uppercase tracked labels. Numbers that align in a
 column use `tabular-nums`.
@@ -99,7 +99,7 @@ column use `tabular-nums`.
 - On a tinted background use the matching `*-soft-foreground`; do not pair a
   soft background with plain `text-foreground`.
 - Destructive `Alert` uses `border-danger/30 bg-danger-soft
-  text-danger-soft-foreground`.
+text-danger-soft-foreground`.
 - No gradient text, glow, or colored shadow.
 - Charts use one accent and the chart ramp; do not assign arbitrary colors.
 - A request to unslop, polish, or fix "AI-looking" UI reads the `unslop` skill
@@ -148,13 +148,13 @@ column use `tabular-nums`.
 
 ## Responsive
 
-| Breakpoint | Behavior |
-|---|---|
-| 390 | Single column, cards instead of tables, bottom nav visible |
-| 640 (`sm`) | Two-up donuts, header actions inline |
-| 768 (`md`) | Two-column layouts; user lists may switch to tables |
+| Breakpoint  | Behavior                                                                 |
+| ----------- | ------------------------------------------------------------------------ |
+| 390         | Single column, cards instead of tables, bottom nav visible               |
+| 640 (`sm`)  | Two-up donuts, header actions inline                                     |
+| 768 (`md`)  | Two-column layouts; user lists may switch to tables                      |
 | 1024 (`lg`) | Persistent sidebar; admin cards switch to tables; settings rail vertical |
-| 1280 (`xl`) | Wider grids |
+| 1280 (`xl`) | Wider grids                                                              |
 
 - Put `min-w-0` on flex/grid children that contain text or tables.
 - Use `overflow-x-clip` on the shell content; never `overflow-x-hidden` on a
@@ -176,17 +176,67 @@ column use `tabular-nums`.
 
 ## Anti-patterns
 
-| Anti-pattern | Real example | Replacement |
-|---|---|---|
-| Raw palette for status | `text-green-600` | `text-success-soft-foreground` |
-| Hard-coded accent | `bg-[#0a6fd0]` | `bg-primary` |
-| Parallel primitive | New `components/button.tsx` | `components/ui/button` |
-| Ad-hoc card shell | `rounded-2xl border bg-card` | `Card` / `.lp-panel` |
-| Page title in a card | `<h1>` inside `CardHeader` | `PageHeader` |
-| Second chart library | ApexCharts | Recharts + `ChartContainer` |
-| Emoji status | “✅ Active” | Badge/dot + text |
-| Uppercase tracked label | `uppercase tracking-widest` | Sentence case |
-| Shadow glow | Colored `box-shadow` | Border + surface token |
+| Anti-pattern            | Real example                 | Replacement                    |
+| ----------------------- | ---------------------------- | ------------------------------ |
+| Raw palette for status  | `text-green-600`             | `text-success-soft-foreground` |
+| Hard-coded accent       | `bg-[#0a6fd0]`               | `bg-primary`                   |
+| Parallel primitive      | New `components/button.tsx`  | `components/ui/button`         |
+| Ad-hoc card shell       | `rounded-2xl border bg-card` | `Card` / `.lp-panel`           |
+| Page title in a card    | `<h1>` inside `CardHeader`   | `PageHeader`                   |
+| Second chart library    | ApexCharts                   | Recharts + `ChartContainer`    |
+| Emoji status            | “✅ Active”                  | Badge/dot + text               |
+| Uppercase tracked label | `uppercase tracking-widest`  | Sentence case                  |
+| Shadow glow             | Colored `box-shadow`         | Border + surface token         |
+
+## Chart card recipe
+
+```tsx
+// source: resources/js/components/admin/insights/daily-chart.tsx
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+} from '@/components/ui/chart';
+
+const config = { clicks: { label: 'Clicks', color: 'var(--chart-1)' } };
+
+<Card>
+    <CardHeader>
+        <CardTitle>Daily activity</CardTitle>
+    </CardHeader>
+    <CardContent>
+        <ChartContainer
+            config={config}
+            className="h-[300px] w-full min-w-0"
+            aria-label={`Daily clicks, ${rangeLabel}, ${total} total`}
+        >
+            <LineChart data={data} accessibilityLayer>
+                <CartesianGrid vertical={false} />
+                <XAxis dataKey="date" tickLine={false} axisLine={false} />
+                <YAxis
+                    allowDecimals={false}
+                    tickLine={false}
+                    axisLine={false}
+                    width={36}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line
+                    dataKey="clicks"
+                    stroke="var(--color-clicks)"
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                />
+            </LineChart>
+        </ChartContainer>
+    </CardContent>
+</Card>;
+```
+
+`ChartContainer` renders `role="img"`; pass `aria-label` on it. Empty data
+renders `Empty`, not an empty axis.
 
 ## Checklist
 

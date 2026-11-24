@@ -71,13 +71,13 @@ router.get(files.index().url, { q }, { preserveScroll: true });
 
 ## Mutations
 
-| Need | API |
-|---|---|
-| Page/auth/settings form | `<Form {...Action.form()}>` |
-| Dialog/editor with controlled data | `useForm<T>()` |
-| One-shot action (delete, restore, rotate) | `router.post/patch/delete` |
-| Filter or range change | `router.get` |
-| Update via multipart | `useForm` with `forceFormData` or a `FormData` transform |
+| Need                                      | API                                                      |
+| ----------------------------------------- | -------------------------------------------------------- |
+| Page/auth/settings form                   | `<Form {...Action.form()}>`                              |
+| Dialog/editor with controlled data        | `useForm<T>()`                                           |
+| One-shot action (delete, restore, rotate) | `router.post/patch/delete`                               |
+| Filter or range change                    | `router.get`                                             |
+| Update via multipart                      | `useForm` with `forceFormData` or a `FormData` transform |
 
 Never use `router.put`; Laravel routes declare `put` where needed, but the UI
 uses `patch` or a `_method` transform. Never submit with a raw `fetch`.
@@ -109,10 +109,14 @@ const [query, setQuery] = useState(filters.q ?? '');
 
 function apply(event: FormEvent) {
     event.preventDefault();
-    router.get(path, { q: query.trim() || undefined }, {
-        preserveScroll: true,
-        preserveState: true,
-    });
+    router.get(
+        path,
+        { q: query.trim() || undefined },
+        {
+            preserveScroll: true,
+            preserveState: true,
+        },
+    );
 }
 
 function reset() {

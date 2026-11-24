@@ -20,12 +20,12 @@ above the toolbar.
 
 ## Choose the representation
 
-| Case | Representation |
-|---|---|
-| Dense admin records | Native `<table>` inside `.lp-table-shell` at `lg+`, cards below `lg` |
-| User-facing short links | Semantic `<ul>` reflowing grid (current `links/index.tsx`) |
-| Few fields, mobile-first | Card list only |
-| Wide audit rows | Table with internal horizontal scroll; never page-level scroll |
+| Case                     | Representation                                                       |
+| ------------------------ | -------------------------------------------------------------------- |
+| Dense admin records      | Native `<table>` inside `.lp-table-shell` at `lg+`, cards below `lg` |
+| User-facing short links  | Semantic `<ul>` reflowing grid (current `links/index.tsx`)           |
+| Few fields, mobile-first | Card list only                                                       |
+| Wide audit rows          | Table with internal horizontal scroll; never page-level scroll       |
 
 Page-level horizontal scroll at 390 px is a failure. A scroll container inside
 the surface is acceptable when a card variant is impossible.
@@ -38,7 +38,9 @@ the surface is acceptable when a card variant is impossible.
         <thead>
             <tr>
                 <th scope="col">Account</th>
-                <th scope="col" className="text-right">Links</th>
+                <th scope="col" className="text-right">
+                    Links
+                </th>
             </tr>
         </thead>
         <tbody>
@@ -62,13 +64,13 @@ the surface is acceptable when a card variant is impossible.
 
 ## Shared primitives
 
-| Component | Props | Use |
-|---|---|---|
-| `ResourceListToolbar` | `action`, `className`, `children` | Native GET form wrapper; used by `links`/`folders`, not admin lists |
-| `ResourceListFilterChips` | `filters: { key, label, value, href }[]` | Active filter removal |
-| `ResourceListViewToggle` | view state + labels | Table/card switch when both are offered |
-| `ResourceListBulkTray` | selection count + actions | Bulk actions after selection |
-| `ResourceListPagination` | `links`, `total`, `ariaLabel`, `singular`, `plural` | User-list pagination |
+| Component                 | Props                                               | Use                                                                 |
+| ------------------------- | --------------------------------------------------- | ------------------------------------------------------------------- |
+| `ResourceListToolbar`     | `action`, `className`, `children`                   | Native GET form wrapper; used by `links`/`folders`, not admin lists |
+| `ResourceListFilterChips` | `filters: { key, label, value, href }[]`            | Active filter removal                                               |
+| `ResourceListViewToggle`  | view state + labels                                 | Table/card switch when both are offered                             |
+| `ResourceListBulkTray`    | selection count + actions                           | Bulk actions after selection                                        |
+| `ResourceListPagination`  | `links`, `total`, `ariaLabel`, `singular`, `plural` | User-list pagination                                                |
 
 Admin lists compose their own toolbar with `router.get` and a richer footer;
 they do not use `ResourceListToolbar` or `ResourceListPagination`. Use the
@@ -86,10 +88,14 @@ const [query, setQuery] = useState(filters.q ?? '');
 
 function apply(event: FormEvent) {
     event.preventDefault();
-    router.get(path, {
-        q: query.trim() || undefined,
-        state: state === 'any' ? undefined : state,
-    }, { preserveScroll: true, preserveState: true });
+    router.get(
+        path,
+        {
+            q: query.trim() || undefined,
+            state: state === 'any' ? undefined : state,
+        },
+        { preserveScroll: true, preserveState: true },
+    );
 }
 ```
 
@@ -139,7 +145,9 @@ function apply(event: FormEvent) {
 ```tsx
 <Empty>
     <EmptyHeader>
-        <EmptyMedia variant="icon"><Link2 aria-hidden="true" /></EmptyMedia>
+        <EmptyMedia variant="icon">
+            <Link2 aria-hidden="true" />
+        </EmptyMedia>
         <EmptyTitle>No short links yet</EmptyTitle>
         <EmptyDescription>
             Create your first route to start tracking clicks.
@@ -173,6 +181,48 @@ function apply(event: FormEvent) {
   fix; scope it separately.
 - `aria-selected` still appears on the bio editor’s tabs, where it is valid.
   Do not remove it.
+
+## Filter toolbar recipe
+
+```tsx
+// source: resources/js/pages/admin/content/index.tsx
+const [query, setQuery] = useState(filters.q ?? '');
+
+function apply(event: FormEvent) {
+    event.preventDefault();
+    router.get(
+        path,
+        { q: query.trim() || undefined },
+        {
+            preserveScroll: true,
+            preserveState: true,
+        },
+    );
+}
+
+function reset() {
+    setQuery('');
+    router.get(path, {}, { preserveScroll: true });
+}
+
+<form
+    onSubmit={apply}
+    className="lp-panel flex flex-wrap items-center gap-2 p-3"
+>
+    <Input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        aria-label="Search"
+        className="w-full sm:max-w-sm"
+    />
+    <Button type="submit">Apply</Button>
+    <Button type="button" variant="ghost" onClick={reset}>
+        Reset
+    </Button>
+</form>;
+```
+
+Show active chips below the toolbar; each chip removes its own filter.
 
 ## Checklist
 

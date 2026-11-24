@@ -18,11 +18,7 @@ type Props = {
     onHelp?: () => void;
 };
 
-export function UserMenuContent({
-    user,
-    onNavigate,
-    onHelp,
-}: Props) {
+export function UserMenuContent({ user, onNavigate, onHelp }: Props) {
     const cleanup = useMobileNavigation();
 
     const handleNavigation = () => {

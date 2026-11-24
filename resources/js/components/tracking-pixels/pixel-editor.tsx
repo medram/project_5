@@ -4,14 +4,42 @@ import { type FormEvent, type ReactNode, useState } from 'react';
 import { useContentEditorRoutes } from '@/components/admin/content-editor-routes';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { store, update } from '@/routes/tracking-pixels';
-import { destroy as destroyRule, store as storeRule } from '@/routes/tracking-pixels/rules';
-import type { TrackingPixel, TrackingPixelProvider, TrackingPixelTarget } from '@/types/link-pages';
+import {
+    destroy as destroyRule,
+    store as storeRule,
+} from '@/routes/tracking-pixels/rules';
+import type {
+    TrackingPixel,
+    TrackingPixelProvider,
+    TrackingPixelTarget,
+} from '@/types/link-pages';
 type PixelFormData = {
     name: string;
     provider: TrackingPixelProvider;
@@ -195,7 +223,17 @@ export function CreatePixelDialog({ children }: { children: ReactNode }) {
     );
 }
 
-export function EditPixelDialog({ pixel, open: controlledOpen, onOpenChange, targets }: { pixel: TrackingPixel; open?: boolean; onOpenChange?: (open: boolean) => void; targets?: TrackingPixelTarget[] }) {
+export function EditPixelDialog({
+    pixel,
+    open: controlledOpen,
+    onOpenChange,
+    targets,
+}: {
+    pixel: TrackingPixel;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    targets?: TrackingPixelTarget[];
+}) {
     const [localOpen, setLocalOpen] = useState(false);
     const open = controlledOpen ?? localOpen;
     const setOpen = onOpenChange ?? setLocalOpen;
@@ -217,12 +255,14 @@ export function EditPixelDialog({ pixel, open: controlledOpen, onOpenChange, tar
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            {controlledOpen === undefined && <DialogTrigger asChild>
-                <Button type="button" size="sm" variant="outline">
-                    <Pencil data-icon="inline-start" />
-                    Edit
-                </Button>
-            </DialogTrigger>}
+            {controlledOpen === undefined && (
+                <DialogTrigger asChild>
+                    <Button type="button" size="sm" variant="outline">
+                        <Pencil data-icon="inline-start" />
+                        Edit
+                    </Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Edit {pixel.name}</DialogTitle>
@@ -256,7 +296,9 @@ export function EditPixelDialog({ pixel, open: controlledOpen, onOpenChange, tar
                         </Button>
                     </DialogFooter>
                 </form>
-                {targets && <PixelRules pixel={pixel} targets={targets} editable />}
+                {targets && (
+                    <PixelRules pixel={pixel} targets={targets} editable />
+                )}
             </DialogContent>
         </Dialog>
     );
@@ -342,10 +384,13 @@ export function PixelRules({
                                         disabled={form.processing}
                                         onClick={() =>
                                             router.delete(
-                                                editorUrl(destroyRule({
-                                                    trackingPixel: pixel.id,
-                                                    trackingPixelRule: rule.id,
-                                                }).url),
+                                                editorUrl(
+                                                    destroyRule({
+                                                        trackingPixel: pixel.id,
+                                                        trackingPixelRule:
+                                                            rule.id,
+                                                    }).url,
+                                                ),
                                                 { preserveScroll: true },
                                             )
                                         }

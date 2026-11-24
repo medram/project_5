@@ -37,13 +37,15 @@ import type {
     TrackingPixelProvider,
     TrackingPixelsPageProps,
 } from '@/types/link-pages';
-import { CreatePixelDialog, EditPixelDialog, PixelRules } from '@/components/tracking-pixels/pixel-editor';
-
+import {
+    CreatePixelDialog,
+    EditPixelDialog,
+    PixelRules,
+} from '@/components/tracking-pixels/pixel-editor';
 
 function providerLabel(provider: TrackingPixelProvider): string {
     return provider === 'meta_pixel' ? 'Meta Pixel' : 'Google Analytics';
 }
-
 
 function DeletePixelDialog({ pixel }: { pixel: TrackingPixel }) {
     const [open, setOpen] = useState(false);
@@ -98,7 +100,6 @@ function DeletePixelDialog({ pixel }: { pixel: TrackingPixel }) {
         </Dialog>
     );
 }
-
 
 export default function TrackingPixelsIndex({
     pixels,

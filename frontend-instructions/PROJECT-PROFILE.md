@@ -5,36 +5,36 @@ paths, versions, commands, and bindings. The guides stay stack-scoped.
 
 ## Project identity
 
-| Item | Value |
-|---|---|
-| Name | LinkPilot |
-| Framework | Laravel `^13.17` (PHP `^8.3`) |
-| Inertia Laravel | `^3.0` |
-| Inertia React | `^3.0` |
-| React | `^19.2` |
-| Tailwind CSS | `^4.0` |
-| shadcn/ui | `new-york`, locally themed |
-| Wayfinder | `^0.1.14` |
-| Vite+ | `0.3.0` with Vite `^8.0` |
-| TypeScript | `^5.7` |
-| Visual spec | `docs/DESIGN.md` §2–§9 |
-| Compositions | `docs/reference/hero-dashboard.png`, `docs/reference/hero-dashboard-2.png` |
+| Item            | Value                                                                      |
+| --------------- | -------------------------------------------------------------------------- |
+| Name            | LinkPilot                                                                  |
+| Framework       | Laravel `^13.17` (PHP `^8.3`)                                              |
+| Inertia Laravel | `^3.0`                                                                     |
+| Inertia React   | `^3.0`                                                                     |
+| React           | `^19.2`                                                                    |
+| Tailwind CSS    | `^4.0`                                                                     |
+| shadcn/ui       | `new-york`, locally themed                                                 |
+| Wayfinder       | `^0.1.14`                                                                  |
+| Vite+           | `0.3.0` with Vite `^8.0`                                                   |
+| TypeScript      | `^5.7`                                                                     |
+| Visual spec     | `docs/DESIGN.md` §2–§9                                                     |
+| Compositions    | `docs/reference/hero-dashboard.png`, `docs/reference/hero-dashboard-2.png` |
 
 ## Commands
 
 Run from the repository root.
 
-| Purpose | Command | Notes |
-|---|---|---|
-| Dev app + Vite | `compose.dev.yaml` stack; app `http://localhost:8000`, Vite `http://localhost:5173` | `docker compose -f compose.dev.yaml up -d` |
-| Production build | `npm run build` | Runs Wayfinder generation and Vite |
-| Type check | `npm run types:check` | `tsc --noEmit`; mandatory, `vp check` is not type-aware enough |
-| Lint/format check | `npx vp check --no-fmt <paths>` | Only paths you changed |
-| Lint/format fix | `npx vp check --fix <paths>` | Only paths you changed |
-| Frontend tests | `npx vp test <explicit paths>` | Vitest via `vite-plus/test`; pass the test files, not a bare run |
-| Backend tests | `docker compose -f compose.dev.yaml exec -T app php artisan test <path>` | PHPUnit |
-| Full CI | `composer ci:check` | `npm run check`, `types:check`, Pint, PHPStan, backend tests |
-| PHP lint | `vendor/bin/pint --test <paths>` | Repo-wide via CI |
+| Purpose           | Command                                                                             | Notes                                                            |
+| ----------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Dev app + Vite    | `compose.dev.yaml` stack; app `http://localhost:8000`, Vite `http://localhost:5173` | `docker compose -f compose.dev.yaml up -d`                       |
+| Production build  | `npm run build`                                                                     | Runs Wayfinder generation and Vite                               |
+| Type check        | `npm run types:check`                                                               | `tsc --noEmit`; mandatory, `vp check` is not type-aware enough   |
+| Lint/format check | `npx vp check --no-fmt <paths>`                                                     | Only paths you changed                                           |
+| Lint/format fix   | `npx vp check --fix <paths>`                                                        | Only paths you changed                                           |
+| Frontend tests    | `npx vp test <explicit paths>`                                                      | Vitest via `vite-plus/test`; pass the test files, not a bare run |
+| Backend tests     | `docker compose -f compose.dev.yaml exec -T app php artisan test <path>`            | PHPUnit                                                          |
+| Full CI           | `composer ci:check`                                                                 | `npm run check`, `types:check`, Pint, PHPStan, backend tests     |
+| PHP lint          | `vendor/bin/pint --test <paths>`                                                    | Repo-wide via CI                                                 |
 
 `npx vp test` loads `vite.config.ts` and runs Wayfinder generation. Pass
 explicit test paths: a bare run discovers `.superpowers/sdd/**` scratch suites
@@ -55,58 +55,58 @@ the config.
 
 ## Path map
 
-| Area | Path |
-|---|---|
-| Pages | `resources/js/pages/**` |
-| Layouts | `resources/js/layouts/**` |
-| Domain components | `resources/js/components/**` (except `ui`) |
-| UI primitives | `resources/js/components/ui/**` |
-| Hooks | `resources/js/hooks/**` |
-| Utilities | `resources/js/lib/**` |
-| Types | `resources/js/types/**` |
-| Generated route helpers | `resources/js/routes/**` |
-| Generated controller actions | `resources/js/actions/**` |
-| Generated Wayfinder internals | `resources/js/wayfinder/**` |
-| CSS and tokens | `resources/css/app.css` |
-| Controllers | `app/Http/Controllers/**` |
-| Routes and middleware | `routes/**`, `app/Http/Middleware/**` |
-| Form requests | `app/Http/Requests/**` |
-| Backend tests | `tests/Feature/**`, `tests/Unit/**` |
-| Frontend tests | colocated `*.test.ts` / `*.test.tsx` |
-| Visual spec | `docs/DESIGN.md` |
+| Area                          | Path                                       |
+| ----------------------------- | ------------------------------------------ |
+| Pages                         | `resources/js/pages/**`                    |
+| Layouts                       | `resources/js/layouts/**`                  |
+| Domain components             | `resources/js/components/**` (except `ui`) |
+| UI primitives                 | `resources/js/components/ui/**`            |
+| Hooks                         | `resources/js/hooks/**`                    |
+| Utilities                     | `resources/js/lib/**`                      |
+| Types                         | `resources/js/types/**`                    |
+| Generated route helpers       | `resources/js/routes/**`                   |
+| Generated controller actions  | `resources/js/actions/**`                  |
+| Generated Wayfinder internals | `resources/js/wayfinder/**`                |
+| CSS and tokens                | `resources/css/app.css`                    |
+| Controllers                   | `app/Http/Controllers/**`                  |
+| Routes and middleware         | `routes/**`, `app/Http/Middleware/**`      |
+| Form requests                 | `app/Http/Requests/**`                     |
+| Backend tests                 | `tests/Feature/**`, `tests/Unit/**`        |
+| Frontend tests                | colocated `*.test.ts` / `*.test.tsx`       |
+| Visual spec                   | `docs/DESIGN.md`                           |
 
 ## Change impact map
 
 Used by `scripts/check-pack.mjs --changed` to scope an audit after code changes.
 
-| Changed path | Re-verify guides |
-|---|---|
-| `resources/js/pages/**` | 02, 05, 06 |
-| `resources/js/components/**` (except `ui`) | 01, 06 |
-| `resources/js/components/ui/**` | 06 |
-| `resources/js/layouts/**` | 01, 02, 08 |
-| `resources/js/app.tsx` | 01, 02, `PROJECT-PROFILE.md` |
-| `resources/js/hooks/**` | 01, 03 |
-| `resources/js/lib/**` | 01, 09 |
-| `resources/js/types/global.d.ts` | 03, `PROJECT-PROFILE.md` |
-| `resources/js/types/**` | 03 |
-| `resources/css/app.css` | 06, `docs/DESIGN.md` |
-| `app/Http/Controllers/**`, `app/Http/Requests/**`, `routes/**` | 03, 04 |
-| `tests/**` | 09 |
-| `package.json`, `composer.json`, `vite.config.ts` | `PROJECT-PROFILE.md`, 09 |
+| Changed path                                                   | Re-verify guides             |
+| -------------------------------------------------------------- | ---------------------------- |
+| `resources/js/pages/**`                                        | 02, 05, 06                   |
+| `resources/js/components/**` (except `ui`)                     | 01, 06                       |
+| `resources/js/components/ui/**`                                | 06                           |
+| `resources/js/layouts/**`                                      | 01, 02, 08                   |
+| `resources/js/app.tsx`                                         | 01, 02, `PROJECT-PROFILE.md` |
+| `resources/js/hooks/**`                                        | 01, 03                       |
+| `resources/js/lib/**`                                          | 01, 09                       |
+| `resources/js/types/global.d.ts`                               | 03, `PROJECT-PROFILE.md`     |
+| `resources/js/types/**`                                        | 03                           |
+| `resources/css/app.css`                                        | 06, `docs/DESIGN.md`         |
+| `app/Http/Controllers/**`, `app/Http/Requests/**`, `routes/**` | 03, 04                       |
+| `tests/**`                                                     | 09                           |
+| `package.json`, `composer.json`, `vite.config.ts`              | `PROJECT-PROFILE.md`, 09     |
 
 ## Layout registry
 
 `resources/js/app.tsx` owns one `layout: (name) => …` callback. It is the only
 place that maps a page name to a shell.
 
-| Page name | Layout |
-|---|---|
-| `welcome`, `bio-pages/public`, `link-pages/public`, `links/overlay`, `links/unlock`, `qr-codes/unlock`, `content/show` | `null` |
-| `auth/*` | `AuthLayout` |
-| `admin/*` | `AdminLayout` |
-| `settings/*`, `webhooks/*`, `billing/*` | `[UserLayout, SettingsLayout]` |
-| Everything else | `UserLayout` |
+| Page name                                                                                                              | Layout                         |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `welcome`, `bio-pages/public`, `link-pages/public`, `links/overlay`, `links/unlock`, `qr-codes/unlock`, `content/show` | `null`                         |
+| `auth/*`                                                                                                               | `AuthLayout`                   |
+| `admin/*`                                                                                                              | `AdminLayout`                  |
+| `settings/*`, `webhooks/*`, `billing/*`                                                                                | `[UserLayout, SettingsLayout]` |
+| Everything else                                                                                                        | `UserLayout`                   |
 
 A page supplies layout props through its static `.layout` object:
 `breadcrumbs` for product pages, `title`/`description` for auth pages, and
@@ -135,19 +135,19 @@ Never hard-code a hex in a component.
 
 `app/Http/Middleware/HandleInertiaRequests.php` shares:
 
-| Prop | Shape | Consumer |
-|---|---|---|
-| `auth` | `{ user, isAdmin, canSearchPlatform, adminAbilities }` | Shell, permissions |
-| `platform` | branding, capabilities, captcha | Shell, feature gates |
-| `locale` | `{ code, direction }` | Root direction |
-| `translations` | dictionary | `useTranslation` |
-| `notificationUnreadCount` | number | Header bell |
-| `notificationPreview` | list | Header bell |
-| `workspace` | current workspace + membership + plan usage | Sidebar, switcher |
-| `sidebarOpen` | boolean | Sidebar default |
-| `googleAuthEnabled` | boolean | Login |
-| `errors` | `Record<string, string>` | Inertia forms |
-| `name` | app name | Titles |
+| Prop                      | Shape                                                  | Consumer             |
+| ------------------------- | ------------------------------------------------------ | -------------------- |
+| `auth`                    | `{ user, isAdmin, canSearchPlatform, adminAbilities }` | Shell, permissions   |
+| `platform`                | branding, capabilities, captcha                        | Shell, feature gates |
+| `locale`                  | `{ code, direction }`                                  | Root direction       |
+| `translations`            | dictionary                                             | `useTranslation`     |
+| `notificationUnreadCount` | number                                                 | Header bell          |
+| `notificationPreview`     | list                                                   | Header bell          |
+| `workspace`               | current workspace + membership + plan usage            | Sidebar, switcher    |
+| `sidebarOpen`             | boolean                                                | Sidebar default      |
+| `googleAuthEnabled`       | boolean                                                | Login                |
+| `errors`                  | `Record<string, string>`                               | Inertia forms        |
+| `name`                    | app name                                               | Titles               |
 
 They are globally typed in `resources/js/types/global.d.ts`; call `usePage()`
 without a generic. UI hiding is not authorization. Backend middleware and
@@ -179,27 +179,27 @@ provided pagination and export URLs are the only allowed raw URLs.
 
 Account settings live under `/account-settings/*`, not `/settings/*`:
 
-| Page | URL |
-|---|---|
-| Profile | `/account-settings/general` |
-| Security | `/account-settings/security` |
+| Page       | URL                            |
+| ---------- | ------------------------------ |
+| Profile    | `/account-settings/general`    |
+| Security   | `/account-settings/security`   |
 | Appearance | `/account-settings/appearance` |
-| Billing | `/account-settings/billing` |
+| Billing    | `/account-settings/billing`    |
 | Workspaces | `/account-settings/workspaces` |
-| API keys | `/account-settings/api-keys` |
-| Webhooks | `/account-settings/webhooks` |
-| Restore | `/account-settings/restore` |
+| API keys   | `/account-settings/api-keys`   |
+| Webhooks   | `/account-settings/webhooks`   |
+| Restore    | `/account-settings/restore`    |
 
 Page names still use the `settings/` prefix (`pages/settings/profile.tsx`);
 only the URLs use `account-settings`.
 
 ## Generated zones
 
-| Path | Status |
-|---|---|
-| `resources/js/routes/**` | Generated by Wayfinder; disposable, gitignored |
-| `resources/js/actions/**` | Generated by Wayfinder; disposable, gitignored |
-| `resources/js/wayfinder/**` | Generated internals; never edit |
+| Path                            | Status                                                            |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `resources/js/routes/**`        | Generated by Wayfinder; disposable, gitignored                    |
+| `resources/js/actions/**`       | Generated by Wayfinder; disposable, gitignored                    |
+| `resources/js/wayfinder/**`     | Generated internals; never edit                                   |
 | `resources/js/components/ui/**` | shadcn-derived; locally themed, lint/fmt excluded, not disposable |
 
 Regenerate routes/actions with the app running or by invoking Wayfinder
@@ -218,18 +218,18 @@ shared helper, not in the controller. Money uses `formatMoney` from
 
 ## Utilities
 
-| Helper | Import | Use |
-|---|---|---|
-| `cn` | `@/lib/utils` | Conditional class composition |
-| `toUrl` | `@/lib/utils` | Normalize `Link` hrefs |
-| `formatMoney` | `@/lib/money` | Currency display |
-| `countryName` | `@/lib/countries` | Country labels |
-| `useCurrentUrl` | `@/hooks/use-current-url` | `aria-current`, nav state |
-| `useClipboard` | `@/hooks/use-clipboard` | Copy buttons |
-| `useInitials` | `@/hooks/use-initials` | Avatar fallback |
-| `useTranslation` | `@/hooks/use-translation` | Shared translations |
-| `useAppearance` | `@/hooks/use-appearance` | Theme state |
-| `useIsMobile` | `@/hooks/use-mobile` | Mobile shell behavior |
+| Helper           | Import                    | Use                           |
+| ---------------- | ------------------------- | ----------------------------- |
+| `cn`             | `@/lib/utils`             | Conditional class composition |
+| `toUrl`          | `@/lib/utils`             | Normalize `Link` hrefs        |
+| `formatMoney`    | `@/lib/money`             | Currency display              |
+| `countryName`    | `@/lib/countries`         | Country labels                |
+| `useCurrentUrl`  | `@/hooks/use-current-url` | `aria-current`, nav state     |
+| `useClipboard`   | `@/hooks/use-clipboard`   | Copy buttons                  |
+| `useInitials`    | `@/hooks/use-initials`    | Avatar fallback               |
+| `useTranslation` | `@/hooks/use-translation` | Shared translations           |
+| `useAppearance`  | `@/hooks/use-appearance`  | Theme state                   |
+| `useIsMobile`    | `@/hooks/use-mobile`      | Mobile shell behavior         |
 
 ## Verification prerequisites
 

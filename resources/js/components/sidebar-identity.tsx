@@ -59,7 +59,9 @@ export function SidebarIdentity({ roleLabel }: { roleLabel?: string }) {
                     <DropdownMenuContent
                         className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-xl"
                         align="end"
-                        side={!isMobile && state === 'collapsed' ? 'right' : 'top'}
+                        side={
+                            !isMobile && state === 'collapsed' ? 'right' : 'top'
+                        }
                     >
                         <UserMenuContent
                             onHelp={() => setHelpOpen(true)}

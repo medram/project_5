@@ -235,7 +235,10 @@ export function LinkPageBlockForm({
         if (block) {
             data.append('_method', 'patch');
             router.post(
-                editorUrl(updateBlock({ linkPage: page.id, linkPageBlock: block.id }).url),
+                editorUrl(
+                    updateBlock({ linkPage: page.id, linkPageBlock: block.id })
+                        .url,
+                ),
                 data,
                 options,
             );
@@ -247,7 +250,10 @@ export function LinkPageBlockForm({
     function remove() {
         if (!block) return;
         router.delete(
-            editorUrl(destroyBlock({ linkPage: page.id, linkPageBlock: block.id }).url),
+            editorUrl(
+                destroyBlock({ linkPage: page.id, linkPageBlock: block.id })
+                    .url,
+            ),
             { preserveScroll: true },
         );
     }
@@ -328,9 +334,7 @@ export function LinkPageBlockForm({
                         )}
                     </Field>
 
-                    <Field
-                        data-invalid={Boolean(errors.link_page_variant_id)}
-                    >
+                    <Field data-invalid={Boolean(errors.link_page_variant_id)}>
                         <FieldLabel htmlFor={`${fieldPrefix}-variant`}>
                             Variant
                         </FieldLabel>
@@ -362,9 +366,7 @@ export function LinkPageBlockForm({
                                         value={String(variant.id)}
                                     >
                                         {variant.name} · {variant.weight}%
-                                        {!variant.isActive
-                                            ? ' · inactive'
-                                            : ''}
+                                        {!variant.isActive ? ' · inactive' : ''}
                                     </SelectItem>
                                 ))}
                             </SelectContent>

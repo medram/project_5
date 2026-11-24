@@ -198,10 +198,7 @@ function TwoFactorVerificationStep({
                             </InputOTP>
                             {errors?.confirmTwoFactorAuthentication?.code && (
                                 <FieldError>
-                                    {
-                                        errors.confirmTwoFactorAuthentication
-                                            .code
-                                    }
+                                    {errors.confirmTwoFactorAuthentication.code}
                                 </FieldError>
                             )}
                         </div>

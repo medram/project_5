@@ -57,9 +57,11 @@ export default function Welcome() {
                                 aria-label={brandName}
                                 className="inline-flex items-center gap-2 text-foreground sm:hidden"
                             >
-                                {compactLogo ?? fullLogo ? (
+                                {(compactLogo ?? fullLogo) ? (
                                     <img
-                                        src={compactLogo ?? fullLogo ?? undefined}
+                                        src={
+                                            compactLogo ?? fullLogo ?? undefined
+                                        }
                                         alt=""
                                         width={32}
                                         height={32}

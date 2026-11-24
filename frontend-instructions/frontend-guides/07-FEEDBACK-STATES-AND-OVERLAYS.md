@@ -5,14 +5,14 @@ loading state, or empty state.
 
 ## Feedback decision table
 
-| Situation | Channel |
-|---|---|
-| Validation failed | Inline `FieldError`; `FormErrorSummary` for large forms |
-| Mutation changes the visible surface | Close/reset silently; the list or card updates |
-| Mutation does not change the visible surface | Server flash toast |
-| Client-only copy/export | Sonner `toast.*` |
-| Background failure with no field | `Alert` on the page |
-| Destructive action | `AlertDialog` (simple) or `Dialog` (needs a form) |
+| Situation                                    | Channel                                                 |
+| -------------------------------------------- | ------------------------------------------------------- |
+| Validation failed                            | Inline `FieldError`; `FormErrorSummary` for large forms |
+| Mutation changes the visible surface         | Close/reset silently; the list or card updates          |
+| Mutation does not change the visible surface | Server flash toast                                      |
+| Client-only copy/export                      | Sonner `toast.*`                                        |
+| Background failure with no field             | `Alert` on the page                                     |
+| Destructive action                           | `AlertDialog` (simple) or `Dialog` (needs a form)       |
 
 Do not stack a toast on top of a visible list update. Do not toast validation.
 
@@ -44,13 +44,13 @@ second `<Toaster>` or call `useFlashToast` in a page. Types are `success`,
 
 Choose the overlay:
 
-| Need | Overlay |
-|---|---|
-| Focused create/edit with fields | `Dialog` |
-| Simple yes/no destructive confirm | `AlertDialog` |
-| Confirmation that needs a password or a form | `Dialog` |
-| Nested settings | `SettingsPanelDialog` (dialog above the base dialog) |
-| Mobile-only navigation | `Sheet` |
+| Need                                         | Overlay                                              |
+| -------------------------------------------- | ---------------------------------------------------- |
+| Focused create/edit with fields              | `Dialog`                                             |
+| Simple yes/no destructive confirm            | `AlertDialog`                                        |
+| Confirmation that needs a password or a form | `Dialog`                                             |
+| Nested settings                              | `SettingsPanelDialog` (dialog above the base dialog) |
+| Mobile-only navigation                       | `Sheet`                                              |
 
 Anatomy:
 
@@ -173,6 +173,58 @@ Use `Empty`:
   `resources/js/pages/settings/workspaces/index.tsx`. The current count is
   recorded in `verified.json`. Replace them with `AlertDialog` or a shared
   confirm-dialog primitive when touched; do not add another call site.
+
+## Empty state recipe
+
+```tsx
+// source: resources/js/pages/link-pages/index.tsx
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyTitle,
+} from '@/components/ui/empty';
+import { Button } from '@/components/ui/button';
+
+<Empty>
+    <EmptyHeader>
+        <EmptyTitle>No link pages yet</EmptyTitle>
+        <EmptyDescription>
+            Start with a campaign, then add its destinations.
+        </EmptyDescription>
+    </EmptyHeader>
+    <EmptyContent>
+        <Button>Create page</Button>
+    </EmptyContent>
+</Empty>;
+```
+
+Filtered-empty copy offers “Clear filters” instead of a create action.
+
+## Status badge recipe
+
+```tsx
+// source: resources/js/pages/links/index.tsx (status mapping)
+import { Badge } from '@/components/ui/badge';
+
+function StatusBadge({
+    status,
+}: {
+    status: 'live' | 'paused' | 'archived' | 'pending';
+}) {
+    const map = {
+        live: { label: 'Live', variant: 'success' as const },
+        paused: { label: 'Paused', variant: 'warning' as const },
+        archived: { label: 'Archived', variant: 'secondary' as const },
+        pending: { label: 'Pending review', variant: 'outline' as const },
+    };
+    const item = map[status];
+    return <Badge variant={item.variant}>{item.label}</Badge>;
+}
+```
+
+Pair a status dot with text; never communicate status by color alone.
 
 ## Checklist
 

@@ -15,11 +15,11 @@ folder and replaces those two files.
 
 ## Who reads what
 
-| Reader | Start here | Then |
-|---|---|---|
-| Coding agent | `FRONTEND_INSTRUCTIONS.md` | The task guide it routes to, then the owning code |
-| Human reviewer | `README.md` | `PROJECT-PROFILE.md` for commands, the relevant guide for rules |
-| New project setup | "Portability" below | `PROJECT-PROFILE.md`, `PROJECT-SURFACES.md`, `AGENTS_FRONTEND_SNIPPET.md` |
+| Reader            | Start here                 | Then                                                                      |
+| ----------------- | -------------------------- | ------------------------------------------------------------------------- |
+| Coding agent      | `FRONTEND_INSTRUCTIONS.md` | The task guide it routes to, then the owning code                         |
+| Human reviewer    | `README.md`                | `PROJECT-PROFILE.md` for commands, the relevant guide for rules           |
+| New project setup | "Portability" below        | `PROJECT-PROFILE.md`, `PROJECT-SURFACES.md`, `AGENTS_FRONTEND_SNIPPET.md` |
 
 ## File map
 
@@ -97,8 +97,9 @@ stack-agnostic.
 - Record known debt in the guide that owns the rule. Do not silently diverge.
 - Keep guides 01–10 at or below 250 lines and `11-RECIPES.md` at or below 450.
   The checker allows 10 lines of review tolerance on guides 01–10. The recipe
-  file may run longer because each recipe is a self-contained skeleton; split it
-  only when a recipe gains a second variant. The checker enforces these budgets.
+  file may run longer because it contains self-contained skeletons. Move a
+  recipe to its owning guide before splitting the file; split only when a
+  recipe gains a second variant. The checker enforces these budgets.
 - Run `node frontend-instructions/scripts/check-pack.mjs` after any pack edit.
 - Run `--changed` before a feature audit to see which guides the code moved.
 - Update `verified.json` only after a full audit, never after a partial edit.

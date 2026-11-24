@@ -111,7 +111,9 @@ export function AdminContentDeleteDialog({
                             {form.errors.confirmation}
                         </FieldError>
                     )}
-                    {otherError && <FieldError role="alert">{otherError}</FieldError>}
+                    {otherError && (
+                        <FieldError role="alert">{otherError}</FieldError>
+                    )}
                     <DialogFooter className="gap-2">
                         <Button
                             type="button"

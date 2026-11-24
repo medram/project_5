@@ -146,8 +146,7 @@ export function LeadForm({
                         const options = field.options ?? [];
                         let emptyValue = `__linkpilot_empty_${prefix}_${field.id}`;
                         while (options.includes(emptyValue)) emptyValue += '_';
-                        const selectedValue =
-                            form.data.values[field.id] ?? '';
+                        const selectedValue = form.data.values[field.id] ?? '';
 
                         return (
                             <Field

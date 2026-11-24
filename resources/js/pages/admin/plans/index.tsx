@@ -17,7 +17,10 @@ import {
 } from '@/components/ui/empty';
 import planRoutes from '@/routes/admin/plans';
 import settings from '@/routes/admin/settings';
-import type { AdminPlanRecord, AdminPlansPageProps } from '@/types/admin-billing';
+import type {
+    AdminPlanRecord,
+    AdminPlansPageProps,
+} from '@/types/admin-billing';
 
 const NEW_PLAN = 'new';
 

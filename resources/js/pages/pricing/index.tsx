@@ -88,7 +88,8 @@ export default function Pricing({
                                             {amount(plan, plan.monthlyPrice)}
                                             {plan.monthlyPrice !== null && (
                                                 <span className="text-sm font-normal text-muted-foreground">
-                                                    {' '}/ month
+                                                    {' '}
+                                                    / month
                                                 </span>
                                             )}
                                         </p>

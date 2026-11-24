@@ -40,15 +40,15 @@ A one-off feature is proven with a throwaway script or browser scenario.
 
 ## Commands
 
-| Purpose | Command | Prerequisite |
-|---|---|---|
-| Type check | `npm run types:check` | `node_modules` |
-| Focused lint/format | `npx vp check --no-fmt <changed paths>` | `node_modules` |
-| Fix formatting | `npx vp check --fix <changed paths>` | Only your files |
-| Frontend tests | `npx vp test <paths>` | PHP on `PATH` (see below) |
-| Production build | `npm run build` | PHP on `PATH` (see below) |
-| Backend test | `docker compose -f compose.dev.yaml exec -T app php artisan test <path>` | Compose stack |
-| Full CI | `composer ci:check` | Full stack; runs repo-wide checks |
+| Purpose             | Command                                                                  | Prerequisite                      |
+| ------------------- | ------------------------------------------------------------------------ | --------------------------------- |
+| Type check          | `npm run types:check`                                                    | `node_modules`                    |
+| Focused lint/format | `npx vp check --no-fmt <changed paths>`                                  | `node_modules`                    |
+| Fix formatting      | `npx vp check --fix <changed paths>`                                     | Only your files                   |
+| Frontend tests      | `npx vp test <paths>`                                                    | PHP on `PATH` (see below)         |
+| Production build    | `npm run build`                                                          | PHP on `PATH` (see below)         |
+| Backend test        | `docker compose -f compose.dev.yaml exec -T app php artisan test <path>` | Compose stack                     |
+| Full CI             | `composer ci:check`                                                      | Full stack; runs repo-wide checks |
 
 `npm run types:check` is mandatory; `vp check` does not replace it. `vp test`
 and `vp build` load `vite.config.ts`, whose Wayfinder plugin runs
@@ -94,15 +94,15 @@ If the Laravel Vite plugin refuses to start because it detects CI, prefix
 
 ## Surface-specific proof
 
-| Surface | Proof |
-|---|---|
-| Page header | One `h1`, title/description/actions, no duplicate title |
-| List | Filters, chips, pagination label, empty state, table→cards |
-| Form | Invalid submit preserves values, inline error, focus, no toast |
-| Dialog | Open/close, focus trap/return, fixed footer at 390 px |
-| Settings section | Rail/chooser, sticky save bar, `h2`/`h3`, version conflict |
-| Insights | One window control, KPI row, one main series, map, donuts, privacy note |
-| Auth | Layout title/description, no `PageHeader`, password toggle in tab order |
+| Surface          | Proof                                                                   |
+| ---------------- | ----------------------------------------------------------------------- |
+| Page header      | One `h1`, title/description/actions, no duplicate title                 |
+| List             | Filters, chips, pagination label, empty state, table→cards              |
+| Form             | Invalid submit preserves values, inline error, focus, no toast          |
+| Dialog           | Open/close, focus trap/return, fixed footer at 390 px                   |
+| Settings section | Rail/chooser, sticky save bar, `h2`/`h3`, version conflict              |
+| Insights         | One window control, KPI row, one main series, map, donuts, privacy note |
+| Auth             | Layout title/description, no `PageHeader`, password toggle in tab order |
 
 ## Reporting
 

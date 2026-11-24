@@ -89,37 +89,39 @@ export default function AdminUserShow({
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [planCode, setPlanCode] = useState(currentPlanCode);
-    const selectedPlan = plans.find(
-        (candidate) => candidate.code === planCode,
-    );
+    const selectedPlan = plans.find((candidate) => candidate.code === planCode);
     const [profileName, setProfileName] = useState(account.name);
     const [profileEmail, setProfileEmail] = useState(account.email);
-    const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
+    const [profileErrors, setProfileErrors] = useState<Record<string, string>>(
+        {},
+    );
 
     function saveProfile(): void {
         setProfileErrors({});
         request(
             {
                 title: 'Save account profile?',
-                description: profileEmail !== account.email
-                    ? 'Changing the email clears verification and sends a new verification link. The account must verify the new address.'
-                    : 'The account name will be updated. The existing email verification status will be preserved.',
+                description:
+                    profileEmail !== account.email
+                        ? 'Changing the email clears verification and sends a new verification link. The account must verify the new address.'
+                        : 'The account name will be updated. The existing email verification status will be preserved.',
                 confirmLabel: 'Save profile',
             },
-            () => router.patch(
-                `/admin/users/${account.id}/profile`,
-                { name: profileName, email: profileEmail },
-                {
-                    preserveScroll: true,
-                    onSuccess: finish,
-                    onError: (errors) => {
-                        setProfileErrors(errors);
-                        setPending(null);
-                        setProcessing(false);
+            () =>
+                router.patch(
+                    `/admin/users/${account.id}/profile`,
+                    { name: profileName, email: profileEmail },
+                    {
+                        preserveScroll: true,
+                        onSuccess: finish,
+                        onError: (errors) => {
+                            setProfileErrors(errors);
+                            setPending(null);
+                            setProcessing(false);
+                        },
+                        onFinish: () => setProcessing(false),
                     },
-                    onFinish: () => setProcessing(false),
-                },
-            ),
+                ),
         );
     }
 
@@ -468,22 +470,79 @@ export default function AdminUserShow({
                         </CardHeader>
                         {can('admin.users.manage_profile') && (
                             <CardContent>
-                                <form className="grid gap-4" onSubmit={(event) => {
-                                    event.preventDefault();
-                                    saveProfile();
-                                }}>
+                                <form
+                                    className="grid gap-4"
+                                    onSubmit={(event) => {
+                                        event.preventDefault();
+                                        saveProfile();
+                                    }}
+                                >
                                     <div className="grid gap-2">
-                                        <Label htmlFor="profile-name">Name</Label>
-                                        <Input id="profile-name" value={profileName} onChange={(event) => setProfileName(event.target.value)} required maxLength={255} aria-invalid={!!profileErrors.name} />
-                                        {profileErrors.name && <p role="alert" className="text-sm text-destructive">{profileErrors.name}</p>}
+                                        <Label htmlFor="profile-name">
+                                            Name
+                                        </Label>
+                                        <Input
+                                            id="profile-name"
+                                            value={profileName}
+                                            onChange={(event) =>
+                                                setProfileName(
+                                                    event.target.value,
+                                                )
+                                            }
+                                            required
+                                            maxLength={255}
+                                            aria-invalid={!!profileErrors.name}
+                                        />
+                                        {profileErrors.name && (
+                                            <p
+                                                role="alert"
+                                                className="text-sm text-destructive"
+                                            >
+                                                {profileErrors.name}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="profile-email">Email</Label>
-                                        <Input id="profile-email" type="email" value={profileEmail} onChange={(event) => setProfileEmail(event.target.value)} required maxLength={255} aria-invalid={!!profileErrors.email} />
-                                        {profileErrors.email && <p role="alert" className="text-sm text-destructive">{profileErrors.email}</p>}
+                                        <Label htmlFor="profile-email">
+                                            Email
+                                        </Label>
+                                        <Input
+                                            id="profile-email"
+                                            type="email"
+                                            value={profileEmail}
+                                            onChange={(event) =>
+                                                setProfileEmail(
+                                                    event.target.value,
+                                                )
+                                            }
+                                            required
+                                            maxLength={255}
+                                            aria-invalid={!!profileErrors.email}
+                                        />
+                                        {profileErrors.email && (
+                                            <p
+                                                role="alert"
+                                                className="text-sm text-destructive"
+                                            >
+                                                {profileErrors.email}
+                                            </p>
+                                        )}
                                     </div>
-                                    {profileErrors.profile && <p role="alert" className="text-sm text-destructive">{profileErrors.profile}</p>}
-                                    <Button type="submit" disabled={processing} className="w-fit">Save profile</Button>
+                                    {profileErrors.profile && (
+                                        <p
+                                            role="alert"
+                                            className="text-sm text-destructive"
+                                        >
+                                            {profileErrors.profile}
+                                        </p>
+                                    )}
+                                    <Button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="w-fit"
+                                    >
+                                        Save profile
+                                    </Button>
                                 </form>
                             </CardContent>
                         )}
@@ -574,7 +633,9 @@ export default function AdminUserShow({
                                         onClick={assignPlan}
                                     >
                                         <UserPlus data-icon="inline-start" />
-                                        {currentPlanCode ? 'Update plan' : 'Assign'}
+                                        {currentPlanCode
+                                            ? 'Update plan'
+                                            : 'Assign'}
                                     </Button>
                                 </div>
                             )}
@@ -683,7 +744,9 @@ export default function AdminUserShow({
                                                     {role.name}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {assigned ? 'Assigned · ' : ''}
+                                                    {assigned
+                                                        ? 'Assigned · '
+                                                        : ''}
                                                     {role.permissions.length}{' '}
                                                     permissions
                                                 </p>
@@ -694,7 +757,11 @@ export default function AdminUserShow({
                                                         type="button"
                                                         size="sm"
                                                         variant="outline"
-                                                        disabled={processing || blockedReason !== null}
+                                                        disabled={
+                                                            processing ||
+                                                            blockedReason !==
+                                                                null
+                                                        }
                                                         onClick={() =>
                                                             changeRole(
                                                                 role.code,
@@ -717,7 +784,8 @@ export default function AdminUserShow({
                                                 )}
                                         </div>
                                         {can('admin.users.manage_roles') &&
-                                            !account.isSelf && blockedReason && (
+                                            !account.isSelf &&
+                                            blockedReason && (
                                                 <p className="mt-2 text-xs text-muted-foreground">
                                                     {blockedReason}
                                                 </p>

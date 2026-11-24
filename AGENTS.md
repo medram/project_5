@@ -12,25 +12,25 @@ LinkPilot is a Laravel 13 + Inertia 3 + React 19 + Tailwind CSS 4 + shadcn/ui pu
 
 ## Stack and map
 
-| Layer | Technology | Owns |
-|---|---|---|
-| Backend | Laravel 13 / PHP 8.3 | models, policies, requests, services, jobs, migrations |
-| Routing | Laravel routes + Inertia 3 | page props, redirects, validation |
-| UI | React 19 + shadcn/ui + Radix | pages, domain components, interactions |
-| Styling | Tailwind CSS 4 + CSS variables | layout, spacing, semantic color |
-| URLs | Wayfinder | generated route/action helpers |
-| Build/tooling | Vite+ (`vp`) | dev, build, lint, format, tests |
-| Charts/maps | Recharts, `react-svg-worldmap`, local `flag-icons` | charts and country maps |
+| Layer         | Technology                                         | Owns                                                   |
+| ------------- | -------------------------------------------------- | ------------------------------------------------------ |
+| Backend       | Laravel 13 / PHP 8.3                               | models, policies, requests, services, jobs, migrations |
+| Routing       | Laravel routes + Inertia 3                         | page props, redirects, validation                      |
+| UI            | React 19 + shadcn/ui + Radix                       | pages, domain components, interactions                 |
+| Styling       | Tailwind CSS 4 + CSS variables                     | layout, spacing, semantic color                        |
+| URLs          | Wayfinder                                          | generated route/action helpers                         |
+| Build/tooling | Vite+ (`vp`)                                       | dev, build, lint, format, tests                        |
+| Charts/maps   | Recharts, `react-svg-worldmap`, local `flag-icons` | charts and country maps                                |
 
-| Area | Path |
-|---|---|
-| Backend | `app/` (`Http/Controllers`, `Http/Requests`, `Models`, `Policies`, `Services`, `Enums`, `Jobs`) |
-| Routes | `routes/web.php`, `routes/api.php`, `routes/settings.php` |
-| DB | `database/migrations`, `database/factories`, `database/seeders` |
-| Tests | `tests/Feature/**`, `tests/Unit/**`; frontend tests are colocated `*.test.ts(x)` |
-| Frontend | `resources/js/pages`, `components` (domain), `components/ui` (primitives), `hooks`, `lib`, `types` |
-| CSS/tokens | `resources/css/app.css` |
-| Docs | `docs/DESIGN.md`, `frontend-instructions/` |
+| Area       | Path                                                                                               |
+| ---------- | -------------------------------------------------------------------------------------------------- |
+| Backend    | `app/` (`Http/Controllers`, `Http/Requests`, `Models`, `Policies`, `Services`, `Enums`, `Jobs`)    |
+| Routes     | `routes/web.php`, `routes/api.php`, `routes/settings.php`                                          |
+| DB         | `database/migrations`, `database/factories`, `database/seeders`                                    |
+| Tests      | `tests/Feature/**`, `tests/Unit/**`; frontend tests are colocated `*.test.ts(x)`                   |
+| Frontend   | `resources/js/pages`, `components` (domain), `components/ui` (primitives), `hooks`, `lib`, `types` |
+| CSS/tokens | `resources/css/app.css`                                                                            |
+| Docs       | `docs/DESIGN.md`, `frontend-instructions/`                                                         |
 
 Generated/protected: `resources/js/routes/**`, `actions/**`, `wayfinder/**` (Wayfinder), `components/ui/**` (shadcn). Never edit generated files; fix the Laravel route and regenerate. `.superpowers/sdd/**` is scratch; exclude it from `vp test`.
 
@@ -92,17 +92,17 @@ Every insights page follows §7.2c: one header, one window control, a 3–5 card
 
 ## Verification
 
-| Purpose | Command | Prerequisite |
-|---|---|---|
-| Type check | `npm run types:check` | `node_modules` |
-| Focused lint/format check | `npx vp check --no-fmt <changed paths>` | `node_modules` |
-| Format fix | `npx vp check --fix <changed paths>` | only your files |
-| Frontend tests | `npx vp test <explicit paths>` | PHP on `PATH` or app container |
-| Production build | `npm run build` | PHP on `PATH` or app container; run when routing/Wayfinder/CSS changes |
-| Backend tests | `docker compose -f compose.dev.yaml exec -T app php artisan test <path>` | Compose stack |
-| PHP lint | `vendor/bin/pint --test <paths>` | `vendor` |
-| PHPStan | `composer types:check` | `vendor`; level 7 |
-| Full CI | `composer ci:check` | full stack |
+| Purpose                   | Command                                                                  | Prerequisite                                                           |
+| ------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| Type check                | `npm run types:check`                                                    | `node_modules`                                                         |
+| Focused lint/format check | `npx vp check --no-fmt <changed paths>`                                  | `node_modules`                                                         |
+| Format fix                | `npx vp check --fix <changed paths>`                                     | only your files                                                        |
+| Frontend tests            | `npx vp test <explicit paths>`                                           | PHP on `PATH` or app container                                         |
+| Production build          | `npm run build`                                                          | PHP on `PATH` or app container; run when routing/Wayfinder/CSS changes |
+| Backend tests             | `docker compose -f compose.dev.yaml exec -T app php artisan test <path>` | Compose stack                                                          |
+| PHP lint                  | `vendor/bin/pint --test <paths>`                                         | `vendor`                                                               |
+| PHPStan                   | `composer types:check`                                                   | `vendor`; level 7                                                      |
+| Full CI                   | `composer ci:check`                                                      | full stack                                                             |
 
 - `npm run types:check` is mandatory; `vp check` is not type-aware enough.
 - `vp test`/`vp build` load the Laravel Vite plugin and run Wayfinder; if the host has no PHP, use the app container or a PHP shim. Prefix `LARAVEL_BYPASS_ENV_CHECK=1` if the CI guard blocks.
@@ -121,19 +121,19 @@ Every insights page follows §7.2c: one header, one window control, a 3–5 card
 
 ## Fast defaults
 
-| Need | Default |
-|---|---|
-| New page | Route + controller + `pages/<area>/<name>.tsx` + layout registry check |
-| New admin page | Admin route group + `platform:admin.*` + `AdminLayout` via `admin/` prefix + sidebar ability |
-| New list | Paginator + `resource-list/*` + domain row + empty/filtered-empty states |
-| New form | `FormRequest` + `<Form>`/`useForm` + `Field`/`FieldError` + inline errors |
-| New dialog | `Dialog` for forms, `AlertDialog` for destructive confirmation, `Sheet` for mobile panels |
-| New chart | Shared chart primitive; one series; no second library |
-| New settings section | `settings-form.ts` + section service/contract + `section.tsx`; no new shell |
-| New shared component | Only after a second consumer; otherwise keep it in the domain folder |
-| New dependency | Don't. Compose Radix/shadcn or use the framework. Ask only if the stack cannot do it. |
-| New JSON endpoint | Only for the API surface; Inertia pages use controller props, not a client fetch. |
-| New migration | Additive, indexed FKs, safe defaults; no destructive change without approval. |
+| Need                   | Default                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| New page               | Route + controller + `pages/<area>/<name>.tsx` + layout registry check                                             |
+| New admin page         | Admin route group + `platform:admin.*` + `AdminLayout` via `admin/` prefix + sidebar ability                       |
+| New list               | Paginator + `resource-list/*` + domain row + empty/filtered-empty states                                           |
+| New form               | `FormRequest` + `<Form>`/`useForm` + `Field`/`FieldError` + inline errors                                          |
+| New dialog             | `Dialog` for forms, `AlertDialog` for destructive confirmation, `Sheet` for mobile panels                          |
+| New chart              | Shared chart primitive; one series; no second library                                                              |
+| New settings section   | `settings-form.ts` + section service/contract + `section.tsx`; no new shell                                        |
+| New shared component   | Only after a second consumer; otherwise keep it in the domain folder                                               |
+| New dependency         | Don't. Compose Radix/shadcn or use the framework. Ask only if the stack cannot do it.                              |
+| New JSON endpoint      | Only for the API surface; Inertia pages use controller props, not a client fetch.                                  |
+| New migration          | Additive, indexed FKs, safe defaults; no destructive change without approval.                                      |
 | Unsure where code goes | Page composition → page; reusable UI → domain component; primitive → `ui`; pure logic → `lib`; contract → `types`. |
 
 ## Escalation

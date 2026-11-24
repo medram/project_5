@@ -33,8 +33,10 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { destroy } from '@/routes/overlays';
 import type { LinkOverlay, OverlaysPageProps } from '@/types/overlays';
-import { CreateOverlayDialog, EditOverlayDialog } from '@/components/overlays/overlay-form-dialogs';
-
+import {
+    CreateOverlayDialog,
+    EditOverlayDialog,
+} from '@/components/overlays/overlay-form-dialogs';
 
 function DeleteOverlayDialog({ overlay }: { overlay: LinkOverlay }) {
     const [open, setOpen] = useState(false);

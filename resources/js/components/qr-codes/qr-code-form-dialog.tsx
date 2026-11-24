@@ -334,11 +334,16 @@ export function QrCodeFormDialog({
             size: previewSize,
         },
     }).url;
-    const draftPreviewUrl = isAdmin && campaign
-        ? editorUrl(`${update(campaign.id).url}/draft-preview.svg${ownerDraftPreviewUrl.slice(ownerDraftPreviewUrl.indexOf('?'))}`)
-        : ownerDraftPreviewUrl;
+    const draftPreviewUrl =
+        isAdmin && campaign
+            ? editorUrl(
+                  `${update(campaign.id).url}/draft-preview.svg${ownerDraftPreviewUrl.slice(ownerDraftPreviewUrl.indexOf('?'))}`,
+              )
+            : ownerDraftPreviewUrl;
     const linkedQr = campaign?.source === 'linked';
-    const previewSrc = campaign ? editorUrl(preview(campaign.id).url) : draftPreviewUrl;
+    const previewSrc = campaign
+        ? editorUrl(preview(campaign.id).url)
+        : draftPreviewUrl;
     const previewLogoAlt =
         form.data.logo_alt ||
         (campaign?.has_logo && !form.data.clear_logo
@@ -528,9 +533,10 @@ export function QrCodeFormDialog({
             preserveScroll: true,
             onSuccess: (page) => {
                 const savedCampaign = campaign
-                    ? ((page.props as unknown as Partial<QrCodeIndexProps>).campaigns?.find(
-                          (item) => item.id === campaign.id,
-                      ) ?? campaign)
+                    ? ((
+                          page.props as unknown as Partial<QrCodeIndexProps>
+                      ).campaigns?.find((item) => item.id === campaign.id) ??
+                      campaign)
                     : undefined;
                 form.setDefaults(qrCodeFormData(savedCampaign));
                 form.reset();

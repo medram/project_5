@@ -481,7 +481,10 @@ export function LinkFormDialog({
         };
 
         if (link) {
-            form.patch(editorUrl(withListQuery(update(link.id).url, listQuery)), options);
+            form.patch(
+                editorUrl(withListQuery(update(link.id).url, listQuery)),
+                options,
+            );
 
             return;
         }
@@ -522,8 +525,8 @@ export function LinkFormDialog({
                         {isEditing ? 'Edit short link' : 'Create short link'}
                     </DialogTitle>
                     <DialogDescription className="sr-only">
-                        Set a destination, then configure optional tracking
-                        and other available controls.
+                        Set a destination, then configure optional tracking and
+                        other available controls.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -636,7 +639,8 @@ export function LinkFormDialog({
                                                     disabled={
                                                         !customDomainsEnabled &&
                                                         domain.id.toString() !==
-                                                            form.data.custom_domain_id
+                                                            form.data
+                                                                .custom_domain_id
                                                     }
                                                 >
                                                     {domain.hostname}

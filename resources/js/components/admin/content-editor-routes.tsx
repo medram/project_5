@@ -14,7 +14,8 @@ const ownerRoutes: ContentEditorRoutes = {
     isAdmin: false,
 };
 
-const ContentEditorRoutesContext = createContext<ContentEditorRoutes>(ownerRoutes);
+const ContentEditorRoutesContext =
+    createContext<ContentEditorRoutes>(ownerRoutes);
 
 export function ContentEditorRoutesProvider({
     ownerPrefix,
@@ -33,7 +34,9 @@ export function ContentEditorRoutesProvider({
             !ownerUrl.startsWith(ownerPrefix) ||
             (suffix !== '' && !['/', '?', '#'].includes(suffix[0]))
         ) {
-            throw new Error('The editor URL does not belong to the selected content record.');
+            throw new Error(
+                'The editor URL does not belong to the selected content record.',
+            );
         }
 
         return adminPrefix + suffix;

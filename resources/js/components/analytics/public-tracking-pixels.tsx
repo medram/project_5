@@ -96,10 +96,7 @@ function googleTag(): (...args: unknown[]) => void {
     return window.gtag;
 }
 
-function initializeGoogleAndTrack(
-    identifier: string,
-    eventName: string,
-): void {
+function initializeGoogleAndTrack(identifier: string, eventName: string): void {
     const gtag = googleTag();
     appendScript(
         `linkpilot-google-analytics-${identifier}`,
