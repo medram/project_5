@@ -66,6 +66,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
+import { linkStatus } from '@/lib/link-status';
 import { destroy, index, insights } from '@/routes/links';
 import type { CustomDomainOption } from '@/types/custom-domains';
 import type { FolderOption } from '@/types/folders';
@@ -426,13 +427,7 @@ function LinkRow({
     const shortLinkLabel = link.customDomain
         ? `${link.customDomain.hostname}/${link.slug}`
         : `/${link.slug}`;
-    const status = link.archivedAt
-        ? { label: 'Archived', dot: 'bg-muted-foreground' }
-        : link.approvalStatus === 'pending'
-          ? { label: 'Pending review', dot: 'bg-warning' }
-          : link.isActive
-            ? { label: 'Live', dot: 'bg-success' }
-            : { label: 'Paused', dot: 'bg-warning' };
+    const status = linkStatus(link);
     const targetLabel =
         link.deliveryMode === 'link_page'
             ? `Link page: ${link.linkPage?.name ?? 'Unavailable'}`
