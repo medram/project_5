@@ -4,9 +4,11 @@ import {
     Ban,
     Clock3,
     ExternalLink,
+    Link2,
     Megaphone,
     Search,
     ShieldCheck,
+    UsersRound,
 } from 'lucide-react';
 import {
     AccountStatusBadge,
@@ -150,7 +152,7 @@ export default function AdminUsersIndex({
                         {
                             label: 'Accounts',
                             value: overview.accounts,
-                            Icon: null,
+                            Icon: UsersRound,
                         },
                         {
                             label: 'Administrators',
@@ -170,7 +172,7 @@ export default function AdminUsersIndex({
                         {
                             label: 'Short links',
                             value: overview.shortLinks,
-                            Icon: null,
+                            Icon: Link2,
                         },
                     ].map(({ label, value, Icon }, index, stats) => (
                         <div
@@ -184,14 +186,14 @@ export default function AdminUsersIndex({
                             <StatCard
                                 label={label}
                                 value={value.toLocaleString()}
-                                className={Icon ? 'h-full pr-10' : 'h-full'}
+                                className="h-full [&>div]:pr-12"
                             />
-                            {Icon && (
-                                <Icon
-                                    aria-hidden="true"
-                                    className="pointer-events-none absolute right-4 bottom-4 size-4 text-muted-foreground"
-                                />
-                            )}
+                            <span
+                                aria-hidden="true"
+                                className="pointer-events-none absolute right-4 bottom-4 flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary-soft-foreground"
+                            >
+                                <Icon className="size-5" />
+                            </span>
                         </div>
                     ))}
                 </section>
