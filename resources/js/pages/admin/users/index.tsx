@@ -1,6 +1,13 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
-import { ExternalLink, Megaphone, Search } from 'lucide-react';
+import {
+    Ban,
+    Clock3,
+    ExternalLink,
+    Megaphone,
+    Search,
+    ShieldCheck,
+} from 'lucide-react';
 import {
     AccountStatusBadge,
     PlanBadge,
@@ -140,22 +147,52 @@ export default function AdminUsersIndex({
                     className="grid grid-cols-2 gap-3 lg:grid-cols-5"
                 >
                     {[
-                        ['Accounts', overview.accounts],
-                        ['Administrators', overview.administrators],
-                        ['Suspended', overview.suspended],
-                        ['Deletion pending', overview.deletionPending],
-                        ['Short links', overview.shortLinks],
-                    ].map(([label, value], index, stats) => (
-                        <StatCard
-                            key={String(label)}
-                            label={String(label)}
-                            value={Number(value).toLocaleString()}
+                        {
+                            label: 'Accounts',
+                            value: overview.accounts,
+                            Icon: null,
+                        },
+                        {
+                            label: 'Administrators',
+                            value: overview.administrators,
+                            Icon: ShieldCheck,
+                        },
+                        {
+                            label: 'Suspended',
+                            value: overview.suspended,
+                            Icon: Ban,
+                        },
+                        {
+                            label: 'Deletion pending',
+                            value: overview.deletionPending,
+                            Icon: Clock3,
+                        },
+                        {
+                            label: 'Short links',
+                            value: overview.shortLinks,
+                            Icon: null,
+                        },
+                    ].map(({ label, value, Icon }, index, stats) => (
+                        <div
+                            key={label}
                             className={
                                 index === stats.length - 1
-                                    ? 'col-span-2 lg:col-span-1'
-                                    : undefined
+                                    ? 'relative col-span-2 lg:col-span-1'
+                                    : 'relative'
                             }
-                        />
+                        >
+                            <StatCard
+                                label={label}
+                                value={value.toLocaleString()}
+                                className={Icon ? 'h-full pr-10' : 'h-full'}
+                            />
+                            {Icon && (
+                                <Icon
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute right-4 bottom-4 size-4 text-muted-foreground"
+                                />
+                            )}
+                        </div>
                     ))}
                 </section>
 
