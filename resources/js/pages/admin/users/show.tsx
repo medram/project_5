@@ -81,10 +81,17 @@ export default function AdminUserShow({
     const { auth } = usePage().props;
     const can = (permission: string) =>
         auth.adminAbilities.includes(permission);
+    const personalWorkspace = workspaces.find(
+        (workspace) => workspace.isPersonal,
+    );
+    const currentPlanCode = personalWorkspace?.plan.code ?? '';
     const [pending, setPending] = useState<PendingAction | null>(null);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [planCode, setPlanCode] = useState('');
+    const [planCode, setPlanCode] = useState(currentPlanCode);
+    const selectedPlan = plans.find(
+        (candidate) => candidate.code === planCode,
+    );
     const [profileName, setProfileName] = useState(account.name);
     const [profileEmail, setProfileEmail] = useState(account.email);
     const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
@@ -328,7 +335,7 @@ export default function AdminUserShow({
     }
 
     function assignPlan(): void {
-        const plan = plans.find((candidate) => candidate.code === planCode);
+        const plan = selectedPlan;
 
         if (!plan) {
             return;
@@ -336,10 +343,14 @@ export default function AdminUserShow({
 
         request(
             {
-                title: `Assign ${plan.name}?`,
+                title: currentPlanCode
+                    ? `Change plan to ${plan.name}?`
+                    : `Assign ${plan.name}?`,
                 description:
                     'This records a local platform override for the personal workspace. Provider billing remains untouched.',
-                confirmLabel: `Assign ${plan.name}`,
+                confirmLabel: currentPlanCode
+                    ? 'Update plan'
+                    : `Assign ${plan.name}`,
             },
             () =>
                 router.patch(
@@ -522,17 +533,12 @@ export default function AdminUserShow({
                         <CardHeader className="gap-1">
                             <CardTitle>Plan</CardTitle>
                             <CardDescription>
-                                Entitlement source for the personal workspace.
+                                Select a different plan to update the personal
+                                workspace. Provider billing remains untouched.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-3">
-                            <PlanBadge
-                                plan={
-                                    workspaces.find(
-                                        (workspace) => workspace.isPersonal,
-                                    )?.plan ?? null
-                                }
-                            />
+                            <PlanBadge plan={personalWorkspace?.plan ?? null} />
                             {can('admin.billing.manage') && !account.isSelf && (
                                 <div className="flex flex-col gap-2 sm:flex-row">
                                     <Select
@@ -540,10 +546,12 @@ export default function AdminUserShow({
                                         onValueChange={setPlanCode}
                                     >
                                         <SelectTrigger
-                                            className="h-9 w-full"
-                                            aria-label="Assign plan"
+                                            className="h-9 min-h-11 w-full sm:min-h-0"
+                                            aria-label="Personal workspace plan"
                                         >
-                                            <SelectValue placeholder="Select a plan" />
+                                            <SelectValue placeholder="Select a plan">
+                                                {selectedPlan?.name}
+                                            </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent>
                                             {plans.map((plan) => (
@@ -558,12 +566,15 @@ export default function AdminUserShow({
                                     </Select>
                                     <Button
                                         type="button"
-                                        className="h-9"
-                                        disabled={!planCode}
+                                        className="h-9 min-h-11 sm:min-h-0"
+                                        disabled={
+                                            !selectedPlan ||
+                                            planCode === currentPlanCode
+                                        }
                                         onClick={assignPlan}
                                     >
                                         <UserPlus data-icon="inline-start" />
-                                        Assign
+                                        {currentPlanCode ? 'Update plan' : 'Assign'}
                                     </Button>
                                 </div>
                             )}
