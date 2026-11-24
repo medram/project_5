@@ -5,27 +5,13 @@ x-project-runtime: &project-runtime
     volumes:
         - .:/var/www
 
-x-development-mail: &development-mail
-    MAIL_MAILER: smtp
-    MAIL_SCHEME: 'null'
-    MAIL_HOST: mailpit
-    MAIL_PORT: 1025
-    MAIL_USERNAME: 'null'
-    MAIL_PASSWORD: 'null'
-
 services:
     app:
         image: linkpilot-dev
         command: php artisan serve --host=0.0.0.0 --port=8000 --no-reload
-        environment: *development-mail
-        depends_on:
-            - mailpit
 
     queue:
         image: linkpilot-dev
-        environment: *development-mail
-        depends_on:
-            - mailpit
 
     vite:
         <<: *project-runtime
@@ -38,12 +24,4 @@ services:
 
     scheduler:
         <<: *project-runtime
-        environment: *development-mail
-        depends_on:
-            - mailpit
         command: php artisan schedule:work
-
-    mailpit:
-        image: axllent/mailpit:v1.33.1
-        ports:
-            - '8025:8025'

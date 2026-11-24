@@ -233,13 +233,14 @@ shared helper, not in the controller. Money uses `formatMoney` from
 
 ## Verification prerequisites
 
-- Compose services: `app`, `vite`, `mailpit`, `queue`, `scheduler`.
+- Compose services: `app`, `vite`, `queue`, `scheduler`.
 - App at `http://localhost:8000`; Vite at `http://localhost:5173`.
 - Seed local demo accounts with `php artisan db:seed --class=DemoAccountSeeder`.
   The password is defined in `database/seeders/DemoAccountSeeder.php`. Never
   copy it into a committed file.
 - Grant admin access with `php artisan linkpilot:grant-admin <email>`.
-- Mailpit at `http://localhost:8025` for verification and reset mail.
+- Email: configure SMTP in the administrator settings console under **Email**;
+  unconfigured mail writes to the application log.
 - Use the seeded admin or user account for browser proof; log out between
   roles.
 

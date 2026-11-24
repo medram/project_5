@@ -246,9 +246,9 @@ class AdminSettingsTest extends TestCase
         $settings = app(PlatformSettings::class);
         $settings->updateSection($administrator, 'email', [
             'mailer' => 'smtp',
-            'smtp_host' => 'mailpit',
-            'smtp_port' => 1025,
-            'smtp_security' => 'none',
+            'smtp_host' => 'smtp.acme.test',
+            'smtp_port' => 587,
+            'smtp_security' => 'starttls',
         ], $settings->version('email'));
 
         $this->actingAs($administrator)
@@ -258,7 +258,7 @@ class AdminSettingsTest extends TestCase
             ])
             ->assertSessionHasErrors('values.smtp_host');
 
-        $this->assertSame('mailpit', $settings->resolved()['email']['smtp_host']);
+        $this->assertSame('smtp.acme.test', $settings->resolved()['email']['smtp_host']);
     }
 
     public function test_turnstile_protection_requires_complete_credentials(): void

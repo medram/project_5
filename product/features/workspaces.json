@@ -144,7 +144,7 @@
         },
         {
             "type": "browser",
-            "description": "Managed Chromium captured desktop/mobile workspace settings and exercised real create/switch behavior with a disposable workspace; Task 2 separately proved invitation SMTP and queued mail through Mailpit.",
+            "description": "Managed Chromium captured desktop/mobile workspace settings and exercised real create/switch behavior with a disposable workspace; Task 2 separately proved invitation SMTP and queued mail through a development SMTP transport.",
             "reference": "product/verification/parity/user-settings-workspaces-desktop.png; product/verification/parity/mobile-workspaces-cards.png; .superpowers/sdd/belink-parity-completion-plan/task-2-report.md; product/verification/parity/manifest.json",
             "verifiedAt": "2026-11-12T12:38:36Z"
         }

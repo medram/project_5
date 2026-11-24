@@ -78,7 +78,7 @@ class PlatformSettingsImportTest extends TestCase
         $dryRunOutput = Artisan::output();
         $this->assertStringContainsString('email.smtp_host', $dryRunOutput);
         $this->assertStringContainsString('subscriptions.stripe_secret', $dryRunOutput);
-        $this->assertStringNotContainsString('mailpit', $dryRunOutput);
+        $this->assertStringNotContainsString('smtp.legacy.test', $dryRunOutput);
         $this->assertStringNotContainsString('sk_test_import_secret', $dryRunOutput);
         $this->assertDatabaseCount('platform_settings', 1);
         $this->assertSame(4, app(PlatformSettings::class)->version('email'));
@@ -97,7 +97,7 @@ class PlatformSettingsImportTest extends TestCase
         $this->assertDatabaseHas('platform_settings', [
             'section' => 'email',
             'key' => 'smtp_security',
-            'value' => '"none"',
+            'value' => '"starttls"',
         ]);
         $this->assertDatabaseHas('platform_settings', [
             'section' => 'system',
@@ -251,8 +251,8 @@ class PlatformSettingsImportTest extends TestCase
     {
         $values = [
             'MAIL_MAILER' => 'smtp',
-            'MAIL_HOST' => 'mailpit',
-            'MAIL_PORT' => '1025',
+            'MAIL_HOST' => 'smtp.legacy.test',
+            'MAIL_PORT' => '587',
             'MAIL_SCHEME' => 'null',
             'MAIL_USERNAME' => 'smtp-import-user',
             'MAIL_PASSWORD' => 'smtp-import-password',

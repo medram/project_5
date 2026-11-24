@@ -227,23 +227,22 @@ is 60 requests per minute, configurable with `API_RATE_LIMIT_PER_MINUTE`.
 ## Notifications and optional email
 
 In-app notifications are stored in the database and work without email.
-Category email is sent only when the recipient enables that category and the
-Laravel mailer is configured. The local default, `MAIL_MAILER=log`, writes
-messages to the application log rather than sending externally. Configure the
-standard `MAIL_*` transport variables and verify deliverability before relying
-on email notifications.
-The development Compose overlay overrides these values only inside its
-containers and sends mail to Mailpit; it does not change the host `.env`.
+Category email is sent only when the recipient enables that category and an
+SMTP transport is configured. Delivery is SMTP-only and administrator-owned in
+the settings console under **Email**; without an SMTP host the log mailer
+writes messages to the application log rather than sending externally. Send a
+test message from the console and verify deliverability before relying on email
+notifications.
 
 ## Docker development runtime
 
 Docker Engine with Docker Compose v2 is required. The default local database
 is SQLite at `database/database.sqlite`. Development uses `compose.dev.yaml`
-as an overlay so the app, queue worker, Vite server, scheduler, and Mailpit run
+as an overlay so the app, queue worker, Vite server, and scheduler run
 together:
 
 ```bash
-docker compose -f compose.yaml -f compose.dev.yaml up -d app queue vite scheduler mailpit
+docker compose -f compose.yaml -f compose.dev.yaml up -d app queue vite scheduler
 ```
 
 The host `.env` is persistent and operator-owned. Copy the template only when
@@ -280,7 +279,7 @@ docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps app php ar
 docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps app php artisan migrate --force
 docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps app php artisan db:seed --force
 docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps app php artisan linkpilot:grant-admin admin@linkpilot.test
-docker compose -f compose.yaml -f compose.dev.yaml up -d app queue vite scheduler mailpit
+docker compose -f compose.yaml -f compose.dev.yaml up -d app queue vite scheduler
 ```
 
 Run `cp` and `key:generate` only for a new local environment. Existing
@@ -297,10 +296,8 @@ docker compose -f compose.yaml -f compose.dev.yaml run --rm app php artisan migr
 ```
 
 Open LinkPilot at [http://localhost:8000](http://localhost:8000), or at the
-configured LAN `APP_URL`. Mailpit is available at
-[http://localhost:8025](http://localhost:8025) (and the same port on the LAN
-host). The development overlay sends SMTP to `mailpit:1025`; production
-`MAIL_*` values remain owned by the deployment environment.
+configured LAN `APP_URL`. Runtime email is SMTP-only and configured by an
+administrator in the settings console under **Email**.
 
 Stop only this development stack with:
 

@@ -203,7 +203,7 @@ class ImportPlatformSettings extends Command
         if ($normalizedMailer === 'smtp') {
             $security = $mailer === 'smtps' || $scheme === 'smtps' || $port === 465
                 ? 'tls'
-                : (($host === 'mailpit' && $port === 1025 && $scheme === '') ? 'none' : 'starttls');
+                : 'starttls';
             $this->add($values, 'email', 'smtp_security', $security);
         }
         $username = $this->environment('MAIL_USERNAME');

@@ -181,6 +181,75 @@ class PlatformSettingsMigrationTest extends TestCase
         $this->assertTrue($this->workspaceIdIsNullable());
     }
 
+    public function test_mailpit_email_transport_is_removed_once_without_touching_real_smtp_settings(): void
+    {
+        $now = now();
+        $insert = function (array $rows) use ($now): void {
+            DB::table('platform_settings')->insert(array_map(
+                fn (array $row): array => [
+                    ...$row,
+                    'is_secret' => false,
+                    'updated_by' => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ],
+                $rows,
+            ));
+        };
+
+        $insert([
+            ['section' => 'email', 'key' => 'mailer', 'value' => json_encode('smtp', JSON_THROW_ON_ERROR)],
+            ['section' => 'email', 'key' => 'smtp_host', 'value' => json_encode('mailpit', JSON_THROW_ON_ERROR)],
+            ['section' => 'email', 'key' => 'smtp_port', 'value' => json_encode(1025, JSON_THROW_ON_ERROR)],
+            ['section' => 'email', 'key' => 'smtp_security', 'value' => json_encode('starttls', JSON_THROW_ON_ERROR)],
+            ['section' => 'email', 'key' => 'sender_name', 'value' => json_encode('Administrator', JSON_THROW_ON_ERROR)],
+        ]);
+        DB::table('platform_setting_sections')->where('section', 'email')->update(['revision' => 3]);
+
+        $migration = require database_path('migrations/2026_11_24_000000_remove_mailpit_email_transport.php');
+        $migration->up();
+
+        $this->assertSame(0, DB::table('platform_settings')
+            ->where('section', 'email')
+            ->whereIn('key', ['mailer', 'smtp_host', 'smtp_port', 'smtp_security'])
+            ->count());
+        $this->assertDatabaseHas('platform_settings', [
+            'section' => 'email',
+            'key' => 'sender_name',
+            'value' => '"Administrator"',
+        ]);
+        $this->assertDatabaseHas('platform_setting_sections', [
+            'section' => 'email',
+            'revision' => 4,
+        ]);
+        $this->assertSame('log', app(PlatformSettings::class)->resolved()['email']['mailer']);
+
+        $migration->up();
+        $this->assertDatabaseHas('platform_setting_sections', [
+            'section' => 'email',
+            'revision' => 4,
+        ]);
+
+        $insert([
+            ['section' => 'email', 'key' => 'mailer', 'value' => json_encode('smtp', JSON_THROW_ON_ERROR)],
+            ['section' => 'email', 'key' => 'smtp_host', 'value' => json_encode('smtp.acme.test', JSON_THROW_ON_ERROR)],
+            ['section' => 'email', 'key' => 'smtp_port', 'value' => json_encode(587, JSON_THROW_ON_ERROR)],
+            ['section' => 'email', 'key' => 'smtp_security', 'value' => json_encode('starttls', JSON_THROW_ON_ERROR)],
+        ]);
+
+        $migration->up();
+
+        $this->assertDatabaseHas('platform_settings', [
+            'section' => 'email',
+            'key' => 'smtp_host',
+            'value' => '"smtp.acme.test"',
+        ]);
+        $this->assertDatabaseHas('platform_setting_sections', [
+            'section' => 'email',
+            'revision' => 4,
+        ]);
+    }
+
     private function workspaceIdIsNullable(): bool
     {
         $column = collect(Schema::getColumns('content_media'))->firstWhere('name', 'workspace_id');

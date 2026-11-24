@@ -21,7 +21,7 @@
         "publicPrivacyUrl": "unconfigured",
         "analyticsHashKeyAndVersion": "unconfigured",
         "maxMindDatabase": "unavailable",
-        "developmentSmtp": "Mailpit verified through app and queue worker",
+        "developmentSmtp": "Development SMTP verified through app and queue worker",
         "productionSmtp": "unconfigured",
         "publicWebhookReceiver": "unavailable",
         "customerDnsAndTls": "unavailable",

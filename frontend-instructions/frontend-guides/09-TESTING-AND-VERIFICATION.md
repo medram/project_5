@@ -79,7 +79,7 @@ If the Laravel Vite plugin refuses to start because it detects CI, prefix
 
 ## Manual proof
 
-1. Confirm the stack is running: app `:8000`, Vite `:5173`, Mailpit, queue,
+1. Confirm the stack is running: app `:8000`, Vite `:5173`, queue,
    scheduler.
 2. Log in with a seeded account from `database/seeders/DemoAccountSeeder.php`.
    Grant admin with `php artisan linkpilot:grant-admin <email>`; never commit

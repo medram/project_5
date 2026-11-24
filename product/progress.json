@@ -204,10 +204,10 @@
                 "Workspace settings at 390x844 had no horizontal overflow or browser errors. Owner-mobile and workspace-admin desktop billing screenshots are in product/verification/.",
                 "Frontend typecheck and Vite production build passed; member webhook metadata omitted endpoint URL and signing secret, and GET /webhooks/2/deliveries returned 403.",
                 "Current Task 3 workspace suites passed inside the focused run, including backfill/contract chronology, membership and role authorization, invitation lifecycle, ownership transfer, capacity locking semantics, tenant scoping, and append-only workspace audit records.",
-                "Managed Chromium captured desktop/mobile workspace settings and exercised real create/switch behavior with a disposable workspace; Task 2 separately proved invitation SMTP and queued mail through Mailpit."
+                "Managed Chromium captured desktop/mobile workspace settings and exercised real create/switch behavior with a disposable workspace; Task 2 separately proved invitation SMTP and queued mail through a development SMTP transport."
             ],
             "blockers": [
-                "Production SMTP is unconfigured; local invitation and queued-mail delivery through the development Mailpit transport passed.",
+                "Production SMTP is unconfigured; local invitation and queued-mail delivery through the development SMTP transport passed.",
                 "No production-like populated database snapshot is available for migration proof; isolated SQLite migration chronology/backfill tests passed."
             ]
         },
@@ -268,7 +268,7 @@
                 "Managed Chromium captured the populated notification menu, notification center/preferences, and responsive mobile cards with no HTTP/page errors or horizontal overflow."
             ],
             "blockers": [
-                "Production SMTP is unconfigured; local application and queue delivery through the development Mailpit transport passed."
+                "Production SMTP is unconfigured; local application and queue delivery through the development SMTP transport passed."
             ]
         },
         {

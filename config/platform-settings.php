@@ -293,7 +293,7 @@ return [
                 ],
                 'delivery' => [
                     'label' => 'Delivery',
-                    'description' => 'Log or SMTP transport configuration.',
+                    'description' => 'SMTP delivery settings; log keeps messages in the application log.',
                     'fields' => ['mailer', 'smtp_host', 'smtp_port', 'smtp_security', 'smtp_username', 'smtp_password', 'smtp_timeout_seconds', 'smtp_ehlo_domain'],
                 ],
             ],
