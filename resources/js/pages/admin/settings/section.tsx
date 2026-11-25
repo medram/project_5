@@ -608,6 +608,9 @@ function SettingControl({
     onClearSecret: () => void;
     onUpload: (file: File) => void;
 }) {
+    if (field.key === 'smtp_ehlo_domain') {
+        return null;
+    }
     const id = 'setting-' + field.key;
     const invalid = error !== undefined;
     const describedBy = [

@@ -61,6 +61,37 @@ describe('admin settings sections', () => {
         expect(html).toMatch(/aria-current="page"/);
         expect(html).toMatch(/aria-label="Choose settings section: General"/);
     });
+    it('hides the SMTP EHLO domain from email settings', () => {
+        const mailer = field({ key: 'mailer', label: 'Mailer', value: 'smtp' });
+        const smtpHost = field({
+            key: 'smtp_host',
+            label: 'SMTP host',
+            visibleWhen: { mailer: 'smtp' },
+        });
+        const ehloDomain = field({
+            key: 'smtp_ehlo_domain',
+            label: 'EHLO domain',
+            visibleWhen: { mailer: 'smtp' },
+            value: 'mail.example.com',
+        });
+        const html = renderSection({
+            key: 'email',
+            label: 'Email',
+            groups: [
+                {
+                    key: 'delivery',
+                    label: 'Delivery',
+                    description: '',
+                    fields: [mailer, smtpHost, ehloDomain],
+                },
+            ],
+        });
+
+        expect(html).toContain('SMTP host');
+        expect(html).not.toContain('EHLO domain');
+        expect(html).not.toContain('name="smtp_ehlo_domain"');
+    });
+
 
     it('hides only the generic ready fallback and places view-only access before settings', () => {
         const html = renderSection({
