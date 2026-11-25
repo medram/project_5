@@ -13,6 +13,19 @@ export type AdminPlanRecord = {
     deleteBlockedReason: string | null;
     stripeMonthlyPriceId: string | null;
     stripeYearlyPriceId: string | null;
+    paypalMonthlyPlanId: string | null;
+    paypalYearlyPlanId: string | null;
+    paypalCheckout: {
+        month: boolean;
+        year: boolean;
+    };
+    paypalPrices: Array<{
+        id: string;
+        interval: string;
+        currency: string;
+        amount: number;
+        verified: boolean;
+    }>;
     prices: Array<{
         id: string;
         interval: 'month' | 'year';
@@ -30,6 +43,8 @@ export type AdminPlanRecord = {
 export type AdminBillingReadiness = {
     configured?: boolean;
     checkoutReady?: boolean;
+    stripeReady?: boolean;
+    paypalReady?: boolean;
     missing: string[];
 };
 
@@ -69,6 +84,10 @@ export type AdminSubscriptionRow = {
         overrideExpiresAt: string | null;
     };
     provider: {
+        name: 'stripe' | 'paypal' | null;
+        amount: number | null;
+        currency: string | null;
+        interval: string | null;
         configured: boolean;
         status: string | null;
         priceId: string | null;

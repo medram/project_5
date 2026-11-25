@@ -117,6 +117,15 @@ class AdminInsights
 
         /** @var list<array{state: string, count: int}> $states */
         $states = array_values($states);
+        $paypalStates = DB::table('paypal_subscriptions')
+            ->select('status')->selectRaw('COUNT(*) as aggregate_count')
+            ->groupBy('status')->orderBy('status')->get();
+        foreach ($paypalStates as $state) {
+            $states[] = [
+                'state' => 'PayPal: '.strtolower(str_replace('_', ' ', $state->status)),
+                'count' => (int) $state->aggregate_count,
+            ];
+        }
 
         $pricesById = PlanStripePrice::query()->with('plan')->get()->keyBy('stripe_price_id');
         $currency = strtolower((string) config('cashier.currency', 'usd'));
@@ -154,13 +163,38 @@ class AdminInsights
             }
         }
 
+        $paypalPrices = DB::table('paypal_subscriptions')
+            ->join('plan_paypal_prices', 'paypal_subscriptions.plan_paypal_price_id', '=', 'plan_paypal_prices.id')
+            ->join('plans', 'plan_paypal_prices.plan_id', '=', 'plans.id')
+            ->where('paypal_subscriptions.status', 'ACTIVE')
+            ->where(fn ($query) => $query->where('plan_paypal_prices.unit_amount', 0)
+                ->orWhere(fn ($paid) => $paid->whereNotNull('paypal_subscriptions.last_paid_at')
+                    ->where('paypal_subscriptions.next_billing_at', '>', now())))
+            ->select('plan_paypal_prices.interval', 'plan_paypal_prices.unit_amount',
+                'plan_paypal_prices.currency', 'plan_paypal_prices.verified_at', 'plans.currency as plan_currency')
+            ->selectRaw('COUNT(*) as aggregate_count')
+            ->groupBy('plan_paypal_prices.interval', 'plan_paypal_prices.unit_amount',
+                'plan_paypal_prices.currency', 'plan_paypal_prices.verified_at', 'plans.currency')
+            ->get();
+        foreach ($paypalPrices as $price) {
+            $count = (int) $price->aggregate_count;
+            if ($price->verified_at !== null && strtolower($price->currency) === $currency
+                && strtolower($price->plan_currency) === $currency && in_array($price->interval, ['month', 'year'], true)) {
+                $monthly = $price->interval === 'year' ? (int) round($price->unit_amount / 12) : (int) $price->unit_amount;
+                $mrr += $monthly * $count;
+                $mapped += $count;
+            } else {
+                $unmapped += $count;
+            }
+        }
+
         return [
             'states' => $states,
             'mrrCents' => $mrr,
             'arrCents' => $mrr * 12,
             'mappedSubscriptions' => $mapped,
             'unmappedSubscriptions' => $unmapped,
-            'source' => 'Mapped Stripe subscription prices; overrides are excluded from revenue.',
+            'source' => 'Mapped Stripe and PayPal subscription prices; overrides are excluded from revenue.',
         ];
     }
 

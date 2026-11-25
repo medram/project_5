@@ -27,6 +27,7 @@ import { formatMoney } from '@/lib/money';
 import { currentPlanPrice } from '@/lib/plan-pricing';
 import plans from '@/routes/admin/plans';
 import planPrices from '@/routes/admin/plans/prices';
+import paypalPlans from '@/routes/admin/plans/paypal';
 import type { AdminPlanRecord } from '@/types/admin-billing';
 import type { PlanLimits } from '@/types/billing';
 
@@ -476,17 +477,35 @@ export function PlanFormSheet({
                             </section>
                         )}
 
+                        {plan && plan.code !== 'free' && (
+                            <section className="grid gap-4">
+                                <div>
+                                    <h3 className="text-sm font-medium">PayPal plans</h3>
+                                    <p className="mt-0.5 text-xs text-muted-foreground">
+                                        Verify a PayPal plan for each billing interval. Previous mappings remain available to existing subscribers.
+                                    </p>
+                                </div>
+                                {(['month', 'year'] as const).map((interval) => (
+                                    <PayPalPlanEditor
+                                        key={`${interval}-${interval === 'month' ? plan.paypalMonthlyPlanId : plan.paypalYearlyPlanId}`}
+                                        plan={plan}
+                                        interval={interval}
+                                    />
+                                ))}
+                            </section>
+                        )}
+
                         {plan?.code === 'free' && (
                             <p className="rounded-xl border border-dashed border-border px-3 py-2.5 text-xs text-muted-foreground">
-                                Free plan · no Stripe price. Checkout never
+                                Free plan · no provider price. Checkout never
                                 charges for this tier
                             </p>
                         )}
 
                         {!plan && (
                             <p className="rounded-xl border border-dashed border-border px-3 py-2.5 text-xs text-muted-foreground">
-                                Stripe prices can be connected after the plan is
-                                created
+                                Stripe prices and PayPal plans can be connected
+                                after the plan is created
                             </p>
                         )}
                     </div>
@@ -707,6 +726,60 @@ function PriceEditor({
                     >
                         <Trash2 aria-hidden="true" />
                         Clear price
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function PayPalPlanEditor({ plan, interval }: { plan: AdminPlanRecord; interval: 'month' | 'year' }) {
+    const current = interval === 'month' ? plan.paypalMonthlyPlanId : plan.paypalYearlyPlanId;
+    const mapping = plan.paypalPrices.find((price) => price.id === current && price.interval === interval);
+    const form = useForm({ plan_id: current ?? '', expected_current_plan_id: current });
+    const params = { plan: plan.code, interval };
+    const id = `${plan.code}-${interval}-paypal-plan`;
+
+    return (
+        <div className="grid min-w-0 gap-3 rounded-xl border border-border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-medium">{interval === 'month' ? 'Monthly' : 'Yearly'} plan</p>
+                <span className="text-xs text-muted-foreground">
+                    {mapping?.verified ? formatMoney(mapping.amount, mapping.currency) : current ? 'Not verified' : 'No plan set'}
+                </span>
+            </div>
+            <Field>
+                <FieldLabel htmlFor={id} className="text-xs text-muted-foreground">PayPal plan ID</FieldLabel>
+                <Input
+                    id={id}
+                    value={form.data.plan_id}
+                    maxLength={255}
+                    placeholder="P-…"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="h-9 font-mono text-xs"
+                    aria-invalid={Boolean(form.errors.plan_id)}
+                    onChange={(event) => form.setData('plan_id', event.target.value)}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                            form.post(paypalPlans.sync(params).url, { preserveScroll: true });
+                        }
+                    }}
+                />
+                {form.errors.plan_id && <FieldError>{form.errors.plan_id}</FieldError>}
+                {form.errors.expected_current_plan_id && <FieldError>{form.errors.expected_current_plan_id}</FieldError>}
+            </Field>
+            <div className="flex flex-wrap gap-2">
+                <Button type="button" size="sm" variant="outline" disabled={form.processing || !form.data.plan_id}
+                    onClick={() => form.post(paypalPlans.sync(params).url, { preserveScroll: true })}>
+                    <RefreshCw aria-hidden="true" />
+                    {form.processing ? 'Verifying…' : 'Verify and sync'}
+                </Button>
+                {current && (
+                    <Button type="button" size="sm" variant="ghost" disabled={form.processing}
+                        onClick={() => form.delete(paypalPlans.destroy(params).url, { preserveScroll: true })}>
+                        <Trash2 aria-hidden="true" /> Clear plan
                     </Button>
                 )}
             </div>

@@ -9,10 +9,12 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { index as billingIndex } from '@/routes/billing';
 import type { BillingPlan } from '@/types/billing';
 
 type Props = {
     status: 'success' | 'cancelled';
+    checkoutProvider: 'stripe' | 'paypal';
     processing: boolean;
     sessionReturned: boolean;
     effectivePlan: BillingPlan;
@@ -25,13 +27,15 @@ type Props = {
 
 export default function CheckoutResult({
     status,
+    checkoutProvider,
     processing,
     sessionReturned,
     effectivePlan,
     effectiveSource,
     provider,
 }: Props) {
-    const active = status === 'success' && !processing;
+    const active = status === 'success' && !processing && effectiveSource === checkoutProvider;
+    const providerName = checkoutProvider === 'paypal' ? 'PayPal' : 'Stripe';
 
     return (
         <>
@@ -67,14 +71,14 @@ export default function CheckoutResult({
                                 ? 'Checkout cancelled'
                                 : active
                                   ? 'Subscription active'
-                                  : 'Payment received — activation pending'}
+                                  : 'Subscription confirmation pending'}
                         </CardTitle>
                         <CardDescription>
                             {status === 'cancelled'
-                                ? 'No payment was taken. Your workspace plan did not change.'
+                                ? 'Checkout was cancelled. Check your billing page for the current subscription status.'
                                 : active
-                                  ? 'Stripe confirmed the subscription and the workspace entitlement is active.'
-                                  : 'LinkPilot is waiting for the signed Stripe webhook. A return URL never grants a plan by itself.'}
+                                  ? `${providerName} confirmed the subscription and the workspace entitlement is active.`
+                                  : `LinkPilot is waiting for verified ${providerName} subscription confirmation. Approval or a return URL alone does not grant a plan.`}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
@@ -95,7 +99,7 @@ export default function CheckoutResult({
                         {provider && (
                             <div className="flex items-center justify-between gap-3">
                                 <span className="text-muted-foreground">
-                                    Stripe status
+                                    {providerName} status
                                 </span>
                                 <span className="font-medium">
                                     {provider.status}
@@ -116,8 +120,8 @@ export default function CheckoutResult({
                         )}
                         {sessionReturned && processing && (
                             <p className="text-muted-foreground">
-                                Checkout session returned. Refresh after the
-                                webhook is processed if activation is still
+                                You returned from checkout. Refresh after the
+                                subscription is confirmed if activation is still
                                 pending.
                             </p>
                         )}
@@ -125,7 +129,7 @@ export default function CheckoutResult({
                 </Card>
 
                 <Button asChild variant="outline">
-                    <Link href="/account-settings/billing">
+                    <Link href={billingIndex.url()}>
                         Back to billing
                     </Link>
                 </Button>

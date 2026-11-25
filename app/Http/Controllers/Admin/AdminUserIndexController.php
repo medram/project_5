@@ -6,6 +6,7 @@ use App\Enums\PlatformPermission;
 use App\Enums\PlatformRoleCode;
 use App\Http\Controllers\Controller;
 use App\Models\Link;
+use App\Models\PayPalSubscription;
 use App\Models\Plan;
 use App\Models\PlanStripePrice;
 use App\Models\PlatformRole;
@@ -81,45 +82,39 @@ class AdminUserIndexController extends Controller
 
         if ($planCode !== null) {
             $plan = Plan::query()->where('code', $planCode)->sole();
-            $paidPrices = PlanStripePrice::query()
-                ->whereHas('plan', fn (Builder $plans) => $plans->where('code', '!=', 'free'))
-                ->pluck('stripe_price_id')->all();
+            $allPrices = PlanStripePrice::query()->pluck('stripe_price_id')->all();
             $planPrices = PlanStripePrice::query()->where('plan_id', $plan->id)->pluck('stripe_price_id')->all();
             $activeOverride = fn (Builder $override): Builder => $override
                 ->whereNull('revoked_at')
-                ->where(fn (Builder $started) => $started
-                    ->whereNull('starts_at')
-                    ->orWhere('starts_at', '<=', now()))
-                ->where(fn (Builder $expires) => $expires
-                    ->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now()));
-            $validSubscription = fn (Builder $subscription): Builder => $subscription
+                ->where(fn (Builder $started) => $started->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+                ->where(fn (Builder $expires) => $expires->whereNull('expires_at')->orWhere('expires_at', '>', now()));
+            $validStripe = fn (Builder $subscription): Builder => $subscription
                 ->where(fn (Builder $state) => $state
                     ->whereIn('stripe_status', ['active', 'trialing'])
-                    ->orWhere(fn (Builder $grace) => $grace
-                        ->whereNotNull('ends_at')
-                        ->where('ends_at', '>', now())));
+                    ->orWhere(fn (Builder $grace) => $grace->whereNotNull('ends_at')->where('ends_at', '>', now())));
             $matchesPrices = fn (Builder $subscription, array $prices): Builder => $subscription
-                ->where(fn (Builder $matches) => $matches
-                    ->whereIn('stripe_price', $prices)
+                ->where(fn (Builder $matches) => $matches->whereIn('stripe_price', $prices)
                     ->orWhereHas('items', fn (Builder $items) => $items->whereIn('stripe_price', $prices)));
+            $validPayPal = fn (Builder $subscription): Builder => $subscription
+                ->where('status', 'ACTIVE')
+                ->where(fn (Builder $paid) => $paid
+                    ->whereHas('price', fn (Builder $price) => $price->where('unit_amount', 0))
+                    ->orWhere(fn (Builder $current) => $current->whereNotNull('last_paid_at')->where('next_billing_at', '>', now())));
 
-            $query->whereHas('personalWorkspace', function (Builder $workspace) use ($plan, $paidPrices, $planPrices, $activeOverride, $validSubscription, $matchesPrices): void {
-                if ($plan->code === 'free') {
-                    $workspace->where(fn (Builder $matches) => $matches
-                        ->whereHas('planOverrides', fn (Builder $override) => $activeOverride($override)->where('plan_id', $plan->id))
-                        ->orWhere(fn (Builder $withoutOverride) => $withoutOverride
-                            ->whereDoesntHave('planOverrides', $activeOverride)
-                            ->whereDoesntHave('subscriptions', fn (Builder $subscription) => $matchesPrices($validSubscription($subscription), $paidPrices))));
-
-                    return;
-                }
-
+            $query->whereHas('personalWorkspace', function (Builder $workspace) use ($plan, $allPrices, $planPrices, $activeOverride, $validStripe, $matchesPrices, $validPayPal): void {
                 $workspace->where(fn (Builder $matches) => $matches
                     ->whereHas('planOverrides', fn (Builder $override) => $activeOverride($override)->where('plan_id', $plan->id))
                     ->orWhere(fn (Builder $withoutOverride) => $withoutOverride
                         ->whereDoesntHave('planOverrides', $activeOverride)
-                        ->whereHas('subscriptions', fn (Builder $subscription) => $matchesPrices($validSubscription($subscription), $planPrices))));
+                        ->where(fn (Builder $providers) => $providers
+                            ->whereHas('subscriptions', fn (Builder $subscription) => $matchesPrices($validStripe($subscription), $planPrices))
+                            ->orWhere(fn (Builder $withoutStripe) => $withoutStripe
+                                ->whereDoesntHave('subscriptions', fn (Builder $subscription) => $matchesPrices($validStripe($subscription), $allPrices))
+                                ->where(fn (Builder $paypal) => $paypal
+                                    ->whereHas('paypalSubscriptions', fn (Builder $subscription) => $validPayPal($subscription)
+                                        ->whereHas('price', fn (Builder $price) => $price->where('plan_id', $plan->id)))
+                                    ->when($plan->code === 'free', fn (Builder $fallback) => $fallback
+                                        ->orWhereDoesntHave('paypalSubscriptions', $validPayPal)))))));
             });
         }
 
@@ -159,7 +154,8 @@ class AdminUserIndexController extends Controller
                         'code' => $effective['plan']->code,
                         'name' => $effective['plan']->name,
                         'source' => $effective['source'],
-                        'subscriptionStatus' => $effective['subscription']?->stripe_status,
+                        'subscriptionStatus' => $effective['subscription'] instanceof PayPalSubscription
+                            ? $effective['subscription']->status : $effective['subscription']?->stripe_status,
                     ],
                     'lastSeenAt' => $user->last_seen_at?->toISOString(),
                     'createdAt' => $user->created_at?->toISOString(),

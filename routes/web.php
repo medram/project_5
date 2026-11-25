@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\AdminInsightsController;
 use App\Http\Controllers\Admin\AdminLocalizationController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminOperationLogController;
+use App\Http\Controllers\Admin\AdminPayPalPlanController;
 use App\Http\Controllers\Admin\AdminPlanController;
 use App\Http\Controllers\Admin\AdminPlanPriceController;
 use App\Http\Controllers\Admin\AdminRoleController;
@@ -30,6 +31,9 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Billing\CashierWebhookController;
 use App\Http\Controllers\Billing\CheckoutController;
 use App\Http\Controllers\Billing\CheckoutResultController;
+use App\Http\Controllers\Billing\PaymentCheckoutController;
+use App\Http\Controllers\Billing\PayPalCheckoutController;
+use App\Http\Controllers\Billing\PayPalWebhookController;
 use App\Http\Controllers\Billing\PortalController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BioContentBlockController;
@@ -130,6 +134,7 @@ Route::get('up', function (Request $request) {
 Route::get('/', HomePageController::class)->name('home');
 Route::get('stripe/payment/{id}', [CashierPaymentController::class, 'show'])->name('cashier.payment');
 Route::post('stripe/webhook', [CashierWebhookController::class, 'handleWebhook'])->name('cashier.webhook');
+Route::post('paypal/webhook', PayPalWebhookController::class)->name('billing.paypal.webhook');
 Route::get('pricing', PricingController::class)->middleware(EnsurePricingEnabled::class)->name('pricing');
 
 Route::middleware(['auth', 'verified', 'active-account'])->group(function (): void {
@@ -193,6 +198,13 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         ->name('billing.checkout.success');
     Route::get('billing/checkout/cancel', [CheckoutResultController::class, 'cancel'])
         ->name('billing.checkout.cancel');
+    Route::post('billing/checkout/abandon', [PaymentCheckoutController::class, 'abandon'])->name('billing.checkout.abandon');
+    Route::post('billing/paypal/checkout/{plan:code}/{interval}', [PayPalCheckoutController::class, 'checkout'])
+        ->whereIn('interval', ['month', 'year'])->name('billing.paypal.checkout');
+    Route::get('billing/paypal/success', [CheckoutResultController::class, 'paypalSuccess'])->name('billing.paypal.success');
+    Route::get('billing/paypal/cancelled', [CheckoutResultController::class, 'paypalCancelled'])->name('billing.paypal.cancelled');
+    Route::post('billing/paypal/cancel', [PayPalCheckoutController::class, 'cancel'])->name('billing.paypal.cancel');
+    Route::post('billing/paypal/refresh', [PayPalCheckoutController::class, 'refresh'])->name('billing.paypal.refresh');
     Route::get('billing/portal', PortalController::class)->name('billing.portal');
     Route::get('dashboard/custom-domains', [CustomDomainController::class, 'index'])->name('custom-domains.index');
     Route::get('dashboard/insights/custom-events', [AnalyticsEventDefinitionController::class, 'index'])
@@ -620,6 +632,14 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
             ->whereIn('interval', ['month', 'year'])
             ->middleware('platform:admin.billing.manage')
             ->name('plans.prices.destroy');
+        Route::post('plans/{plan:code}/paypal/{interval}', [AdminPayPalPlanController::class, 'sync'])
+            ->whereIn('interval', ['month', 'year'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('plans.paypal.sync');
+        Route::delete('plans/{plan:code}/paypal/{interval}', [AdminPayPalPlanController::class, 'destroy'])
+            ->whereIn('interval', ['month', 'year'])
+            ->middleware('platform:admin.billing.manage')
+            ->name('plans.paypal.destroy');
 
         Route::get('subscriptions', [AdminSubscriptionController::class, 'index'])
             ->middleware('platform:admin.billing.view')

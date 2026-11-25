@@ -8,7 +8,10 @@ use Illuminate\Support\Collection;
 
 final class PlanCatalogPresenter
 {
-    public function __construct(private readonly StripeReadiness $readiness) {}
+    public function __construct(
+        private readonly StripeReadiness $readiness,
+        private readonly PayPalReadiness $paypal,
+    ) {}
 
     /**
      * @return array<int, array<string, mixed>>
@@ -16,7 +19,7 @@ final class PlanCatalogPresenter
     public function all(): array
     {
         return $this->ordered(
-            Plan::query()->where('is_active', true)->with('stripePrices')->get(),
+            Plan::query()->where('is_active', true)->with(['stripePrices', 'paypalPrices'])->get(),
         )
             ->map(fn (Plan $plan): array => $this->data($plan))
             ->values()
@@ -62,7 +65,8 @@ final class PlanCatalogPresenter
      *     featured: bool,
      *     sortOrder: int,
      *     limits: array<string, int|null>,
-     *     checkout: array{month: bool, year: bool}
+     *     checkout: array{month: bool, year: bool},
+     *     paypalCheckout: array{month: bool, year: bool}
      * }
      */
     public function data(Plan $plan): array
@@ -71,13 +75,15 @@ final class PlanCatalogPresenter
         $metadata = $plan->display_metadata ?? [];
         $monthId = $this->readiness->priceId($plan, 'month');
         $yearId = $this->readiness->priceId($plan, 'year');
+        $paypalMonth = $this->paypal->price($plan, 'month');
+        $paypalYear = $this->paypal->price($plan, 'year');
 
         return [
             'code' => $plan->code,
             'name' => $plan->name,
             'description' => is_string($metadata['description'] ?? null) ? $metadata['description'] : null,
-            'monthlyPrice' => $plan->code === 'free' ? 0 : ($monthId === null ? null : $plan->stripePrices->first(fn ($price) => $price->stripe_price_id === $monthId)->unit_amount),
-            'annualPrice' => $plan->code === 'free' ? 0 : ($yearId === null ? null : $plan->stripePrices->first(fn ($price) => $price->stripe_price_id === $yearId)->unit_amount),
+            'monthlyPrice' => $plan->code === 'free' ? 0 : ($monthId === null ? $paypalMonth?->unit_amount : $plan->stripePrices->first(fn ($price) => $price->stripe_price_id === $monthId)->unit_amount),
+            'annualPrice' => $plan->code === 'free' ? 0 : ($yearId === null ? $paypalYear?->unit_amount : $plan->stripePrices->first(fn ($price) => $price->stripe_price_id === $yearId)->unit_amount),
             'currency' => $plan->currency,
             'featured' => (bool) ($metadata['featured'] ?? false),
             'sortOrder' => $this->sortOrder($plan),
@@ -97,6 +103,10 @@ final class PlanCatalogPresenter
             'checkout' => [
                 'month' => $monthId !== null,
                 'year' => $yearId !== null,
+            ],
+            'paypalCheckout' => [
+                'month' => $paypalMonth !== null,
+                'year' => $paypalYear !== null,
             ],
         ];
     }

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SelectFreePlanRequest;
+use App\Models\PayPalSubscription;
 use App\Models\Plan;
 use App\Models\PlanStripePrice;
+use App\Services\Billing\PayPalReadiness;
+use App\Services\Billing\PaymentCheckout;
 use App\Services\Billing\PlanCatalogPresenter;
 use App\Services\Billing\StripeReadiness;
 use App\Services\Billing\WorkspaceUsage;
@@ -23,6 +26,8 @@ class BillingController extends Controller
     public function __construct(
         private readonly WorkspaceUsage $usage,
         private readonly StripeReadiness $readiness,
+        private readonly PayPalReadiness $paypal,
+        private readonly PaymentCheckout $checkout,
         private readonly PlanCatalogPresenter $plans,
     ) {}
 
@@ -31,6 +36,12 @@ class BillingController extends Controller
         $workspace = $context->currentFor($request->user());
         Gate::authorize('viewBilling', $workspace);
         $effective = $this->usage->effectivePlanFor($workspace);
+        $canManage = Gate::allows('manageBilling', $workspace);
+        $pending = $this->checkout->pending($workspace);
+        $subscription = $effective['subscription']
+            ?? $workspace->subscriptions()->whereNotIn('stripe_status', ['canceled', 'incomplete_expired'])->first()
+            ?? PayPalSubscription::query()->with('price')->where('workspace_id', $workspace->id)
+                ->whereIn('status', ['ACTIVE', 'SUSPENDED', 'PAYMENT_FAILED'])->orderByDesc('id')->first();
 
         return Inertia::render('billing/index', [
             'effectivePlan' => $this->plans->data($effective['plan']),
@@ -40,14 +51,20 @@ class BillingController extends Controller
                 'reason' => $effective['override']->reason,
                 'expiresAt' => $effective['override']->expires_at?->toISOString(),
             ],
-            'providerSubscription' => $this->providerSubscription($effective['subscription']),
+            'providerSubscription' => $this->providerSubscription($subscription),
             'plans' => $this->plans->all(),
-            'canManageBilling' => Gate::allows('manageBilling', $workspace),
+            'canManageBilling' => $canManage,
             'usage' => $this->usage->for($workspace),
             'billing' => [
                 'enabled' => (bool) (app(PlatformSettings::class)->resolved()['subscriptions']['billing_enabled'] ?? true),
                 'annualDisplay' => (bool) (app(PlatformSettings::class)->resolved()['subscriptions']['annual_display'] ?? true),
                 'checkoutReady' => $this->readiness->checkoutReady(),
+                'paypalReady' => $this->paypal->checkoutReady(),
+                'hasProviderSubscription' => $this->checkout->hasSubscription($workspace),
+                'pendingCheckout' => $pending === null ? null : [
+                    'provider' => $pending->provider,
+                    'resumeUrl' => $canManage ? $pending->approval_url : null,
+                ],
                 'portalReady' => $this->readiness->configured(),
                 'missing' => $this->readiness->missing(),
                 'promotionCodes' => (bool) config('linkpilot.billing.promotion_codes'),
@@ -59,11 +76,9 @@ class BillingController extends Controller
     {
         $workspace = $context->currentFor($request->user());
         Gate::authorize('manageBilling', $workspace);
-        $effective = $this->usage->effectivePlanFor($workspace);
-
-        if ($effective['source'] === 'stripe') {
+        if ($this->checkout->hasSubscription($workspace) || $this->checkout->pending($workspace) !== null) {
             throw ValidationException::withMessages([
-                'subscription' => 'Manage the active Stripe subscription in the billing portal before changing the local plan.',
+                'subscription' => 'Manage the existing subscription or checkout before changing the local plan.',
             ]);
         }
 
@@ -74,12 +89,29 @@ class BillingController extends Controller
     }
 
     /**
-     * @return array{status: string, price: string|null, interval: string|null, baseAmount: int|null, currency: string|null, trialEndsAt: string|null, endsAt: string|null, onGracePeriod: bool}|null
+     * @return array<string, mixed>|null
      */
-    private function providerSubscription(?Subscription $subscription): ?array
+    private function providerSubscription(Subscription|PayPalSubscription|null $subscription): ?array
     {
         if ($subscription === null) {
             return null;
+        }
+
+        if ($subscription instanceof PayPalSubscription) {
+            $subscription->loadMissing('price');
+
+            return [
+                'provider' => 'paypal',
+                'canCancel' => $this->paypal->configured() && in_array($subscription->status, ['ACTIVE', 'SUSPENDED', 'PAYMENT_FAILED'], true),
+                'status' => $subscription->status,
+                'price' => null,
+                'interval' => $subscription->price->interval,
+                'baseAmount' => $subscription->price->unit_amount,
+                'currency' => $subscription->price->currency,
+                'trialEndsAt' => null,
+                'endsAt' => null,
+                'onGracePeriod' => false,
+            ];
         }
 
         $prices = collect([$subscription->stripe_price])
@@ -92,6 +124,8 @@ class BillingController extends Controller
         $verified = $mapping !== null && $mapping->verified_at !== null && $mapping->unit_amount !== null;
 
         return [
+            'provider' => 'stripe',
+            'canCancel' => false,
             'status' => $subscription->stripe_status,
             'price' => $subscription->stripe_price,
             'interval' => $mapping?->interval,

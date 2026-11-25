@@ -59,6 +59,26 @@ class StripePriceSyncTest extends TestCase
         $this->assertNotNull(DB::table('plan_stripe_prices')->where('stripe_price_id', 'price_new')->value('verified_at'));
     }
 
+    public function test_stripe_sync_cannot_publish_a_different_price_than_the_current_paypal_plan(): void
+    {
+        $plan = Plan::where('code', 'pro')->firstOrFail();
+        $plan->update(['stripe_monthly_price_id' => null, 'paypal_monthly_plan_id' => 'P-PRICE']);
+        DB::table('plan_paypal_prices')->insert([
+            'plan_id' => $plan->id, 'paypal_plan_id' => 'P-PRICE', 'interval' => 'month',
+            'currency' => 'usd', 'unit_amount' => 4000, 'verified_at' => now(),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->prices(['price_new' => $this->price('price_new')]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->post('/admin/plans/pro/prices/month', [
+                'price_id' => 'price_new', 'expected_current_price_id' => null,
+            ])->assertSessionHasErrors('price_id');
+
+        $this->assertNull($plan->fresh()->stripe_monthly_price_id);
+        $this->assertDatabaseMissing('plan_stripe_prices', ['stripe_price_id' => 'price_new']);
+    }
+
     public function test_invalid_provider_prices_and_stale_expectations_do_not_mutate_plan(): void
     {
         $plan = Plan::where('code', 'pro')->firstOrFail();

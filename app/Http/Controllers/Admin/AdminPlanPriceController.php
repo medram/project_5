@@ -70,6 +70,17 @@ class AdminPlanPriceController extends Controller
                 if ($locked->stripePriceIdFor($interval) !== $expected || strtolower($locked->currency) !== strtolower($plan->currency)) {
                     throw ValidationException::withMessages(['expected_current_price_id' => 'The current price has changed. Refresh and try again.']);
                 }
+                $paypalId = $locked->paypalPlanIdFor($interval);
+                $paypalPrice = $paypalId === null ? null : $locked->paypalPrices()
+                    ->where('paypal_plan_id', $paypalId)
+                    ->where('interval', $interval)
+                    ->whereNotNull('verified_at')
+                    ->first();
+                if ($newPrice !== null && $paypalPrice !== null
+                    && ($paypalPrice->unit_amount !== $newPrice->unit_amount
+                        || strtolower($paypalPrice->currency) !== strtolower((string) $newPrice->currency))) {
+                    throw ValidationException::withMessages(['price_id' => 'The Stripe amount must match the verified PayPal plan.']);
+                }
                 if ($expected !== null && $expected !== $newId) {
                     $old = PlanStripePrice::query()->where('stripe_price_id', $expected)->lockForUpdate()->first();
                     if ($old !== null && ($old->plan_id !== $locked->id || $old->interval !== $interval)) {
@@ -84,7 +95,7 @@ class AdminPlanPriceController extends Controller
                 if ($newPrice !== null) {
                     $this->saveMapping($locked, $interval, $newPrice);
                 }
-                $locked->forceFill([$column => $newId, $amountColumn => $newPrice?->unit_amount ?? 0])->save();
+                $locked->forceFill([$column => $newId, $amountColumn => $newPrice?->unit_amount ?? $paypalPrice?->unit_amount ?? 0])->save();
                 $this->audit->record($actor, PlatformPermission::AdminBillingManage, $newId === null ? 'clear_plan_price' : 'sync_plan_price', $locked, null, ['interval' => $interval, 'mapped' => $newId !== null]);
             });
         } catch (QueryException $exception) {

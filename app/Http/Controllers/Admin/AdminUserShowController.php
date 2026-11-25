@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\PlatformRoleCode;
 use App\Http\Controllers\Controller;
+use App\Models\PayPalSubscription;
 use App\Models\Plan;
 use App\Models\PlatformRole;
 use App\Models\User;
@@ -48,7 +49,8 @@ class AdminUserShowController extends Controller
                         'code' => $effective['plan']->code,
                         'name' => $effective['plan']->name,
                         'source' => $effective['source'],
-                        'subscriptionStatus' => $effective['subscription']?->stripe_status,
+                        'subscriptionStatus' => $effective['subscription'] instanceof PayPalSubscription
+                            ? $effective['subscription']->status : $effective['subscription']?->stripe_status,
                     ],
                 ];
             })

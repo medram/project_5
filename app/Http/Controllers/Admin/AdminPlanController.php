@@ -8,10 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminPlanUpdateRequest;
 use App\Models\Plan;
 use App\Models\User;
+use App\Services\Billing\PayPalReadiness;
 use App\Services\Billing\PlanCatalogPresenter;
 use App\Services\Billing\StripeReadiness;
 use App\Services\Platform\AdminAudit;
 use App\Services\Platform\PlatformAuthorization;
+use App\Services\Settings\PlatformSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -24,6 +26,7 @@ class AdminPlanController extends Controller
 {
     public function __construct(
         private readonly StripeReadiness $readiness,
+        private readonly PayPalReadiness $paypal,
         private readonly PlanCatalogPresenter $catalog,
         private readonly AdminAudit $audit,
         private readonly PlatformAuthorization $authorization,
@@ -35,17 +38,23 @@ class AdminPlanController extends Controller
             ->merge(DB::table('subscription_items')->whereNotNull('stripe_price')->pluck('stripe_price'))
             ->unique()
             ->flip();
+        $referencedPayPalPrices = DB::table('paypal_subscriptions')->pluck('plan_paypal_price_id')->flip();
         $plans = $this->catalog
-            ->ordered(Plan::query()->with('stripePrices')->withCount('overrides')->get())
-            ->map(fn (Plan $plan): array => $this->present($plan, $referencedPrices))
+            ->ordered(Plan::query()->with(['stripePrices', 'paypalPrices'])->withCount('overrides')->get())
+            ->map(fn (Plan $plan): array => $this->present($plan, $referencedPrices, $referencedPayPalPrices))
             ->values()
             ->all();
+        $enabled = (bool) (app(PlatformSettings::class)->resolved()['subscriptions']['billing_enabled'] ?? false);
+        $stripeReady = $enabled && $this->readiness->checkoutReady();
+        $paypalReady = $enabled && $this->paypal->checkoutReady();
 
         return Inertia::render('admin/plans/index', [
             'plans' => $plans,
             'subscriptionCurrency' => config('cashier.currency', 'usd'),
             'readiness' => [
-                'checkoutReady' => $this->readiness->checkoutReady(),
+                'checkoutReady' => $stripeReady || $paypalReady,
+                'stripeReady' => $stripeReady,
+                'paypalReady' => $paypalReady,
                 'missing' => $this->readiness->missing(),
             ],
         ]);
@@ -162,6 +171,7 @@ class AdminPlanController extends Controller
                 DB::table('subscriptions')->whereIn('stripe_price', $priceIds)->exists()
                 || DB::table('subscription_items')->whereIn('stripe_price', $priceIds)->exists()
             );
+            $inUse = $inUse || DB::table('paypal_subscriptions')->whereIn('plan_paypal_price_id', $locked->paypalPrices()->select('id'))->exists();
             if ($inUse) {
                 throw ValidationException::withMessages([
                     'plan' => 'A provider subscription still uses this plan. Cancel or migrate it first.',
@@ -179,7 +189,7 @@ class AdminPlanController extends Controller
      * @param  Collection<string, int>  $referencedPrices
      * @return array<string, mixed>
      */
-    private function present(Plan $plan, Collection $referencedPrices): array
+    private function present(Plan $plan, Collection $referencedPrices, Collection $referencedPayPalPrices): array
     {
         $metadata = $plan->display_metadata ?? [];
 
@@ -192,6 +202,7 @@ class AdminPlanController extends Controller
             $isBuiltIn => 'Built-in plans cannot be deleted.',
             (int) $plan->overrides_count > 0 => 'Referenced by workspace plan history.',
             $priceIds->contains(fn (string $id): bool => $referencedPrices->has($id)) => 'A provider subscription still uses this plan.',
+            $plan->paypalPrices->contains(fn ($price): bool => $referencedPayPalPrices->has($price->id)) => 'A provider subscription still uses this plan.',
             default => null,
         };
 
@@ -210,6 +221,15 @@ class AdminPlanController extends Controller
             'deleteBlockedReason' => $reason,
             'stripeMonthlyPriceId' => $plan->stripe_monthly_price_id,
             'stripeYearlyPriceId' => $plan->stripe_yearly_price_id,
+            'paypalMonthlyPlanId' => $plan->paypal_monthly_plan_id,
+            'paypalYearlyPlanId' => $plan->paypal_yearly_plan_id,
+            'paypalPrices' => $plan->paypalPrices->map(fn ($price): array => [
+                'id' => $price->paypal_plan_id,
+                'interval' => $price->interval,
+                'currency' => $price->currency,
+                'amount' => $price->unit_amount,
+                'verified' => $price->verified_at !== null,
+            ])->values()->all(),
             'prices' => $plan->stripePrices->map(fn ($price): array => [
                 'id' => $price->stripe_price_id,
                 'interval' => $price->interval,
@@ -220,6 +240,10 @@ class AdminPlanController extends Controller
             'checkout' => [
                 'month' => $this->readiness->priceId($plan, 'month') !== null,
                 'year' => $this->readiness->priceId($plan, 'year') !== null,
+            ],
+            'paypalCheckout' => [
+                'month' => $this->paypal->price($plan, 'month') !== null,
+                'year' => $this->paypal->price($plan, 'year') !== null,
             ],
             'limits' => [
                 'links' => $plan->link_limit,

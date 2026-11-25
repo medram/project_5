@@ -253,7 +253,7 @@ The platform dashboard is the operations view of the same analytics language, no
 4. **Countries.** A full-width country map with the ranked flag legend. Ranked countries use `--chart-2` opacity; the rest use `--muted-foreground` at 18%. Put the unresolved-country count in muted text below the map and keep the native 4:3 canvas unclipped.
 5. **Distribution row.** Three donut cards: `Top browsers`, `Top platforms`, `Device classes`. Donuts collapse to five slices (top four named cohorts plus `Other`); the center carries the event total and each legend row repeats count and share.
 6. **Referrers and resources.** `Top referrers` ranked bars beside a compact `Resource totals` definition grid. Resource totals are two-column label/value pairs, never a full-width table.
-7. **Growth and account health.** `Daily growth` bar panel, `Account health`, and `Cashier subscription states` in one desktop row. Account health opens with `active / total` and a progress bar, then the independent suspended and deletion-pending flags, then subscription mapping. Do not repeat the same snapshot as a row of badges above the charts.
+7. **Growth and account health.** `Daily growth` bar panel, `Account health`, and `Provider subscription states` in one desktop row. Include Stripe and PayPal states; provider revenue uses verified mapped prices and excludes overrides. Account health opens with `active / total` and a progress bar, then the independent suspended and deletion-pending flags, then subscription mapping. Do not repeat the same snapshot as a row of badges above the charts.
 8. **Privacy.** One slim note at the end. State the k-anonymity threshold once below the donut row, not in every card description.
 
 ### 7.2c Insights pages standard (all scopes)

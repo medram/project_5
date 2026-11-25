@@ -37,20 +37,36 @@ function planPrice(plan: AdminPlanRecord) {
         return {
             main: formatMoney(0, plan.currency),
             suffix: 'free',
-            note: 'No Stripe price',
+            note: 'No provider price',
         };
     }
 
-    const monthly = currentPlanPrice(plan, 'month');
-    const annual = currentPlanPrice(plan, 'year');
-    const monthlyReady = currentPlanPriceIsVerified(plan, 'month');
-    const annualReady = currentPlanPriceIsVerified(plan, 'year');
+    const stripeMonth = currentPlanPrice(plan, 'month');
+    const stripeYear = currentPlanPrice(plan, 'year');
+    const paypalMonth = plan.paypalPrices.find(
+        (price) => price.id === plan.paypalMonthlyPlanId && price.interval === 'month' && price.verified,
+    );
+    const paypalYear = plan.paypalPrices.find(
+        (price) => price.id === plan.paypalYearlyPlanId && price.interval === 'year' && price.verified,
+    );
+    const monthly = currentPlanPriceIsVerified(plan, 'month') ? stripeMonth : paypalMonth;
+    const annual = currentPlanPriceIsVerified(plan, 'year') ? stripeYear : paypalYear;
+    const monthlyReady = monthly != null && monthly.amount !== null;
+    const annualReady = annual != null && annual.amount !== null;
 
-    if (!plan.stripeMonthlyPriceId && !plan.stripeYearlyPriceId) {
+    if (!monthlyReady && !annualReady) {
         return {
             main: null,
             suffix: '',
-            note: 'Add a monthly or yearly price',
+            note: 'Add a verified monthly or yearly price',
+        };
+    }
+
+    if (!monthlyReady && annualReady) {
+        return {
+            main: formatMoney(annual.amount ?? 0, plan.currency),
+            suffix: '/ year',
+            note: 'Monthly price not set',
         };
     }
 
@@ -82,9 +98,10 @@ export function PlanCatalogCard({
     const checkout =
         plan.code === 'free'
             ? null
-            : plan.checkout.month && plan.checkout.year
-              ? { label: 'Checkout ready', dot: 'bg-success' }
-              : { label: 'Checkout off', dot: 'bg-warning' };
+            : (plan.checkout.month || plan.paypalCheckout.month) &&
+                (plan.checkout.year || plan.paypalCheckout.year)
+              ? { label: 'Prices verified', dot: 'bg-success' }
+              : { label: 'Prices incomplete', dot: 'bg-warning' };
 
     return (
         <Card className="gap-0 overflow-hidden py-0">

@@ -58,7 +58,11 @@ export default function AdminPlansIndex({
             : null;
     const activeCount = plans.filter((plan) => plan.isActive).length;
     const checkoutReadyCount = plans.filter(
-        (plan) => plan.checkout.month && plan.checkout.year,
+        (plan) =>
+            ((readiness.stripeReady && plan.checkout.month) ||
+                (readiness.paypalReady && plan.paypalCheckout.month)) &&
+            ((readiness.stripeReady && plan.checkout.year) ||
+                (readiness.paypalReady && plan.paypalCheckout.year)),
     ).length;
     const checkoutReady = readiness.checkoutReady === true;
     const missing = readiness.missing ?? [];
@@ -89,7 +93,7 @@ export default function AdminPlansIndex({
             <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-4 px-5 pt-4 pb-10">
                 <PageHeader
                     title="Plans"
-                    description="Workspace tiers, quotas, and Stripe prices."
+                    description="Workspace tiers, quotas, and payment provider prices."
                     actions={
                         canManage ? (
                             <Button
@@ -174,7 +178,7 @@ export default function AdminPlansIndex({
                     {!checkoutReady && missing.length > 0 && (
                         <details className="mt-2">
                             <summary className="cursor-pointer text-xs text-muted-foreground select-none hover:text-foreground">
-                                Missing keys
+                                Missing Stripe setup
                             </summary>
                             <div className="mt-2 flex flex-wrap gap-1.5">
                                 {missing.map((key) => (
@@ -205,7 +209,7 @@ export default function AdminPlansIndex({
                             <EmptyTitle>No plans configured</EmptyTitle>
                             <EmptyDescription>
                                 Create the first tier to assign workspace
-                                entitlements and connect Stripe prices
+                                entitlements and connect payment provider prices
                             </EmptyDescription>
                         </EmptyHeader>
                         {canManage && (

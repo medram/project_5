@@ -223,7 +223,7 @@ class BillingSurfaceTest extends TestCase
         config(['cashier.webhook.secret' => 'whsec_legacy_environment']);
 
         $this->assertSame(
-            ['stripe/webhook'],
+            ['stripe/webhook', 'paypal/webhook'],
             app(\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class)->getExcludedPaths(),
         );
 

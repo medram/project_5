@@ -16,7 +16,7 @@ LinkPilot is a Laravel and React publishing console for owned short links and pu
 - Attach fixed Meta Pixel or GA4 integrations to published pages after consent.
 - Review consent-gated account analytics and per-link insights.
 - Register signed webhook endpoints for consented events with retry handling.
-- Review local account plan limits and subscription usage at `/account-settings/billing`; this is internal entitlement state, not payment collection.
+- Review workspace subscription billing and plan limits at `/account-settings/billing`.
 - Administer account status, administrator access, and local entitlements at `/admin`.
 
 ## QR campaigns
@@ -42,24 +42,49 @@ accepted as public storage paths. Production deployments must configure a durabl
 private disk or mount for that path and verify persistence across restarts; the
 development Compose bind mount is not a production durability guarantee.
 
-## Plans, Stripe billing, and workspace usage
+## Plans, billing, and workspace usage
 
-Every workspace starts on Free and the effective plan resolves, in order: a current administrator override, a valid Stripe subscription mapped by its price history, then Free. The initial Free/Pro/Business catalog is seeded by the Phase 8 migration; administrators can create plans and adjust their quotas without deleting existing content. One locked service enforces count and retained-byte limits.
+Every workspace starts on Free. Effective access resolves in order: a current
+administrator override, a valid Stripe subscription, a paid active PayPal
+subscription, then Free. Historical provider price mappings preserve access
+when the current catalog price changes. Downgrades preserve existing content.
 
-Stripe is the only paid path. `/account-settings/billing` shows the effective plan, all usage metrics, provider state, and a setup checklist; `/pricing` is public. Owner-only routes `/billing/checkout/{plan}/{interval}` and `/billing/portal` stay disabled until every prerequisite is configured. Cashier's signed webhook at `/stripe/webhook` is the only source of subscription activation—return URLs never grant a plan, and LinkPilot never edits Stripe status locally.
+Workspace owners choose Stripe or PayPal on `/account-settings/billing`.
+Stripe subscriptions are managed in the Stripe billing portal. PayPal
+subscriptions can be cancelled from billing; cancellation stops the
+subscription and paid access immediately. Only one provider checkout or
+subscription may be in progress for a workspace. A pending checkout can be
+resumed or cancelled on the billing page.
 
-Required operator configuration:
+Configure billing under **Admin → Settings → Payment gateways**:
 
-```dotenv
-STRIPE_KEY=pk_test_...
-STRIPE_SECRET=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-CASHIER_TAX_POLICY_ACKNOWLEDGED=true
-CASHIER_CURRENCY=usd
-BILLING_PROMOTION_CODES=false
-```
+1. Enable billing, select the currency, and acknowledge the platform's tax
+   policy. Configure Stripe's publishable key, secret key, and signing secret
+   if using Stripe.
+2. For PayPal, choose sandbox or live mode and enter the REST application's
+   client ID, client secret, and webhook ID. The secret is encrypted and is not
+   returned to the browser. Set `APP_URL` to the public HTTPS origin.
+3. Register the displayed PayPal webhook URL (`/paypal/webhook`) for all event
+   types, or at least `BILLING.SUBSCRIPTION.ACTIVATED`, `.UPDATED`,
+   `.CANCELLED`, `.EXPIRED`, `.SUSPENDED`, `.PAYMENT.FAILED`, and
+   `PAYMENT.SALE.COMPLETED`. Checkout verifies the webhook URL and event
+   subscriptions with PayPal before creating a subscription.
+4. In PayPal, create a product and an active, fixed-price recurring plan for
+   each desired monthly or yearly interval. Plans must have one indefinite
+   regular cycle, a supported two-decimal currency, and no trial, setup fee, or
+   additional tax. In **Admin → Plans**, use **Verify and sync** for each
+   Stripe price and PayPal plan ID. When both providers are configured for an
+   interval, their amounts and currencies must match. PayPal prices are checked
+   again before checkout because PayPal plans can change.
 
-In `/admin/plans`, use **Verify & sync** for each monthly or yearly Stripe price, then point the webhook endpoint at `/stripe/webhook`. A legacy price ID is unverified until synchronized: existing subscriptions keep their entitlements, but its public price and new checkout remain unavailable. Previous verified prices stay mapped to their subscriptions when the current selection changes. Without Stripe credentials, synchronization and checkout stay unavailable; plan metadata and quota edits still work.
+Stripe activates access through its signed Cashier webhook at
+`/stripe/webhook`; PayPal events are verified with PayPal and reconciled
+against the provider's current subscription details. A return URL never grants
+access. If PayPal notification delivery is delayed, the owner can use
+**Refresh PayPal status** on the billing page to retrieve and verify the
+workspace's subscription directly. Existing Stripe checkouts created before
+deploying this change are not tracked by the new cross-provider checkout guard;
+wait for them to complete or expire before enabling PayPal.
 
 Optional Google sign-in is hidden unless `GOOGLE_AUTH_ENABLED=true` and both Google OAuth credentials are set. Existing email addresses are never auto-linked; connect Google from account settings while signed in.
 

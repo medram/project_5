@@ -60,14 +60,39 @@ class PlatformSettingsReadiness
             return [['label' => 'Billing', 'state' => 'disabled', 'detail' => 'Billing is disabled; pricing remains informational.']];
         }
 
-        return [
-            $this->requirement('Publishable key', is_string($subscriptions['stripe_publishable_key'] ?? null) && $subscriptions['stripe_publishable_key'] !== ''),
-            $this->requirement('Secret key', $this->settings->secret('subscriptions', 'stripe_secret') !== null),
-            $this->requirement('Webhook secret', $this->settings->secret('subscriptions', 'stripe_webhook_secret') !== null),
-            $this->requirement('Tax policy acknowledgement', (bool) ($subscriptions['tax_policy_acknowledged'] ?? false)),
-            $this->stripeMode($subscriptions),
-            ['label' => 'Webhook URL', 'state' => 'ready', 'detail' => route('cashier.webhook')],
-        ];
+        $clientId = filled($subscriptions['paypal_client_id'] ?? null);
+        $secret = $this->settings->secret('subscriptions', 'paypal_secret') !== null;
+        $webhookId = filled($subscriptions['paypal_webhook_id'] ?? null);
+        $paypalConfigured = $clientId || $secret || $webhookId || ($subscriptions['paypal_mode'] ?? 'sandbox') !== 'sandbox';
+        $stripeConfigured = filled($subscriptions['stripe_publishable_key'] ?? null)
+            || $this->settings->secret('subscriptions', 'stripe_secret') !== null
+            || $this->settings->secret('subscriptions', 'stripe_webhook_secret') !== null;
+
+        $items = ! $stripeConfigured && $paypalConfigured
+            ? [
+                ['label' => 'Stripe', 'state' => 'disabled', 'detail' => 'Not configured.'],
+                $this->requirement('Tax policy acknowledgement', (bool) ($subscriptions['tax_policy_acknowledged'] ?? false)),
+            ]
+            : [
+                $this->requirement('Publishable key', is_string($subscriptions['stripe_publishable_key'] ?? null) && $subscriptions['stripe_publishable_key'] !== ''),
+                $this->requirement('Secret key', $this->settings->secret('subscriptions', 'stripe_secret') !== null),
+                $this->requirement('Webhook secret', $this->settings->secret('subscriptions', 'stripe_webhook_secret') !== null),
+                $this->requirement('Tax policy acknowledgement', (bool) ($subscriptions['tax_policy_acknowledged'] ?? false)),
+                $this->stripeMode($subscriptions),
+                ['label' => 'Webhook URL', 'state' => 'ready', 'detail' => route('cashier.webhook')],
+            ];
+
+        if (! $clientId && ! $secret && ! $webhookId && ($subscriptions['paypal_mode'] ?? 'sandbox') === 'sandbox') {
+            $items[] = ['label' => 'PayPal', 'state' => 'disabled', 'detail' => 'Not configured.'];
+        } else {
+            $items[] = $this->requirement('PayPal client ID', $clientId);
+            $items[] = $this->requirement('PayPal secret', $secret);
+            $items[] = $this->requirement('PayPal webhook ID', $webhookId);
+        }
+
+        $items[] = ['label' => 'PayPal webhook URL', 'state' => 'ready', 'detail' => rtrim((string) config('app.url'), '/').route('billing.paypal.webhook', [], false)];
+
+        return $items;
     }
 
     /** @param array<string, mixed> $subscriptions

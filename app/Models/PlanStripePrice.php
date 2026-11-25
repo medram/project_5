@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/** @property string $stripe_price_id */
 #[Fillable(['plan_id', 'stripe_price_id', 'interval', 'currency', 'unit_amount', 'verified_at'])]
 class PlanStripePrice extends Model
 {

@@ -172,8 +172,8 @@ export default function Pricing({
                 </div>
 
                 <p className="text-center text-xs text-muted-foreground">
-                    Paid checkout opens only when Stripe is configured. No
-                    payment is simulated locally.
+                    Paid checkout is available when a payment provider is
+                    configured for the selected plan.
                 </p>
             </div>
         </>

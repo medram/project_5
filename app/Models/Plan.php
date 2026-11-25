@@ -45,6 +45,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'display_metadata',
     'stripe_monthly_price_id',
     'stripe_yearly_price_id',
+    'paypal_monthly_plan_id',
+    'paypal_yearly_plan_id',
     'is_active',
 ])]
 class Plan extends Model
@@ -83,6 +85,20 @@ class Plan extends Model
     public function stripePrices(): HasMany
     {
         return $this->hasMany(PlanStripePrice::class);
+    }
+
+    /** @return HasMany<PlanPayPalPrice, $this> */
+    public function paypalPrices(): HasMany
+    {
+        return $this->hasMany(PlanPayPalPrice::class);
+    }
+
+    public function paypalPlanIdFor(string $interval): ?string
+    {
+        $column = $interval === 'year' ? 'paypal_yearly_plan_id' : 'paypal_monthly_plan_id';
+        $id = $this->getAttribute($column);
+
+        return is_string($id) && $id !== '' ? $id : null;
     }
 
     public function stripePriceIdFor(string $interval): ?string

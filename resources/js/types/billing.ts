@@ -26,6 +26,10 @@ export type BillingPlan = {
         month: boolean;
         year: boolean;
     };
+    paypalCheckout: {
+        month: boolean;
+        year: boolean;
+    };
 };
 
 export type UsageMetric = {
@@ -36,6 +40,8 @@ export type UsageMetric = {
 };
 
 export type ProviderSubscription = {
+    provider: 'stripe' | 'paypal';
+    canCancel: boolean;
     status: string;
     price: string | null;
     interval: string | null;
@@ -56,6 +62,12 @@ export type BillingReadiness = {
     enabled: boolean;
     annualDisplay: boolean;
     checkoutReady: boolean;
+    paypalReady: boolean;
+    hasProviderSubscription: boolean;
+    pendingCheckout: {
+        provider: 'stripe' | 'paypal';
+        resumeUrl: string | null;
+    } | null;
     portalReady: boolean;
     missing: string[];
     promotionCodes: boolean;

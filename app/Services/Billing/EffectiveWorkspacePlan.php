@@ -3,6 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Models\BillingHealthRecord;
+use App\Models\PayPalSubscription;
 use App\Models\Plan;
 use App\Models\PlanStripePrice;
 use App\Models\Workspace;
@@ -17,7 +18,7 @@ use Laravel\Cashier\Subscription;
 final class EffectiveWorkspacePlan
 {
     /**
-     * @return array{plan: Plan, source: string, override: WorkspacePlanOverride|null, subscription: Subscription|null}
+     * @return array{plan: Plan, source: string, override: WorkspacePlanOverride|null, subscription: Subscription|PayPalSubscription|null}
      */
     public function for(Workspace $workspace): array
     {
@@ -53,6 +54,25 @@ final class EffectiveWorkspacePlan
             }
 
             $this->recordUnmappedPrice($workspace, $subscription);
+        }
+
+        $paypal = PayPalSubscription::query()
+            ->where('workspace_id', $workspace->id)
+            ->where('status', 'ACTIVE')
+            ->where(fn ($query) => $query
+                ->whereHas('price', fn ($price) => $price->where('unit_amount', 0))
+                ->orWhere(fn ($paid) => $paid->whereNotNull('last_paid_at')->where('next_billing_at', '>', now())))
+            ->with('price.plan')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($paypal !== null) {
+            return [
+                'plan' => $paypal->price->plan,
+                'source' => 'paypal',
+                'override' => null,
+                'subscription' => $paypal,
+            ];
         }
 
         return [

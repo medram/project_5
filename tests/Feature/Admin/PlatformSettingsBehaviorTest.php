@@ -131,7 +131,7 @@ class PlatformSettingsBehaviorTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('section.readiness.state', 'ready')
-                ->has('section.readiness.items', 6)
+                ->has('section.readiness.items', 8)
                 ->where('section.readiness.items.4.label', 'Stripe mode')
                 ->where('section.readiness.items.4.detail', 'Test mode')
                 ->where('section.readiness.items.5.label', 'Webhook URL')

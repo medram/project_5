@@ -33,7 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
         $middleware->preventRequestsDuringMaintenance(except: ['/up']);
-        $middleware->validateCsrfTokens(except: ['stripe/webhook']);
+        $middleware->validateCsrfTokens(except: ['stripe/webhook', 'paypal/webhook']);
         $middleware->api(prepend: [ApplyPlatformSettings::class]);
 
         $middleware->web(

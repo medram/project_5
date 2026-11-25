@@ -48,6 +48,12 @@ class Workspace extends Model
             ->orderByDesc('created_at');
     }
 
+    /** @return HasMany<PayPalSubscription, $this> */
+    public function paypalSubscriptions(): HasMany
+    {
+        return $this->hasMany(PayPalSubscription::class);
+    }
+
     /** @return HasMany<WorkspacePlanOverride, $this> */
     public function planOverrides(): HasMany
     {

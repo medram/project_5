@@ -354,6 +354,17 @@ class PlatformSettings
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('key');
+            if ($section === 'subscriptions') {
+                $current = $this->effectiveValues($section, [], $rows);
+                foreach (['paypal_mode', 'paypal_client_id'] as $key) {
+                    if (array_key_exists($key, $validated) && $validated[$key] !== $current[$key]
+                        && $this->hasLivePayPalSubscriptions()) {
+                        throw ValidationException::withMessages([
+                            'values.'.$key => 'Cancel existing PayPal subscriptions and checkouts before changing the PayPal account.',
+                        ]);
+                    }
+                }
+            }
             $this->definitions->assertCrossField(
                 $section,
                 $this->effectiveValues($section, $validated, $rows),
@@ -438,6 +449,9 @@ class PlatformSettings
 
             if (! $setting instanceof PlatformSetting || $this->decode($setting) === null) {
                 return;
+            }
+            if ($section === 'subscriptions' && $key === 'paypal_secret' && $this->hasLivePayPalSubscriptions()) {
+                throw ValidationException::withMessages(['key' => 'Cancel existing PayPal subscriptions and checkouts before removing this secret.']);
             }
 
             $setting->forceFill([
@@ -681,6 +695,10 @@ class PlatformSettings
             'cashier.webhook.secret' => $this->secret('subscriptions', 'stripe_webhook_secret'),
             'cashier.currency' => $subscriptions['currency'] ?? 'usd',
             'cashier.tax_policy_acknowledged' => (bool) ($subscriptions['tax_policy_acknowledged'] ?? false),
+            'services.paypal.mode' => $subscriptions['paypal_mode'] ?? 'sandbox',
+            'services.paypal.client_id' => $subscriptions['paypal_client_id'] ?? null,
+            'services.paypal.secret' => $this->secret('subscriptions', 'paypal_secret'),
+            'services.paypal.webhook_id' => $subscriptions['paypal_webhook_id'] ?? null,
             'linkpilot.billing.promotion_codes' => (bool) ($subscriptions['promotion_codes'] ?? false),
             'services.google.client_id' => $authentication['google_client_id'] ?? null,
             'services.google.client_secret' => $this->secret('authentication', 'google_client_secret'),
@@ -831,6 +849,14 @@ class PlatformSettings
         }
 
         return $effective;
+    }
+
+    private function hasLivePayPalSubscriptions(): bool
+    {
+        return Schema::hasTable('paypal_subscriptions')
+            && DB::table('paypal_subscriptions')
+                ->whereIn('status', ['CREATING', 'APPROVAL_PENDING', 'APPROVED', 'ACTIVE', 'SUSPENDED', 'PAYMENT_FAILED'])
+                ->exists();
     }
 
     private function lockSection(string $section, int $expectedVersion): PlatformSettingSection

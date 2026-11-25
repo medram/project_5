@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Billing;
 
 use App\Http\Controllers\Controller;
+use App\Models\PayPalSubscription;
 use App\Services\Billing\PlanCatalogPresenter;
 use App\Services\Billing\WorkspaceUsage;
 use App\Services\Workspaces\WorkspaceContext;
@@ -20,36 +21,42 @@ class CheckoutResultController extends Controller
 
     public function success(Request $request, WorkspaceContext $context): Response
     {
-        $workspace = $context->currentFor($request->user());
-        Gate::authorize('viewBilling', $workspace);
-        $effective = $this->usage->effectivePlanFor($workspace);
-
-        return Inertia::render('billing/checkout-result', [
-            'status' => 'success',
-            'processing' => $effective['source'] !== 'stripe',
-            'sessionReturned' => $request->filled('session_id'),
-            'effectivePlan' => $this->plans->data($effective['plan']),
-            'effectiveSource' => $effective['source'],
-            'provider' => $effective['subscription'] === null ? null : [
-                'status' => $effective['subscription']->stripe_status,
-                'endsAt' => $effective['subscription']->ends_at?->toISOString(),
-            ],
-        ]);
+        return $this->result($request, $context, 'stripe', false);
     }
 
     public function cancel(Request $request, WorkspaceContext $context): Response
     {
+        return $this->result($request, $context, 'stripe', true);
+    }
+
+    public function paypalSuccess(Request $request, WorkspaceContext $context): Response
+    {
+        return $this->result($request, $context, 'paypal', false);
+    }
+
+    public function paypalCancelled(Request $request, WorkspaceContext $context): Response
+    {
+        return $this->result($request, $context, 'paypal', true);
+    }
+
+    private function result(Request $request, WorkspaceContext $context, string $provider, bool $cancelled): Response
+    {
         $workspace = $context->currentFor($request->user());
         Gate::authorize('viewBilling', $workspace);
         $effective = $this->usage->effectivePlanFor($workspace);
+        $subscription = $effective['source'] === $provider ? $effective['subscription'] : null;
 
         return Inertia::render('billing/checkout-result', [
-            'status' => 'cancelled',
-            'processing' => false,
-            'sessionReturned' => false,
+            'status' => $cancelled ? 'cancelled' : 'success',
+            'checkoutProvider' => $provider,
+            'processing' => ! $cancelled && $effective['source'] !== $provider,
+            'sessionReturned' => $request->filled('session_id') || $request->filled('subscription_id') || $request->filled('token'),
             'effectivePlan' => $this->plans->data($effective['plan']),
             'effectiveSource' => $effective['source'],
-            'provider' => null,
+            'provider' => $subscription === null ? null : [
+                'status' => $subscription instanceof PayPalSubscription ? $subscription->status : $subscription->stripe_status,
+                'endsAt' => $subscription instanceof PayPalSubscription ? null : $subscription->ends_at?->toISOString(),
+            ],
         ]);
     }
 }

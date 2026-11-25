@@ -4,6 +4,7 @@ namespace App\Services\Billing;
 
 use App\Enums\PlanMetric;
 use App\Models\ContentMedia;
+use App\Models\PayPalSubscription;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\Workspace;
@@ -28,7 +29,7 @@ class WorkspaceUsage
     }
 
     /**
-     * @return array{plan: Plan, source: string, override: WorkspacePlanOverride|null, subscription: Subscription|null}
+     * @return array{plan: Plan, source: string, override: WorkspacePlanOverride|null, subscription: Subscription|PayPalSubscription|null}
      */
     public function effectivePlanFor(Workspace $workspace): array
     {

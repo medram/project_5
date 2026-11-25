@@ -274,7 +274,7 @@ export default function AdminInsightsIndex({
 
                     <div className="md:col-span-2 xl:col-span-1">
                         <DimensionPanel
-                            title="Cashier subscription states"
+                            title="Provider subscription states"
                             description="Stored provider states. Grace-period enterprise flows remain provider-owned."
                             rows={subscriptionRows}
                             visual="donut"

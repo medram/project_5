@@ -132,6 +132,36 @@ class AdminInsightsTest extends TestCase
                 ->where('insights.kAnonymityThreshold', 5));
     }
 
+    public function test_provider_revenue_includes_paid_paypal_subscriptions_but_not_unpaid_approvals(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $paid = User::factory()->create()->personalWorkspace()->sole();
+        $unpaid = User::factory()->create()->personalWorkspace()->sole();
+        $plan = Plan::query()->where('code', 'pro')->sole();
+        $price = DB::table('plan_paypal_prices')->insertGetId([
+            'plan_id' => $plan->id, 'paypal_plan_id' => 'P-ANNUAL', 'interval' => 'year',
+            'currency' => 'usd', 'unit_amount' => 34800, 'verified_at' => now(),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        foreach ([[$paid, now()], [$unpaid, null]] as [$workspace, $paidAt]) {
+            DB::table('paypal_subscriptions')->insert([
+                'workspace_id' => $workspace->id, 'plan_paypal_price_id' => $price,
+                'custom_id' => (string) Str::uuid(), 'paypal_subscription_id' => 'I-'.$workspace->id,
+                'status' => 'ACTIVE', 'last_paid_at' => $paidAt, 'next_billing_at' => now()->addMonth(),
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+
+        $this->withoutVite()->actingAs($admin)->get('/admin/insights?range=30')
+            ->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('insights.subscriptions.mrrCents', 2900)
+            ->where('insights.subscriptions.arrCents', 34800)
+            ->where('insights.subscriptions.mappedSubscriptions', 1)
+            ->where('insights.subscriptions.states', fn ($states) => collect($states)->contains(
+                fn ($state) => $state['state'] === 'PayPal: active' && $state['count'] === 2,
+            )));
+    }
+
     public function test_analytics_totals_are_aggregate_and_dimensions_collapse_low_cardinality_buckets(): void
     {
         $administrator = User::factory()->admin()->create();

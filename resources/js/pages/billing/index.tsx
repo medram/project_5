@@ -1,5 +1,17 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Check, CreditCard, ExternalLink } from 'lucide-react';
+import { useRef, useState } from 'react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +23,10 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { formatMoney } from '@/lib/money';
+import { checkout, portal } from '@/routes/billing';
+import { abandon } from '@/routes/billing/checkout';
+import { checkout as paypalCheckout, cancel as paypalCancel, refresh as paypalRefresh } from '@/routes/billing/paypal';
+import { update as updatePlan } from '@/routes/billing/plan';
 import type {
     BillingPageProps,
     BillingPlan,
@@ -53,15 +69,76 @@ export default function BillingIndex({
     canManageBilling,
     billing,
 }: BillingPageProps) {
+    const [processing, setProcessing] = useState(false);
+    const [cancelOpen, setCancelOpen] = useState(false);
+    const [abandonOpen, setAbandonOpen] = useState(false);
+    const errorRef = useRef<HTMLDivElement>(null);
+    const { errors } = usePage().props;
+    const billingErrors = Object.entries(errors);
+
+    function focusErrors() {
+        requestAnimationFrame(() => errorRef.current?.focus());
+    }
+
+    function startStripe(plan: string, interval: 'month' | 'year') {
+        router.get(checkout.url({ plan, interval }), {}, {
+            preserveScroll: true,
+            onStart: () => setProcessing(true),
+            onError: focusErrors,
+            onFinish: () => setProcessing(false),
+        });
+    }
+
+    function startPayPal(plan: string, interval: 'month' | 'year') {
+        router.post(paypalCheckout.url({ plan, interval }), {}, {
+            preserveScroll: true,
+            onStart: () => setProcessing(true),
+            onError: focusErrors,
+            onFinish: () => setProcessing(false),
+        });
+    }
+
+    function cancelPayPal() {
+        router.post(paypalCancel.url(), {}, {
+            preserveScroll: true,
+            onStart: () => setProcessing(true),
+            onSuccess: () => setCancelOpen(false),
+            onError: focusErrors,
+            onFinish: () => setProcessing(false),
+        });
+    }
+    function refreshPayPal() {
+        router.post(paypalRefresh.url(), {}, {
+            preserveScroll: true,
+            onStart: () => setProcessing(true),
+            onError: focusErrors,
+            onFinish: () => setProcessing(false),
+        });
+    }
+
+    function abandonCheckout() {
+        router.post(abandon.url(), {}, {
+            preserveScroll: true,
+            onStart: () => setProcessing(true),
+            onSuccess: () => setAbandonOpen(false),
+            onError: focusErrors,
+            onFinish: () => setProcessing(false),
+        });
+    }
+
+
     function selectFreePlan() {
         router.patch(
-            '/account-settings/billing/plan',
+            updatePlan.url(),
             { plan: 'free' },
-            { preserveScroll: true },
+            { preserveScroll: true, onError: focusErrors },
         );
     }
 
-    const providerManaged = effectiveSource === 'stripe';
+    const providerManaged = effectiveSource === 'stripe' || effectiveSource === 'paypal';
+    const subscriptionMessage = providerSubscription?.provider === 'paypal'
+        ? 'Cancel the PayPal subscription before changing plans'
+        : 'Manage the paid subscription in the Stripe portal before changing plans';
 
     return (
         <>
@@ -100,7 +177,7 @@ export default function BillingIndex({
                             {providerSubscription && (
                                 <div className="rounded-lg border p-3 text-sm">
                                     <p className="font-medium">
-                                        Stripe status:{' '}
+                                        {providerSubscription.provider === 'paypal' ? 'PayPal' : 'Stripe'} status:{' '}
                                         {providerSubscription.status}
                                     </p>
                                     {providerSubscription.interval && (
@@ -133,22 +210,93 @@ export default function BillingIndex({
                                 </p>
                             )}
 
-                            {billing.portalReady && canManageBilling && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() =>
-                                        router.get('/billing/portal')
-                                    }
-                                >
+                            {billing.portalReady && canManageBilling && providerSubscription?.provider === 'stripe' && (
+                                <Button type="button" variant="outline" className="max-sm:min-h-11" onClick={() => router.get(portal.url())}>
                                     <ExternalLink data-icon="inline-start" />
                                     Open Stripe billing portal
                                 </Button>
                             )}
+                            {canManageBilling && providerSubscription?.provider === 'paypal' && !billing.pendingCheckout && (
+                                <Button type="button" variant="outline" className="max-sm:min-h-11" disabled={processing} onClick={refreshPayPal}>
+                                    Refresh PayPal status
+                                </Button>
+                            )}
+                            {canManageBilling && providerSubscription?.provider === 'paypal' && providerSubscription.canCancel && (
+                                <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+                                    <AlertDialogTrigger asChild>
+                                        <Button type="button" variant="outline" className="max-sm:min-h-11" disabled={processing}>Cancel PayPal subscription now</Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Cancel PayPal subscription?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Cancellation takes effect immediately. Your paid subscription access will end once cancellation is confirmed.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        {billingErrors.length > 0 && <div ref={errorRef} role="alert" tabIndex={-1} className="text-sm text-destructive">{billingErrors.map(([key, message]) => <p key={key}>{message}</p>)}</div>}
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel disabled={processing}>Keep subscription</AlertDialogCancel>
+                                            <AlertDialogAction disabled={processing} onClick={(event) => { event.preventDefault(); cancelPayPal(); }}>
+                                                {processing ? 'Cancelling…' : 'Cancel subscription'}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+                            {billingErrors.length > 0 && !cancelOpen && !abandonOpen && (
+                                <div ref={errorRef} role="alert" tabIndex={-1} className="text-sm text-destructive">
+                                    {billingErrors.map(([key, message]) => <p key={key}>{message}</p>)}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
+                    {billing.pendingCheckout && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>A checkout is in progress</CardTitle>
+                                <CardDescription>
+                                    Finish or cancel your {billing.pendingCheckout.provider === 'paypal' ? 'PayPal' : 'Stripe'} checkout before starting another.
+                                </CardDescription>
+                            </CardHeader>
+                            {canManageBilling && (
+                                <CardContent className="flex flex-wrap gap-2">
+                                    {billing.pendingCheckout.resumeUrl && (
+                                        <Button asChild variant="outline" className="max-sm:min-h-11">
+                                            <a href={billing.pendingCheckout.resumeUrl}>Resume checkout</a>
+                                        </Button>
+                                    )}
+                                    {billing.pendingCheckout.provider === 'paypal' && (
+                                        <Button type="button" variant="outline" className="max-sm:min-h-11" disabled={processing} onClick={refreshPayPal}>
+                                            Refresh PayPal status
+                                        </Button>
+                                    )}
+                                    <AlertDialog open={abandonOpen} onOpenChange={setAbandonOpen}>
+                                        <AlertDialogTrigger asChild>
+                                            <Button type="button" variant="outline" className="max-sm:min-h-11" disabled={processing}>Cancel checkout</Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Cancel checkout?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This will cancel the checkout in progress. You can start a new checkout afterwards.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            {billingErrors.length > 0 && <div ref={errorRef} role="alert" tabIndex={-1} className="text-sm text-destructive">{billingErrors.map(([key, message]) => <p key={key}>{message}</p>)}</div>}
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel disabled={processing}>Keep checkout</AlertDialogCancel>
+                                                <AlertDialogAction disabled={processing} onClick={(event) => { event.preventDefault(); abandonCheckout(); }}>
+                                                    {processing ? 'Cancelling…' : 'Cancel checkout'}
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </CardContent>
+                            )}
+                        </Card>
+                    )}
 
-                    {!billing.checkoutReady && canManageBilling && (
+
+                    {!billing.checkoutReady && !billing.paypalReady && canManageBilling && (
                         <div className="rounded-xl border bg-card px-5 py-4">
                             <p className="text-sm">
                                 Checkout is not available yet
@@ -253,10 +401,11 @@ export default function BillingIndex({
                                             </span>
                                         ) : plan.code === 'free' ? (
                                             canManageBilling &&
-                                            !providerManaged ? (
+                                            !billing.hasProviderSubscription && !billing.pendingCheckout ? (
                                                 <Button
                                                     type="button"
                                                     variant="outline"
+                                                    className="max-sm:min-h-11"
                                                     onClick={selectFreePlan}
                                                 >
                                                     <Check data-icon="inline-start" />
@@ -264,60 +413,53 @@ export default function BillingIndex({
                                                 </Button>
                                             ) : (
                                                 <span className="text-sm text-muted-foreground">
-                                                    {providerManaged
-                                                        ? 'Manage the paid subscription in the portal'
-                                                        : 'Only workspace owners can change plans'}
+                                                    {billing.pendingCheckout
+                                                        ? 'Finish or cancel the checkout in progress'
+                                                        : billing.hasProviderSubscription
+                                                          ? subscriptionMessage
+                                                          : 'Only workspace owners can change plans'}
                                                 </span>
                                             )
                                         ) : canManageBilling &&
                                           billing.enabled &&
-                                          billing.checkoutReady &&
-                                          !providerManaged ? (
+                                          !billing.hasProviderSubscription && !billing.pendingCheckout ? (
                                             <div className="flex flex-wrap gap-2">
-                                                {plan.checkout.month && (
-                                                    <Button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            router.get(
-                                                                `/billing/checkout/${plan.code}/month`,
-                                                            )
-                                                        }
-                                                    >
+                                                {billing.checkoutReady && plan.checkout.month && (
+                                                    <Button type="button" className="max-sm:min-h-11" disabled={processing} onClick={() => startStripe(plan.code, 'month')}>
                                                         <CreditCard data-icon="inline-start" />
-                                                        Choose monthly
+                                                        Card monthly
                                                     </Button>
                                                 )}
-                                                {billing.annualDisplay &&
-                                                    plan.checkout.year && (
-                                                        <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            onClick={() =>
-                                                                router.get(
-                                                                    `/billing/checkout/${plan.code}/year`,
-                                                                )
-                                                            }
-                                                        >
-                                                            <CreditCard data-icon="inline-start" />
-                                                            Choose yearly
-                                                        </Button>
-                                                    )}
-                                                {!plan.checkout.month &&
-                                                    (!billing.annualDisplay ||
-                                                        !plan.checkout
-                                                            .year) && (
-                                                        <span className="text-sm text-muted-foreground">
-                                                            Price unavailable
-                                                        </span>
-                                                    )}
+                                                {billing.annualDisplay && billing.checkoutReady && plan.checkout.year && (
+                                                    <Button type="button" variant="outline" className="max-sm:min-h-11" disabled={processing} onClick={() => startStripe(plan.code, 'year')}>
+                                                        <CreditCard data-icon="inline-start" />
+                                                        Card yearly
+                                                    </Button>
+                                                )}
+                                                {billing.paypalReady && plan.paypalCheckout.month && (
+                                                    <Button type="button" variant="outline" className="max-sm:min-h-11" disabled={processing} onClick={() => startPayPal(plan.code, 'month')}>
+                                                        {processing ? 'Opening checkout…' : 'PayPal monthly'}
+                                                    </Button>
+                                                )}
+                                                {billing.annualDisplay && billing.paypalReady && plan.paypalCheckout.year && (
+                                                    <Button type="button" variant="outline" className="max-sm:min-h-11" disabled={processing} onClick={() => startPayPal(plan.code, 'year')}>
+                                                        {processing ? 'Opening checkout…' : 'PayPal yearly'}
+                                                    </Button>
+                                                )}
+                                                {!((billing.checkoutReady && (plan.checkout.month || (billing.annualDisplay && plan.checkout.year))) ||
+                                                    (billing.paypalReady && (plan.paypalCheckout.month || (billing.annualDisplay && plan.paypalCheckout.year)))) && (
+                                                    <span className="text-sm text-muted-foreground">Price unavailable</span>
+                                                )}
                                             </div>
                                         ) : (
                                             <span className="text-sm text-muted-foreground">
-                                                {providerManaged
-                                                    ? 'Manage the paid subscription in the portal'
-                                                    : canManageBilling
-                                                      ? 'Checkout is not configured'
-                                                      : 'Only workspace owners can change plans'}
+                                                {billing.pendingCheckout
+                                                    ? 'Finish or cancel the checkout in progress'
+                                                    : billing.hasProviderSubscription
+                                                      ? subscriptionMessage
+                                                      : canManageBilling
+                                                        ? 'Checkout is not configured'
+                                                        : 'Only workspace owners can change plans'}
                                             </span>
                                         )}
                                     </CardFooter>

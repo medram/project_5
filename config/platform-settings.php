@@ -168,8 +168,8 @@ return [
             ],
         ],
         'subscriptions' => [
-            'label' => 'Subscriptions',
-            'description' => 'Billing availability, checkout policy, and encrypted Stripe credentials.',
+            'label' => 'Payment gateways',
+            'description' => 'Billing availability, checkout policy, and encrypted payment provider credentials.',
             'category' => 'revenue',
             'groups' => [
                 'availability' => [
@@ -187,6 +187,11 @@ return [
                     'description' => 'Publishable key and encrypted server credentials.',
                     'fields' => ['stripe_publishable_key', 'stripe_secret', 'stripe_webhook_secret'],
                 ],
+                'paypal' => [
+                    'label' => 'PayPal',
+                    'description' => 'PayPal application credentials and webhook ID.',
+                    'fields' => ['paypal_mode', 'paypal_client_id', 'paypal_secret', 'paypal_webhook_id'],
+                ],
             ],
             'fields' => [
                 'billing_enabled' => ['label' => 'Billing enabled', 'type' => 'bool', 'default' => true, 'rules' => ['boolean']],
@@ -196,6 +201,10 @@ return [
                 'stripe_publishable_key' => ['label' => 'Publishable key', 'type' => 'string', 'default' => '', 'rules' => ['nullable', 'string', 'max:255', 'regex:/\Apk_(?:test|live)_[A-Za-z0-9_]+\z/']],
                 'stripe_secret' => ['label' => 'Secret key', 'type' => 'string', 'default' => null, 'secret' => true, 'autocomplete' => 'new-password', 'rules' => ['nullable', 'string', 'max:255', 'regex:/\Ask_(?:test|live)_[A-Za-z0-9_]+\z/']],
                 'stripe_webhook_secret' => ['label' => 'Webhook signing secret', 'type' => 'string', 'default' => null, 'secret' => true, 'autocomplete' => 'new-password', 'rules' => ['nullable', 'string', 'max:255', 'regex:/\Awhsec_[A-Za-z0-9_]+\z/']],
+                'paypal_mode' => ['label' => 'Mode', 'type' => 'enum', 'default' => 'sandbox', 'options' => ['sandbox' => 'Sandbox', 'live' => 'Live'], 'rules' => ['required', 'in:sandbox,live']],
+                'paypal_client_id' => ['label' => 'Client ID', 'type' => 'string', 'default' => '', 'rules' => ['nullable', 'string', 'max:255']],
+                'paypal_secret' => ['label' => 'Secret', 'type' => 'string', 'default' => null, 'secret' => true, 'autocomplete' => 'new-password', 'rules' => ['nullable', 'string', 'max:255']],
+                'paypal_webhook_id' => ['label' => 'Webhook ID', 'type' => 'string', 'default' => '', 'rules' => ['nullable', 'string', 'max:255']],
                 'currency' => ['label' => 'Currency', 'type' => 'string', 'default' => 'usd', 'rules' => ['required', 'string', 'regex:/\A[a-z]{3}\z/']],
                 'tax_policy_acknowledged' => ['label' => 'Tax policy acknowledged', 'type' => 'bool', 'control' => 'checkbox', 'default' => false, 'rules' => ['boolean']],
             ],

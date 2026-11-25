@@ -4,19 +4,20 @@ namespace App\Http\Controllers\Billing;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Services\Billing\PaymentCheckout;
 use App\Services\Billing\StripeReadiness;
-use App\Services\Billing\WorkspaceUsage;
 use App\Services\Settings\PlatformSettings;
 use App\Services\Workspaces\WorkspaceContext;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 
 class CheckoutController extends Controller
 {
     public function __construct(
-        private readonly WorkspaceUsage $usage,
+        private readonly PaymentCheckout $checkout,
         private readonly StripeReadiness $readiness,
     ) {}
 
@@ -25,7 +26,7 @@ class CheckoutController extends Controller
         WorkspaceContext $context,
         Plan $plan,
         string $interval,
-    ): RedirectResponse {
+    ): Response {
         $workspace = $context->currentFor($request->user());
         Gate::authorize('manageBilling', $workspace);
 
@@ -48,13 +49,7 @@ class CheckoutController extends Controller
             ]);
         }
 
-        if ($this->usage->effectivePlanFor($workspace)['source'] === 'stripe') {
-            throw ValidationException::withMessages([
-                'subscription' => 'Manage the active Stripe subscription in the billing portal before starting another checkout.',
-            ]);
-        }
-
-        $checkout = $workspace->newSubscription('default', $priceId)->checkout([
+        $url = $this->checkout->startStripe($workspace, $plan, $interval, $priceId, [
             'success_url' => route('billing.checkout.success').'?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => route('billing.checkout.cancel'),
             'allow_promotion_codes' => (bool) config('linkpilot.billing.promotion_codes'),
@@ -65,6 +60,6 @@ class CheckoutController extends Controller
             ],
         ]);
 
-        return $checkout->redirect();
+        return Inertia::location($url);
     }
 }

@@ -18,6 +18,10 @@ function plan(overrides: Partial<AdminPlanRecord> = {}): AdminPlanRecord {
         deleteBlockedReason: null,
         stripeMonthlyPriceId: 'price_month',
         stripeYearlyPriceId: 'price_year',
+        paypalMonthlyPlanId: null,
+        paypalYearlyPlanId: null,
+        paypalPrices: [],
+        paypalCheckout: { month: false, year: false },
         prices: [
             {
                 id: 'price_month',

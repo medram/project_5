@@ -41,6 +41,13 @@ return [
         'redirect' => '/auth/google/callback',
     ],
 
+    'paypal' => [
+        'mode' => 'sandbox',
+        'client_id' => null,
+        'secret' => null,
+        'webhook_id' => null,
+    ],
+
     'linkpilot' => [
         'analytics' => [
             'privacy_url' => null,
