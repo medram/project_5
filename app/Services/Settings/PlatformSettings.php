@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use Laravel\Socialite\Contracts\Factory as SocialiteFactory;
@@ -31,13 +32,14 @@ class PlatformSettings
     ) {}
 
     /**
-     * @return list<array{key: string, label: string, description: string, category: string}>
+     * @return list<array{key: string, routeKey: string, label: string, description: string, category: string}>
      */
     public function navigation(): array
     {
         return array_map(
             fn (string $key, array $section): array => [
                 'key' => $key,
+                'routeKey' => $this->definitions->routeKeyForSection($key),
                 'label' => (string) ($section['label'] ?? $key),
                 'description' => (string) ($section['description'] ?? ''),
                 'category' => (string) ($section['category'] ?? 'platform'),
@@ -114,6 +116,7 @@ class PlatformSettings
 
         return [
             'key' => $section,
+            'routeKey' => $this->definitions->routeKeyForSection($section),
             'label' => (string) ($definition['label'] ?? $section),
             'description' => (string) ($definition['description'] ?? ''),
             'category' => (string) ($definition['category'] ?? 'platform'),
@@ -716,7 +719,48 @@ class PlatformSettings
             'linkpilot.api.rate_limit_per_minute' => (int) ($system['api_rate_limit_per_minute'] ?? 60),
         ]);
 
-        if ($this->hasStored('uploading', 'disk') || ! is_string(config('services.linkpilot.media.disk')) || trim((string) config('services.linkpilot.media.disk')) === '') {
+        $storedUploading = $this->storedKeys('uploading');
+        $s3Overrides = [];
+
+        foreach ([
+            's3_access_key_id' => 'key',
+            's3_region' => 'region',
+            's3_bucket' => 'bucket',
+            's3_endpoint' => 'endpoint',
+        ] as $setting => $configKey) {
+            if (! isset($storedUploading[$setting])) {
+                continue;
+            }
+
+            $value = $uploading[$setting] ?? null;
+
+            if (is_string($value) && trim($value) !== '') {
+                $s3Overrides[$configKey] = $value;
+            }
+        }
+
+        if (isset($storedUploading['s3_secret_access_key'])) {
+            $secret = $this->secret('uploading', 's3_secret_access_key');
+
+            if ($secret !== null) {
+                $s3Overrides['secret'] = $secret;
+            }
+        }
+
+        if (isset($storedUploading['s3_use_path_style_endpoint'])) {
+            $s3Overrides['use_path_style_endpoint'] = (bool) ($uploading['s3_use_path_style_endpoint'] ?? false);
+        }
+
+        if ($s3Overrides !== []) {
+            $s3 = config('filesystems.disks.s3');
+            config(['filesystems.disks.s3' => array_merge(
+                is_array($s3) ? $s3 : ['driver' => 's3', 'throw' => false, 'report' => false],
+                $s3Overrides,
+            )]);
+            Storage::forgetDisk('s3');
+        }
+
+        if (isset($storedUploading['disk']) || ! is_string(config('services.linkpilot.media.disk')) || trim((string) config('services.linkpilot.media.disk')) === '') {
             config(['services.linkpilot.media.disk' => $uploading['disk'] ?? null]);
         }
 
@@ -794,6 +838,25 @@ class PlatformSettings
             ->get()
             ->keyBy('key')
             ->all();
+    }
+
+    /**
+     * @return array<string, true>
+     */
+    private function storedKeys(string $section): array
+    {
+        if (! Schema::hasTable('platform_settings')) {
+            return [];
+        }
+
+        return array_fill_keys(
+            PlatformSetting::query()
+                ->where('section', $section)
+                ->pluck('key')
+                ->map(fn (mixed $key): string => (string) $key)
+                ->all(),
+            true,
+        );
     }
 
     /**

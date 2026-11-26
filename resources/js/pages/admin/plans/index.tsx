@@ -161,7 +161,7 @@ export default function AdminPlansIndex({
                                     </span>
                                     <Link
                                         href={
-                                            settings.show('subscriptions').url
+                                            settings.show('payment-gateways').url
                                         }
                                         className="inline-flex items-center gap-0.5 rounded-sm font-medium text-foreground underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
                                     >

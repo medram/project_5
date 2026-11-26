@@ -240,6 +240,116 @@ class AdminSettingsTest extends TestCase
         $this->assertSame('local', app(PlatformSettings::class)->resolved()['uploading']['disk']);
     }
 
+    public function test_uploading_s3_requires_complete_credentials(): void
+    {
+        config([
+            'filesystems.disks.s3.key' => null,
+            'filesystems.disks.s3.secret' => null,
+            'filesystems.disks.s3.region' => null,
+            'filesystems.disks.s3.bucket' => null,
+        ]);
+        $administrator = User::factory()->admin()->create();
+
+        $this->actingAs($administrator)
+            ->patch('/admin/settings/uploading', [
+                'version' => 0,
+                'values' => ['disk' => 's3'],
+            ])
+            ->assertSessionHasErrors([
+                'values.s3_access_key_id',
+                'values.s3_secret_access_key',
+                'values.s3_region',
+                'values.s3_bucket',
+            ]);
+
+        $this->assertSame('local', app(PlatformSettings::class)->resolved()['uploading']['disk']);
+    }
+
+    public function test_uploading_s3_accepts_deployment_credentials_when_fields_are_blank(): void
+    {
+        config([
+            'filesystems.disks.s3.key' => 'env-key',
+            'filesystems.disks.s3.secret' => 'env-secret',
+            'filesystems.disks.s3.region' => 'us-east-1',
+            'filesystems.disks.s3.bucket' => 'env-bucket',
+        ]);
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+
+        $this->actingAs($administrator)
+            ->patch('/admin/settings/uploading', [
+                'version' => 0,
+                'values' => ['disk' => 's3'],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertSame('s3', $settings->resolved()['uploading']['disk']);
+    }
+
+    public function test_uploading_stores_s3_credentials_and_applies_them_at_runtime(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+
+        $this->actingAs($administrator)
+            ->patch('/admin/settings/uploading', [
+                'version' => 0,
+                'values' => [
+                    'disk' => 's3',
+                    's3_access_key_id' => 'AKIAEXAMPLE',
+                    's3_secret_access_key' => 'secret-example',
+                    's3_region' => 'eu-central-1',
+                    's3_bucket' => 'linkpilot-media',
+                    's3_endpoint' => 'https://s3.example.test',
+                    's3_use_path_style_endpoint' => true,
+                ],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $resolved = $settings->resolved()['uploading'];
+        $this->assertSame('s3', $resolved['disk']);
+        $this->assertSame('AKIAEXAMPLE', $resolved['s3_access_key_id']);
+        $this->assertSame('linkpilot-media', $resolved['s3_bucket']);
+        $this->assertArrayNotHasKey('s3_secret_access_key', $resolved);
+        $this->assertSame('secret-example', $settings->secret('uploading', 's3_secret_access_key'));
+
+        $settings->applyRuntime();
+
+        $this->assertSame('AKIAEXAMPLE', config('filesystems.disks.s3.key'));
+        $this->assertSame('secret-example', config('filesystems.disks.s3.secret'));
+        $this->assertSame('eu-central-1', config('filesystems.disks.s3.region'));
+        $this->assertSame('linkpilot-media', config('filesystems.disks.s3.bucket'));
+        $this->assertSame('https://s3.example.test', config('filesystems.disks.s3.endpoint'));
+        $this->assertTrue(config('filesystems.disks.s3.use_path_style_endpoint'));
+        $this->assertSame('s3', config('services.linkpilot.media.disk'));
+    }
+
+    public function test_partial_s3_updates_reuse_the_stored_secret(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'uploading', [
+            'disk' => 's3',
+            's3_access_key_id' => 'AKIAEXAMPLE',
+            's3_secret_access_key' => 'secret-example',
+            's3_region' => 'us-east-1',
+            's3_bucket' => 'linkpilot-media',
+        ], $settings->version('uploading'));
+
+        $this->actingAs($administrator)
+            ->patch('/admin/settings/uploading', [
+                'version' => 1,
+                'values' => ['s3_bucket' => 'linkpilot-archive'],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertSame('linkpilot-archive', $settings->resolved()['uploading']['s3_bucket']);
+        $this->assertSame('secret-example', $settings->secret('uploading', 's3_secret_access_key'));
+    }
+
     public function test_partial_smtp_updates_are_checked_against_stored_values(): void
     {
         $administrator = User::factory()->admin()->create();

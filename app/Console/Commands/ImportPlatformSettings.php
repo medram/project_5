@@ -266,6 +266,12 @@ class ImportPlatformSettings extends Command
         $this->add($values, 'analytics', 'visitor_hash_version', $this->environment('ANALYTICS_HASH_KEY_VERSION'));
         $this->add($values, 'analytics', 'retention_days', $this->integer('ANALYTICS_RETENTION_DAYS'));
         $this->add($values, 'uploading', 'disk', $this->environment('LINKPILOT_MEDIA_DISK'));
+        $this->add($values, 'uploading', 's3_access_key_id', $this->environment('AWS_ACCESS_KEY_ID'));
+        $this->add($values, 'uploading', 's3_secret_access_key', $this->environment('AWS_SECRET_ACCESS_KEY'));
+        $this->add($values, 'uploading', 's3_region', $this->environment('AWS_DEFAULT_REGION'));
+        $this->add($values, 'uploading', 's3_bucket', $this->environment('AWS_BUCKET'));
+        $this->add($values, 'uploading', 's3_endpoint', $this->environment('AWS_ENDPOINT'));
+        $this->add($values, 'uploading', 's3_use_path_style_endpoint', $this->boolean('AWS_USE_PATH_STYLE_ENDPOINT'));
         $this->add($values, 'uploading', 'retention_days', $this->integer('CONTENT_MEDIA_RETENTION_DAYS'));
         $this->add($values, 'system', 'api_rate_limit_per_minute', $this->integer('API_RATE_LIMIT_PER_MINUTE'));
         $this->add($values, 'system', 'webhook_retry_delays', $this->integerList('WEBHOOK_RETRY_DELAYS'));

@@ -168,6 +168,7 @@ return [
             ],
         ],
         'subscriptions' => [
+            'route_key' => 'payment-gateways',
             'label' => 'Payment gateways',
             'description' => 'Billing availability, checkout policy, and encrypted payment provider credentials.',
             'category' => 'revenue',
@@ -264,13 +265,18 @@ return [
         ],
         'uploading' => [
             'label' => 'Uploading',
-            'description' => 'Configured disk, hard-capped sizes, and retention. MIME types remain a code allowlist.',
+            'description' => 'Storage destination, S3 credentials, hard-capped sizes, and retention. MIME types remain a code allowlist.',
             'category' => 'product',
             'groups' => [
                 'storage' => [
                     'label' => 'Storage',
                     'description' => 'Destination for newly uploaded private media.',
                     'fields' => ['disk'],
+                ],
+                's3' => [
+                    'label' => 'S3 storage',
+                    'description' => 'Credentials for the s3 disk. Empty fields fall back to the deployment environment.',
+                    'fields' => ['s3_access_key_id', 's3_secret_access_key', 's3_region', 's3_bucket', 's3_endpoint', 's3_use_path_style_endpoint'],
                 ],
                 'limits' => [
                     'label' => 'Upload limits',
@@ -285,6 +291,12 @@ return [
             ],
             'fields' => [
                 'disk' => ['label' => 'Storage disk', 'type' => 'string', 'control' => 'combobox', 'default' => 'local', 'help' => 'Applies to new uploads only; existing media keeps its recorded disk.', 'rules' => ['required', 'string', 'max:100']],
+                's3_access_key_id' => ['label' => 'Access key ID', 'type' => 'string', 'default' => '', 'visibleWhen' => ['disk' => 's3'], 'autocomplete' => 'off', 'help' => 'Falls back to AWS_ACCESS_KEY_ID when empty.', 'rules' => ['nullable', 'string', 'max:255']],
+                's3_secret_access_key' => ['label' => 'Secret access key', 'type' => 'string', 'default' => null, 'secret' => true, 'visibleWhen' => ['disk' => 's3'], 'autocomplete' => 'new-password', 'help' => 'Falls back to AWS_SECRET_ACCESS_KEY when not set.', 'rules' => ['nullable', 'string', 'max:1024']],
+                's3_region' => ['label' => 'Region', 'type' => 'string', 'default' => '', 'visibleWhen' => ['disk' => 's3'], 'placeholder' => 'us-east-1', 'help' => 'Required by AWS; use auto for Cloudflare R2.', 'rules' => ['nullable', 'string', 'max:64']],
+                's3_bucket' => ['label' => 'Bucket', 'type' => 'string', 'default' => '', 'visibleWhen' => ['disk' => 's3'], 'help' => 'Falls back to AWS_BUCKET when empty.', 'rules' => ['nullable', 'string', 'max:255']],
+                's3_endpoint' => ['label' => 'Endpoint', 'type' => 'url', 'default' => '', 'visibleWhen' => ['disk' => 's3'], 'placeholder' => 'https://s3.example.com', 'help' => 'Leave empty for AWS; set it for S3-compatible providers and MinIO.', 'rules' => ['nullable', 'url', 'max:255']],
+                's3_use_path_style_endpoint' => ['label' => 'Path-style endpoint', 'type' => 'bool', 'default' => false, 'visibleWhen' => ['disk' => 's3'], 'help' => 'Enable for MinIO and providers that require path-style requests.', 'rules' => ['boolean']],
                 'max_image_mb' => ['label' => 'Maximum image MB', 'type' => 'int', 'default' => 5, 'rules' => ['required', 'integer', 'between:1,5']],
                 'max_file_mb' => ['label' => 'Maximum PDF MB', 'type' => 'int', 'default' => 25, 'rules' => ['required', 'integer', 'between:1,25']],
                 'retention_days' => ['label' => 'Retention days', 'type' => 'int', 'default' => 365, 'rules' => ['required', 'integer', 'between:1,3650']],

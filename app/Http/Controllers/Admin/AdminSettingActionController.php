@@ -11,8 +11,11 @@ use App\Services\Settings\SettingDefinitions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Cashier\Cashier;
+use RuntimeException;
 use Throwable;
 
 class AdminSettingActionController extends Controller
@@ -70,9 +73,45 @@ class AdminSettingActionController extends Controller
         return back()->with('success', 'Stripe credentials were accepted.');
     }
 
-    public function clearSecret(Request $request, string $section, string $key): RedirectResponse
+    public function testStorage(Request $request): RedirectResponse
     {
-        abort_unless($this->definitions->isSecret($section, $key), 404);
+        $this->settings->applyRuntime();
+
+        $disk = $this->settings->hasStored('uploading', 'disk')
+            ? ($this->settings->resolved()['uploading']['disk'] ?? null)
+            : config('services.linkpilot.media.disk');
+
+        if (! is_string($disk) || ! is_array(config('filesystems.disks.'.$disk))) {
+            throw ValidationException::withMessages(['storage' => 'No storage disk is configured.']);
+        }
+
+        try {
+            $filesystem = Storage::disk($disk);
+            $path = 'healthcheck/'.Str::uuid()->toString().'.txt';
+
+            if (! $filesystem->put($path, 'LinkPilot storage check') || ! $filesystem->exists($path)) {
+                throw new RuntimeException('Storage check write failed.');
+            }
+
+            $filesystem->delete($path);
+        } catch (Throwable) {
+            $this->audit->record($request->user(), PlatformPermission::AdminSettingsManage, 'test_platform_settings_storage', null, null, ['outcome' => 'failure']);
+
+            throw ValidationException::withMessages([
+                'storage' => 'The saved storage configuration could not be written to.',
+            ]);
+        }
+
+        $this->audit->record($request->user(), PlatformPermission::AdminSettingsManage, 'test_platform_settings_storage', null, null, ['outcome' => 'success']);
+
+        return back()->with('success', 'Storage disk accepted a test write.');
+    }
+
+    public function clearSecret(Request $request, string $routeKey, string $key): RedirectResponse
+    {
+        $sectionKey = $this->definitions->sectionKeyForRoute($routeKey);
+        abort_if($sectionKey === null, 404);
+        abort_unless($this->definitions->isSecret($sectionKey, $key), 404);
 
         $validated = $request->validate([
             'version' => ['required', 'integer', 'min:0'],
@@ -80,18 +119,20 @@ class AdminSettingActionController extends Controller
         $actor = $request->user();
         abort_if($actor === null, 403);
 
-        $this->settings->clearSecret($actor, $section, $key, (int) $validated['version']);
+        $this->settings->clearSecret($actor, $sectionKey, $key, (int) $validated['version']);
 
         return back()->with('success', 'Stored secret removed.');
     }
 
     public function uploadAsset(
         Request $request,
-        string $section,
+        string $routeKey,
         string $key,
         ContentMediaStorage $storage,
     ): RedirectResponse {
-        abort_unless(($this->definitions->fields($section)[$key]['asset'] ?? false) === true, 404);
+        $sectionKey = $this->definitions->sectionKeyForRoute($routeKey);
+        abort_if($sectionKey === null, 404);
+        abort_unless(($this->definitions->fields($sectionKey)[$key]['asset'] ?? false) === true, 404);
 
         $validated = $request->validate([
             'version' => ['required', 'integer', 'min:0'],
@@ -101,12 +142,12 @@ class AdminSettingActionController extends Controller
         abort_if($actor === null, 403);
 
         $candidate = $storage->storePlatformAsset($validated['file'], $actor);
-        $previous = $this->settings->resolved()[$section][$key] ?? null;
+        $previous = $this->settings->resolved()[$sectionKey][$key] ?? null;
 
         try {
             $this->settings->updateAsset(
                 $actor,
-                $section,
+                $sectionKey,
                 $key,
                 $candidate->id,
                 (int) $validated['version'],

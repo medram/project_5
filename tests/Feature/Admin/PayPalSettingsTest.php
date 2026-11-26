@@ -19,17 +19,27 @@ class PayPalSettingsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_payment_gateway_settings_keep_the_existing_url_and_show_the_new_label(): void
+    public function test_payment_gateway_settings_use_the_new_route_and_keep_the_internal_key(): void
     {
         $this->withoutVite()->actingAs(User::factory()->admin()->create())
-            ->get('/admin/settings/subscriptions')
+            ->get('/admin/settings/payment-gateways')
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('section.key', 'subscriptions')
+                ->where('section.routeKey', 'payment-gateways')
                 ->where('section.label', 'Payment gateways')
                 ->where('navigation', fn ($items) => collect($items)->contains(
-                    fn ($item) => $item['key'] === 'subscriptions' && $item['label'] === 'Payment gateways',
+                    fn ($item) => $item['key'] === 'subscriptions'
+                        && $item['routeKey'] === 'payment-gateways'
+                        && $item['label'] === 'Payment gateways',
                 )));
+    }
+
+    public function test_the_old_payment_settings_route_is_not_an_alias(): void
+    {
+        $this->withoutVite()->actingAs(User::factory()->admin()->create())
+            ->get('/admin/settings/subscriptions')
+            ->assertNotFound();
     }
 
     public function test_paypal_settings_are_encrypted_redacted_and_applied_at_runtime(): void
@@ -37,7 +47,7 @@ class PayPalSettingsTest extends TestCase
         $admin = User::factory()->admin()->create();
         $settings = app(PlatformSettings::class);
 
-        $this->actingAs($admin)->patch('/admin/settings/subscriptions', [
+        $this->actingAs($admin)->patch('/admin/settings/payment-gateways', [
             'version' => 0,
             'values' => [
                 'paypal_mode' => 'live',
@@ -60,7 +70,7 @@ class PayPalSettingsTest extends TestCase
         $this->assertTrue($secret['configured']);
         $this->assertNull($secret['value']);
 
-        $this->withoutVite()->actingAs($admin)->get('/admin/settings/subscriptions')
+        $this->withoutVite()->actingAs($admin)->get('/admin/settings/payment-gateways')
             ->assertOk()->assertDontSee('paypal-private-secret');
 
         $settings->applyRuntime();
@@ -72,7 +82,7 @@ class PayPalSettingsTest extends TestCase
 
     public function test_paypal_mode_must_be_sandbox_or_live(): void
     {
-        $this->actingAs(User::factory()->admin()->create())->patch('/admin/settings/subscriptions', [
+        $this->actingAs(User::factory()->admin()->create())->patch('/admin/settings/payment-gateways', [
             'version' => 0,
             'values' => ['paypal_mode' => 'production'],
         ])->assertSessionHasErrors('values.paypal_mode');
@@ -99,13 +109,13 @@ class PayPalSettingsTest extends TestCase
             'status' => 'ACTIVE', 'last_paid_at' => now(), 'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        $this->actingAs($admin)->patch('/admin/settings/subscriptions', [
+        $this->actingAs($admin)->patch('/admin/settings/payment-gateways', [
             'version' => 1, 'values' => ['paypal_mode' => 'live'],
         ])->assertSessionHasErrors();
-        $this->patch('/admin/settings/subscriptions', [
+        $this->patch('/admin/settings/payment-gateways', [
             'version' => 1, 'values' => ['paypal_client_id' => 'client-two'],
         ])->assertSessionHasErrors();
-        $this->delete('/admin/settings/subscriptions/secrets/paypal_secret', ['version' => 1])
+        $this->delete('/admin/settings/payment-gateways/secrets/paypal_secret', ['version' => 1])
             ->assertSessionHasErrors();
         $this->assertSame('sandbox', $settings->resolved()['subscriptions']['paypal_mode']);
         $this->assertSame('client-one', $settings->resolved()['subscriptions']['paypal_client_id']);

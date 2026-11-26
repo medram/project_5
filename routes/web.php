@@ -602,9 +602,12 @@ Route::middleware(['auth', 'verified', 'active-account'])->group(function (): vo
         Route::post('settings/email/test', [AdminSettingActionController::class, 'testEmail'])
             ->middleware('platform:admin.settings.manage')
             ->name('settings.email.test');
-        Route::post('settings/subscriptions/test', [AdminSettingActionController::class, 'testStripe'])
+        Route::post('settings/payment-gateways/test', [AdminSettingActionController::class, 'testStripe'])
             ->middleware('platform:admin.settings.manage')
-            ->name('settings.subscriptions.test');
+            ->name('settings.payment-gateways.test');
+        Route::post('settings/uploading/test', [AdminSettingActionController::class, 'testStorage'])
+            ->middleware('platform:admin.settings.manage')
+            ->name('settings.uploading.test');
         Route::get('settings/{section}', [AdminSettingController::class, 'show'])
             ->middleware('platform:admin.settings.view')
             ->name('settings.show');

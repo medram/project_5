@@ -5,6 +5,7 @@ import {
     Check,
     ChevronsUpDown,
     CreditCard,
+    HardDrive,
     Mail,
     Plus,
     Copy,
@@ -13,10 +14,23 @@ import {
     Upload,
     X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+    type KeyboardEvent,
+    useEffect,
+    useId,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import SettingsLayout from '@/pages/admin/settings/layout';
-import { collectSettingsChanges, isSettingVisible } from '@/pages/admin/settings/settings-form';
-import type { FormValues, SettingValue } from '@/pages/admin/settings/settings-form';
+import {
+    collectSettingsChanges,
+    isSettingVisible,
+} from '@/pages/admin/settings/settings-form';
+import type {
+    FormValues,
+    SettingValue,
+} from '@/pages/admin/settings/settings-form';
 import { FormErrorSummary } from '@/components/forms/form-error-summary';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -70,6 +84,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
+import AdminSettingActionController from '@/actions/App/Http/Controllers/Admin/AdminSettingActionController';
 import settings from '@/routes/admin/settings';
 import type {
     AdminSettingField,
@@ -77,6 +92,43 @@ import type {
 } from '@/types/admin-settings';
 
 type OptionItem = { value: string; label: string; description?: string | null };
+type PaymentProvider = 'stripe' | 'paypal';
+type PaymentProviderGroup =
+    AdminSettingsPageProps['section']['groups'][number] & {
+        key: PaymentProvider;
+    };
+
+function isPaymentProvider(key: string): key is PaymentProvider {
+    return key === 'stripe' || key === 'paypal';
+}
+
+const paymentProviderMarks = {
+    stripe: (
+        <svg
+            aria-hidden="true"
+            className="size-4 shrink-0"
+            viewBox="0 0 24 24"
+        >
+            <path
+                fill="currentColor"
+                d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.305h.003z"
+            />
+        </svg>
+    ),
+    paypal: (
+        <svg
+            aria-hidden="true"
+            className="size-4 shrink-0"
+            viewBox="0 0 24 24"
+        >
+            <path
+                fill="currentColor"
+                d="M15.607 4.653H8.941L6.645 19.251H1.82L4.862 0h7.995c3.754 0 6.375 2.294 6.473 5.513-.648-.478-2.105-.86-3.722-.86m6.57 5.546c0 3.41-3.01 6.853-6.958 6.853h-2.493L11.595 24H6.74l1.845-11.538h3.592c4.208 0 7.346-3.634 7.153-6.949a5.24 5.24 0 0 1 2.848 4.686M9.653 5.546h6.408c.907 0 1.942.222 2.363.541-.195 2.741-2.655 5.483-6.441 5.483H8.714Z"
+            />
+        </svg>
+    ),
+};
+
 
 function initialValues(fields: AdminSettingField[]): FormValues {
     return Object.fromEntries(
@@ -139,22 +191,73 @@ export default function AdminSettingsSection({
         [section.key, section.version],
     );
     const [values, setValues] = useState<FormValues>(initial);
+    const [activePaymentProvider, setActivePaymentProvider] =
+        useState<PaymentProvider>('stripe');
+    const paymentTabsId = useId();
+    const paymentTabRefs = useRef<
+        Record<PaymentProvider, HTMLButtonElement | null>
+    >({
+        stripe: null,
+        paypal: null,
+    });
     const [processing, setProcessing] = useState(false);
     const [uploading, setUploading] = useState<string | null>(null);
     const page = usePage();
     const errors = page.props.errors ?? {};
+    const visibleGroups = section.groups
+        .map((group) => ({
+            ...group,
+            fields: group.fields.filter((field) =>
+                isSettingVisible(field, values),
+            ),
+        }))
+        .filter((group) => group.fields.length > 0);
+    const providerGroups: PaymentProviderGroup[] =
+        section.key === 'subscriptions'
+            ? visibleGroups.filter(
+                  (group): group is PaymentProviderGroup =>
+                      isPaymentProvider(group.key),
+              )
+            : [];
+    const sharedGroups =
+        section.key === 'subscriptions'
+            ? visibleGroups.filter((group) => !isPaymentProvider(group.key))
+            : visibleGroups;
     const requestErrorRef = useRef<HTMLDivElement>(null);
     const summaryRef = useRef<HTMLDivElement>(null);
     const saveBarRef = useRef<HTMLDivElement>(null);
-    const fieldErrors: Array<{ key: string; fieldKey: string; label: string; message: string; interactive: boolean }> = [];
+    const fieldErrors: Array<{
+        key: string;
+        fieldKey: string;
+        label: string;
+        message: string;
+        interactive: boolean;
+    }> = [];
     const requestErrors: Array<{ key: string; message: string }> = [];
     for (const [key, message] of Object.entries(errors)) {
         const match = /^values\.([^.]+)(?:\.\d+)?$/.exec(key);
-        const field = match ? fields.find((candidate) => candidate.key === match[1]) : undefined;
+        const field = match
+            ? fields.find((candidate) => candidate.key === match[1])
+            : undefined;
         if (field) {
-            fieldErrors.push({ key, fieldKey: field.key, label: field.label, message, interactive: isSettingVisible(field, values) });
-        } else if (!((section.key === 'email' && canManage && (key === 'recipient' || key === 'email')) ||
-            (section.key === 'subscriptions' && canManage && key === 'stripe'))) {
+            fieldErrors.push({
+                key,
+                fieldKey: field.key,
+                label: field.label,
+                message,
+                interactive: isSettingVisible(field, values),
+            });
+        } else if (
+            !(
+                (section.key === 'email' &&
+                    canManage &&
+                    (key === 'recipient' || key === 'email')) ||
+                (section.key === 'subscriptions' &&
+                    canManage &&
+                    key === 'stripe') ||
+                (section.key === 'uploading' && canManage && key === 'storage')
+            )
+        ) {
             requestErrors.push({ key, message });
         }
     }
@@ -166,12 +269,16 @@ export default function AdminSettingsSection({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [section.key, section.version]);
+    useEffect(() => {
+        setActivePaymentProvider('stripe');
+    }, [section.key]);
 
     const dirty = JSON.stringify(values) !== JSON.stringify(initial);
     const changes = collectSettingsChanges(fields, values, initial);
     const canSave = Object.keys(changes.visible).length > 0;
     const readiness = section.readiness;
-    const genericReadiness = readiness?.state === 'ready' &&
+    const genericReadiness =
+        readiness?.state === 'ready' &&
         readiness.items.length === 1 &&
         readiness.items[0].state === 'ready' &&
         readiness.items[0].label === 'Configuration' &&
@@ -209,8 +316,12 @@ export default function AdminSettingsSection({
         }
 
         const frame = requestAnimationFrame(() => {
-            const target = requestErrorRef.current ?? summaryRef.current ??
-                (errors.recipient ? document.getElementById('test-email-recipient') : null);
+            const target =
+                requestErrorRef.current ??
+                summaryRef.current ??
+                (errors.recipient
+                    ? document.getElementById('test-email-recipient')
+                    : null);
             target?.focus({ preventScroll: true });
             target?.scrollIntoView({ block: 'center', behavior: 'auto' });
         });
@@ -227,14 +338,16 @@ export default function AdminSettingsSection({
         }
         if (
             changes.hasHiddenChanges &&
-            !window.confirm('Save visible changes and discard unsaved changes in hidden fields?')
+            !window.confirm(
+                'Save visible changes and discard unsaved changes in hidden fields?',
+            )
         ) {
             return;
         }
 
         setProcessing(true);
         router.patch(
-            settings.update(section.key).url,
+            settings.update(section.routeKey).url,
             { version: section.version, values: changes.visible },
             {
                 preserveScroll: true,
@@ -246,15 +359,22 @@ export default function AdminSettingsSection({
     const clearSecret = (field: AdminSettingField) => {
         if (
             !window.confirm(
-                'Remove the stored ' + field.label.toLowerCase() + '?' +
-                    (dirty ? ' Any unsaved changes on this page will be discarded.' : ''),
+                'Remove the stored ' +
+                    field.label.toLowerCase() +
+                    '?' +
+                    (dirty
+                        ? ' Any unsaved changes on this page will be discarded.'
+                        : ''),
             )
         ) {
             return;
         }
 
         router.delete(
-            '/admin/settings/' + section.key + '/secrets/' + field.key,
+            AdminSettingActionController.clearSecret.url({
+                section: section.routeKey,
+                key: field.key,
+            }),
             {
                 data: { version: section.version },
                 preserveScroll: true,
@@ -263,12 +383,20 @@ export default function AdminSettingsSection({
     };
 
     const uploadAsset = (field: AdminSettingField, file: File) => {
-        if (dirty && !window.confirm('Upload this asset now? Any unsaved changes on this page will be discarded.')) {
+        if (
+            dirty &&
+            !window.confirm(
+                'Upload this asset now? Any unsaved changes on this page will be discarded.',
+            )
+        ) {
             return;
         }
         setUploading(field.key);
         router.post(
-            '/admin/settings/' + section.key + '/assets/' + field.key,
+            AdminSettingActionController.uploadAsset.url({
+                section: section.routeKey,
+                key: field.key,
+            }),
             { version: section.version, file },
             {
                 forceFormData: true,
@@ -278,6 +406,83 @@ export default function AdminSettingsSection({
         );
     };
 
+    const focusSetting = (fieldKey: string) => {
+        const target = document.getElementById('setting-' + fieldKey);
+        target?.focus({ preventScroll: true });
+        target?.scrollIntoView({ block: 'center', behavior: 'auto' });
+    };
+
+    const focusPaymentTab = (provider: PaymentProvider) => {
+        setActivePaymentProvider(provider);
+        paymentTabRefs.current[provider]?.focus();
+    };
+
+    const handlePaymentTabKeyDown = (
+        event: KeyboardEvent<HTMLButtonElement>,
+        provider: PaymentProvider,
+    ) => {
+        const currentIndex = providerGroups.findIndex(
+            (group) => group.key === provider,
+        );
+        if (currentIndex === -1) return;
+
+        let nextIndex: number;
+        switch (event.key) {
+            case 'ArrowRight':
+                nextIndex = (currentIndex + 1) % providerGroups.length;
+                break;
+            case 'ArrowLeft':
+                nextIndex =
+                    (currentIndex - 1 + providerGroups.length) %
+                    providerGroups.length;
+                break;
+            case 'Home':
+                nextIndex = 0;
+                break;
+            case 'End':
+                nextIndex = providerGroups.length - 1;
+                break;
+            default:
+                return;
+        }
+
+        event.preventDefault();
+        const nextProvider = providerGroups[nextIndex]?.key;
+        if (nextProvider) focusPaymentTab(nextProvider);
+    };
+
+    const renderGroup = (group: (typeof section.groups)[number]) => (
+        <Card key={group.key} className="min-w-0">
+            <CardHeader className="gap-1">
+                <CardTitle as="h3">{group.label}</CardTitle>
+                {group.description ? (
+                    <CardDescription>{group.description}</CardDescription>
+                ) : null}
+            </CardHeader>
+            <CardContent>
+                <FieldGroup className="grid min-w-0 gap-5 xl:grid-cols-2">
+                    {group.fields.map((field) => (
+                        <SettingControl
+                            key={field.key}
+                            field={field}
+                            value={values[field.key]}
+                            error={
+                                fieldErrors.find(
+                                    (entry) => entry.fieldKey === field.key,
+                                )?.message
+                            }
+                            disabled={!canManage}
+                            busy={uploading === field.key}
+                            onChange={(value) => setValue(field.key, value)}
+                            onClearSecret={() => clearSecret(field)}
+                            onUpload={(file) => uploadAsset(field, file)}
+                        />
+                    ))}
+                </FieldGroup>
+            </CardContent>
+        </Card>
+    );
+
     return (
         <>
             <Head title={section.label + ' settings'} />
@@ -286,20 +491,32 @@ export default function AdminSettingsSection({
                     className="flex min-w-0 flex-col gap-5 pb-24 [&_button]:scroll-mb-32 [&_input]:scroll-mb-32 [&_textarea]:scroll-mb-32"
                     onFocusCapture={(event) => {
                         const target = event.target;
-                        const visibleTarget = target instanceof HTMLInputElement && target.type === 'file'
-                            ? target.labels?.[0] ?? target
-                            : target;
+                        const visibleTarget =
+                            target instanceof HTMLInputElement &&
+                            target.type === 'file'
+                                ? (target.labels?.[0] ?? target)
+                                : target;
                         requestAnimationFrame(() => {
                             const bar = saveBarRef.current;
-                            if (document.activeElement === target && bar && !bar.contains(target) &&
-                                visibleTarget.getBoundingClientRect().bottom > bar.getBoundingClientRect().top - 8) {
-                                visibleTarget.scrollIntoView({ block: 'center', behavior: 'auto' });
+                            if (
+                                document.activeElement === target &&
+                                bar &&
+                                !bar.contains(target) &&
+                                visibleTarget.getBoundingClientRect().bottom >
+                                    bar.getBoundingClientRect().top - 8
+                            ) {
+                                visibleTarget.scrollIntoView({
+                                    block: 'center',
+                                    behavior: 'auto',
+                                });
                             }
                         });
                     }}
                 >
                     <div className="flex flex-col gap-1">
-                        <h2 className="text-lg font-semibold">{section.label}</h2>
+                        <h2 className="text-lg font-semibold">
+                            {section.label}
+                        </h2>
                         {section.description ? (
                             <p className="max-w-3xl text-sm text-muted-foreground">
                                 {section.description}
@@ -324,9 +541,11 @@ export default function AdminSettingsSection({
                                     ? 'destructive'
                                     : 'default'
                             }
-                            className={section.readiness.state === 'incomplete'
-                                ? 'border-danger/30 bg-danger-soft text-foreground *:data-[slot=alert-description]:text-foreground'
-                                : undefined}
+                            className={
+                                section.readiness.state === 'incomplete'
+                                    ? 'border-danger/30 bg-danger-soft text-foreground *:data-[slot=alert-description]:text-foreground'
+                                    : undefined
+                            }
                         >
                             <AlertTitle className="flex items-center gap-2">
                                 Provider readiness
@@ -353,11 +572,21 @@ export default function AdminSettingsSection({
                     ) : null}
 
                     {requestErrors.length > 0 ? (
-                        <Alert ref={requestErrorRef} tabIndex={-1} variant="destructive"
-                            className="border-danger/30 bg-danger-soft text-foreground outline-none *:data-[slot=alert-description]:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40">
-                            <AlertTitle>Could not complete the request</AlertTitle>
+                        <Alert
+                            ref={requestErrorRef}
+                            tabIndex={-1}
+                            variant="destructive"
+                            className="border-danger/30 bg-danger-soft text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40 *:data-[slot=alert-description]:text-foreground"
+                        >
+                            <AlertTitle>
+                                Could not complete the request
+                            </AlertTitle>
                             <AlertDescription>
-                                <ul>{requestErrors.map(({ key, message }) => <li key={key}>{message}</li>)}</ul>
+                                <ul>
+                                    {requestErrors.map(({ key, message }) => (
+                                        <li key={key}>{message}</li>
+                                    ))}
+                                </ul>
                             </AlertDescription>
                         </Alert>
                     ) : null}
@@ -367,68 +596,161 @@ export default function AdminSettingsSection({
                         entries={fieldErrors}
                         className="mx-0 mb-0"
                         onSelect={(key) => {
-                            const fieldKey = fieldErrors.find((entry) => entry.key === key)?.fieldKey;
-                            const target = fieldKey ? document.getElementById('setting-' + fieldKey) : null;
-                            target?.focus({ preventScroll: true });
-                            target?.scrollIntoView({ block: 'center', behavior: 'auto' });
+                            const fieldKey = fieldErrors.find(
+                                (entry) => entry.key === key,
+                            )?.fieldKey;
+                            if (!fieldKey) return;
+
+                            const provider = providerGroups.find((group) =>
+                                group.fields.some(
+                                    (field) => field.key === fieldKey,
+                                ),
+                            )?.key;
+                            if (provider && provider !== activePaymentProvider) {
+                                setActivePaymentProvider(provider);
+                                requestAnimationFrame(() =>
+                                    focusSetting(fieldKey),
+                                );
+                                return;
+                            }
+
+                            focusSetting(fieldKey);
                         }}
                     />
 
-                    {section.groups.map((group) => (
-                        <Card key={group.key} className="min-w-0">
-                            <CardHeader className="gap-1">
-                                <CardTitle as="h3">{group.label}</CardTitle>
-                                {group.description ? (
-                                    <CardDescription>
-                                        {group.description}
-                                    </CardDescription>
-                                ) : null}
-                            </CardHeader>
-                            <CardContent>
-                                <FieldGroup className="grid min-w-0 gap-5 xl:grid-cols-2">
-                                    {group.fields
-                                        .filter((field) => isSettingVisible(field, values))
-                                        .map((field) => (
-                                            <SettingControl
-                                                key={field.key}
-                                                field={field}
-                                                value={values[field.key]}
-                                                error={fieldErrors.find((entry) => entry.fieldKey === field.key)?.message}
-                                                disabled={!canManage}
-                                                busy={uploading === field.key}
-                                                onChange={(value) =>
-                                                    setValue(field.key, value)
-                                                }
-                                                onClearSecret={() =>
-                                                    clearSecret(field)
-                                                }
-                                                onUpload={(file) =>
-                                                    uploadAsset(field, file)
-                                                }
-                                            />
-                                        ))}
-                                </FieldGroup>
-                            </CardContent>
-                        </Card>
-                    ))}
+                    {sharedGroups.map(renderGroup)}
+
+                    {providerGroups.length > 0 ? (
+                        <div className="flex min-w-0 flex-col gap-3">
+                            <div
+                                role="tablist"
+                                aria-label="Payment provider"
+                                className="grid min-w-0 grid-cols-2 gap-1 rounded-2xl bg-surface-secondary p-1"
+                            >
+                                {providerGroups.map((group) => (
+                                    <button
+                                        key={group.key}
+                                        id={
+                                            paymentTabsId +
+                                            '-' +
+                                            group.key +
+                                            '-tab'
+                                        }
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={
+                                            activePaymentProvider === group.key
+                                        }
+                                        aria-controls={
+                                            paymentTabsId +
+                                            '-' +
+                                            group.key +
+                                            '-panel'
+                                        }
+                                        tabIndex={
+                                            activePaymentProvider === group.key
+                                                ? 0
+                                                : -1
+                                        }
+                                        ref={(element) => {
+                                            paymentTabRefs.current[group.key] =
+                                                element;
+                                        }}
+                                        onClick={() =>
+                                            setActivePaymentProvider(group.key)
+                                        }
+                                        onKeyDown={(event) =>
+                                            handlePaymentTabKeyDown(
+                                                event,
+                                                group.key,
+                                            )
+                                        }
+                                        className={cn(
+                                            'inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                            activePaymentProvider === group.key
+                                                ? 'bg-card text-foreground shadow-sm'
+                                                : 'text-muted-foreground hover:text-foreground',
+                                        )}
+                                    >
+                                        {paymentProviderMarks[group.key]}
+                                        <span>{group.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {errors.stripe ? (
+                                <Alert
+                                    variant="destructive"
+                                    className="border-danger/30 bg-danger-soft text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40 *:data-[slot=alert-description]:text-foreground"
+                                >
+                                    <AlertTitle>
+                                        Stripe connection test failed
+                                    </AlertTitle>
+                                    <AlertDescription>
+                                        {errors.stripe}
+                                    </AlertDescription>
+                                </Alert>
+                            ) : null}
+
+                            {providerGroups.map((group) => (
+                                <section
+                                    key={group.key}
+                                    id={
+                                        paymentTabsId +
+                                        '-' +
+                                        group.key +
+                                        '-panel'
+                                    }
+                                    role="tabpanel"
+                                    aria-labelledby={
+                                        paymentTabsId +
+                                        '-' +
+                                        group.key +
+                                        '-tab'
+                                    }
+                                    tabIndex={0}
+                                    hidden={
+                                        activePaymentProvider !== group.key
+                                    }
+                                    className="min-w-0 space-y-3"
+                                >
+                                    {renderGroup(group)}
+                                    {group.key === 'stripe' && canManage ? (
+                                        <TestStripePanel />
+                                    ) : null}
+                                </section>
+                            ))}
+                        </div>
+                    ) : null}
+
 
                     {section.key === 'authentication' ? (
                         <OAuthCallbackPanel />
                     ) : null}
                     {section.key === 'email' && canManage ? (
-                        <TestEmailPanel recipientError={errors.recipient} deliveryError={errors.email} />
+                        <TestEmailPanel
+                            recipientError={errors.recipient}
+                            deliveryError={errors.email}
+                        />
                     ) : null}
-                    {section.key === 'subscriptions' && canManage ? (
-                        <TestStripePanel error={errors.stripe} />
+                    {section.key === 'uploading' && canManage ? (
+                        <TestStoragePanel error={errors.storage} />
                     ) : null}
 
                     {canManage ? (
-                        <div ref={saveBarRef} className="sticky bottom-0 z-20 -mx-4 mt-1 border-t bg-background px-4 py-3 md:-mx-6 md:px-6">
+                        <div
+                            ref={saveBarRef}
+                            className="sticky bottom-0 z-20 -mx-4 mt-1 border-t bg-background px-4 py-3 md:-mx-6 md:px-6"
+                        >
                             <div className="flex flex-wrap items-center gap-3">
                                 <Button
                                     type="button"
                                     className="min-h-11 md:min-h-9"
-                                    disabled={!canSave || processing || Boolean(errors.version)}
+                                    disabled={
+                                        !canSave ||
+                                        processing ||
+                                        Boolean(errors.version)
+                                    }
                                     onClick={save}
                                 >
                                     {processing ? (
@@ -505,7 +827,13 @@ function OAuthCallbackPanel() {
     );
 }
 
-function TestEmailPanel({ recipientError, deliveryError }: { recipientError?: string; deliveryError?: string }) {
+function TestEmailPanel({
+    recipientError,
+    deliveryError,
+}: {
+    recipientError?: string;
+    deliveryError?: string;
+}) {
     const [recipient, setRecipient] = useState('');
 
     return (
@@ -530,10 +858,21 @@ function TestEmailPanel({ recipientError, deliveryError }: { recipientError?: st
                         autoComplete="email"
                         value={recipient}
                         aria-invalid={Boolean(recipientError)}
-                        aria-describedby={recipientError ? 'test-email-recipient-error' : undefined}
+                        aria-describedby={
+                            recipientError
+                                ? 'test-email-recipient-error'
+                                : undefined
+                        }
                         onChange={(event) => setRecipient(event.target.value)}
                     />
-                    {recipientError ? <FieldError id="test-email-recipient-error" role="alert">{recipientError}</FieldError> : null}
+                    {recipientError ? (
+                        <FieldError
+                            id="test-email-recipient-error"
+                            role="alert"
+                        >
+                            {recipientError}
+                        </FieldError>
+                    ) : null}
                 </Field>
                 <Button
                     type="button"
@@ -551,13 +890,15 @@ function TestEmailPanel({ recipientError, deliveryError }: { recipientError?: st
                     <Mail data-icon="inline-start" aria-hidden="true" />
                     Send test email
                 </Button>
-                {deliveryError ? <FieldError role="alert">{deliveryError}</FieldError> : null}
+                {deliveryError ? (
+                    <FieldError role="alert">{deliveryError}</FieldError>
+                ) : null}
             </CardContent>
         </Card>
     );
 }
 
-function TestStripePanel({ error }: { error?: string }) {
+function TestStripePanel() {
     return (
         <Card>
             <CardHeader>
@@ -574,7 +915,7 @@ function TestStripePanel({ error }: { error?: string }) {
                     className="min-h-11 md:min-h-9"
                     onClick={() =>
                         router.post(
-                            '/admin/settings/subscriptions/test',
+                            AdminSettingActionController.testStripe.url(),
                             {},
                             { preserveScroll: true },
                         )
@@ -582,6 +923,37 @@ function TestStripePanel({ error }: { error?: string }) {
                 >
                     <CreditCard data-icon="inline-start" aria-hidden="true" />
                     Test Stripe connection
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
+
+function TestStoragePanel({ error }: { error?: string }) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle as="h3">Validate storage</CardTitle>
+                <CardDescription>
+                    Writes and removes one probe file with the saved disk
+                    configuration. Save changes before testing.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-11 md:min-h-9"
+                    onClick={() =>
+                        router.post(
+                            AdminSettingActionController.testStorage.url(),
+                            {},
+                            { preserveScroll: true },
+                        )
+                    }
+                >
+                    <HardDrive data-icon="inline-start" aria-hidden="true" />
+                    Test storage write
                 </Button>
                 {error ? <FieldError role="alert">{error}</FieldError> : null}
             </CardContent>
@@ -613,24 +985,29 @@ function SettingControl({
     }
     const id = 'setting-' + field.key;
     const invalid = error !== undefined;
-    const describedBy = [
-        field.help ? id + '-help' : null,
-        error ? id + '-error' : null,
-    ]
-        .filter((value): value is string => value !== null)
-        .join(' ') || undefined;
-    const wide = !field.secret && (['bool', 'text', 'list', 'int_list'].includes(field.type) ||
-        field.key === 'homepage' || field.key === 'default_delivery');
+    const describedBy =
+        [field.help ? id + '-help' : null, error ? id + '-error' : null]
+            .filter((value): value is string => value !== null)
+            .join(' ') || undefined;
+    const wide =
+        !field.secret &&
+        (['bool', 'text', 'list', 'int_list'].includes(field.type) ||
+            field.key === 'homepage' ||
+            field.key === 'default_delivery');
 
-    if (field.type === 'list' || field.type === 'int_list' ||
-        field.key === 'homepage' || field.key === 'default_delivery') {
+    if (
+        field.type === 'list' ||
+        field.type === 'int_list' ||
+        field.key === 'homepage' ||
+        field.key === 'default_delivery'
+    ) {
         return (
             <FieldSet
                 id={id}
                 tabIndex={-1}
                 aria-invalid={invalid || undefined}
                 aria-describedby={describedBy}
-                className="min-w-0 xl:col-span-2 scroll-mb-32"
+                className="min-w-0 scroll-mb-32 xl:col-span-2"
                 data-invalid={invalid || undefined}
             >
                 <FieldLegend>{field.label}</FieldLegend>
@@ -659,7 +1036,10 @@ function SettingControl({
 
     if (field.type === 'bool') {
         return (
-            <Field className="min-w-0 xl:col-span-2" data-invalid={invalid || undefined}>
+            <Field
+                className="min-w-0 xl:col-span-2"
+                data-invalid={invalid || undefined}
+            >
                 <div className="flex min-h-11 items-start justify-between gap-4 py-2">
                     <div className="flex flex-col gap-1">
                         <FieldLabel htmlFor={id}>{field.label}</FieldLabel>
@@ -1064,7 +1444,11 @@ function ControlBody({
 }
 
 function OrderedRows({
-    value, disabled, onChange, label, kind,
+    value,
+    disabled,
+    onChange,
+    label,
+    kind,
 }: {
     value: number[];
     disabled: boolean;
@@ -1083,21 +1467,50 @@ function OrderedRows({
     return (
         <ul className="flex flex-col gap-1">
             {value.map((item, index) => (
-                <li key={`${item}-${index}`} className="flex min-w-0 items-center gap-2 rounded-md border px-2 py-1.5">
-                    <span className="min-w-0 flex-1 truncate text-sm">{label(item)}</span>
-                    <Button type="button" size="icon" className="size-11 md:size-9" variant="ghost"
-                        disabled={disabled || index === 0} aria-label={`Move ${kind} ${index + 1} up`}
-                        onClick={() => move(index, -1)}>
+                <li
+                    key={`${item}-${index}`}
+                    className="flex min-w-0 items-center gap-2 rounded-md border px-2 py-1.5"
+                >
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                        {label(item)}
+                    </span>
+                    <Button
+                        type="button"
+                        size="icon"
+                        className="size-11 md:size-9"
+                        variant="ghost"
+                        disabled={disabled || index === 0}
+                        aria-label={`Move ${kind} ${index + 1} up`}
+                        onClick={() => move(index, -1)}
+                    >
                         <ArrowUp aria-hidden="true" />
                     </Button>
-                    <Button type="button" size="icon" className="size-11 md:size-9" variant="ghost"
-                        disabled={disabled || index === value.length - 1} aria-label={`Move ${kind} ${index + 1} down`}
-                        onClick={() => move(index, 1)}>
+                    <Button
+                        type="button"
+                        size="icon"
+                        className="size-11 md:size-9"
+                        variant="ghost"
+                        disabled={disabled || index === value.length - 1}
+                        aria-label={`Move ${kind} ${index + 1} down`}
+                        onClick={() => move(index, 1)}
+                    >
                         <ArrowDown aria-hidden="true" />
                     </Button>
-                    <Button type="button" size="icon" className="size-11 md:size-9" variant="ghost"
-                        disabled={disabled} aria-label={`Remove ${kind} ${index + 1}`}
-                        onClick={() => onChange(value.filter((_, position) => position !== index))}>
+                    <Button
+                        type="button"
+                        size="icon"
+                        className="size-11 md:size-9"
+                        variant="ghost"
+                        disabled={disabled}
+                        aria-label={`Remove ${kind} ${index + 1}`}
+                        onClick={() =>
+                            onChange(
+                                value.filter(
+                                    (_, position) => position !== index,
+                                ),
+                            )
+                        }
+                    >
                         <X aria-hidden="true" />
                     </Button>
                 </li>
@@ -1106,7 +1519,12 @@ function OrderedRows({
     );
 }
 
-function NumberListField({ value, disabled, onChange, describedBy }: {
+function NumberListField({
+    value,
+    disabled,
+    onChange,
+    describedBy,
+}: {
     value: number[];
     disabled: boolean;
     onChange: (value: number[]) => void;
@@ -1114,27 +1532,57 @@ function NumberListField({ value, disabled, onChange, describedBy }: {
 }) {
     const [input, setInput] = useState('');
     const delay = Number(input);
-    const canAdd = input.trim() !== '' && Number.isInteger(delay) && delay >= 1 && delay <= 86400 && value.length < 10;
+    const canAdd =
+        input.trim() !== '' &&
+        Number.isInteger(delay) &&
+        delay >= 1 &&
+        delay <= 86400 &&
+        value.length < 10;
 
     return (
         <div className="flex min-w-0 flex-col gap-2">
-            {value.length === 0 ? <p className="text-sm text-muted-foreground">No retry delays added.</p> : (
-                <OrderedRows value={value} disabled={disabled} onChange={onChange} kind="delay" label={(item) => `${item} seconds`} />
+            {value.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                    No retry delays added.
+                </p>
+            ) : (
+                <OrderedRows
+                    value={value}
+                    disabled={disabled}
+                    onChange={onChange}
+                    kind="delay"
+                    label={(item) => `${item} seconds`}
+                />
             )}
-            <p className="text-sm text-muted-foreground">Add up to 10 delays of 1–86,400 seconds.</p>
+            <p className="text-sm text-muted-foreground">
+                Add up to 10 delays of 1–86,400 seconds.
+            </p>
             {!disabled ? (
                 <div className="flex flex-wrap items-center gap-2">
-                    <Input type="number" aria-label="Retry delay in seconds" aria-describedby={describedBy}
-                        min={1} max={86400} step={1} value={input}
+                    <Input
+                        type="number"
+                        aria-label="Retry delay in seconds"
+                        aria-describedby={describedBy}
+                        min={1}
+                        max={86400}
+                        step={1}
+                        value={input}
                         className="min-h-11 w-full sm:w-48 md:min-h-10"
-                        onChange={(event) => setInput(event.target.value)} />
-                    <Button type="button" variant="outline" className="min-h-11 md:min-h-9" disabled={!canAdd}
+                        onChange={(event) => setInput(event.target.value)}
+                    />
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-11 md:min-h-9"
+                        disabled={!canAdd}
                         onClick={() => {
                             if (!canAdd) return;
                             onChange([...value, delay]);
                             setInput('');
-                        }}>
-                        <Plus data-icon="inline-start" aria-hidden="true" /> Add delay
+                        }}
+                    >
+                        <Plus data-icon="inline-start" aria-hidden="true" /> Add
+                        delay
                     </Button>
                 </div>
             ) : null}
@@ -1142,7 +1590,13 @@ function NumberListField({ value, disabled, onChange, describedBy }: {
     );
 }
 
-function OrderedListField({ field, value, disabled, onChange, describedBy }: {
+function OrderedListField({
+    field,
+    value,
+    disabled,
+    onChange,
+    describedBy,
+}: {
     field: AdminSettingField;
     value: number[];
     disabled: boolean;
@@ -1170,7 +1624,14 @@ function OrderedListField({ field, value, disabled, onChange, describedBy }: {
             })
             .then((payload) => {
                 if (!controller.signal.aborted) {
-                    setLabels(Object.fromEntries((payload.items ?? []).map((item) => [item.value, item.label])));
+                    setLabels(
+                        Object.fromEntries(
+                            (payload.items ?? []).map((item) => [
+                                item.value,
+                                item.label,
+                            ]),
+                        ),
+                    );
                 }
             })
             .catch(() => {
@@ -1181,8 +1642,13 @@ function OrderedListField({ field, value, disabled, onChange, describedBy }: {
 
     return (
         <div className="flex min-w-0 flex-col gap-2">
-            <OrderedRows value={value} disabled={disabled} onChange={onChange} kind="page"
-                label={(item) => labels[String(item)] ?? `Page #${item}`} />
+            <OrderedRows
+                value={value}
+                disabled={disabled}
+                onChange={onChange}
+                kind="page"
+                label={(item) => labels[String(item)] ?? `Page #${item}`}
+            />
             {!disabled ? (
                 <SearchableCombobox
                     id={'setting-' + field.key + '-add'}
@@ -1195,7 +1661,10 @@ function OrderedListField({ field, value, disabled, onChange, describedBy }: {
                     describedBy={describedBy}
                     onChange={(next) => {
                         const numeric = Number(next);
-                        if (Number.isInteger(numeric) && !value.includes(numeric)) {
+                        if (
+                            Number.isInteger(numeric) &&
+                            !value.includes(numeric)
+                        ) {
                             onChange([...value, numeric]);
                         }
                     }}
@@ -1263,7 +1732,11 @@ function SearchableCombobox({
                     type="button"
                     variant="outline"
                     role="combobox"
-                    aria-label={field.type === 'int_list' ? `Add page to ${field.label}` : undefined}
+                    aria-label={
+                        field.type === 'int_list'
+                            ? `Add page to ${field.label}`
+                            : undefined
+                    }
                     aria-expanded={open}
                     aria-invalid={invalid}
                     disabled={disabled}

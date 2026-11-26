@@ -30,6 +30,7 @@ export type AdminSettingGroup = {
 
 export type AdminSettingSection = {
     key: string;
+    routeKey: string;
     label: string;
     description: string;
     category: AdminSettingsCategory;
@@ -43,6 +44,7 @@ export type AdminSettingSection = {
 
 export type AdminSettingsNavigationItem = {
     key: string;
+    routeKey: string;
     label: string;
     description: string;
     category: AdminSettingsCategory;

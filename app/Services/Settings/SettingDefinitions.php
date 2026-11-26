@@ -29,6 +29,27 @@ class SettingDefinitions
     }
 
     /**
+     * Resolve a public settings route key to its internal section key.
+     */
+    public function sectionKeyForRoute(string $routeKey): ?string
+    {
+        foreach ($this->sections() as $sectionKey => $definition) {
+            if ((string) ($definition['route_key'] ?? $sectionKey) === $routeKey) {
+                return $sectionKey;
+            }
+        }
+
+        return null;
+    }
+
+    public function routeKeyForSection(string $sectionKey): string
+    {
+        $definition = $this->section($sectionKey);
+
+        return (string) ($definition['route_key'] ?? $sectionKey);
+    }
+
+    /**
      * @return list<string>
      */
     public function sectionKeys(): array
@@ -208,6 +229,36 @@ class SettingDefinitions
 
             if ($errors !== []) {
                 throw ValidationException::withMessages($errors);
+            }
+        }
+
+        if ($section === 'uploading' && ($values['disk'] ?? null) === 's3') {
+            $disk = config('filesystems.disks.s3');
+            $disk = is_array($disk) ? $disk : [];
+
+            if (($disk['driver'] ?? null) === 's3') {
+                $errors = [];
+
+                foreach ([
+                    's3_access_key_id' => ['key', 'An access key ID is required for the s3 disk.'],
+                    's3_secret_access_key' => ['secret', 'A secret access key is required for the s3 disk.'],
+                    's3_region' => ['region', 'A region is required for the s3 disk.'],
+                    's3_bucket' => ['bucket', 'A bucket is required for the s3 disk.'],
+                ] as $setting => [$configKey, $message]) {
+                    $value = $values[$setting] ?? null;
+
+                    if (! is_string($value) || trim($value) === '') {
+                        $value = $disk[$configKey] ?? null;
+                    }
+
+                    if (! is_string($value) || trim($value) === '') {
+                        $errors['values.'.$setting] = $message;
+                    }
+                }
+
+                if ($errors !== []) {
+                    throw ValidationException::withMessages($errors);
+                }
             }
         }
 

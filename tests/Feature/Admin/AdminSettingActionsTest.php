@@ -3,8 +3,8 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\MediaPurpose;
-use App\Models\CustomPage;
 use App\Models\ContentMedia;
+use App\Models\CustomPage;
 use App\Models\Locale;
 use App\Models\User;
 use App\Services\Content\ContentMediaStorage;
@@ -327,6 +327,53 @@ class AdminSettingActionsTest extends TestCase
             ->assertSessionHasErrors('email');
     }
 
+    public function test_storage_check_writes_and_removes_a_probe_file(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'uploading', [
+            'disk' => self::DISK,
+        ], $settings->version('uploading'));
+
+        $this->actingAs($administrator)
+            ->from('/admin/settings/uploading')
+            ->post('/admin/settings/uploading/test')
+            ->assertRedirect('/admin/settings/uploading')
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success', 'Storage disk accepted a test write.');
+
+        $this->assertSame([], Storage::disk(self::DISK)->allFiles('healthcheck'));
+    }
+
+    public function test_storage_check_reports_an_unwritable_disk(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'uploading', [
+            'disk' => self::DISK,
+        ], $settings->version('uploading'));
+
+        $root = (string) tempnam(sys_get_temp_dir(), 'linkpilot-storage');
+
+        try {
+            config()->set('filesystems.disks.'.self::DISK.'.root', $root.'/media');
+            Storage::forgetDisk(self::DISK);
+
+            $this->actingAs($administrator)
+                ->post('/admin/settings/uploading/test')
+                ->assertSessionHasErrors('storage');
+        } finally {
+            @unlink($root);
+        }
+    }
+
+    public function test_storage_check_requires_the_manage_permission(): void
+    {
+        $this->actingAs(User::factory()->support()->create())
+            ->post('/admin/settings/uploading/test')
+            ->assertForbidden();
+    }
+
     public function test_stripe_validation_stops_when_billing_is_disabled(): void
     {
         $administrator = User::factory()->admin()->create();
@@ -336,10 +383,9 @@ class AdminSettingActionsTest extends TestCase
         ], $settings->version('subscriptions'));
 
         $this->actingAs($administrator)
-            ->from('/admin/settings/subscriptions')
-            ->post('/admin/settings/subscriptions/test')
-            ->assertRedirect('/admin/settings/subscriptions')
+            ->from('/admin/settings/payment-gateways')
+            ->post('/admin/settings/payment-gateways/test')
+            ->assertRedirect('/admin/settings/payment-gateways')
             ->assertSessionHasErrors(['stripe' => 'Billing is disabled.']);
     }
-
 }

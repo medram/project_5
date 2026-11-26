@@ -262,7 +262,7 @@ export default function AdminSubscriptionsIndex({
                             variant="outline"
                             className="shrink-0 max-lg:min-h-11"
                         >
-                            <Link href={settings.show('subscriptions').url}>
+                            <Link href={settings.show('payment-gateways').url}>
                                 Open billing settings
                             </Link>
                         </Button>

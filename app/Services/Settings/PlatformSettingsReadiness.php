@@ -96,7 +96,7 @@ class PlatformSettingsReadiness
     }
 
     /** @param array<string, mixed> $subscriptions
-     *  @return array{label: string, state: string, detail: string}
+     * @return array{label: string, state: string, detail: string}
      */
     private function stripeMode(array $subscriptions): array
     {
@@ -164,18 +164,28 @@ class PlatformSettingsReadiness
         ];
     }
 
-    /** @param array<string, mixed> $resolved */
+    /** @param array<string, mixed> $resolved
+     * @return list<array{label: string, state: string, detail: string}>
+     */
     private function uploading(array $resolved): array
     {
         $disk = $resolved['uploading']['disk'] ?? null;
-        $configured = is_string($disk) && is_array(config('filesystems.disks.'.$disk));
+        $configuration = is_string($disk) ? config('filesystems.disks.'.$disk) : null;
+        $configured = is_array($configuration);
+        $items = [$this->requirement('Storage disk', $configured)];
 
-        return [
-            $this->requirement('Storage disk', $configured),
-            filled(config('services.linkpilot.media.clamav_path'))
-                ? ['label' => 'ClamAV executable', 'state' => 'ready', 'detail' => 'Deployment-owned scanner path is configured.']
-                : ['label' => 'ClamAV executable', 'state' => 'incomplete', 'detail' => 'PDF uploads fail closed without a scanner.'],
-        ];
+        if ($configured && ($configuration['driver'] ?? null) === 's3') {
+            $items[] = $this->requirement('Access key ID', filled($configuration['key'] ?? null));
+            $items[] = $this->requirement('Secret access key', filled($configuration['secret'] ?? null));
+            $items[] = $this->requirement('Bucket', filled($configuration['bucket'] ?? null));
+            $items[] = $this->requirement('Region', filled($configuration['region'] ?? null));
+        }
+
+        $items[] = filled(config('services.linkpilot.media.clamav_path'))
+            ? ['label' => 'ClamAV executable', 'state' => 'ready', 'detail' => 'Deployment-owned scanner path is configured.']
+            : ['label' => 'ClamAV executable', 'state' => 'incomplete', 'detail' => 'PDF uploads fail closed without a scanner.'];
+
+        return $items;
     }
 
     /** @return list<array{label: string, state: string, detail: string}> */

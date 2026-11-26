@@ -23,9 +23,12 @@ class AdminSettingController extends Controller
         private readonly ContentMediaStorage $mediaStorage,
     ) {}
 
-    public function show(Request $request, string $section): Response
+    public function show(Request $request, string $routeKey): Response
     {
-        $schema = $this->settings->schema($section);
+        $sectionKey = $this->definitions->sectionKeyForRoute($routeKey);
+        abort_if($sectionKey === null, 404);
+
+        $schema = $this->settings->schema($sectionKey);
         abort_if($schema === null, 404);
 
         return Inertia::render('admin/settings/section', [
@@ -36,24 +39,27 @@ class AdminSettingController extends Controller
         ]);
     }
 
-    public function update(AdminSettingsUpdateRequest $request, string $section): RedirectResponse
+    public function update(AdminSettingsUpdateRequest $request, string $routeKey): RedirectResponse
     {
+        $sectionKey = $this->definitions->sectionKeyForRoute($routeKey);
+        abort_if($sectionKey === null, 404);
+
         $actor = $request->user();
         abort_if($actor === null, 403);
 
         $values = $request->validated()['values'];
         $assetKeys = array_keys(array_filter(
-            $this->definitions->fields($section),
+            $this->definitions->fields($sectionKey),
             fn (array $field): bool => ($field['asset'] ?? false) === true,
         ));
         $previousAssets = array_intersect_key(
-            $this->settings->resolved()[$section] ?? [],
+            $this->settings->resolved()[$sectionKey] ?? [],
             array_fill_keys($assetKeys, true),
         );
 
         $this->settings->updateSection(
             $actor,
-            $section,
+            $sectionKey,
             $values,
             (int) $request->validated()['version'],
         );

@@ -158,7 +158,7 @@ export default function SettingsLayout({
                                                             setOpen(false);
                                                             router.visit(
                                                                 settings.show(
-                                                                    item.key,
+                                                                    item.routeKey,
                                                                 ).url,
                                                             );
                                                         }}
@@ -211,7 +211,7 @@ export default function SettingsLayout({
                                 return (
                                     <Link
                                         key={item.key}
-                                        href={settings.show(item.key).url}
+                                        href={settings.show(item.routeKey).url}
                                         className={cn(
                                             'flex min-h-9 items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none [@media(min-height:1050px)]:min-h-10',
                                             item.key === section

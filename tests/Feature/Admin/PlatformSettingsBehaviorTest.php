@@ -127,7 +127,7 @@ class PlatformSettingsBehaviorTest extends TestCase
 
         $response = $this->withoutVite()
             ->actingAs($administrator)
-            ->get('/admin/settings/subscriptions')
+            ->get('/admin/settings/payment-gateways')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('section.readiness.state', 'ready')
@@ -155,7 +155,7 @@ class PlatformSettingsBehaviorTest extends TestCase
 
         $response = $this->withoutVite()
             ->actingAs($administrator)
-            ->get('/admin/settings/subscriptions')
+            ->get('/admin/settings/payment-gateways')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('section.readiness.state', 'incomplete')

@@ -3,15 +3,25 @@
 namespace Tests\Feature\Admin;
 
 use App\Http\Middleware\ApplyPlatformSettings;
+use App\Http\Middleware\EnsureAllowedHost;
 use App\Models\OperationLog;
 use App\Models\User;
 use App\Services\Settings\PlatformSettings;
+use Illuminate\Bus\Queueable;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Contracts\Queue\Job;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Mail\MailManager;
 use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
+use Laravel\Socialite\Contracts\Factory;
 use Mockery;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
@@ -119,9 +129,94 @@ class PlatformSettingsRuntimeTest extends TestCase
         $this->assertSame(750, config('services.linkpilot.webhooks.excerpt_bytes'));
     }
 
+    public function test_stored_s3_settings_replace_deployment_credentials(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'uploading', [
+            'disk' => 's3',
+            's3_access_key_id' => 'stored-key',
+            's3_secret_access_key' => 'stored-secret',
+            's3_region' => 'eu-west-1',
+            's3_bucket' => 'stored-bucket',
+            's3_endpoint' => 'https://minio.acme.test',
+            's3_use_path_style_endpoint' => true,
+        ], $settings->version('uploading'));
+
+        config([
+            'filesystems.disks.s3.key' => 'env-key',
+            'filesystems.disks.s3.secret' => 'env-secret',
+            'filesystems.disks.s3.region' => 'env-region',
+            'filesystems.disks.s3.bucket' => 'env-bucket',
+            'filesystems.disks.s3.endpoint' => null,
+            'filesystems.disks.s3.use_path_style_endpoint' => false,
+        ]);
+
+        $settings->applyRuntime();
+
+        $this->assertSame('stored-key', config('filesystems.disks.s3.key'));
+        $this->assertSame('stored-secret', config('filesystems.disks.s3.secret'));
+        $this->assertSame('eu-west-1', config('filesystems.disks.s3.region'));
+        $this->assertSame('stored-bucket', config('filesystems.disks.s3.bucket'));
+        $this->assertSame('https://minio.acme.test', config('filesystems.disks.s3.endpoint'));
+        $this->assertTrue(config('filesystems.disks.s3.use_path_style_endpoint'));
+        $this->assertSame('s3', config('services.linkpilot.media.disk'));
+    }
+
+    public function test_unstored_s3_settings_keep_deployment_values(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'uploading', [
+            's3_bucket' => 'stored-bucket',
+        ], $settings->version('uploading'));
+
+        config([
+            'filesystems.disks.s3.key' => 'env-key',
+            'filesystems.disks.s3.secret' => 'env-secret',
+            'filesystems.disks.s3.region' => 'env-region',
+            'filesystems.disks.s3.bucket' => 'env-bucket',
+            'filesystems.disks.s3.use_path_style_endpoint' => true,
+        ]);
+
+        $settings->applyRuntime();
+
+        $this->assertSame('env-key', config('filesystems.disks.s3.key'));
+        $this->assertSame('env-secret', config('filesystems.disks.s3.secret'));
+        $this->assertSame('env-region', config('filesystems.disks.s3.region'));
+        $this->assertSame('stored-bucket', config('filesystems.disks.s3.bucket'));
+        $this->assertTrue(config('filesystems.disks.s3.use_path_style_endpoint'));
+    }
+
+    public function test_empty_stored_s3_values_fall_back_to_deployment_credentials(): void
+    {
+        $administrator = User::factory()->admin()->create();
+        $settings = app(PlatformSettings::class);
+        $settings->updateSection($administrator, 'uploading', [
+            's3_access_key_id' => '',
+            's3_secret_access_key' => '',
+            's3_region' => '',
+            's3_bucket' => '',
+        ], $settings->version('uploading'));
+
+        config([
+            'filesystems.disks.s3.key' => 'env-key',
+            'filesystems.disks.s3.secret' => 'env-secret',
+            'filesystems.disks.s3.region' => 'env-region',
+            'filesystems.disks.s3.bucket' => 'env-bucket',
+        ]);
+
+        $settings->applyRuntime();
+
+        $this->assertSame('env-key', config('filesystems.disks.s3.key'));
+        $this->assertSame('env-secret', config('filesystems.disks.s3.secret'));
+        $this->assertSame('env-region', config('filesystems.disks.s3.region'));
+        $this->assertSame('env-bucket', config('filesystems.disks.s3.bucket'));
+    }
+
     public function test_revision_changes_at_the_same_timestamp_refresh_cached_integrations(): void
     {
-        \Illuminate\Support\Carbon::setTestNow('2026-11-13 12:00:00');
+        Carbon::setTestNow('2026-11-13 12:00:00');
 
         try {
             $administrator = User::factory()->admin()->create();
@@ -139,8 +234,8 @@ class PlatformSettingsRuntimeTest extends TestCase
             ], $settings->version('authentication'));
             $settings->applyRuntime();
 
-            $mail = app(\Illuminate\Mail\MailManager::class);
-            $socialite = app(\Laravel\Socialite\Contracts\Factory::class);
+            $mail = app(MailManager::class);
+            $socialite = app(Factory::class);
             $firstMailer = $mail->mailer('smtp');
             $firstGoogleDriver = $socialite->driver('google');
 
@@ -157,7 +252,7 @@ class PlatformSettingsRuntimeTest extends TestCase
             $this->assertSame('second.smtp.test', config('mail.mailers.smtp.host'));
             $this->assertSame('second.apps.googleusercontent.com', config('services.google.client_id'));
         } finally {
-            \Illuminate\Support\Carbon::setTestNow();
+            Carbon::setTestNow();
         }
     }
 
@@ -269,7 +364,6 @@ class PlatformSettingsRuntimeTest extends TestCase
         $this->assertSame('Queue Name', config('app.name'));
     }
 
-
     public function test_one_shot_queue_worker_applies_settings_before_handling_a_job(): void
     {
         $administrator = User::factory()->admin()->create();
@@ -295,6 +389,7 @@ class PlatformSettingsRuntimeTest extends TestCase
 
         $this->assertSame('One-shot Queue Name', RuntimeSettingsObservationJob::$observedAppName);
     }
+
     public function test_cashier_payment_and_webhook_routes_are_owned_by_the_application(): void
     {
         $this->assertTrue(Route::has('cashier.payment'));
@@ -309,14 +404,14 @@ class PlatformSettingsRuntimeTest extends TestCase
 
         $this->assertLessThan(
             array_search(ApplyPlatformSettings::class, $groups['web'], true),
-            array_search(\App\Http\Middleware\EnsureAllowedHost::class, $groups['web'], true),
+            array_search(EnsureAllowedHost::class, $groups['web'], true),
         );
         $this->assertLessThan(
-            array_search(\Illuminate\Routing\Middleware\SubstituteBindings::class, $groups['web'], true),
+            array_search(SubstituteBindings::class, $groups['web'], true),
             array_search(ApplyPlatformSettings::class, $groups['web'], true),
         );
         $this->assertLessThan(
-            array_search(\Illuminate\Routing\Middleware\SubstituteBindings::class, $groups['api'], true),
+            array_search(SubstituteBindings::class, $groups['api'], true),
             array_search(ApplyPlatformSettings::class, $groups['api'], true),
         );
 
@@ -325,12 +420,12 @@ class PlatformSettingsRuntimeTest extends TestCase
     }
 }
 
-final class RuntimeSettingsObservationJob implements \Illuminate\Contracts\Queue\ShouldQueue
+final class RuntimeSettingsObservationJob implements ShouldQueue
 {
-    use \Illuminate\Bus\Queueable;
-    use \Illuminate\Foundation\Bus\Dispatchable;
-    use \Illuminate\Queue\InteractsWithQueue;
-    use \Illuminate\Queue\SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     public static ?string $observedAppName = null;
 
