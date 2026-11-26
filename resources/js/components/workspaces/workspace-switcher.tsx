@@ -1,6 +1,5 @@
 import { router, useForm, usePage } from '@inertiajs/react';
 import {
-    Building2,
     Check,
     ChevronsUpDown,
     Plus,
@@ -62,14 +61,13 @@ export function WorkspaceSwitcher() {
                     <DropdownMenuTrigger asChild>
                         <button
                             type="button"
-                            title={workspace.current.name}
+                            aria-label={`Switch workspace. Current workspace: ${workspace.current.name}`}
+                            title={`Switch workspace: ${workspace.current.name}`}
                             className="flex h-8 w-full min-w-0 items-center gap-2 rounded-lg px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring/40 focus-visible:outline-none"
                         >
-                            <Building2
-                                className="size-3.5 shrink-0"
-                                aria-hidden="true"
-                            />
-                            <span className="truncate">Switch workspace</span>
+                            <span className="truncate">
+                                {workspace.current.name}
+                            </span>
                             <ChevronsUpDown
                                 className="ml-auto size-3.5 shrink-0"
                                 aria-hidden="true"
