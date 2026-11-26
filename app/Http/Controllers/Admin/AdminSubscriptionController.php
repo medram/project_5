@@ -48,7 +48,10 @@ class AdminSubscriptionController extends Controller
         $query = Workspace::query()
             ->with([
                 'owner:id,name,email',
-                'planOverrides' => fn ($overrides) => $overrides->with('plan:id,code,name')->orderByDesc('id'),
+                'planOverrides' => fn ($overrides) => $overrides
+                    ->with('plan:id,code,name')
+                    ->orderByRaw('expires_at IS NULL, expires_at asc')
+                    ->orderByDesc('id'),
                 'subscriptions' => fn ($subscriptions) => $subscriptions->orderByDesc('created_at')->orderByDesc('id'),
                 'paypalSubscriptions' => fn ($subscriptions) => $subscriptions->with('price')->orderByDesc('id'),
             ])
